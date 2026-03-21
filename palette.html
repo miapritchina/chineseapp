@@ -9,28 +9,26 @@
 <script src="https://scrtwpns.com/mixbox.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body {
-  height: 100%; width: 100%;
+  width: 100%; height: 100dvh;
   overflow: hidden;
   touch-action: none;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
+  background: #2a2520;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   user-select: none;
-  background: #3a3a3a;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-user-select: none;
 }
 
 #app {
   display: grid;
-  grid-template-columns: 270px 1fr;
+  grid-template-columns: 260px 1fr;
   height: 100dvh;
   gap: 0;
 }
 
-/* ---- PALETTE PANEL ---- */
+/* ── Palette Panel ── */
 #palette-panel {
-  background: #4a4440;
+  background: #3a342e;
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -38,7 +36,6 @@ html, body {
   overflow: hidden;
 }
 
-/* Color squares */
 #color-squares {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -47,157 +44,157 @@ html, body {
 }
 .color-swatch {
   aspect-ratio: 1;
-  border-radius: 5px;
+  border-radius: 6px;
   border: 3px solid transparent;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, transform 0.1s;
   position: relative;
 }
 .color-swatch.selected {
   border-color: #fff;
-  box-shadow: 0 0 0 2px #333, 0 0 8px rgba(255,255,255,0.4);
+  box-shadow: 0 0 0 2px #555, 0 0 12px rgba(255,255,255,0.3);
+  transform: scale(1.08);
+  z-index: 1;
 }
-.color-swatch:active { transform: scale(0.93); }
-.color-swatch .label {
-  position: absolute; bottom: -1px; left: 0; right: 0;
-  font-size: 7px; text-align: center; color: rgba(255,255,255,0.7);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-  line-height: 1.2; padding: 1px;
-}
+.color-swatch:active { transform: scale(0.95); }
 
-/* Brush preview */
-#brush-preview-row {
-  display: flex; align-items: center; gap: 8px;
-  flex-shrink: 0; padding: 4px 0;
+#brush-preview-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  flex-shrink: 0;
 }
 #brush-preview {
   width: 36px; height: 36px;
   border-radius: 50%;
-  border: 2px solid #888;
+  border: 2px solid #666;
   background: #222;
   flex-shrink: 0;
+  transition: background-color 0.15s;
 }
 #brush-label {
-  color: #ccc; font-size: 11px;
+  color: #aaa;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Mixing wells */
-#wells-container {
+#wells-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 5px;
   flex: 1;
   min-height: 0;
 }
-.well-wrapper {
+.well-container {
   position: relative;
-  border-radius: 8px;
+  border-radius: 10px;
+  background: #c8bba8;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), inset 0 -1px 2px rgba(255,255,255,0.15);
   overflow: hidden;
-  background: #c8b99a;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), inset 0 -1px 3px rgba(255,255,255,0.15);
 }
 .well-canvas {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   display: block;
-  touch-action: none;
-  border-radius: 8px;
+  border-radius: 10px;
+  cursor: crosshair;
 }
 .well-clear {
-  position: absolute; top: 2px; right: 4px;
-  background: none; border: none;
-  color: rgba(255,255,255,0.5); font-size: 14px;
-  cursor: pointer; z-index: 2;
-  line-height: 1; padding: 2px;
+  position: absolute;
+  top: 3px; right: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+  color: #ccc;
+  border: none;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
 }
-.well-clear:active { color: #fff; }
+.well-container:hover .well-clear,
+.well-container:active .well-clear { opacity: 1; }
 
-/* Water jar */
 #water-jar {
   flex-shrink: 0;
   height: 52px;
-  border-radius: 6px;
-  border: 2px solid #888;
-  background: linear-gradient(180deg, transparent 15%, rgba(180,210,240,0.5) 40%, rgba(140,180,220,0.7) 100%);
-  position: relative;
+  border-radius: 8px;
+  border: 2px solid #665e54;
+  background: linear-gradient(to bottom, rgba(180,210,240,0.15) 0%, rgba(140,190,230,0.5) 100%);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 12px;
+  position: relative;
   overflow: hidden;
   transition: background 0.3s;
 }
-#water-jar-tint {
-  position: absolute; inset: 0;
-  border-radius: 4px;
-  pointer-events: none;
+#water-jar-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 70%;
+  background: rgba(160,200,235,0.35);
   transition: background 0.5s;
+  pointer-events: none;
 }
-#water-jar-label {
-  position: absolute; bottom: 4px; left: 0; right: 0;
-  text-align: center; font-size: 10px; color: rgba(0,0,0,0.5);
-}
-#water-jar-ring {
-  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  width: 50%; height: 6px;
-  border-radius: 0 0 6px 6px;
-  background: rgba(255,255,255,0.3);
-}
+#water-jar-label { position: relative; z-index: 1; pointer-events: none; }
+#water-jar:active { background: rgba(180,210,240,0.4); }
 
-/* Controls row */
-#controls-row {
-  display: flex; gap: 6px; align-items: center; flex-shrink: 0;
+#palette-controls {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
 }
-#controls-row button {
-  flex: 1; padding: 8px 4px;
-  border: none; border-radius: 5px;
-  background: #665e56; color: #ddd;
-  font-size: 11px; cursor: pointer;
-  min-height: 36px;
+.ctrl-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #4a433b;
+  color: #ccc;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
 }
-#controls-row button:active { background: #554e47; }
+.ctrl-btn:active { background: #5a534b; }
 
-/* Brush size slider */
-#size-row {
-  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+#brush-size-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
-#size-row label { color: #aaa; font-size: 10px; white-space: nowrap; }
+#brush-size-container label { color: #888; font-size: 11px; }
 #brush-size {
-  flex: 1; height: 20px;
-  -webkit-appearance: none; appearance: none;
-  background: #5a5350; border-radius: 10px; outline: none;
-}
-#brush-size::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #ddd; cursor: pointer;
+  flex: 1;
+  accent-color: #888;
+  height: 20px;
 }
 
-/* ---- CANVAS PANEL ---- */
+/* ── Canvas Panel ── */
 #canvas-panel {
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   background: #555;
   position: relative;
 }
-#canvas-toolbar {
-  display: flex; align-items: center; justify-content: flex-end;
-  padding: 6px 10px; gap: 8px;
-  background: #444; flex-shrink: 0;
-}
-#canvas-toolbar button {
-  padding: 6px 14px;
-  border: none; border-radius: 5px;
-  background: #665e56; color: #ddd;
-  font-size: 12px; cursor: pointer;
-  min-height: 32px;
-}
-#canvas-toolbar button:active { background: #554e47; }
 #drawing-canvas {
   flex: 1;
   display: block;
-  background: #fff;
-  touch-action: none;
   cursor: crosshair;
+  background: #fff;
 }
 
-/* ---- PORTRAIT MODE ---- */
-@media (max-aspect-ratio: 4/5) {
+/* Portrait layout */
+@media (max-aspect-ratio: 1/1) {
   #app {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
@@ -207,760 +204,556 @@ html, body {
     flex-wrap: wrap;
     padding: 6px;
     gap: 6px;
-    max-height: 180px;
+    max-height: 40vh;
     overflow-y: auto;
   }
   #color-squares {
     grid-template-columns: repeat(6, 1fr);
     width: 100%;
   }
-  #wells-container {
+  #wells-grid {
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 1fr;
     width: 100%;
-    min-height: 80px;
+    min-height: 100px;
   }
-  #brush-preview-row, #water-jar, #controls-row, #size-row {
-    display: none; /* simplified in portrait for now */
+  #brush-preview-container, #water-jar, #palette-controls, #brush-size-container {
+    width: 100%;
   }
 }
 </style>
 </head>
 <body>
 <div id="app">
-  <!-- PALETTE PANEL -->
   <div id="palette-panel">
     <div id="color-squares"></div>
-
-    <div id="brush-preview-row">
+    <div id="brush-preview-container">
       <div id="brush-preview"></div>
-      <span id="brush-label">No color selected</span>
+      <span id="brush-label">Tap a color to start</span>
     </div>
-
-    <div id="wells-container"></div>
-
+    <div id="wells-grid"></div>
     <div id="water-jar">
-      <div id="water-jar-tint"></div>
-      <div id="water-jar-ring"></div>
-      <div id="water-jar-label">Tap: dilute &middot; Hold: clean</div>
+      <div id="water-jar-fill"></div>
+      <span id="water-jar-label">Water Jar &middot; tap: dilute &middot; hold: clean</span>
     </div>
-
-    <div id="size-row">
+    <div id="brush-size-container">
       <label>Size</label>
       <input type="range" id="brush-size" min="2" max="60" value="14">
     </div>
-
-    <div id="controls-row">
-      <button id="clean-palette">Clean Palette</button>
+    <div id="palette-controls">
+      <button class="ctrl-btn" id="clean-palette">Clean Wells</button>
+      <button class="ctrl-btn" id="clear-canvas-btn">Clear Canvas</button>
     </div>
   </div>
-
-  <!-- CANVAS PANEL -->
   <div id="canvas-panel">
-    <div id="canvas-toolbar">
-      <button id="undo-btn">Undo</button>
-      <button id="clear-canvas">Clear Canvas</button>
-    </div>
     <canvas id="drawing-canvas"></canvas>
   </div>
 </div>
 
 <script>
-// ============================================================
-//  ARTIST PALETTE APP
-// ============================================================
+(function() {
+'use strict';
 
-// --- Artist Colors ---
-const COLORS = [
-  { name: 'Cad Yellow',   rgb: [255, 227, 2]   },
-  { name: 'Yellow Ochre',  rgb: [204, 164, 61]  },
-  { name: 'Cad Red',       rgb: [227, 38, 30]   },
-  { name: 'Alizarin',      rgb: [179, 27, 55]   },
-  { name: 'Ultramarine',   rgb: [25, 42, 145]   },
-  { name: 'Cerulean',      rgb: [0, 117, 178]   },
-  { name: 'Phthalo Green', rgb: [0, 100, 80]    },
-  { name: 'Sap Green',     rgb: [80, 125, 42]   },
-  { name: 'Burnt Sienna',  rgb: [150, 78, 38]   },
-  { name: 'Burnt Umber',   rgb: [83, 55, 33]    },
-  { name: 'Titanium White',rgb: [248, 248, 245] },
-  { name: 'Ivory Black',   rgb: [35, 31, 28]    },
+const LATENT_SIZE = typeof mixbox !== 'undefined' ? mixbox.LATENT_SIZE : 7;
+const PALETTE_COLORS = [
+  { name: 'Cadmium Yellow',   rgb: [255, 211, 0]   },
+  { name: 'Yellow Ochre',     rgb: [204, 164, 61]  },
+  { name: 'Cadmium Red',      rgb: [227, 38, 38]   },
+  { name: 'Alizarin Crimson', rgb: [179, 27, 53]   },
+  { name: 'Ultramarine Blue', rgb: [25, 40, 150]   },
+  { name: 'Cerulean Blue',    rgb: [0, 123, 184]   },
+  { name: 'Phthalo Green',    rgb: [18, 100, 70]   },
+  { name: 'Sap Green',        rgb: [80, 125, 42]   },
+  { name: 'Burnt Sienna',     rgb: [150, 78, 36]   },
+  { name: 'Burnt Umber',      rgb: [101, 67, 33]   },
+  { name: 'Titanium White',   rgb: [248, 248, 245] },
+  { name: 'Ivory Black',      rgb: [35, 31, 28]    },
 ];
 
-const LATENT_SIZE = typeof mixbox !== 'undefined' ? (mixbox.LATENT_SIZE || 7) : 7;
-const NUM_WELLS = 6;
-const DPR = window.devicePixelRatio || 1;
+const WHITE_LATENT = mixbox.rgbToLatent([248, 248, 245]);
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-// --- State ---
+// ── State ──
 const state = {
-  brushColor: null,       // [r,g,b] or null (no color)
-  brushLatent: null,       // Float64Array
+  brushColor: null,
+  brushLatent: null,
   brushBaseSize: 14,
-  brushOpacity: 1.0,
   isDrawing: false,
-  activeTarget: null,      // 'well-0'..'well-5' | 'canvas'
-  lastPoint: null,         // {x, y, pressure}
+  activeTarget: null,
+  lastPoint: null,
   waterJarTint: [180, 210, 240],
-  waterJarDirty: 0,        // 0-1 how dirty the water is
-  jarDownTime: 0,
+  waterJarDirty: 0,
 };
 
-// --- Wells data ---
+// ── Wells ──
 const wells = [];
+const NUM_WELLS = 6;
 
-// --- Canvas data ---
+// ── Drawing canvas buffers ──
 let drawCanvas, drawCtx;
-let canvasUndoStack = [];
-const MAX_UNDO = 15;
+let canvasLatent, canvasAlpha, canvasWetness;
+let canvasW, canvasH;
 
-// ============================================================
-//  INITIALIZATION
-// ============================================================
+// ════════════════════════════════════════════
+//  COLOR PALETTE
+// ════════════════════════════════════════════
 
-function init() {
-  createColorSwatches();
-  createWells();
-  setupDrawingCanvas();
-  setupWaterJar();
-  setupControls();
-  setupGlobalTouchPrevention();
-
-  // Select first color by default
-  selectColor(0);
-
-  // Handle resize
-  window.addEventListener('resize', debounce(() => {
-    resizeAllCanvases();
-  }, 200));
-}
-
-// ============================================================
-//  COLOR SWATCHES
-// ============================================================
-
-function createColorSwatches() {
+function createColorSquares() {
   const container = document.getElementById('color-squares');
-  COLORS.forEach((c, i) => {
-    const div = document.createElement('div');
-    div.className = 'color-swatch';
-    div.style.backgroundColor = `rgb(${c.rgb.join(',')})`;
-    div.dataset.index = i;
-
-    const label = document.createElement('div');
-    label.className = 'label';
-    label.textContent = c.name;
-    div.appendChild(label);
-
-    div.addEventListener('pointerdown', (e) => {
+  PALETTE_COLORS.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'color-swatch';
+    el.style.background = `rgb(${c.rgb.join(',')})`;
+    el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      selectColor(i);
+      selectColor(c.rgb, i);
     });
-    container.appendChild(div);
+    container.appendChild(el);
   });
 }
 
-function selectColor(index) {
-  const c = COLORS[index];
-  state.brushColor = [...c.rgb];
-  state.brushLatent = mixbox.rgbToLatent(state.brushColor);
-  state.brushOpacity = 1.0;
-  updateBrushPreview();
-
-  // Update selection UI
-  document.querySelectorAll('.color-swatch').forEach((el, i) => {
-    el.classList.toggle('selected', i === index);
-  });
+function selectColor(rgb, idx) {
+  state.brushColor = [...rgb];
+  state.brushLatent = mixbox.rgbToLatent(rgb);
+  const prev = document.getElementById('brush-preview');
+  prev.style.background = `rgb(${rgb.join(',')})`;
+  document.getElementById('brush-label').textContent =
+    idx !== undefined ? PALETTE_COLORS[idx].name : `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+  document.querySelectorAll('.color-swatch').forEach((el, i) =>
+    el.classList.toggle('selected', i === idx));
 }
 
-function updateBrushPreview() {
-  const preview = document.getElementById('brush-preview');
-  const label = document.getElementById('brush-label');
-  if (state.brushColor) {
-    const [r, g, b] = state.brushColor;
-    preview.style.background = `rgb(${r},${g},${b})`;
-    label.textContent = `rgb(${r}, ${g}, ${b})`;
-  } else {
-    preview.style.background = '#222';
-    label.textContent = 'No color (clean brush)';
-  }
+function updateBrushFromRgb(rgb) {
+  state.brushColor = [...rgb];
+  state.brushLatent = mixbox.rgbToLatent(rgb);
+  document.getElementById('brush-preview').style.background = `rgb(${rgb.join(',')})`;
+  document.getElementById('brush-label').textContent = 'Mixed';
+  document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
 }
 
-// ============================================================
+// ════════════════════════════════════════════
 //  MIXING WELLS
-// ============================================================
+// ════════════════════════════════════════════
 
 function createWells() {
-  const container = document.getElementById('wells-container');
+  const grid = document.getElementById('wells-grid');
   for (let i = 0; i < NUM_WELLS; i++) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'well-wrapper';
+    const container = document.createElement('div');
+    container.className = 'well-container';
 
     const canvas = document.createElement('canvas');
     canvas.className = 'well-canvas';
-    canvas.dataset.wellIndex = i;
+    container.appendChild(canvas);
 
     const clearBtn = document.createElement('button');
     clearBtn.className = 'well-clear';
     clearBtn.textContent = '\u00d7';
     clearBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
       e.stopPropagation();
       clearWell(i);
     });
+    container.appendChild(clearBtn);
+    grid.appendChild(container);
 
-    wrapper.appendChild(canvas);
-    wrapper.appendChild(clearBtn);
-    container.appendChild(wrapper);
-
-    const ctx = canvas.getContext('2d');
-    const well = { canvas, ctx, wrapper, latentBuffer: null, alphaBuffer: null, w: 0, h: 0 };
+    const well = { canvas, ctx: null, latentBuffer: null, alphaBuffer: null, w: 0, h: 0 };
     wells.push(well);
-
-    // Events
-    setupWellEvents(canvas, i);
+    setupPointer(canvas, 'well', i);
   }
-
-  // Defer sizing to after layout
-  requestAnimationFrame(() => { resizeWells(); });
+  requestAnimationFrame(() => wells.forEach(w => initWell(w)));
+  new ResizeObserver(() => wells.forEach(w => initWell(w))).observe(grid);
 }
 
-function resizeWells() {
-  wells.forEach((well) => {
-    const rect = well.canvas.getBoundingClientRect();
-    const w = Math.floor(rect.width * DPR);
-    const h = Math.floor(rect.height * DPR);
-    if (w === well.w && h === well.h) return;
-
-    well.canvas.width = w;
-    well.canvas.height = h;
-    well.w = w;
-    well.h = h;
-
-    // Initialize latent buffer (palette background color in latent space)
-    well.latentBuffer = new Float64Array(w * h * LATENT_SIZE);
-    well.alphaBuffer = new Float32Array(w * h); // all 0 = no paint
-
-    // Draw palette background
-    well.ctx.fillStyle = '#c8b99a';
-    well.ctx.fillRect(0, 0, w, h);
-  });
+function initWell(well) {
+  const rect = well.canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const w = Math.floor(rect.width * DPR);
+  const h = Math.floor(rect.height * DPR);
+  if (well.w === w && well.h === h) return;
+  well.canvas.width = w;
+  well.canvas.height = h;
+  well.w = w; well.h = h;
+  well.ctx = well.canvas.getContext('2d', { willReadFrequently: true });
+  well.ctx.scale(DPR, DPR);
+  well.latentBuffer = new Float64Array(w * h * LATENT_SIZE);
+  well.alphaBuffer = new Float32Array(w * h);
+  well.ctx.clearRect(0, 0, rect.width, rect.height);
 }
 
-function clearWell(index) {
-  const well = wells[index];
-  well.alphaBuffer.fill(0);
-  well.latentBuffer.fill(0);
-  well.ctx.fillStyle = '#c8b99a';
-  well.ctx.fillRect(0, 0, well.w, well.h);
+function clearWell(i) {
+  const w = wells[i];
+  if (!w.ctx) return;
+  const rect = w.canvas.getBoundingClientRect();
+  w.ctx.clearRect(0, 0, rect.width, rect.height);
+  w.latentBuffer.fill(0);
+  w.alphaBuffer.fill(0);
 }
 
-function setupWellEvents(canvas, wellIndex) {
-  canvas.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (!state.brushColor) return;
-    state.isDrawing = true;
-    state.activeTarget = `well-${wellIndex}`;
-    const pos = getCanvasPos(e, canvas, wells[wellIndex]);
-    state.lastPoint = { x: pos.x, y: pos.y, pressure: getPressure(e) };
-    paintInWell(wellIndex, pos.x, pos.y, getPressure(e));
-  });
-
-  canvas.addEventListener('pointermove', (e) => {
-    if (!state.isDrawing || state.activeTarget !== `well-${wellIndex}`) return;
-    e.preventDefault();
-    const pos = getCanvasPos(e, canvas, wells[wellIndex]);
-    const pressure = getPressure(e);
-    // Interpolate stroke
-    if (state.lastPoint) {
-      interpolateAndPaint((x, y, p) => paintInWell(wellIndex, x, y, p),
-        state.lastPoint, { x: pos.x, y: pos.y, pressure });
-    }
-    state.lastPoint = { x: pos.x, y: pos.y, pressure };
-  });
-
-  const endHandler = (e) => {
-    if (state.activeTarget === `well-${wellIndex}`) {
-      state.isDrawing = false;
-      state.activeTarget = null;
-      state.lastPoint = null;
-    }
-  };
-  canvas.addEventListener('pointerup', endHandler);
-  canvas.addEventListener('pointercancel', endHandler);
-  canvas.addEventListener('pointerleave', endHandler);
-
-  // Prevent Safari gestures
-  ['touchstart', 'touchmove', 'touchend'].forEach(evt => {
-    canvas.addEventListener(evt, (e) => e.preventDefault(), { passive: false });
-  });
-}
-
-function paintInWell(wellIndex, x, y, pressure) {
-  const well = wells[wellIndex];
-  if (!state.brushColor || !state.brushLatent) return;
-
-  const size = state.brushBaseSize * DPR * (0.4 + pressure * 0.8);
-  const opacity = 0.3 + pressure * 0.7;
-  const brushLatent = state.brushLatent;
-
-  const cx = Math.round(x);
-  const cy = Math.round(y);
-  const r = Math.ceil(size / 2);
-
-  for (let dy = -r; dy <= r; dy++) {
-    for (let dx = -r; dx <= r; dx++) {
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > r) continue;
-
-      const px = cx + dx;
-      const py = cy + dy;
-      if (px < 0 || px >= well.w || py < 0 || py >= well.h) continue;
-
-      const idx = py * well.w + px;
-
-      // Soft brush falloff
-      const falloff = 1.0 - (dist / r);
-      const strength = opacity * falloff * falloff * 0.6;
-
-      const existingAlpha = well.alphaBuffer[idx];
-      const latentIdx = idx * LATENT_SIZE;
-
-      if (existingAlpha < 0.01) {
-        // No existing paint — stamp brush color
-        for (let k = 0; k < LATENT_SIZE; k++) {
-          well.latentBuffer[latentIdx + k] = brushLatent[k];
-        }
-        well.alphaBuffer[idx] = Math.min(1, strength);
-      } else {
-        // Blend in latent space
-        const t = strength / (existingAlpha + strength);
-        for (let k = 0; k < LATENT_SIZE; k++) {
-          well.latentBuffer[latentIdx + k] =
-            well.latentBuffer[latentIdx + k] * (1 - t) + brushLatent[k] * t;
-        }
-        well.alphaBuffer[idx] = Math.min(1, existingAlpha + strength * 0.3);
-      }
-    }
-  }
-
-  // Render the painted area
-  renderWellRegion(well, cx - r - 1, cy - r - 1, r * 2 + 3, r * 2 + 3);
-
-  // Live color pickup: update brush to the color under the center point
-  pickupColorFromWell(well, cx, cy);
-}
-
-function renderWellRegion(well, startX, startY, w, h) {
-  startX = Math.max(0, startX);
-  startY = Math.max(0, startY);
-  const endX = Math.min(well.w, startX + w);
-  const endY = Math.min(well.h, startY + h);
-  const regionW = endX - startX;
-  const regionH = endY - startY;
-  if (regionW <= 0 || regionH <= 0) return;
-
-  const imageData = well.ctx.getImageData(startX, startY, regionW, regionH);
-  const data = imageData.data;
-
-  // Palette background color
-  const bgR = 200, bgG = 185, bgB = 154;
-
-  for (let ly = 0; ly < regionH; ly++) {
-    for (let lx = 0; lx < regionW; lx++) {
-      const px = startX + lx;
-      const py = startY + ly;
-      const idx = py * well.w + px;
-      const alpha = well.alphaBuffer[idx];
-      const pixIdx = (ly * regionW + lx) * 4;
-
-      if (alpha < 0.01) {
-        data[pixIdx] = bgR;
-        data[pixIdx + 1] = bgG;
-        data[pixIdx + 2] = bgB;
-        data[pixIdx + 3] = 255;
-      } else {
-        const latentArr = [];
-        const latentIdx = idx * LATENT_SIZE;
-        for (let k = 0; k < LATENT_SIZE; k++) {
-          latentArr.push(well.latentBuffer[latentIdx + k]);
-        }
-        const rgb = mixbox.latentToRgb(latentArr);
-        const a = Math.min(1, alpha);
-        // Composite over background
-        data[pixIdx]     = Math.round(bgR * (1 - a) + rgb[0] * a);
-        data[pixIdx + 1] = Math.round(bgG * (1 - a) + rgb[1] * a);
-        data[pixIdx + 2] = Math.round(bgB * (1 - a) + rgb[2] * a);
-        data[pixIdx + 3] = 255;
-      }
-    }
-  }
-  well.ctx.putImageData(imageData, startX, startY);
-}
-
-function pickupColorFromWell(well, cx, cy) {
-  // Sample a small area around the center
-  const sampleR = 2;
-  let totalWeight = 0;
-  const accLatent = new Float64Array(LATENT_SIZE);
-
-  for (let dy = -sampleR; dy <= sampleR; dy++) {
-    for (let dx = -sampleR; dx <= sampleR; dx++) {
-      const px = cx + dx;
-      const py = cy + dy;
-      if (px < 0 || px >= well.w || py < 0 || py >= well.h) continue;
-      const idx = py * well.w + px;
-      const a = well.alphaBuffer[idx];
-      if (a < 0.01) continue;
-      const w = a;
-      const latentIdx = idx * LATENT_SIZE;
-      for (let k = 0; k < LATENT_SIZE; k++) {
-        accLatent[k] += well.latentBuffer[latentIdx + k] * w;
-      }
-      totalWeight += w;
-    }
-  }
-
-  if (totalWeight > 0.01) {
-    for (let k = 0; k < LATENT_SIZE; k++) {
-      accLatent[k] /= totalWeight;
-    }
-    const rgb = mixbox.latentToRgb(Array.from(accLatent));
-    state.brushColor = [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2])];
-    state.brushLatent = mixbox.rgbToLatent(state.brushColor);
-    updateBrushPreview();
-
-    // Deselect palette swatches
-    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-  }
-}
-
-// ============================================================
+// ════════════════════════════════════════════
 //  DRAWING CANVAS
-// ============================================================
+// ════════════════════════════════════════════
 
 function setupDrawingCanvas() {
   drawCanvas = document.getElementById('drawing-canvas');
-  drawCtx = drawCanvas.getContext('2d');
+  setupPointer(drawCanvas, 'canvas', 0);
 
-  requestAnimationFrame(() => { resizeDrawingCanvas(); });
-
-  // Pointer events
-  drawCanvas.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    if (!state.brushColor) return;
-    state.isDrawing = true;
-    state.activeTarget = 'canvas';
-    const pos = getCanvasPosSimple(e, drawCanvas);
-    state.lastPoint = { x: pos.x, y: pos.y, pressure: getPressure(e) };
-
-    // Save undo state
-    saveUndoState();
-
-    paintOnCanvas(pos.x, pos.y, getPressure(e));
-  });
-
-  drawCanvas.addEventListener('pointermove', (e) => {
-    if (!state.isDrawing || state.activeTarget !== 'canvas') return;
-    e.preventDefault();
-    const pos = getCanvasPosSimple(e, drawCanvas);
-    const pressure = getPressure(e);
-    if (state.lastPoint) {
-      interpolateAndPaint((x, y, p) => paintOnCanvas(x, y, p),
-        state.lastPoint, { x: pos.x, y: pos.y, pressure });
+  function initDraw() {
+    const rect = drawCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    canvasW = Math.floor(rect.width * DPR);
+    canvasH = Math.floor(rect.height * DPR);
+    drawCanvas.width = canvasW;
+    drawCanvas.height = canvasH;
+    drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
+    drawCtx.scale(DPR, DPR);
+    drawCtx.fillStyle = '#fff';
+    drawCtx.fillRect(0, 0, rect.width, rect.height);
+    canvasLatent = new Float64Array(canvasW * canvasH * LATENT_SIZE);
+    canvasAlpha = new Float32Array(canvasW * canvasH);
+    canvasWetness = new Float32Array(canvasW * canvasH);
+    const wl = mixbox.rgbToLatent([255, 255, 255]);
+    for (let i = 0; i < canvasW * canvasH; i++) {
+      for (let j = 0; j < LATENT_SIZE; j++)
+        canvasLatent[i * LATENT_SIZE + j] = wl[j];
+      canvasAlpha[i] = 1;
     }
-    state.lastPoint = { x: pos.x, y: pos.y, pressure };
+  }
+  requestAnimationFrame(initDraw);
+  new ResizeObserver(initDraw).observe(drawCanvas.parentElement);
+}
+
+// ════════════════════════════════════════════
+//  POINTER / STROKE HANDLING
+// ════════════════════════════════════════════
+
+function setupPointer(canvas, type, index) {
+  // Block Safari gestures
+  for (const evt of ['touchstart', 'touchmove', 'touchend']) {
+    canvas.addEventListener(evt, e => e.preventDefault(), { passive: false });
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!state.brushColor) return;
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    state.isDrawing = true;
+    state.activeTarget = { type, index };
+    const pos = getPos(e, canvas);
+    state.lastPoint = pos;
+    dab(type, index, pos);
   });
 
-  const endCanvas = () => {
-    if (state.activeTarget === 'canvas') {
+  canvas.addEventListener('pointermove', (e) => {
+    if (!state.isDrawing || !state.activeTarget) return;
+    if (state.activeTarget.type !== type || state.activeTarget.index !== index) return;
+    e.preventDefault();
+    const pos = getPos(e, canvas);
+    strokeTo(type, index, state.lastPoint, pos);
+    state.lastPoint = pos;
+  });
+
+  const end = () => {
+    if (state.activeTarget && state.activeTarget.type === type && state.activeTarget.index === index) {
       state.isDrawing = false;
       state.activeTarget = null;
       state.lastPoint = null;
     }
   };
-  drawCanvas.addEventListener('pointerup', endCanvas);
-  drawCanvas.addEventListener('pointercancel', endCanvas);
-  drawCanvas.addEventListener('pointerleave', endCanvas);
-
-  // Prevent Safari gestures
-  ['touchstart', 'touchmove', 'touchend'].forEach(evt => {
-    drawCanvas.addEventListener(evt, (e) => e.preventDefault(), { passive: false });
-  });
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointercancel', end);
 }
 
-function resizeDrawingCanvas() {
-  const rect = drawCanvas.getBoundingClientRect();
-  const w = Math.floor(rect.width * DPR);
-  const h = Math.floor(rect.height * DPR);
-  if (drawCanvas.width === w && drawCanvas.height === h) return;
+function getPos(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  let pressure = 0.5;
+  if (e.pressure > 0 && e.pressure < 1) pressure = e.pressure;
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top, pressure };
+}
 
-  // Save current image if resizing
-  let oldImage = null;
-  if (drawCanvas.width > 0 && drawCanvas.height > 0) {
-    oldImage = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
-  }
-
-  drawCanvas.width = w;
-  drawCanvas.height = h;
-
-  // White background
-  drawCtx.fillStyle = '#fff';
-  drawCtx.fillRect(0, 0, w, h);
-
-  // Restore old content
-  if (oldImage) {
-    drawCtx.putImageData(oldImage, 0, 0);
+function strokeTo(type, index, p1, p2) {
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const step = Math.max(1, state.brushBaseSize * 0.25);
+  const steps = Math.ceil(dist / step);
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    dab(type, index, {
+      x: p1.x + dx * t,
+      y: p1.y + dy * t,
+      pressure: p1.pressure + (p2.pressure - p1.pressure) * t
+    });
   }
 }
 
-function paintOnCanvas(x, y, pressure) {
-  if (!state.brushColor) return;
-  const [r, g, b] = state.brushColor;
-  const size = state.brushBaseSize * DPR * (0.4 + pressure * 0.8);
-  const opacity = (0.3 + pressure * 0.7) * state.brushOpacity;
-  const radius = size / 2;
-
-  // Watercolor-style brush: radial gradient with edge darkening
-  const gradient = drawCtx.createRadialGradient(x, y, 0, x, y, radius);
-
-  // Center: semi-transparent (lighter wash)
-  // Edge: more opaque (pigment accumulation)
-  const centerAlpha = opacity * 0.4;
-  const edgeAlpha = opacity * 0.9;
-
-  gradient.addColorStop(0, `rgba(${r},${g},${b},${centerAlpha})`);
-  gradient.addColorStop(0.5, `rgba(${r},${g},${b},${opacity * 0.6})`);
-  gradient.addColorStop(0.8, `rgba(${r},${g},${b},${edgeAlpha})`);
-  gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
-
-  drawCtx.fillStyle = gradient;
-  drawCtx.beginPath();
-  drawCtx.arc(x, y, radius, 0, Math.PI * 2);
-  drawCtx.fill();
+function dab(type, index, pos) {
+  const p = pos.pressure;
+  const sizeMul = 0.4 + p * 1.1;
+  const radius = state.brushBaseSize * sizeMul * 0.5;
+  const opacity = 0.3 + p * 0.7;
+  if (type === 'well') dabOnWell(index, pos.x, pos.y, radius, opacity);
+  else dabOnCanvas(pos.x, pos.y, radius, opacity);
 }
 
-function clearCanvas() {
-  saveUndoState();
-  drawCtx.fillStyle = '#fff';
-  drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+// ════════════════════════════════════════════
+//  DAB ON WELL  — latent mixing + live pickup
+// ════════════════════════════════════════════
+
+function dabOnWell(wi, cx, cy, radius, opacity) {
+  const well = wells[wi];
+  if (!well.ctx || !well.latentBuffer) return;
+  const bl = state.brushLatent;
+  const r = radius;
+  const x0 = Math.max(0, Math.floor((cx - r) * DPR));
+  const y0 = Math.max(0, Math.floor((cy - r) * DPR));
+  const x1 = Math.min(well.w - 1, Math.ceil((cx + r) * DPR));
+  const y1 = Math.min(well.h - 1, Math.ceil((cy + r) * DPR));
+  const imgW = x1 - x0 + 1, imgH = y1 - y0 + 1;
+  if (imgW <= 0 || imgH <= 0) return;
+
+  const imgData = well.ctx.getImageData(x0, y0, imgW, imgH);
+  const px = imgData.data;
+  let pR = 0, pG = 0, pB = 0, pN = 0;
+
+  for (let py = y0; py <= y1; py++) {
+    for (let ppx = x0; ppx <= x1; ppx++) {
+      const dx = ppx / DPR - cx, dy = py / DPR - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > r) continue;
+      const nd = dist / r;
+      const ef = 0.5 + 0.5 * nd * nd;
+      const da = opacity * ef * (1 - nd * nd * 0.3);
+
+      const idx = py * well.w + ppx;
+      const ea = well.alphaBuffer[idx];
+      const li = idx * LATENT_SIZE;
+
+      if (ea > 0.01) {
+        const k1 = 1 - da;
+        for (let k = 0; k < LATENT_SIZE; k++)
+          well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * da;
+      } else {
+        for (let k = 0; k < LATENT_SIZE; k++)
+          well.latentBuffer[li + k] = bl[k];
+      }
+      well.alphaBuffer[idx] = Math.min(1, ea + da * (1 - ea));
+
+      const sl = [];
+      for (let k = 0; k < LATENT_SIZE; k++) sl.push(well.latentBuffer[li + k]);
+      const rgb = mixbox.latentToRgb(sl);
+
+      const pi = ((py - y0) * imgW + (ppx - x0)) * 4;
+      px[pi] = Math.round(rgb[0]);
+      px[pi + 1] = Math.round(rgb[1]);
+      px[pi + 2] = Math.round(rgb[2]);
+      px[pi + 3] = Math.round(well.alphaBuffer[idx] * 255);
+
+      if (nd < 0.3) { pR += rgb[0]; pG += rgb[1]; pB += rgb[2]; pN++; }
+    }
+  }
+  well.ctx.putImageData(imgData, x0, y0);
+  if (pN > 0) updateBrushFromRgb([Math.round(pR/pN), Math.round(pG/pN), Math.round(pB/pN)]);
 }
 
-function saveUndoState() {
-  if (canvasUndoStack.length >= MAX_UNDO) canvasUndoStack.shift();
-  canvasUndoStack.push(drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+// ════════════════════════════════════════════
+//  DAB ON CANVAS  — wet-on-wet blending
+// ════════════════════════════════════════════
+
+function dabOnCanvas(cx, cy, radius, opacity) {
+  if (!drawCtx || !canvasLatent) return;
+  const bl = state.brushLatent;
+  const r = radius;
+  const x0 = Math.max(0, Math.floor((cx - r) * DPR));
+  const y0 = Math.max(0, Math.floor((cy - r) * DPR));
+  const x1 = Math.min(canvasW - 1, Math.ceil((cx + r) * DPR));
+  const y1 = Math.min(canvasH - 1, Math.ceil((cy + r) * DPR));
+  const imgW = x1 - x0 + 1, imgH = y1 - y0 + 1;
+  if (imgW <= 0 || imgH <= 0) return;
+
+  const imgData = drawCtx.getImageData(x0, y0, imgW, imgH);
+  const px = imgData.data;
+
+  for (let py = y0; py <= y1; py++) {
+    for (let ppx = x0; ppx <= x1; ppx++) {
+      const dx = ppx / DPR - cx, dy = py / DPR - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > r) continue;
+      const nd = dist / r;
+      const ef = 0.5 + 0.5 * nd * nd;
+      const da = opacity * ef * (1 - nd * nd * 0.3);
+
+      const idx = py * canvasW + ppx;
+      const wet = canvasWetness[idx];
+      const li = idx * LATENT_SIZE;
+
+      // Blend amount depends on wetness
+      const ba = wet > 0.1 ? da * (0.4 + 0.6 * wet) : da;
+      const k1 = 1 - ba;
+      for (let k = 0; k < LATENT_SIZE; k++)
+        canvasLatent[li + k] = canvasLatent[li + k] * k1 + bl[k] * ba;
+
+      canvasAlpha[idx] = Math.min(1, canvasAlpha[idx] + da * (1 - canvasAlpha[idx]));
+      canvasWetness[idx] = Math.min(1, wet + da * 0.8);
+
+      const sl = [];
+      for (let k = 0; k < LATENT_SIZE; k++) sl.push(canvasLatent[li + k]);
+      const rgb = mixbox.latentToRgb(sl);
+
+      const pi = ((py - y0) * imgW + (ppx - x0)) * 4;
+      px[pi] = Math.round(rgb[0]);
+      px[pi + 1] = Math.round(rgb[1]);
+      px[pi + 2] = Math.round(rgb[2]);
+      px[pi + 3] = 255;
+    }
+  }
+  drawCtx.putImageData(imgData, x0, y0);
 }
 
-function undo() {
-  if (canvasUndoStack.length === 0) return;
-  const imgData = canvasUndoStack.pop();
-  drawCtx.putImageData(imgData, 0, 0);
+// ════════════════════════════════════════════
+//  WETNESS DECAY & BLEEDING
+// ════════════════════════════════════════════
+
+function startWetnessLoop() {
+  let lastT = 0;
+  function tick(now) {
+    requestAnimationFrame(tick);
+    if (!canvasWetness || !canvasLatent || !drawCtx) return;
+    const dt = lastT ? (now - lastT) / 1000 : 0.016;
+    lastT = now;
+
+    let hasWet = false;
+    for (let i = 0; i < canvasWetness.length; i++) {
+      if (canvasWetness[i] > 0.01) {
+        hasWet = true;
+        canvasWetness[i] = Math.max(0, canvasWetness[i] - 0.15 * dt);
+      }
+    }
+
+    // Subtle bleeding while not drawing
+    if (hasWet && !state.isDrawing) {
+      const w = canvasW, h = canvasH, step = 3;
+      let redraw = false;
+      const imgData = drawCtx.getImageData(0, 0, w, h);
+      const px = imgData.data;
+
+      for (let y = step; y < h - step; y += step) {
+        for (let x = step; x < w - step; x += step) {
+          const idx = y * w + x;
+          if (canvasWetness[idx] < 0.15) continue;
+          redraw = true;
+          const li = idx * LATENT_SIZE;
+          const nb = [idx - 1, idx + 1, idx - w, idx + w];
+          for (const ni of nb) {
+            if (ni < 0 || ni >= canvasWetness.length) continue;
+            const nli = ni * LATENT_SIZE;
+            const b = 0.008 * canvasWetness[idx];
+            for (let k = 0; k < LATENT_SIZE; k++)
+              canvasLatent[nli + k] += (canvasLatent[li + k] - canvasLatent[nli + k]) * b;
+            canvasWetness[ni] = Math.max(canvasWetness[ni], canvasWetness[idx] * 0.3);
+            const sl = [];
+            for (let k = 0; k < LATENT_SIZE; k++) sl.push(canvasLatent[nli + k]);
+            const rgb = mixbox.latentToRgb(sl);
+            const pi = ni * 4;
+            px[pi] = Math.round(rgb[0]);
+            px[pi + 1] = Math.round(rgb[1]);
+            px[pi + 2] = Math.round(rgb[2]);
+          }
+        }
+      }
+      if (redraw) drawCtx.putImageData(imgData, 0, 0);
+    }
+  }
+  requestAnimationFrame(tick);
 }
 
-// ============================================================
+// ════════════════════════════════════════════
 //  WATER JAR
-// ============================================================
+// ════════════════════════════════════════════
 
 function setupWaterJar() {
   const jar = document.getElementById('water-jar');
-
-  jar.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    state.jarDownTime = Date.now();
-  });
-
-  jar.addEventListener('pointerup', (e) => {
-    e.preventDefault();
-    const held = Date.now() - state.jarDownTime;
-    if (held >= 500) {
-      cleanBrush();
-    } else {
-      diluteBrush();
-    }
-  });
-
-  // Prevent gestures
-  ['touchstart', 'touchmove', 'touchend'].forEach(evt => {
-    jar.addEventListener(evt, (e) => e.preventDefault(), { passive: false });
+  let downT = 0;
+  jar.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  jar.addEventListener('pointerdown', (e) => { e.preventDefault(); downT = Date.now(); });
+  jar.addEventListener('pointerup', () => {
+    if (!state.brushColor) return;
+    (Date.now() - downT >= 500) ? cleanBrush() : diluteBrush();
   });
 }
 
 function diluteBrush() {
-  if (!state.brushColor) return;
-  // Tint the water
-  tintWater(state.brushColor);
-
-  // Lerp toward white by ~30%
-  const white = [248, 248, 245];
-  const t = 0.3;
-  state.brushColor = state.brushColor.map((c, i) => Math.round(c + (white[i] - c) * t));
-  state.brushLatent = mixbox.rgbToLatent(state.brushColor);
-  state.brushOpacity = Math.max(0.2, state.brushOpacity * 0.7);
-  updateBrushPreview();
-
-  // Visual feedback — flash the jar
-  const jar = document.getElementById('water-jar');
-  jar.style.outline = '2px solid rgba(255,255,255,0.6)';
-  setTimeout(() => { jar.style.outline = ''; }, 200);
+  if (!state.brushLatent) return;
+  for (let k = 0; k < LATENT_SIZE; k++)
+    state.brushLatent[k] = state.brushLatent[k] * 0.7 + WHITE_LATENT[k] * 0.3;
+  const rgb = mixbox.latentToRgb(Array.from(state.brushLatent));
+  state.brushColor = [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2])];
+  document.getElementById('brush-preview').style.background = `rgb(${state.brushColor.join(',')})`;
+  document.getElementById('brush-label').textContent = 'Diluted';
 }
 
 function cleanBrush() {
   if (state.brushColor) {
-    tintWater(state.brushColor);
+    const jt = state.waterJarTint, bc = state.brushColor;
+    const b = 0.15 + state.waterJarDirty * 0.05;
+    state.waterJarTint = [
+      Math.round(jt[0]*(1-b) + bc[0]*b),
+      Math.round(jt[1]*(1-b) + bc[1]*b),
+      Math.round(jt[2]*(1-b) + bc[2]*b),
+    ];
+    state.waterJarDirty = Math.min(1, state.waterJarDirty + 0.12);
+    const fill = document.getElementById('water-jar-fill');
+    const t = state.waterJarTint;
+    fill.style.background = `rgba(${t[0]},${t[1]},${t[2]},${0.3 + state.waterJarDirty * 0.4})`;
   }
-  state.brushColor = null;
-  state.brushLatent = null;
-  state.brushOpacity = 1.0;
-  updateBrushPreview();
-
-  // Deselect palette
-  document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-
-  // Visual feedback
-  const jar = document.getElementById('water-jar');
-  jar.style.outline = '3px solid rgba(255,255,255,0.8)';
-  setTimeout(() => { jar.style.outline = ''; }, 400);
+  state.brushColor = [200, 200, 200];
+  state.brushLatent = mixbox.rgbToLatent([200, 200, 200]);
+  document.getElementById('brush-preview').style.background = '#ccc';
+  document.getElementById('brush-label').textContent = 'Clean \u2014 pick a color';
 }
 
-function tintWater(color) {
-  state.waterJarDirty = Math.min(1, state.waterJarDirty + 0.08);
-  const d = state.waterJarDirty;
-  state.waterJarTint = state.waterJarTint.map((c, i) =>
-    Math.round(c * (1 - 0.15) + color[i] * 0.15)
-  );
-
-  const tintEl = document.getElementById('water-jar-tint');
-  const [r, g, b] = state.waterJarTint;
-  tintEl.style.background = `rgba(${r},${g},${b},${d * 0.5})`;
-}
-
-// ============================================================
+// ════════════════════════════════════════════
 //  CONTROLS
-// ============================================================
+// ════════════════════════════════════════════
 
 function setupControls() {
-  document.getElementById('clean-palette').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    for (let i = 0; i < NUM_WELLS; i++) clearWell(i);
-  });
-
-  document.getElementById('clear-canvas').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    clearCanvas();
-  });
-
-  document.getElementById('undo-btn').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    undo();
-  });
-
-  const slider = document.getElementById('brush-size');
-  slider.value = state.brushBaseSize;
-  slider.addEventListener('input', (e) => {
+  document.getElementById('brush-size').addEventListener('input', (e) => {
     state.brushBaseSize = parseInt(e.target.value);
   });
-}
-
-// ============================================================
-//  GLOBAL TOUCH PREVENTION
-// ============================================================
-
-function setupGlobalTouchPrevention() {
-  // Prevent all default touch behaviors on the entire document
-  document.addEventListener('touchstart', (e) => {
-    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
-      e.preventDefault();
+  document.getElementById('clean-palette').addEventListener('click', () => {
+    for (let i = 0; i < NUM_WELLS; i++) clearWell(i);
+  });
+  document.getElementById('clear-canvas-btn').addEventListener('click', () => {
+    if (!drawCtx) return;
+    const rect = drawCanvas.getBoundingClientRect();
+    drawCtx.fillStyle = '#fff';
+    drawCtx.fillRect(0, 0, rect.width, rect.height);
+    const wl = mixbox.rgbToLatent([255, 255, 255]);
+    for (let i = 0; i < canvasW * canvasH; i++) {
+      for (let j = 0; j < LATENT_SIZE; j++)
+        canvasLatent[i * LATENT_SIZE + j] = wl[j];
+      canvasAlpha[i] = 1;
+      canvasWetness[i] = 0;
     }
-  }, { passive: false });
-
-  document.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-  }, { passive: false });
-
-  // Prevent double-tap zoom
-  document.addEventListener('dblclick', (e) => {
-    e.preventDefault();
-  });
-
-  // Prevent context menu
-  document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-  });
-
-  // Prevent gesturestart (Safari pinch)
-  document.addEventListener('gesturestart', (e) => {
-    e.preventDefault();
-  });
-  document.addEventListener('gesturechange', (e) => {
-    e.preventDefault();
   });
 }
 
-// ============================================================
-//  UTILITIES
-// ============================================================
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
 
-function getCanvasPos(e, canvasEl, wellData) {
-  const rect = canvasEl.getBoundingClientRect();
-  return {
-    x: (e.clientX - rect.left) * (wellData.w / rect.width),
-    y: (e.clientY - rect.top) * (wellData.h / rect.height),
-  };
+function init() {
+  createColorSquares();
+  createWells();
+  setupDrawingCanvas();
+  setupWaterJar();
+  setupControls();
+  startWetnessLoop();
+  selectColor(PALETTE_COLORS[0].rgb, 0);
 }
 
-function getCanvasPosSimple(e, canvasEl) {
-  const rect = canvasEl.getBoundingClientRect();
-  return {
-    x: (e.clientX - rect.left) * DPR,
-    y: (e.clientY - rect.top) * DPR,
-  };
-}
-
-function getPressure(e) {
-  // Try pointer event pressure first
-  if (e.pressure && e.pressure > 0 && e.pressure < 1) {
-    return e.pressure;
-  }
-  // Default
-  return 0.5;
-}
-
-function interpolateAndPaint(paintFn, p1, p2) {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const step = Math.max(1, state.brushBaseSize * DPR * 0.2);
-  const steps = Math.ceil(dist / step);
-
-  for (let i = 1; i <= steps; i++) {
-    const t = i / steps;
-    const x = p1.x + dx * t;
-    const y = p1.y + dy * t;
-    const pressure = p1.pressure + (p2.pressure - p1.pressure) * t;
-    paintFn(x, y, pressure);
-  }
-}
-
-function resizeAllCanvases() {
-  resizeWells();
-  resizeDrawingCanvas();
-}
-
-function debounce(fn, ms) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
-  };
-}
-
-// ============================================================
-//  START
-// ============================================================
-
-if (document.readyState === 'loading') {
+if (document.readyState === 'loading')
   document.addEventListener('DOMContentLoaded', init);
-} else {
+else
   init();
-}
+
+})();
 </script>
 </body>
 </html>
