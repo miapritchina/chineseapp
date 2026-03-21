@@ -519,7 +519,8 @@ function dab(type, index, pos) {
   const sizeMul = 0.4 + p * 1.1;
   const radius = state.brushBaseSize * sizeMul * 0.5;
   const opacity = 0.3 + p * 0.7;
-  if (type === 'well') dabOnWell(index, pos.x, pos.y, radius, opacity);
+  // On wells, deposit only ~5% paint per dab so mixing is gradual
+  if (type === 'well') dabOnWell(index, pos.x, pos.y, radius, opacity * 0.05);
   else dabOnCanvas(pos.x, pos.y, radius, opacity);
 }
 
