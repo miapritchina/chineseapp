@@ -27,7 +27,10 @@ jobs:
         run: |
           mkdir -p _site
           cp palette.html _site/index.html
+          cp palette.html _site/palette.html
           cp mixbox.js _site/mixbox.js
+          cp index.html _site/debug.html
+          echo "Build OK - $(date)" > _site/build-info.txt
 
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3

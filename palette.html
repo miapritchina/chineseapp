@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Artist Palette</title>
-<script src="mixbox.js"></script>
+<script src="mixbox.js" onerror="document.getElementById('load-error').style.display='block'"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -247,6 +247,12 @@ html, body {
 </style>
 </head>
 <body>
+<div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
+  <p>ERROR: mixbox.js failed to load</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v1</p>
+  <p style="color:#666;margin-top:5px" id="error-url"></p>
+  <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
+</div>
 <div id="app">
   <div id="palette-panel">
     <div id="color-squares"></div>
