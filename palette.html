@@ -193,32 +193,56 @@ html, body {
   background: #fff;
 }
 
-/* Portrait layout */
-@media (max-aspect-ratio: 1/1) {
+/* Portrait / phone layout */
+@media (max-aspect-ratio: 4/5) {
   #app {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
   }
   #palette-panel {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-direction: column;
     padding: 6px;
-    gap: 6px;
-    max-height: 40vh;
-    overflow-y: auto;
+    gap: 4px;
+    max-height: none;
+    overflow: visible;
   }
   #color-squares {
     grid-template-columns: repeat(6, 1fr);
-    width: 100%;
+    gap: 4px;
   }
+  .color-swatch { aspect-ratio: 1; }
+  #brush-preview-container { padding: 2px 0; }
+  #brush-preview { width: 28px; height: 28px; }
   #wells-grid {
     grid-template-columns: repeat(3, 1fr);
-    width: 100%;
-    min-height: 100px;
+    min-height: 70px;
+    max-height: 90px;
   }
-  #brush-preview-container, #water-jar, #palette-controls, #brush-size-container {
-    width: 100%;
+  #water-jar { height: 36px; font-size: 11px; }
+  #brush-size-container { gap: 4px; }
+  #palette-controls { gap: 4px; }
+  .ctrl-btn { padding: 6px 4px; font-size: 10px; }
+}
+
+/* Very small phones (iPhone SE etc.) */
+@media (max-width: 380px) {
+  #color-squares {
+    grid-template-columns: repeat(4, 1fr);
   }
+  #wells-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Landscape phone */
+@media (max-height: 500px) and (min-aspect-ratio: 1/1) {
+  #app { grid-template-columns: 200px 1fr; }
+  #palette-panel { padding: 6px; gap: 4px; }
+  #color-squares { gap: 3px; }
+  .color-swatch { border-width: 2px; }
+  #brush-preview { width: 24px; height: 24px; }
+  #water-jar { height: 32px; font-size: 10px; }
+  .ctrl-btn { padding: 5px 3px; font-size: 10px; }
 }
 </style>
 </head>
@@ -463,6 +487,7 @@ function setupPointer(canvas, type, index) {
 
 function getPos(e, canvas) {
   const rect = canvas.getBoundingClientRect();
+  // pressure: Apple Pencil provides 0-1, finger defaults to 0.5
   let pressure = 0.5;
   if (e.pressure > 0 && e.pressure < 1) pressure = e.pressure;
   return { x: e.clientX - rect.left, y: e.clientY - rect.top, pressure };
