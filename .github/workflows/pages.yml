@@ -27,6 +27,7 @@ jobs:
         run: |
           mkdir -p _site
           cp palette.html _site/index.html
+          cp mixbox.js _site/mixbox.js
 
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
