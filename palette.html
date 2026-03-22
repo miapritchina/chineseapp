@@ -232,14 +232,15 @@ html, body {
   #brush-preview-container { padding: 2px 0; }
   #brush-preview { width: 28px; height: 28px; }
   #wells-grid {
-    grid-template-columns: repeat(2, 1fr);
-    min-height: 70px;
-    max-height: 90px;
+    grid-template-columns: 1fr 1fr;
+    flex: 0 0 auto;
+    min-height: 60px;
+    max-height: 80px;
   }
   .well-container:nth-child(n+3) { display: none; }
-  #water-jar { height: 36px; font-size: 11px; }
-  #brush-size-container { gap: 5px; }
-  #palette-controls { gap: 4px; }
+  #water-jar { height: 32px; font-size: 11px; flex-shrink: 0; }
+  #brush-size-container { gap: 5px; flex-shrink: 0; }
+  #palette-controls { gap: 4px; flex-shrink: 0; }
   .ctrl-btn { padding: 6px 4px; font-size: 10px; }
 }
 
@@ -274,7 +275,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v6.1</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v7</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -1294,20 +1295,30 @@ function setupDrawingCanvas() {
   let canvasStrokeDabs = 0;
   function doSplat(pos, prev) {
     if (!fluidSim || !state.brushColor) return;
-    if (splatCount++ < 3) dbg('Splat:'+pos.x.toFixed(2)+','+pos.y.toFixed(2)+' c:'+state.brushColor);
     canvasStrokeDabs++;
     const p = pos.pressure;
-    const radius = (state.brushBaseSize / 800) * (0.4 + p * 1.1);
+    const radius = (state.brushBaseSize / 300) * (0.5 + p * 0.8);
     let dx = 0, dy = 0;
     if (prev) {
       dx = pos.x - prev.x;
       dy = pos.y - prev.y;
     }
     // Water content: starts high, decreases as brush runs out of paint
-    // Pressure also affects water deposit (light touch = drier)
     const strokeFade = Math.max(0.15, 1.0 - canvasStrokeDabs / 80);
     const waterContent = Math.min(1.0, strokeFade * (0.3 + p * 0.7));
     fluidSim.splat(pos.x, pos.y, dx, dy, state.brushColor, radius, waterContent);
+    // Debug: read back dye pixel after first splat
+    if (splatCount++ < 2) {
+      dbg('Splat r:'+radius.toFixed(4)+' wc:'+waterContent.toFixed(2));
+      const g = fluidSim.gl;
+      const px = Math.floor(pos.x * fluidSim.w);
+      const py = Math.floor(pos.y * fluidSim.h);
+      const pix = new Float32Array(4);
+      g.bindFramebuffer(g.FRAMEBUFFER, fluidSim.dye.read.fbo);
+      g.readPixels(px, py, 1, 1, g.RGBA, g.FLOAT, pix);
+      g.bindFramebuffer(g.FRAMEBUFFER, null);
+      dbg('Dye@splat:'+pix[0].toFixed(3)+','+pix[1].toFixed(3)+','+pix[2].toFixed(3));
+    }
   }
 
   requestAnimationFrame(initDraw);
@@ -1555,6 +1566,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v6.1</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v7</div>
 </body>
 </html>
