@@ -39,13 +39,15 @@ html, body {
 #color-squares {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 3px;
+  gap: 2px;
   flex-shrink: 0;
+  max-width: 200px;
 }
 .color-swatch {
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
+  max-width: 30px;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.1s;
   position: relative;
