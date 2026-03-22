@@ -265,7 +265,7 @@ html, body {
 <body>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v1</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v2</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -606,24 +606,22 @@ void main(){
   vec3 dye=texture2D(uDye,vUv).rgb;
   float paper=texture2D(uPaper,vUv).r;
   float wet=texture2D(uWetness,vUv).r;
-  // Paper shows through where there's no pigment
-  // Pigment density = length of dye (0=white paper, higher=more pigment)
-  float pigment=length(dye)*0.8;
-  pigment=min(pigment,1.0);
-  // Convert dye to display color (dye is subtractive pigment concentration)
-  // White paper minus absorbed wavelengths
+  // dye stores pigment absorption (0=no paint, higher=more pigment)
+  // Convert to visible color: paper white minus absorbed light
+  vec3 paintColor=max(vec3(1.0)-dye, vec3(0.0));
+  // Paper texture as base
   vec3 paperColor=vec3(paper);
-  vec3 paintColor=vec3(1.0)-dye; // invert: dye stores absorption
-  paintColor=max(paintColor,vec3(0.0));
-  // Granulation: paper texture modulates pigment in rough areas
-  float grain=1.0-0.15*(1.0-paper)*pigment;
-  vec3 color=mix(paperColor,paintColor*grain,pigment);
-  // Edge darkening approximation: darker where pigment is medium density
-  float edgeDark=1.0-0.08*pigment*(1.0-pigment)*4.0;
+  // How much pigment is present
+  float pigment=clamp(length(dye)*1.2, 0.0, 1.0);
+  // Granulation: paper roughness shows through thin paint
+  float grain=1.0-0.12*(1.0-paper)*pigment;
+  // Blend paper and paint
+  vec3 color=mix(paperColor, paintColor*grain, pigment);
+  // Subtle edge darkening
+  float edgeDark=1.0-0.06*pigment*(1.0-pigment)*4.0;
   color*=edgeDark;
   // Wet sheen
-  float sheen=wet*0.06;
-  color=color+vec3(sheen);
+  color+=vec3(wet*0.04);
   gl_FragColor=vec4(color,1.0);
 }`;
 
@@ -635,13 +633,13 @@ class FluidSim {
     this.gl = g;
     gl = g;
 
-    // Enable float textures
-    const ext = g.getExtension('OES_texture_float');
-    this.hasFloat = !!ext;
-    if (!this.hasFloat) {
-      g.getExtension('OES_texture_half_float');
-    }
+    // Enable float textures (try float first, then half-float)
+    const floatExt = g.getExtension('OES_texture_float');
+    const halfFloatExt = g.getExtension('OES_texture_half_float');
+    this.hasFloat = !!floatExt;
+    this.halfFloatType = halfFloatExt ? halfFloatExt.HALF_FLOAT_OES : null;
     g.getExtension('OES_texture_float_linear');
+    g.getExtension('OES_texture_half_float_linear');
 
     this.resize();
     this._initShaders();
@@ -716,16 +714,20 @@ class FluidSim {
 
   _createFBO(w, h) {
     const g = this.gl;
+    const type = this.hasFloat ? g.FLOAT : (this.halfFloatType || g.UNSIGNED_BYTE);
     const tex = g.createTexture();
     g.bindTexture(g.TEXTURE_2D, tex);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
-    g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, g.FLOAT, null);
+    g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, type, null);
     const fbo = g.createFramebuffer();
     g.bindFramebuffer(g.FRAMEBUFFER, fbo);
     g.framebufferTexture2D(g.FRAMEBUFFER, g.COLOR_ATTACHMENT0, g.TEXTURE_2D, tex, 0);
+    // Clear to black/zero
+    g.clearColor(0, 0, 0, 0);
+    g.clear(g.COLOR_BUFFER_BIT);
     g.bindFramebuffer(g.FRAMEBUFFER, null);
     return { tex, fbo, w, h };
   }
@@ -750,24 +752,20 @@ class FluidSim {
   _generatePaper() {
     const g = this.gl;
     const w = this.w, h = this.h;
-    const data = new Float32Array(w * h * 4);
-    // Generate paper texture: Perlin-like noise
+    // Use Uint8 for paper texture (static, doesn't need float precision)
+    const data = new Uint8Array(w * h * 4);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
-        // Multi-octave noise for paper grain
         let v = 0, amp = 1, freq = 1;
         for (let oct = 0; oct < 4; oct++) {
           v += amp * (Math.sin(x * freq * 0.1 + Math.sin(y * freq * 0.13)) *
                       Math.cos(y * freq * 0.12 + Math.cos(x * freq * 0.11)) * 0.5 + 0.5);
           amp *= 0.5; freq *= 2.1;
         }
-        v = v / 1.875; // normalize
-        const grain = 0.92 + v * 0.08;
-        data[i] = grain;
-        data[i+1] = grain;
-        data[i+2] = grain;
-        data[i+3] = 1;
+        v = v / 1.875;
+        const grain = Math.round((0.92 + v * 0.08) * 255);
+        data[i] = grain; data[i+1] = grain; data[i+2] = grain; data[i+3] = 255;
       }
     }
     const tex = g.createTexture();
@@ -776,7 +774,7 @@ class FluidSim {
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
-    g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, g.FLOAT, data);
+    g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, g.UNSIGNED_BYTE, data);
     this.paperTex = tex;
   }
 
@@ -1091,7 +1089,7 @@ function dab(type, index, pos) {
   const sizeMul = 0.4 + p * 1.1;
   const radius = state.brushBaseSize * sizeMul * 0.5;
   const opacity = 0.3 + p * 0.7;
-  dabOnWell(index, pos.x, pos.y, radius, opacity * 0.15);
+  dabOnWell(index, pos.x, pos.y, radius, opacity);
 }
 
 // ════════════════════════════════════════════
@@ -1127,10 +1125,16 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
       const ea = well.alphaBuffer[idx];
       const li = idx * LATENT_SIZE;
 
-      // Always mix — blend brush into existing latent by da fraction
-      const k1 = 1 - da;
+      // Check if pixel already has paint (non-white)
+      const sl0 = [];
+      for (let k = 0; k < LATENT_SIZE; k++) sl0.push(well.latentBuffer[li + k]);
+      const cur = mixbox.latentToRgb(sl0);
+      const isWhite = cur[0] > 240 && cur[1] > 240 && cur[2] > 240;
+      // Full opacity on clean well, gradual mixing on painted areas
+      const mixDa = isWhite ? da : da * 0.15;
+      const k1 = 1 - mixDa;
       for (let k = 0; k < LATENT_SIZE; k++)
-        well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * da;
+        well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * mixDa;
       well.alphaBuffer[idx] = Math.min(1, ea + da * (1 - ea));
 
       const sl = [];
@@ -1253,6 +1257,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v1</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v2</div>
 </body>
 </html>
