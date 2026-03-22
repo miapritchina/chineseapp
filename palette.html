@@ -204,7 +204,7 @@ html, body {
   flex: 1;
   display: block;
   cursor: crosshair;
-  background: #fff;
+  background: #f5f3ee;
 }
 
 /* Portrait / phone layout */
@@ -263,6 +263,12 @@ html, body {
 </style>
 </head>
 <body>
+<div id="debug-log" style="position:fixed;bottom:30px;right:6px;max-width:50%;max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:6px;border-radius:4px;z-index:99999;pointer-events:none;word-break:break-all"></div>
+<script>
+const _dbg=document.getElementById('debug-log');
+function dbg(msg){_dbg.textContent+=msg+'\n';_dbg.scrollTop=_dbg.scrollHeight;console.log('[DBG]',msg);}
+window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
+</script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
   <p style="color:#aaa;margin-top:10px">page:palette v2</p>
@@ -629,10 +635,12 @@ void main(){
 class FluidSim {
   constructor(canvas) {
     this.canvas = canvas;
+    dbg('Init WebGL...');
     const g = canvas.getContext('webgl', { alpha: false, premultipliedAlpha: false });
     if (!g) throw new Error('WebGL not available');
     this.gl = g;
     gl = g;
+    dbg('WebGL OK');
 
     // Enable float textures (try float first, then half-float)
     const floatExt = g.getExtension('OES_texture_float');
@@ -641,12 +649,17 @@ class FluidSim {
     this.halfFloatType = halfFloatExt ? halfFloatExt.HALF_FLOAT_OES : null;
     g.getExtension('OES_texture_float_linear');
     g.getExtension('OES_texture_half_float_linear');
+    dbg('Float:'+this.hasFloat+' Half:'+ !!this.halfFloatType);
 
     this.resize();
+    dbg('Size:'+this.w+'x'+this.h);
     this._initShaders();
+    dbg('Shaders OK');
     this._initBuffers();
     this._initTextures();
+    dbg('FBOs OK');
     this._generatePaper();
+    dbg('Paper OK');
 
     this.lastTime = 0;
     this._tick = this._tick.bind(this);
@@ -672,8 +685,10 @@ class FluidSim {
     const s = g.createShader(type);
     g.shaderSource(s, src);
     g.compileShader(s);
-    if (!g.getShaderParameter(s, g.COMPILE_STATUS))
-      console.error('Shader error:', g.getShaderInfoLog(s));
+    if (!g.getShaderParameter(s, g.COMPILE_STATUS)) {
+      const err = g.getShaderInfoLog(s);
+      dbg('SHADER ERR:'+err);
+    }
     return s;
   }
 
@@ -726,7 +741,26 @@ class FluidSim {
     const fbo = g.createFramebuffer();
     g.bindFramebuffer(g.FRAMEBUFFER, fbo);
     g.framebufferTexture2D(g.FRAMEBUFFER, g.COLOR_ATTACHMENT0, g.TEXTURE_2D, tex, 0);
-    // Clear to black/zero
+    const status = g.checkFramebufferStatus(g.FRAMEBUFFER);
+    if (status !== g.FRAMEBUFFER_COMPLETE) {
+      dbg('FBO incomplete:'+status+' type:'+(type===g.FLOAT?'F':'HF/U8'));
+      // Retry with half-float or unsigned byte
+      if (type === g.FLOAT && this.halfFloatType) {
+        g.bindFramebuffer(g.FRAMEBUFFER, null);
+        g.deleteTexture(tex);
+        g.deleteFramebuffer(fbo);
+        this.hasFloat = false;
+        return this._createFBO(w, h);
+      }
+      if (type !== g.UNSIGNED_BYTE) {
+        g.bindFramebuffer(g.FRAMEBUFFER, null);
+        g.deleteTexture(tex);
+        g.deleteFramebuffer(fbo);
+        this.hasFloat = false;
+        this.halfFloatType = null;
+        return this._createFBO(w, h);
+      }
+    }
     g.clearColor(0, 0, 0, 0);
     g.clear(g.COLOR_BUFFER_BIT);
     g.bindFramebuffer(g.FRAMEBUFFER, null);
@@ -823,9 +857,9 @@ class FluidSim {
     g.uniform2f(sp.uniforms.uPoint, x, y);
     // Convert RGB to absorption (1-rgb, normalized)
     g.uniform3f(sp.uniforms.uColor,
-      (1 - color[0]/255) * 0.4,
-      (1 - color[1]/255) * 0.4,
-      (1 - color[2]/255) * 0.4);
+      (1 - color[0]/255) * 0.8,
+      (1 - color[1]/255) * 0.8,
+      (1 - color[2]/255) * 0.8);
     g.uniform1f(sp.uniforms.uRadius, radius);
     g.uniform1f(sp.uniforms.uAspect, this.aspect);
     this._draw(sp, this.dye.write);
@@ -948,13 +982,21 @@ function setupDrawingCanvas() {
   drawCanvas = document.getElementById('drawing-canvas');
 
   function initDraw() {
+    if (fluidSim) return;
     const rect = drawCanvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    if (fluidSim) return; // Already initialized
+    if (!rect.width || !rect.height) {
+      requestAnimationFrame(initDraw); // retry until laid out
+      return;
+    }
     try {
       fluidSim = new FluidSim(drawCanvas);
     } catch (e) {
-      console.error('WebGL init failed:', e);
+      dbg('INIT FAIL:'+e.message);
+      drawCanvas.style.background = '#fff';
+      const el = document.createElement('div');
+      el.style.cssText = 'position:absolute;top:10px;left:10px;color:red;font-size:14px;z-index:99';
+      el.textContent = 'WebGL error: ' + e.message;
+      drawCanvas.parentElement.appendChild(el);
     }
   }
 
@@ -980,7 +1022,23 @@ function setupDrawingCanvas() {
     if (!state.isDrawing || !state.activeTarget || state.activeTarget.type !== 'canvas') return;
     e.preventDefault();
     const pos = getCanvasPos(e);
-    doSplat(pos, lastSplatPos);
+    if (lastSplatPos) {
+      // Interpolate splats along the stroke for continuous paint
+      const dx = pos.x - lastSplatPos.x;
+      const dy = pos.y - lastSplatPos.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const step = Math.max(0.002, (state.brushBaseSize / 800) * 0.3);
+      const steps = Math.max(1, Math.ceil(dist / step));
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const p = {
+          x: lastSplatPos.x + dx * t,
+          y: lastSplatPos.y + dy * t,
+          pressure: lastSplatPos.pressure + (pos.pressure - lastSplatPos.pressure) * t
+        };
+        doSplat(p, lastSplatPos);
+      }
+    }
     lastSplatPos = pos;
   });
 
@@ -1005,8 +1063,10 @@ function setupDrawingCanvas() {
     };
   }
 
+  let splatCount = 0;
   function doSplat(pos, prev) {
     if (!fluidSim || !state.brushColor) return;
+    if (splatCount++ < 3) dbg('Splat:'+pos.x.toFixed(2)+','+pos.y.toFixed(2)+' c:'+state.brushColor);
     const p = pos.pressure;
     const radius = (state.brushBaseSize / 800) * (0.4 + p * 1.1);
     let dx = 0, dy = 0;
