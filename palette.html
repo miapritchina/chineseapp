@@ -232,10 +232,11 @@ html, body {
   #brush-preview-container { padding: 2px 0; }
   #brush-preview { width: 28px; height: 28px; }
   #wells-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     min-height: 70px;
     max-height: 90px;
   }
+  .well-container:nth-child(n+3) { display: none; }
   #water-jar { height: 36px; font-size: 11px; }
   #brush-size-container { gap: 5px; }
   #palette-controls { gap: 4px; }
@@ -273,7 +274,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v4</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v5</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -1047,9 +1048,9 @@ class FluidSim {
     g.uniform2f(sp.uniforms.uPoint, x, y);
     // Convert RGB to absorption (1-rgb, normalized)
     g.uniform3f(sp.uniforms.uColor,
-      (1 - color[0]/255) * 0.8,
-      (1 - color[1]/255) * 0.8,
-      (1 - color[2]/255) * 0.8);
+      (1 - color[0]/255) * 1.5,
+      (1 - color[1]/255) * 1.5,
+      (1 - color[2]/255) * 1.5);
     g.uniform1f(sp.uniforms.uRadius, radius);
     g.uniform1f(sp.uniforms.uAspect, this.aspect);
     g.uniform1f(sp.uniforms.uWaterContent, waterContent);
@@ -1223,6 +1224,7 @@ function setupDrawingCanvas() {
   let lastSplatPos = null;
 
   drawCanvas.addEventListener('pointerdown', (e) => {
+    dbg('PDOWN brush:'+!!state.brushColor+' sim:'+!!fluidSim);
     if (!state.brushColor) return;
     e.preventDefault();
     drawCanvas.setPointerCapture(e.pointerId);
@@ -1373,7 +1375,7 @@ function dab(type, index, pos) {
   const p = pos.pressure;
   const sizeMul = 0.4 + p * 1.1;
   const radius = state.brushBaseSize * sizeMul * 0.5;
-  const opacity = 0.3 + p * 0.7;
+  const opacity = 0.7 + p * 0.3;
   dabOnWell(index, pos.x, pos.y, radius, opacity);
 }
 
@@ -1410,10 +1412,10 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
       const ea = well.alphaBuffer[idx];
       const li = idx * LATENT_SIZE;
 
-      // First ~20 dabs of a stroke: full deposit (loaded brush)
+      // First ~60 dabs of a stroke: full deposit (loaded brush)
       // After that: gradual mixing (paint running out)
-      const strokeFade = Math.min(state.wellStrokeDabs / 20, 1);
-      const mixDa = da * (1.0 - strokeFade * 0.85);
+      const strokeFade = Math.min(state.wellStrokeDabs / 60, 1);
+      const mixDa = da * (1.0 - strokeFade * 0.7);
       const k1 = 1 - mixDa;
       for (let k = 0; k < LATENT_SIZE; k++)
         well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * mixDa;
@@ -1539,6 +1541,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v4</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v5</div>
 </body>
 </html>
