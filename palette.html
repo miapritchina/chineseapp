@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v2</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v3</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -493,7 +493,46 @@ function clearWell(i) {
 // Shader sources
 const VERT_SRC = `attribute vec2 a_pos;varying vec2 vUv;void main(){vUv=a_pos*0.5+0.5;gl_Position=vec4(a_pos,0,1);}`;
 
+// ── Splat dye: samples paper height for dry-brush effect ──
 const SPLAT_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uTarget;
+uniform sampler2D uPaper;
+uniform sampler2D uWetness;
+uniform vec2 uPoint;
+uniform float uRadius;
+uniform vec3 uColor;
+uniform float uAspect;
+uniform float uWaterContent;  // 0=dry brush, 1=fully wet
+void main(){
+  vec2 p=vUv-uPoint;
+  p.x*=uAspect;
+  float d=dot(p,p);
+  float r2=uRadius*uRadius;
+  float s=exp(-d/r2);
+
+  // Paper height for dry-brush: skip valleys when brush is dry
+  float paperH=texture2D(uPaper,vUv).r;
+  // Dry-brush threshold: low water = only paint on peaks
+  float dryThresh=mix(0.97, 0.0, uWaterContent);
+  float paperMask=smoothstep(dryThresh-0.03, dryThresh+0.03, paperH);
+  s*=paperMask;
+
+  // Wet-on-wet: existing wetness causes more spread/blending
+  float existingWet=texture2D(uWetness,vUv).r;
+  float wetBlend=1.0+existingWet*0.6; // paint spreads more on wet surface
+  s*=wetBlend;
+
+  vec3 base=texture2D(uTarget,vUv).rgb;
+  // On wet surface, mix with existing color instead of pure additive
+  float mixFactor=existingWet*0.4;
+  vec3 blended=mix(base+uColor*s, mix(base,uColor,s*0.5), mixFactor);
+  gl_FragColor=vec4(blended,1.0);
+}`;
+
+// ── Simple additive splat (for wetness) ──
+const SPLAT_SIMPLE_FRAG = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D uTarget;
@@ -506,8 +545,7 @@ void main(){
   p.x*=uAspect;
   float d=dot(p,p);
   float r2=uRadius*uRadius;
-  // Gaussian splat
-  float s=exp(-d/r2)*1.0;
+  float s=exp(-d/r2);
   vec3 base=texture2D(uTarget,vUv).rgb;
   gl_FragColor=vec4(base+uColor*s,1.0);
 }`;
@@ -516,6 +554,7 @@ const SPLAT_VEL_FRAG = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D uTarget;
+uniform sampler2D uWetness;
 uniform vec2 uPoint;
 uniform float uRadius;
 uniform vec2 uVel;
@@ -526,6 +565,9 @@ void main(){
   float d=dot(p,p);
   float r2=uRadius*uRadius;
   float s=exp(-d/r2);
+  // More velocity on wet surface (paint slides on wet)
+  float existingWet=texture2D(uWetness,vUv).r;
+  s*=1.0+existingWet*1.5;
   vec2 base=texture2D(uTarget,vUv).xy;
   gl_FragColor=vec4(base+uVel*s,0,1);
 }`;
@@ -588,23 +630,139 @@ void main(){
   gl_FragColor=vec4(vel,0,1);
 }`;
 
-// Wetness: .r=wetness, advected + decaying
+// ── Capillary flow: pigment migrates toward drying edges ──
+// This creates the iconic watercolor edge darkening effect
+const CAPILLARY_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uDye;
+uniform sampler2D uWetness;
+uniform sampler2D uPaper;
+uniform vec2 uTexelSize;
+uniform float uDt;
+void main(){
+  float wet=texture2D(uWetness,vUv).r;
+  vec3 dye=texture2D(uDye,vUv).rgb;
+
+  // Only active in the drying zone (wetness 0.05-0.35)
+  float dryingZone=smoothstep(0.01,0.08,wet)*smoothstep(0.45,0.15,wet);
+  if(dryingZone<0.001){
+    gl_FragColor=vec4(dye,1.0);
+    return;
+  }
+
+  // Sample wetness gradient (pigment flows toward drier areas = edges)
+  float wL=texture2D(uWetness,vUv-vec2(uTexelSize.x,0.0)).r;
+  float wR=texture2D(uWetness,vUv+vec2(uTexelSize.x,0.0)).r;
+  float wB=texture2D(uWetness,vUv-vec2(0.0,uTexelSize.y)).r;
+  float wT=texture2D(uWetness,vUv+vec2(0.0,uTexelSize.y)).r;
+
+  // Gradient of wetness: pigment migrates TOWARD lower wetness (edges)
+  vec2 wetGrad=vec2(wR-wL, wT-wB)*0.5;
+  // Flow direction: toward drier areas (negative gradient)
+  vec2 capFlow=-wetGrad;
+
+  // Paper texture modulates capillary action (rougher = more wicking)
+  float paperH=texture2D(uPaper,vUv).r;
+  float paperRoughness=1.0-paperH; // valleys wick more
+  float capStrength=dryingZone*0.35*(1.0+paperRoughness*0.8);
+
+  // Advect pigment along capillary flow
+  vec2 samplePos=vUv-capFlow*capStrength*uDt*uTexelSize*8.0;
+  vec3 advectedDye=texture2D(uDye,samplePos).rgb;
+
+  // Blend: partial transport
+  vec3 result=mix(dye, advectedDye, capStrength*uDt*2.0);
+  gl_FragColor=vec4(result,1.0);
+}`;
+
+// ── Granulation: pigment settles into paper valleys ──
+const GRANULATION_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uDye;
+uniform sampler2D uWetness;
+uniform sampler2D uPaper;
+uniform vec2 uTexelSize;
+uniform float uDt;
+void main(){
+  float wet=texture2D(uWetness,vUv).r;
+  vec3 dye=texture2D(uDye,vUv).rgb;
+
+  // Granulation only in drying paint
+  float dryingPhase=smoothstep(0.0,0.1,wet)*smoothstep(0.5,0.2,wet);
+  if(dryingPhase<0.001){
+    gl_FragColor=vec4(dye,1.0);
+    return;
+  }
+
+  float paperH=texture2D(uPaper,vUv).r;
+  // Paper valleys (low height) accumulate pigment; peaks lose pigment
+  float valleyFactor=(1.0-paperH); // 0=peak, 1=deep valley
+  float peakFactor=paperH;
+
+  // Sample neighbors to redistribute pigment
+  vec3 dL=texture2D(uDye,vUv-vec2(uTexelSize.x,0.0)).rgb;
+  vec3 dR=texture2D(uDye,vUv+vec2(uTexelSize.x,0.0)).rgb;
+  vec3 dB=texture2D(uDye,vUv-vec2(0.0,uTexelSize.y)).rgb;
+  vec3 dT=texture2D(uDye,vUv+vec2(0.0,uTexelSize.y)).rgb;
+  vec3 avg=(dL+dR+dB+dT)*0.25;
+
+  // Valleys pull pigment in; peaks push pigment out
+  float granRate=dryingPhase*0.08*uDt;
+  vec3 result=mix(dye, avg, granRate*(peakFactor-0.5)*2.0);
+  // Valleys get slightly more concentrated
+  result+=dye*valleyFactor*granRate*0.5;
+
+  gl_FragColor=vec4(result,1.0);
+}`;
+
+// ── Wetness: advects, dries from edges inward, capillary spread ──
 const ADVECT_WET_FRAG = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D uVelocity;
 uniform sampler2D uWetness;
+uniform sampler2D uPaper;
 uniform vec2 uTexelSize;
 uniform float uDt;
 uniform float uDryRate;
+uniform vec2 uGravity;  // device tilt
 void main(){
   vec2 vel=texture2D(uVelocity,vUv).xy;
+  // Add gravity/tilt to velocity for wet areas
+  float wet=texture2D(uWetness,vUv).r;
+  vel+=uGravity*wet*0.5;
+
   vec2 coord=vUv-vel*uDt*uTexelSize;
   float w=texture2D(uWetness,coord).r;
-  w=max(0.0,w-uDryRate*uDt);
+
+  // Edge-aware drying: drier at boundary between wet and dry
+  float wL=texture2D(uWetness,vUv-vec2(uTexelSize.x,0.0)).r;
+  float wR=texture2D(uWetness,vUv+vec2(uTexelSize.x,0.0)).r;
+  float wB=texture2D(uWetness,vUv-vec2(0.0,uTexelSize.y)).r;
+  float wT=texture2D(uWetness,vUv+vec2(0.0,uTexelSize.y)).r;
+  float avgWet=(wL+wR+wB+wT)*0.25;
+  // Edge factor: high when this pixel is wetter than neighbors (boundary)
+  float edgeFactor=max(0.0, w-avgWet)*4.0;
+  // Paper absorbency: rough paper absorbs faster
+  float paperH=texture2D(uPaper,vUv).r;
+  float absorbRate=1.0+(1.0-paperH)*0.5;
+  float dryAmount=uDryRate*uDt*absorbRate*(1.0+edgeFactor*3.0);
+
+  // Capillary spread: water wicks into adjacent dry paper
+  float capillarySpread=0.0;
+  if(w<0.02){
+    // This pixel is dry, but neighbors might be wet -> wick
+    float maxNeighbor=max(max(wL,wR),max(wB,wT));
+    capillarySpread=maxNeighbor*0.03*(1.0-paperH)*uDt; // valleys wick more
+  }
+
+  w=max(0.0, w-dryAmount)+capillarySpread;
   gl_FragColor=vec4(w,0,0,1);
 }`;
 
+// ── Display: proper compositing with paper, granulation, wet sheen, edge darkening ──
 const DISPLAY_FRAG = `
 precision highp float;
 varying vec2 vUv;
@@ -615,22 +773,44 @@ void main(){
   vec3 dye=texture2D(uDye,vUv).rgb;
   float paper=texture2D(uPaper,vUv).r;
   float wet=texture2D(uWetness,vUv).r;
-  // dye stores pigment absorption (0=no paint, higher=more pigment)
+
+  // Dye stores pigment absorption (0=no paint, higher=more pigment)
   // Convert to visible color: paper white minus absorbed light
   vec3 paintColor=max(vec3(1.0)-dye, vec3(0.0));
-  // Paper texture as base
+
+  // Paper texture as base white
   vec3 paperColor=vec3(paper);
-  // How much pigment is present
+
+  // Pigment density
   float pigment=clamp(length(dye)*1.2, 0.0, 1.0);
-  // Granulation: paper roughness shows through thin paint
-  float grain=1.0-0.12*(1.0-paper)*pigment;
-  // Blend paper and paint
+
+  // Granulation: paper roughness shows through paint
+  // In valleys (low paper), more pigment collects -> darker
+  // On peaks (high paper), less pigment -> lighter, showing paper grain
+  float grainEffect=(1.0-paper)*pigment;
+  float grain=1.0-0.18*grainEffect;
+
+  // Blend paper and paint with granulation
   vec3 color=mix(paperColor, paintColor*grain, pigment);
-  // Subtle edge darkening
-  float edgeDark=1.0-0.06*pigment*(1.0-pigment)*4.0;
+
+  // Edge darkening: now mostly handled by capillary flow in sim,
+  // but add subtle residual for thin paint edges
+  float edgeDark=1.0-0.04*pigment*(1.0-pigment)*4.0;
   color*=edgeDark;
-  // Wet sheen
-  color+=vec3(wet*0.04);
+
+  // Wet paint appearance
+  if(wet>0.01){
+    // Wet sheen: glossy reflection
+    float sheen=wet*0.08;
+    color+=vec3(sheen);
+    // Wet paint appears slightly darker and more saturated
+    float wetDarken=1.0-wet*0.06;
+    color*=wetDarken;
+    // Slight color shift on very wet areas (watercolor bloom look)
+    float bloom=smoothstep(0.3,0.8,wet)*0.03;
+    color=mix(color, paintColor*0.9, bloom);
+  }
+
   gl_FragColor=vec4(color,1.0);
 }`;
 
@@ -713,11 +893,14 @@ class FluidSim {
 
   _initShaders() {
     this.splatProg = this._createProgram(SPLAT_FRAG);
+    this.splatSimpleProg = this._createProgram(SPLAT_SIMPLE_FRAG);
     this.splatVelProg = this._createProgram(SPLAT_VEL_FRAG);
     this.advectProg = this._createProgram(ADVECT_FRAG);
     this.divergenceProg = this._createProgram(DIVERGENCE_FRAG);
     this.pressureProg = this._createProgram(PRESSURE_FRAG);
     this.gradSubProg = this._createProgram(GRADIENT_SUB_FRAG);
+    this.capillaryProg = this._createProgram(CAPILLARY_FRAG);
+    this.granulationProg = this._createProgram(GRANULATION_FRAG);
     this.advectWetProg = this._createProgram(ADVECT_WET_FRAG);
     this.displayProg = this._createProgram(DISPLAY_FRAG);
   }
@@ -839,12 +1022,15 @@ class FluidSim {
     g.uniform1i(prog.uniforms[name], unit);
   }
 
-  splat(x, y, dx, dy, color, radius) {
+  splat(x, y, dx, dy, color, radius, waterContent) {
     const g = this.gl;
-    // Splat velocity
+    waterContent = waterContent !== undefined ? waterContent : 0.7;
+
+    // Splat velocity (wet-on-wet aware)
     const vp = this.splatVelProg;
     g.useProgram(vp.program);
     this._bindTex(vp, 'uTarget', this.velocity.read.tex, 0);
+    this._bindTex(vp, 'uWetness', this.wetness.read.tex, 1);
     g.uniform2f(vp.uniforms.uPoint, x, y);
     g.uniform2f(vp.uniforms.uVel, dx * 8.0, dy * 8.0);
     g.uniform1f(vp.uniforms.uRadius, radius);
@@ -852,10 +1038,12 @@ class FluidSim {
     this._draw(vp, this.velocity.write);
     this.velocity.swap();
 
-    // Splat dye (as absorption values — higher = more pigment)
+    // Splat dye (with dry-brush + wet-on-wet via paper & wetness)
     const sp = this.splatProg;
     g.useProgram(sp.program);
     this._bindTex(sp, 'uTarget', this.dye.read.tex, 0);
+    this._bindTex(sp, 'uPaper', this.paperTex, 1);
+    this._bindTex(sp, 'uWetness', this.wetness.read.tex, 2);
     g.uniform2f(sp.uniforms.uPoint, x, y);
     // Convert RGB to absorption (1-rgb, normalized)
     g.uniform3f(sp.uniforms.uColor,
@@ -864,18 +1052,19 @@ class FluidSim {
       (1 - color[2]/255) * 0.8);
     g.uniform1f(sp.uniforms.uRadius, radius);
     g.uniform1f(sp.uniforms.uAspect, this.aspect);
+    g.uniform1f(sp.uniforms.uWaterContent, waterContent);
     this._draw(sp, this.dye.write);
     this.dye.swap();
 
-    // Splat wetness
-    const wp = this.splatProg;
-    g.useProgram(wp.program);
-    this._bindTex(wp, 'uTarget', this.wetness.read.tex, 0);
-    g.uniform2f(wp.uniforms.uPoint, x, y);
-    g.uniform3f(wp.uniforms.uColor, 0.5, 0.0, 0.0);
-    g.uniform1f(wp.uniforms.uRadius, radius);
-    g.uniform1f(wp.uniforms.uAspect, this.aspect);
-    this._draw(wp, this.wetness.write);
+    // Splat wetness (scaled by water content, simple additive)
+    const wsp = this.splatSimpleProg;
+    g.useProgram(wsp.program);
+    this._bindTex(wsp, 'uTarget', this.wetness.read.tex, 0);
+    g.uniform2f(wsp.uniforms.uPoint, x, y);
+    g.uniform3f(wsp.uniforms.uColor, waterContent * 0.6, 0.0, 0.0);
+    g.uniform1f(wsp.uniforms.uRadius, radius);
+    g.uniform1f(wsp.uniforms.uAspect, this.aspect);
+    this._draw(wsp, this.wetness.write);
     this.wetness.swap();
   }
 
@@ -931,16 +1120,40 @@ class FluidSim {
     this._draw(ap, this.dye.write);
     this.dye.swap();
 
-    // 6. Advect + dry wetness
+    // 6. Advect + dry wetness (edge-aware drying, capillary spread)
     const wp = this.advectWetProg;
     g.useProgram(wp.program);
     this._bindTex(wp, 'uVelocity', this.velocity.read.tex, 0);
     this._bindTex(wp, 'uWetness', this.wetness.read.tex, 1);
+    this._bindTex(wp, 'uPaper', this.paperTex, 2);
     g.uniform2f(wp.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
     g.uniform1f(wp.uniforms.uDt, dt);
-    g.uniform1f(wp.uniforms.uDryRate, 0.15);
+    g.uniform1f(wp.uniforms.uDryRate, 0.12);
+    g.uniform2f(wp.uniforms.uGravity, 0.0, 0.0); // no tilt for now
     this._draw(wp, this.wetness.write);
     this.wetness.swap();
+
+    // 7. Capillary flow: pigment migrates to drying edges
+    const cp = this.capillaryProg;
+    g.useProgram(cp.program);
+    this._bindTex(cp, 'uDye', this.dye.read.tex, 0);
+    this._bindTex(cp, 'uWetness', this.wetness.read.tex, 1);
+    this._bindTex(cp, 'uPaper', this.paperTex, 2);
+    g.uniform2f(cp.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    g.uniform1f(cp.uniforms.uDt, dt);
+    this._draw(cp, this.dye.write);
+    this.dye.swap();
+
+    // 8. Granulation: pigment settles into paper valleys
+    const grp = this.granulationProg;
+    g.useProgram(grp.program);
+    this._bindTex(grp, 'uDye', this.dye.read.tex, 0);
+    this._bindTex(grp, 'uWetness', this.wetness.read.tex, 1);
+    this._bindTex(grp, 'uPaper', this.paperTex, 2);
+    g.uniform2f(grp.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    g.uniform1f(grp.uniforms.uDt, dt);
+    this._draw(grp, this.dye.write);
+    this.dye.swap();
   }
 
   render() {
@@ -1015,6 +1228,7 @@ function setupDrawingCanvas() {
     drawCanvas.setPointerCapture(e.pointerId);
     state.isDrawing = true;
     state.activeTarget = { type: 'canvas', index: 0 };
+    canvasStrokeDabs = 0; // reset water content for new stroke
     const pos = getCanvasPos(e);
     lastSplatPos = pos;
     doSplat(pos, null);
@@ -1066,9 +1280,11 @@ function setupDrawingCanvas() {
   }
 
   let splatCount = 0;
+  let canvasStrokeDabs = 0;
   function doSplat(pos, prev) {
     if (!fluidSim || !state.brushColor) return;
     if (splatCount++ < 3) dbg('Splat:'+pos.x.toFixed(2)+','+pos.y.toFixed(2)+' c:'+state.brushColor);
+    canvasStrokeDabs++;
     const p = pos.pressure;
     const radius = (state.brushBaseSize / 800) * (0.4 + p * 1.1);
     let dx = 0, dy = 0;
@@ -1076,7 +1292,11 @@ function setupDrawingCanvas() {
       dx = pos.x - prev.x;
       dy = pos.y - prev.y;
     }
-    fluidSim.splat(pos.x, pos.y, dx, dy, state.brushColor, radius);
+    // Water content: starts high, decreases as brush runs out of paint
+    // Pressure also affects water deposit (light touch = drier)
+    const strokeFade = Math.max(0.15, 1.0 - canvasStrokeDabs / 80);
+    const waterContent = Math.min(1.0, strokeFade * (0.3 + p * 0.7));
+    fluidSim.splat(pos.x, pos.y, dx, dy, state.brushColor, radius, waterContent);
   }
 
   requestAnimationFrame(initDraw);
@@ -1319,6 +1539,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v2</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v3 — watercolor physics</div>
 </body>
 </html>
