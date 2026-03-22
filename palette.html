@@ -233,15 +233,13 @@ html, body {
   #brush-preview { width: 28px; height: 28px; }
   #wells-grid {
     grid-template-columns: 1fr 1fr;
-    flex: 0 0 auto;
-    min-height: 60px;
-    max-height: 80px;
+    flex: 0 0 70px;
   }
   .well-container:nth-child(n+3) { display: none; }
-  #water-jar { height: 32px; font-size: 11px; flex-shrink: 0; }
-  #brush-size-container { gap: 5px; flex-shrink: 0; }
-  #palette-controls { gap: 4px; flex-shrink: 0; }
-  .ctrl-btn { padding: 6px 4px; font-size: 10px; }
+  #water-jar { height: 28px; font-size: 10px; flex: 0 0 28px; }
+  #brush-size-container { gap: 5px; flex: 0 0 auto; }
+  #palette-controls { gap: 4px; flex: 0 0 auto; }
+  .ctrl-btn { padding: 5px 4px; font-size: 10px; }
 }
 
 /* Very small phones (iPhone SE etc.) */
@@ -275,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v7</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v8</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -764,7 +762,7 @@ void main(){
   gl_FragColor=vec4(w,0,0,1);
 }`;
 
-// ── Display: proper compositing with paper, granulation, wet sheen, edge darkening ──
+// ── Display: simple paper + paint compositing ──
 const DISPLAY_FRAG = `
 precision highp float;
 varying vec2 vUv;
@@ -774,45 +772,16 @@ uniform sampler2D uWetness;
 void main(){
   vec3 dye=texture2D(uDye,vUv).rgb;
   float paper=texture2D(uPaper,vUv).r;
-  float wet=texture2D(uWetness,vUv).r;
 
-  // Dye stores pigment absorption (0=no paint, higher=more pigment)
-  // Convert to visible color: paper white minus absorbed light
-  vec3 paintColor=max(vec3(1.0)-dye, vec3(0.0));
+  // Dye = absorption. Paint color = what's reflected back.
+  vec3 paintColor=vec3(1.0)-dye;
+  float pigment=clamp(length(dye)*1.5, 0.0, 1.0);
 
-  // Paper texture as base white
-  vec3 paperColor=vec3(paper);
+  // Paper base (light cream)
+  vec3 paperColor=vec3(0.96, 0.95, 0.93)*paper;
 
-  // Pigment density
-  float pigment=clamp(length(dye)*1.2, 0.0, 1.0);
-
-  // Granulation: paper roughness shows through paint
-  // In valleys (low paper), more pigment collects -> darker
-  // On peaks (high paper), less pigment -> lighter, showing paper grain
-  float grainEffect=(1.0-paper)*pigment;
-  float grain=1.0-0.18*grainEffect;
-
-  // Blend paper and paint with granulation
-  vec3 color=mix(paperColor, paintColor*grain, pigment);
-
-  // Edge darkening: now mostly handled by capillary flow in sim,
-  // but add subtle residual for thin paint edges
-  float edgeDark=1.0-0.04*pigment*(1.0-pigment)*4.0;
-  color*=edgeDark;
-
-  // Wet paint appearance
-  if(wet>0.01){
-    // Wet sheen: glossy reflection
-    float sheen=wet*0.08;
-    color+=vec3(sheen);
-    // Wet paint appears slightly darker and more saturated
-    float wetDarken=1.0-wet*0.06;
-    color*=wetDarken;
-    // Slight color shift on very wet areas (watercolor bloom look)
-    float bloom=smoothstep(0.3,0.8,wet)*0.03;
-    color=mix(color, paintColor*0.9, bloom);
-  }
-
+  // Simple blend: paper where no paint, paint color where painted
+  vec3 color=mix(paperColor, paintColor, pigment);
   gl_FragColor=vec4(color,1.0);
 }`;
 
@@ -1566,6 +1535,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v7</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v8</div>
 </body>
 </html>
