@@ -36,10 +36,10 @@ Uses **mixbox** latent space (7-dimensional) for physically accurate pigment mix
 ## Known Issues & Debugging
 
 ### Canvas appears dark / no paint visible
-- **Absorption values must stay < 1.0** per channel. The splat shader adds `(1 - rgb/255) * strength` to the dye. If strength > 1.0, blue channels for warm colors exceed 1.0 and corrupt display. Keep strength ≤ 0.9.
+- **CRITICAL: Float texture filtering** — Mobile GPUs (e.g. iPhone) often lack `OES_texture_float_linear`. Without it, `texture2D()` returns `(0,0,0,0)` when sampling FLOAT textures with `GL_LINEAR` filter. The fix: detect the extension and use `GL_NEAREST` when float linear is unavailable. Debug log shows `FloatLinear:false` when this applies.
+- **Absorption values must stay < 1.0** per channel. The splat shader adds `(1 - rgb/255) * strength` to the dye. Keep strength ≤ 0.5 for watercolor look.
 - Check debug log (bottom-right overlay) for: `LINK ERR`, `GL ERR`, `SHADER ERR`
 - `Frame1 OK` confirms WebGL rendering pipeline is working
-- `PDOWN brush:true sim:true` confirms pointer events reach canvas
 
 ### GitHub Pages Deployment
 - Workflow: `.github/workflows/pages.yml`
