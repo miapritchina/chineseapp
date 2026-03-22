@@ -194,7 +194,7 @@ html, body {
 }
 
 /* Portrait / phone layout */
-@media (max-aspect-ratio: 4/5) {
+@media (max-width: 600px) {
   #app {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
@@ -410,12 +410,15 @@ function initWell(well) {
   well.ctx.scale(DPR, DPR);
   well.latentBuffer = new Float64Array(w * h * LATENT_SIZE);
   well.alphaBuffer = new Float32Array(w * h);
-  // Init latent to white so empty pixels mix from clean palette surface
   const wl = mixbox.rgbToLatent([255, 255, 255]);
-  for (let i = 0; i < w * h; i++)
+  for (let i = 0; i < w * h; i++) {
     for (let j = 0; j < LATENT_SIZE; j++)
       well.latentBuffer[i * LATENT_SIZE + j] = wl[j];
-  well.ctx.clearRect(0, 0, rect.width, rect.height);
+    well.alphaBuffer[i] = 1;
+  }
+  // Paint well white (not transparent)
+  well.ctx.fillStyle = '#fff';
+  well.ctx.fillRect(0, 0, rect.width, rect.height);
 }
 
 function clearWell(i) {
@@ -427,7 +430,11 @@ function clearWell(i) {
   for (let i = 0; i < w.w * w.h; i++)
     for (let j = 0; j < LATENT_SIZE; j++)
       w.latentBuffer[i * LATENT_SIZE + j] = wl[j];
-  w.alphaBuffer.fill(0);
+  w.alphaBuffer.fill(1);
+  // Repaint white
+  const rect2 = w.canvas.getBoundingClientRect();
+  w.ctx.fillStyle = '#fff';
+  w.ctx.fillRect(0, 0, rect2.width, rect2.height);
 }
 
 // ════════════════════════════════════════════
@@ -448,35 +455,37 @@ function setupDrawingCanvas() {
     drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
     drawCtx.scale(DPR, DPR);
     canvasLatent = new Float64Array(canvasW * canvasH * LATENT_SIZE);
-    canvasAlpha = new Float32Array(canvasW * canvasH); // starts at 0 = no paint
+    canvasAlpha = new Float32Array(canvasW * canvasH);
     canvasWetness = new Float32Array(canvasW * canvasH);
     const wl = mixbox.rgbToLatent([255, 255, 255]);
-    for (let i = 0; i < canvasW * canvasH; i++)
+    for (let i = 0; i < canvasW * canvasH; i++) {
       for (let j = 0; j < LATENT_SIZE; j++)
         canvasLatent[i * LATENT_SIZE + j] = wl[j];
+      canvasAlpha[i] = 1;
+    }
 
-    // Generate subtle paper texture (slight grain)
+    // Generate subtle paper texture (very slight grain, 0.97-1.0)
     paperTexture = new Float32Array(canvasW * canvasH);
     for (let i = 0; i < paperTexture.length; i++)
-      paperTexture[i] = 0.94 + Math.random() * 0.06;
-    // Smooth the texture for a natural paper grain feel
-    for (let pass = 0; pass < 2; pass++) {
-      for (let y = 1; y < canvasH - 1; y++) {
-        for (let x = 1; x < canvasW - 1; x++) {
-          const idx = y * canvasW + x;
-          paperTexture[idx] = (paperTexture[idx] * 2 +
-            paperTexture[idx - 1] + paperTexture[idx + 1] +
-            paperTexture[idx - canvasW] + paperTexture[idx + canvasW]) / 6;
-        }
+      paperTexture[i] = 0.97 + Math.random() * 0.03;
+    // Smooth for natural feel
+    for (let y = 1; y < canvasH - 1; y++) {
+      for (let x = 1; x < canvasW - 1; x++) {
+        const idx = y * canvasW + x;
+        paperTexture[idx] = (paperTexture[idx] * 2 +
+          paperTexture[idx - 1] + paperTexture[idx + 1] +
+          paperTexture[idx - canvasW] + paperTexture[idx + canvasW]) / 6;
       }
     }
 
-    // Render initial textured paper
+    // Render textured white paper
+    drawCtx.fillStyle = '#fff';
+    drawCtx.fillRect(0, 0, rect.width, rect.height);
     const imgData = drawCtx.getImageData(0, 0, canvasW, canvasH);
     const px = imgData.data;
     for (let i = 0; i < canvasW * canvasH; i++) {
       const v = Math.round(255 * paperTexture[i]);
-      px[i * 4] = v; px[i * 4 + 1] = v; px[i * 4 + 2] = v; px[i * 4 + 3] = 255;
+      px[i * 4] = v; px[i * 4 + 1] = v; px[i * 4 + 2] = v;
     }
     drawCtx.putImageData(imgData, 0, 0);
   }
@@ -622,8 +631,6 @@ function dabOnCanvas(cx, cy, radius, opacity) {
   if (!drawCtx || !canvasLatent) return;
   const bl = state.brushLatent;
   const r = radius;
-  // Watercolor: lighter deposit, build up with multiple strokes
-  const wcOpacity = opacity * 0.25;
   const x0 = Math.max(0, Math.floor((cx - r) * DPR));
   const y0 = Math.max(0, Math.floor((cy - r) * DPR));
   const x1 = Math.min(canvasW - 1, Math.ceil((cx + r) * DPR));
@@ -640,34 +647,31 @@ function dabOnCanvas(cx, cy, radius, opacity) {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > r) continue;
       const nd = dist / r;
-      // Watercolor edge: thinner at center, pigment pools at edges
-      const edgePool = 0.3 + 0.7 * nd * nd;
-      const da = wcOpacity * edgePool * (1 - nd * nd * 0.2);
+      const ef = 0.5 + 0.5 * nd * nd;
+      const da = opacity * ef * (1 - nd * nd * 0.3);
 
       const idx = py * canvasW + ppx;
       const wet = canvasWetness[idx];
       const li = idx * LATENT_SIZE;
 
-      // Blend amount depends on wetness — wet areas mix more
-      const ba = wet > 0.1 ? da * (0.5 + 0.5 * wet) : da;
+      // Blend amount depends on wetness
+      const ba = wet > 0.1 ? da * (0.4 + 0.6 * wet) : da;
       const k1 = 1 - ba;
       for (let k = 0; k < LATENT_SIZE; k++)
         canvasLatent[li + k] = canvasLatent[li + k] * k1 + bl[k] * ba;
 
-      canvasAlpha[idx] = Math.min(1, canvasAlpha[idx] + da * (1 - canvasAlpha[idx]) * 0.6);
       canvasWetness[idx] = Math.min(1, wet + da * 0.8);
 
       const sl = [];
       for (let k = 0; k < LATENT_SIZE; k++) sl.push(canvasLatent[li + k]);
       const rgb = mixbox.latentToRgb(sl);
 
-      // Blend with paper texture — show through translucent paint
+      // Subtle paper texture grain
       const texVal = paperTexture ? paperTexture[idx] : 1;
-      const a = canvasAlpha[idx];
       const pi = ((py - y0) * imgW + (ppx - x0)) * 4;
-      px[pi]     = Math.round(rgb[0] * a * texVal + 255 * (1 - a));
-      px[pi + 1] = Math.round(rgb[1] * a * texVal + 255 * (1 - a));
-      px[pi + 2] = Math.round(rgb[2] * a * texVal + 255 * (1 - a));
+      px[pi]     = Math.round(rgb[0] * texVal);
+      px[pi + 1] = Math.round(rgb[1] * texVal);
+      px[pi + 2] = Math.round(rgb[2] * texVal);
       px[pi + 3] = 255;
     }
   }
@@ -690,45 +694,39 @@ function startWetnessLoop() {
     for (let i = 0; i < canvasWetness.length; i++) {
       if (canvasWetness[i] > 0.01) {
         hasWet = true;
-        canvasWetness[i] = Math.max(0, canvasWetness[i] - 0.06 * dt);
+        canvasWetness[i] = Math.max(0, canvasWetness[i] - 0.12 * dt);
       }
     }
 
-    // Watercolor bleeding/flow while paint is wet
+    // Subtle bleeding while not drawing
     if (hasWet && !state.isDrawing) {
-      const w = canvasW, h = canvasH;
+      const w = canvasW, h = canvasH, step = 3;
       let redraw = false;
       const imgData = drawCtx.getImageData(0, 0, w, h);
       const px = imgData.data;
 
-      // Process pixels for watercolor flow
-      for (let y = 1; y < h - 1; y += 2) {
-        for (let x = 1; x < w - 1; x += 2) {
+      for (let y = step; y < h - step; y += step) {
+        for (let x = step; x < w - step; x += step) {
           const idx = y * w + x;
-          if (canvasWetness[idx] < 0.05) continue;
+          if (canvasWetness[idx] < 0.15) continue;
           redraw = true;
           const li = idx * LATENT_SIZE;
           const nb = [idx - 1, idx + 1, idx - w, idx + w];
           for (const ni of nb) {
             if (ni < 0 || ni >= canvasWetness.length) continue;
             const nli = ni * LATENT_SIZE;
-            // Stronger bleed + paper texture influences flow
-            const texFlow = paperTexture ? (1.05 - paperTexture[ni]) * 3 : 1;
-            const b = 0.02 * canvasWetness[idx] * texFlow;
+            const b = 0.012 * canvasWetness[idx];
             for (let k = 0; k < LATENT_SIZE; k++)
               canvasLatent[nli + k] += (canvasLatent[li + k] - canvasLatent[nli + k]) * b;
-            // Spread alpha too — paint flows outward
-            canvasAlpha[ni] = Math.min(1, canvasAlpha[ni] + canvasAlpha[idx] * b * 0.3);
-            canvasWetness[ni] = Math.max(canvasWetness[ni], canvasWetness[idx] * 0.4);
+            canvasWetness[ni] = Math.max(canvasWetness[ni], canvasWetness[idx] * 0.3);
             const sl = [];
             for (let k = 0; k < LATENT_SIZE; k++) sl.push(canvasLatent[nli + k]);
             const rgb = mixbox.latentToRgb(sl);
             const texVal = paperTexture ? paperTexture[ni] : 1;
-            const a = canvasAlpha[ni];
             const pi = ni * 4;
-            px[pi]     = Math.round(rgb[0] * a * texVal + 255 * (1 - a));
-            px[pi + 1] = Math.round(rgb[1] * a * texVal + 255 * (1 - a));
-            px[pi + 2] = Math.round(rgb[2] * a * texVal + 255 * (1 - a));
+            px[pi]     = Math.round(rgb[0] * texVal);
+            px[pi + 1] = Math.round(rgb[1] * texVal);
+            px[pi + 2] = Math.round(rgb[2] * texVal);
           }
         }
       }
@@ -801,7 +799,7 @@ function setupControls() {
     for (let i = 0; i < canvasW * canvasH; i++) {
       for (let j = 0; j < LATENT_SIZE; j++)
         canvasLatent[i * LATENT_SIZE + j] = wl[j];
-      canvasAlpha[i] = 0;
+      canvasAlpha[i] = 1;
       canvasWetness[i] = 0;
     }
     // Re-render textured paper
