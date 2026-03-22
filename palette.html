@@ -325,6 +325,7 @@ const state = {
   lastPoint: null,
   waterJarTint: [180, 210, 240],
   waterJarDirty: 0,
+  wellStrokeDabs: 0, // count dabs in current well stroke
 };
 
 // ── Wells ──
@@ -1035,6 +1036,7 @@ function setupPointer(canvas, type, index) {
     canvas.setPointerCapture(e.pointerId);
     state.isDrawing = true;
     state.activeTarget = { type, index };
+    state.wellStrokeDabs = 0;
     const pos = getPos(e, canvas);
     state.lastPoint = pos;
     dab(type, index, pos);
@@ -1085,6 +1087,7 @@ function strokeTo(type, index, p1, p2) {
 
 function dab(type, index, pos) {
   if (type !== 'well') return; // Canvas handled by WebGL pointer events
+  state.wellStrokeDabs++;
   const p = pos.pressure;
   const sizeMul = 0.4 + p * 1.1;
   const radius = state.brushBaseSize * sizeMul * 0.5;
@@ -1125,13 +1128,10 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
       const ea = well.alphaBuffer[idx];
       const li = idx * LATENT_SIZE;
 
-      // Check if pixel already has paint (non-white)
-      const sl0 = [];
-      for (let k = 0; k < LATENT_SIZE; k++) sl0.push(well.latentBuffer[li + k]);
-      const cur = mixbox.latentToRgb(sl0);
-      const isWhite = cur[0] > 240 && cur[1] > 240 && cur[2] > 240;
-      // Full opacity on clean well, gradual mixing on painted areas
-      const mixDa = isWhite ? da : da * 0.15;
+      // First ~20 dabs of a stroke: full deposit (loaded brush)
+      // After that: gradual mixing (paint running out)
+      const strokeFade = Math.min(state.wellStrokeDabs / 20, 1);
+      const mixDa = da * (1.0 - strokeFade * 0.85);
       const k1 = 1 - mixDa;
       for (let k = 0; k < LATENT_SIZE; k++)
         well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * mixDa;
