@@ -274,7 +274,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v5.1</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v6</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -845,6 +845,7 @@ class FluidSim {
     dbg('Paper OK');
 
     this.lastTime = 0;
+    this.frameCount = 0;
     this._tick = this._tick.bind(this);
     requestAnimationFrame(this._tick);
   }
@@ -881,7 +882,9 @@ class FluidSim {
     g.attachShader(p, this._compileShader(VERT_SRC, g.VERTEX_SHADER));
     g.attachShader(p, this._compileShader(fragSrc, g.FRAGMENT_SHADER));
     g.linkProgram(p);
-    if (!g.getShaderParameter) return p;
+    if (!g.getProgramParameter(p, g.LINK_STATUS)) {
+      dbg('LINK ERR:'+g.getProgramInfoLog(p));
+    }
     // Cache uniform locations
     const uniforms = {};
     const n = g.getProgramParameter(p, g.ACTIVE_UNIFORMS);
@@ -1048,9 +1051,9 @@ class FluidSim {
     g.uniform2f(sp.uniforms.uPoint, x, y);
     // Convert RGB to absorption (1-rgb, normalized)
     g.uniform3f(sp.uniforms.uColor,
-      (1 - color[0]/255) * 1.5,
-      (1 - color[1]/255) * 1.5,
-      (1 - color[2]/255) * 1.5);
+      (1 - color[0]/255) * 0.9,
+      (1 - color[1]/255) * 0.9,
+      (1 - color[2]/255) * 0.9);
     g.uniform1f(sp.uniforms.uRadius, radius);
     g.uniform1f(sp.uniforms.uAspect, this.aspect);
     g.uniform1f(sp.uniforms.uWaterContent, waterContent);
@@ -1191,6 +1194,12 @@ class FluidSim {
     this.lastTime = now;
     this.step(dt);
     this.render();
+    this.frameCount++;
+    if (this.frameCount === 1) {
+      const err = this.gl.getError();
+      if (err) dbg('GL ERR:'+err);
+      else dbg('Frame1 OK');
+    }
   }
 }
 
@@ -1412,10 +1421,15 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
       const ea = well.alphaBuffer[idx];
       const li = idx * LATENT_SIZE;
 
-      // First ~60 dabs of a stroke: full deposit (loaded brush)
-      // After that: gradual mixing (paint running out)
-      const strokeFade = Math.min(state.wellStrokeDabs / 60, 1);
-      const mixDa = da * (1.0 - strokeFade * 0.7);
+      // Check if this area of the well is empty (white)
+      const isEmptyArea = ea < 0.05 || (
+        well.latentBuffer[li] > 0.9 && well.latentBuffer[li+1] > 0.9
+      );
+      // If well area is empty, deposit paint at full strength for much longer
+      const fadeThreshold = isEmptyArea ? 150 : 60;
+      const fadeStrength = isEmptyArea ? 0.4 : 0.7;
+      const strokeFade = Math.min(state.wellStrokeDabs / fadeThreshold, 1);
+      const mixDa = da * (1.0 - strokeFade * fadeStrength);
       const k1 = 1 - mixDa;
       for (let k = 0; k < LATENT_SIZE; k++)
         well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * mixDa;
@@ -1541,6 +1555,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v5.1</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v6</div>
 </body>
 </html>
