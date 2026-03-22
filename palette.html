@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v10</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v11</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -789,9 +789,9 @@ class FluidSim {
     const halfFloatExt = g.getExtension('OES_texture_half_float');
     this.hasFloat = !!floatExt;
     this.halfFloatType = halfFloatExt ? halfFloatExt.HALF_FLOAT_OES : null;
-    g.getExtension('OES_texture_float_linear');
-    g.getExtension('OES_texture_half_float_linear');
-    dbg('Float:'+this.hasFloat+' Half:'+ !!this.halfFloatType);
+    this.hasFloatLinear = !!g.getExtension('OES_texture_float_linear');
+    this.hasHalfFloatLinear = !!g.getExtension('OES_texture_half_float_linear');
+    dbg('Float:'+this.hasFloat+' Half:'+ !!this.halfFloatType+' FloatLinear:'+this.hasFloatLinear);
 
     this.resize();
     dbg('Size:'+this.w+'x'+this.h);
@@ -803,17 +803,8 @@ class FluidSim {
     this._generatePaper();
     dbg('Paper OK');
 
-    // DEBUG: fill dye with test color to verify display shader
-    g.bindFramebuffer(g.FRAMEBUFFER, this.dye.read.fbo);
-    g.clearColor(0.3, 0.1, 0.0, 1.0); // orange-ish absorption
-    g.clear(g.COLOR_BUFFER_BIT);
-    g.bindFramebuffer(g.FRAMEBUFFER, null);
-    this._skipSteps = 60; // skip sim for 1 second so test color stays
-    dbg('TestDye set');
-
     this.lastTime = 0;
     this.frameCount = 0;
-    this._skipSteps = 0;
     this._tick = this._tick.bind(this);
     requestAnimationFrame(this._tick);
   }
@@ -888,10 +879,15 @@ class FluidSim {
   _createFBO(w, h) {
     const g = this.gl;
     const type = this.hasFloat ? g.FLOAT : (this.halfFloatType || g.UNSIGNED_BYTE);
+    // Use NEAREST if float linear filtering not supported (crucial for mobile!)
+    const canLinear = (type === g.FLOAT && this.hasFloatLinear) ||
+                      (type !== g.FLOAT && type !== g.UNSIGNED_BYTE && this.hasHalfFloatLinear) ||
+                      (type === g.UNSIGNED_BYTE);
+    const filter = canLinear ? g.LINEAR : g.NEAREST;
     const tex = g.createTexture();
     g.bindTexture(g.TEXTURE_2D, tex);
-    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
-    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, filter);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, filter);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
     g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, type, null);
@@ -1028,9 +1024,6 @@ class FluidSim {
     this._draw(sp, this.dye.write);
     this.dye.swap();
 
-    // Skip sim steps right after splat to let dye persist for rendering
-    this._skipSteps = 3;
-
     // Splat wetness (scaled by water content, simple additive)
     const wsp = this.splatSimpleProg;
     g.useProgram(wsp.program);
@@ -1163,11 +1156,7 @@ class FluidSim {
     requestAnimationFrame(this._tick);
     const dt = this.lastTime ? (now - this.lastTime) / 1000 : 0.016;
     this.lastTime = now;
-    if (this._skipSteps > 0) {
-      this._skipSteps--;
-    } else {
-      this.step(dt);
-    }
+    this.step(dt);
     this.render();
     this.frameCount++;
     if (this.frameCount === 1) {
@@ -1208,7 +1197,6 @@ function setupDrawingCanvas() {
   let lastSplatPos = null;
 
   drawCanvas.addEventListener('pointerdown', (e) => {
-    dbg('PDOWN brush:'+!!state.brushColor+' sim:'+!!fluidSim);
     if (!state.brushColor) return;
     e.preventDefault();
     drawCanvas.setPointerCapture(e.pointerId);
@@ -1281,18 +1269,6 @@ function setupDrawingCanvas() {
     const strokeFade = Math.max(0.15, 1.0 - canvasStrokeDabs / 80);
     const waterContent = Math.min(1.0, strokeFade * (0.3 + p * 0.7));
     fluidSim.splat(pos.x, pos.y, dx, dy, state.brushColor, radius, waterContent);
-    // Debug: read back dye pixel after first splat
-    if (splatCount++ < 2) {
-      dbg('Splat r:'+radius.toFixed(4)+' wc:'+waterContent.toFixed(2));
-      const g = fluidSim.gl;
-      const px = Math.floor(pos.x * fluidSim.w);
-      const py = Math.floor(pos.y * fluidSim.h);
-      const pix = new Float32Array(4);
-      g.bindFramebuffer(g.FRAMEBUFFER, fluidSim.dye.read.fbo);
-      g.readPixels(px, py, 1, 1, g.RGBA, g.FLOAT, pix);
-      g.bindFramebuffer(g.FRAMEBUFFER, null);
-      dbg('Dye@splat:'+pix[0].toFixed(3)+','+pix[1].toFixed(3)+','+pix[2].toFixed(3));
-    }
   }
 
   requestAnimationFrame(initDraw);
@@ -1544,6 +1520,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v10</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v11</div>
 </body>
 </html>
