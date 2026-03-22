@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v13</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v14</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -293,6 +293,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
     <div id="palette-controls">
       <button class="ctrl-btn" id="clean-palette">Clean Wells</button>
       <button class="ctrl-btn" id="clear-canvas-btn">Clear Canvas</button>
+      <button class="ctrl-btn" id="export-log-btn">Log</button>
     </div>
   </div>
   <div id="canvas-panel">
@@ -893,12 +894,24 @@ class FluidSim {
 
   _createFBO(w, h) {
     const g = this.gl;
-    const type = this.hasFloat ? g.FLOAT : (this.halfFloatType || g.UNSIGNED_BYTE);
-    // Use NEAREST if float linear filtering not supported (crucial for mobile!)
+    // Prefer half-float with LINEAR over float with NEAREST
+    let type;
+    if (this.hasFloat && this.hasFloatLinear) {
+      type = g.FLOAT;
+    } else if (this.halfFloatType && this.hasHalfFloatLinear) {
+      type = this.halfFloatType;
+    } else if (this.hasFloat) {
+      type = g.FLOAT;
+    } else if (this.halfFloatType) {
+      type = this.halfFloatType;
+    } else {
+      type = g.UNSIGNED_BYTE;
+    }
     const canLinear = (type === g.FLOAT && this.hasFloatLinear) ||
-                      (type !== g.FLOAT && type !== g.UNSIGNED_BYTE && this.hasHalfFloatLinear) ||
+                      (type === this.halfFloatType && this.hasHalfFloatLinear) ||
                       (type === g.UNSIGNED_BYTE);
     const filter = canLinear ? g.LINEAR : g.NEAREST;
+    if (!this._loggedFBO) { dbg('FBO type:'+(type===g.FLOAT?'F32':type===this.halfFloatType?'F16':'U8')+' filter:'+(canLinear?'LIN':'NEAR')); this._loggedFBO=true; }
     const tex = g.createTexture();
     g.bindTexture(g.TEXTURE_2D, tex);
     g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, filter);
@@ -1028,11 +1041,11 @@ class FluidSim {
     this._bindTex(sp, 'uPaper', this.paperTex, 1);
     this._bindTex(sp, 'uWetness', this.wetness.read.tex, 2);
     g.uniform2f(sp.uniforms.uPoint, x, y);
-    // Convert RGB to absorption — lighter for watercolor transparency
+    // Convert RGB to absorption — light for watercolor washes
     g.uniform3f(sp.uniforms.uColor,
-      (1 - color[0]/255) * 0.5,
-      (1 - color[1]/255) * 0.5,
-      (1 - color[2]/255) * 0.5);
+      (1 - color[0]/255) * 0.3,
+      (1 - color[1]/255) * 0.3,
+      (1 - color[2]/255) * 0.3);
     g.uniform1f(sp.uniforms.uRadius, radius);
     g.uniform1f(sp.uniforms.uAspect, this.aspect);
     g.uniform1f(sp.uniforms.uWaterContent, waterContent);
@@ -1510,6 +1523,15 @@ function setupControls() {
   document.getElementById('clear-canvas-btn').addEventListener('click', () => {
     if (fluidSim) fluidSim.clear();
   });
+  document.getElementById('export-log-btn').addEventListener('click', () => {
+    const text = _dbg.textContent;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'palette-log.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 }
 
 // ════════════════════════════════════════════
@@ -1532,6 +1554,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v13</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v14</div>
 </body>
 </html>
