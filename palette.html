@@ -178,9 +178,9 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 .size-dot {
   border-radius: 50%;
@@ -233,11 +233,11 @@ html, body {
   #brush-preview { width: 28px; height: 28px; }
   #wells-grid {
     grid-template-columns: 1fr 1fr;
-    flex: 0 0 55px;
+    flex: 0 0 65px;
   }
   .well-container:nth-child(n+3) { display: none; }
   #water-jar { font-size: 10px; flex: 0 0 55px; }
-  #brush-size-container { gap: 4px; flex: 0 0 20px; }
+  #brush-size-container { gap: 2px; flex: 0 0 30px; justify-content: center; }
   #palette-controls { gap: 4px; flex: 0 0 auto; }
   .ctrl-btn { padding: 4px 3px; font-size: 9px; }
 }
@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v9</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v10</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -802,6 +802,14 @@ class FluidSim {
     dbg('FBOs OK');
     this._generatePaper();
     dbg('Paper OK');
+
+    // DEBUG: fill dye with test color to verify display shader
+    g.bindFramebuffer(g.FRAMEBUFFER, this.dye.read.fbo);
+    g.clearColor(0.3, 0.1, 0.0, 1.0); // orange-ish absorption
+    g.clear(g.COLOR_BUFFER_BIT);
+    g.bindFramebuffer(g.FRAMEBUFFER, null);
+    this._skipSteps = 60; // skip sim for 1 second so test color stays
+    dbg('TestDye set');
 
     this.lastTime = 0;
     this.frameCount = 0;
@@ -1398,19 +1406,20 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
       const ea = well.alphaBuffer[idx];
       const li = idx * LATENT_SIZE;
 
-      // Check if this area of the well is empty (white)
-      const isEmptyArea = ea < 0.05 || (
-        well.latentBuffer[li] > 0.9 && well.latentBuffer[li+1] > 0.9
-      );
-      // If well area is empty, deposit paint at full strength for much longer
-      const fadeThreshold = isEmptyArea ? 150 : 60;
-      const fadeStrength = isEmptyArea ? 0.4 : 0.7;
-      const strokeFade = Math.min(state.wellStrokeDabs / fadeThreshold, 1);
-      const mixDa = da * (1.0 - strokeFade * fadeStrength);
-      const k1 = 1 - mixDa;
-      for (let k = 0; k < LATENT_SIZE; k++)
-        well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * mixDa;
-      well.alphaBuffer[idx] = Math.min(1, ea + da * (1 - ea));
+      // If pixel is unpainted (alpha near 0), deposit brush color directly
+      if (ea < 0.05) {
+        for (let k = 0; k < LATENT_SIZE; k++)
+          well.latentBuffer[li + k] = bl[k];
+        well.alphaBuffer[idx] = da;
+      } else {
+        // Mix with existing paint
+        const strokeFade = Math.min(state.wellStrokeDabs / 60, 1);
+        const mixDa = da * (1.0 - strokeFade * 0.7);
+        const k1 = 1 - mixDa;
+        for (let k = 0; k < LATENT_SIZE; k++)
+          well.latentBuffer[li + k] = well.latentBuffer[li + k] * k1 + bl[k] * mixDa;
+        well.alphaBuffer[idx] = Math.min(1, ea + da * (1 - ea));
+      }
 
       const sl = [];
       for (let k = 0; k < LATENT_SIZE; k++) sl.push(well.latentBuffer[li + k]);
@@ -1489,9 +1498,12 @@ function createBrushSizeDots() {
   sizes.forEach(s => {
     const dot = document.createElement('div');
     dot.className = 'size-dot' + (s === state.brushBaseSize ? ' selected' : '');
-    const displaySize = Math.max(6, Math.round(s * 0.6));
+    const displaySize = Math.max(10, Math.round(s * 0.7));
     dot.style.width = displaySize + 'px';
     dot.style.height = displaySize + 'px';
+    // Pad for touch target (minimum 30px tap area)
+    dot.style.padding = Math.max(0, Math.floor((30 - displaySize) / 2)) + 'px';
+    dot.style.backgroundClip = 'content-box';
     dot.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       state.brushBaseSize = s;
@@ -1532,6 +1544,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v9</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v10</div>
 </body>
 </html>
