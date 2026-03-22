@@ -38,17 +38,23 @@ html, body {
 
 #color-squares {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
   flex-shrink: 0;
 }
 .color-swatch {
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 3px solid transparent;
+  border: 2px solid transparent;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.1s;
   position: relative;
+  overflow: hidden;
+}
+.color-swatch canvas {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  display: block;
 }
 .color-swatch.selected {
   border-color: #fff;
@@ -169,14 +175,22 @@ html, body {
 #brush-size-container {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 4px 0;
+}
+.size-dot {
+  border-radius: 50%;
+  background: #999;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
   flex-shrink: 0;
 }
-#brush-size-container label { color: #888; font-size: 11px; }
-#brush-size {
-  flex: 1;
-  accent-color: #888;
-  height: 20px;
+.size-dot:active { background: #ccc; }
+.size-dot.selected {
+  background: #fff;
+  box-shadow: 0 0 0 2px #666, 0 0 8px rgba(255,255,255,0.3);
 }
 
 /* ── Canvas Panel ── */
@@ -208,13 +222,10 @@ html, body {
   }
   #color-squares {
     grid-template-columns: repeat(6, 1fr);
-    gap: 3px;
+    gap: 2px;
   }
   .color-swatch {
-    aspect-ratio: 1;
-    border-radius: 50%;
     border-width: 2px;
-    max-width: 36px;
   }
   #brush-preview-container { padding: 2px 0; }
   #brush-preview { width: 28px; height: 28px; }
@@ -224,7 +235,7 @@ html, body {
     max-height: 90px;
   }
   #water-jar { height: 36px; font-size: 11px; }
-  #brush-size-container { gap: 4px; }
+  #brush-size-container { gap: 5px; }
   #palette-controls { gap: 4px; }
   .ctrl-btn { padding: 6px 4px; font-size: 10px; }
 }
@@ -270,10 +281,7 @@ html, body {
       <div id="water-jar-fill"></div>
       <span id="water-jar-label">Water Jar &middot; tap: dilute &middot; hold: clean</span>
     </div>
-    <div id="brush-size-container">
-      <label>Size</label>
-      <input type="range" id="brush-size" min="2" max="60" value="14">
-    </div>
+    <div id="brush-size-container"></div>
     <div id="palette-controls">
       <button class="ctrl-btn" id="clean-palette">Clean Wells</button>
       <button class="ctrl-btn" id="clear-canvas-btn">Clear Canvas</button>
@@ -337,13 +345,46 @@ function createColorSquares() {
   PALETTE_COLORS.forEach((c, i) => {
     const el = document.createElement('div');
     el.className = 'color-swatch';
-    el.style.background = `rgb(${c.rgb.join(',')})`;
+    // Create a small canvas for dry paint texture
+    const cv = document.createElement('canvas');
+    const sz = 64;
+    cv.width = sz; cv.height = sz;
+    const ctx = cv.getContext('2d');
+    renderDryPaintTexture(ctx, sz, c.rgb);
+    el.appendChild(cv);
     el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       selectColor(c.rgb, i);
     });
     container.appendChild(el);
   });
+}
+
+function renderDryPaintTexture(ctx, sz, rgb) {
+  const imgData = ctx.createImageData(sz, sz);
+  const px = imgData.data;
+  const cx = sz / 2, cy = sz / 2, maxR = sz / 2;
+  for (let y = 0; y < sz; y++) {
+    for (let x = 0; x < sz; x++) {
+      const dx = x - cx, dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > maxR) continue;
+      const nd = dist / maxR;
+      // Dry paint: thicker in center, granular texture, edge buildup
+      const grain = 0.7 + Math.random() * 0.3;
+      const edge = nd > 0.75 ? 1 + (nd - 0.75) * 2 : 1;
+      const center = 1 - nd * 0.3;
+      const intensity = grain * center * edge;
+      // Darken slightly for depth, lighten for dry crust spots
+      const crust = Math.random() > 0.92 ? 1.15 : 1;
+      const pi = (y * sz + x) * 4;
+      px[pi]     = Math.min(255, Math.round(rgb[0] * intensity * crust));
+      px[pi + 1] = Math.min(255, Math.round(rgb[1] * intensity * crust));
+      px[pi + 2] = Math.min(255, Math.round(rgb[2] * intensity * crust));
+      px[pi + 3] = Math.round(255 * Math.min(1, (1 - nd) * 4) * (0.85 + Math.random() * 0.15));
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
 }
 
 function selectColor(rgb, idx) {
@@ -562,8 +603,8 @@ function dab(type, index, pos) {
   const sizeMul = 0.4 + p * 1.1;
   const radius = state.brushBaseSize * sizeMul * 0.5;
   const opacity = 0.3 + p * 0.7;
-  // On wells, deposit only ~5% paint per dab so mixing is gradual
-  if (type === 'well') dabOnWell(index, pos.x, pos.y, radius, opacity * 0.05);
+  // On wells, deposit ~15% paint per dab so mixing is gradual
+  if (type === 'well') dabOnWell(index, pos.x, pos.y, radius, opacity * 0.15);
   else dabOnCanvas(pos.x, pos.y, radius, opacity);
 }
 
@@ -616,7 +657,10 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
       px[pi + 2] = Math.round(rgb[2]);
       px[pi + 3] = Math.round(well.alphaBuffer[idx] * 255);
 
-      if (nd < 0.3) { pR += rgb[0]; pG += rgb[1]; pB += rgb[2]; pN++; }
+      // Only sample non-white pixels for pickup
+      if (nd < 0.3 && (rgb[0] < 245 || rgb[1] < 245 || rgb[2] < 245)) {
+        pR += rgb[0]; pG += rgb[1]; pB += rgb[2]; pN++;
+      }
     }
   }
   well.ctx.putImageData(imgData, x0, y0);
@@ -785,10 +829,27 @@ function cleanBrush() {
 //  CONTROLS
 // ════════════════════════════════════════════
 
-function setupControls() {
-  document.getElementById('brush-size').addEventListener('input', (e) => {
-    state.brushBaseSize = parseInt(e.target.value);
+function createBrushSizeDots() {
+  const container = document.getElementById('brush-size-container');
+  const sizes = [4, 8, 14, 22, 34, 50];
+  sizes.forEach(s => {
+    const dot = document.createElement('div');
+    dot.className = 'size-dot' + (s === state.brushBaseSize ? ' selected' : '');
+    const displaySize = Math.max(6, Math.round(s * 0.6));
+    dot.style.width = displaySize + 'px';
+    dot.style.height = displaySize + 'px';
+    dot.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      state.brushBaseSize = s;
+      container.querySelectorAll('.size-dot').forEach(d => d.classList.remove('selected'));
+      dot.classList.add('selected');
+    });
+    container.appendChild(dot);
   });
+}
+
+function setupControls() {
+  createBrushSizeDots();
   document.getElementById('clean-palette').addEventListener('click', () => {
     for (let i = 0; i < NUM_WELLS; i++) clearWell(i);
   });
