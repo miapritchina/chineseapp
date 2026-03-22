@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v14.1</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v14.3</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -515,9 +515,11 @@ void main(){
   s*=wetBlend;
 
   vec3 base=texture2D(uTarget,vUv).rgb;
-  // On wet surface, mix with existing color instead of pure additive
-  float mixFactor=existingWet*0.4;
-  vec3 blended=mix(base+uColor*s, mix(base,uColor,s*0.5), mixFactor);
+  // Additive deposit — always adds absorption, never removes it
+  vec3 deposit=uColor*s;
+  // On wet surface, reduce deposit rate slightly for softer blending
+  deposit*=mix(1.0, 0.6, existingWet);
+  vec3 blended=base+deposit;
   // Clamp to prevent overflow artifacts
   gl_FragColor=vec4(clamp(blended, vec3(0.0), vec3(1.0)),1.0);
 }`;
@@ -1554,6 +1556,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v14.1</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v14.3</div>
 </body>
 </html>
