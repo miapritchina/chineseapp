@@ -331,10 +331,9 @@ const state = {
 const wells = [];
 const NUM_WELLS = 6;
 
-// ── Drawing canvas buffers ──
-let drawCanvas, drawCtx;
-let canvasLatent, canvasAlpha, canvasWetness, paperTexture;
-let canvasW, canvasH;
+// ── Drawing canvas (WebGL) ──
+let drawCanvas;
+let gl, fluidSim;
 
 // ════════════════════════════════════════════
 //  COLOR PALETTE
@@ -479,59 +478,547 @@ function clearWell(i) {
 }
 
 // ════════════════════════════════════════════
-//  DRAWING CANVAS
+//  WEBGL FLUID WATERCOLOR ENGINE
 // ════════════════════════════════════════════
+
+// Shader sources
+const VERT_SRC = `attribute vec2 a_pos;varying vec2 vUv;void main(){vUv=a_pos*0.5+0.5;gl_Position=vec4(a_pos,0,1);}`;
+
+const SPLAT_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uTarget;
+uniform vec2 uPoint;
+uniform float uRadius;
+uniform vec3 uColor;
+uniform float uAspect;
+void main(){
+  vec2 p=vUv-uPoint;
+  p.x*=uAspect;
+  float d=dot(p,p);
+  float r2=uRadius*uRadius;
+  // Gaussian splat
+  float s=exp(-d/r2)*1.0;
+  vec3 base=texture2D(uTarget,vUv).rgb;
+  gl_FragColor=vec4(base+uColor*s,1.0);
+}`;
+
+const SPLAT_VEL_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uTarget;
+uniform vec2 uPoint;
+uniform float uRadius;
+uniform vec2 uVel;
+uniform float uAspect;
+void main(){
+  vec2 p=vUv-uPoint;
+  p.x*=uAspect;
+  float d=dot(p,p);
+  float r2=uRadius*uRadius;
+  float s=exp(-d/r2);
+  vec2 base=texture2D(uTarget,vUv).xy;
+  gl_FragColor=vec4(base+uVel*s,0,1);
+}`;
+
+const ADVECT_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uVelocity;
+uniform sampler2D uSource;
+uniform vec2 uTexelSize;
+uniform float uDt;
+uniform float uDissipation;
+void main(){
+  vec2 vel=texture2D(uVelocity,vUv).xy;
+  vec2 coord=vUv-vel*uDt*uTexelSize;
+  gl_FragColor=texture2D(uSource,coord)*uDissipation;
+}`;
+
+const DIVERGENCE_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uVelocity;
+uniform vec2 uTexelSize;
+void main(){
+  float L=texture2D(uVelocity,vUv-vec2(uTexelSize.x,0)).x;
+  float R=texture2D(uVelocity,vUv+vec2(uTexelSize.x,0)).x;
+  float B=texture2D(uVelocity,vUv-vec2(0,uTexelSize.y)).y;
+  float T=texture2D(uVelocity,vUv+vec2(0,uTexelSize.y)).y;
+  gl_FragColor=vec4(0.5*(R-L+T-B),0,0,1);
+}`;
+
+const PRESSURE_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uPressure;
+uniform sampler2D uDivergence;
+uniform vec2 uTexelSize;
+void main(){
+  float L=texture2D(uPressure,vUv-vec2(uTexelSize.x,0)).x;
+  float R=texture2D(uPressure,vUv+vec2(uTexelSize.x,0)).x;
+  float B=texture2D(uPressure,vUv-vec2(0,uTexelSize.y)).x;
+  float T=texture2D(uPressure,vUv+vec2(0,uTexelSize.y)).x;
+  float div=texture2D(uDivergence,vUv).x;
+  gl_FragColor=vec4((L+R+B+T-div)*0.25,0,0,1);
+}`;
+
+const GRADIENT_SUB_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uPressure;
+uniform sampler2D uVelocity;
+uniform vec2 uTexelSize;
+void main(){
+  float L=texture2D(uPressure,vUv-vec2(uTexelSize.x,0)).x;
+  float R=texture2D(uPressure,vUv+vec2(uTexelSize.x,0)).x;
+  float B=texture2D(uPressure,vUv-vec2(0,uTexelSize.y)).x;
+  float T=texture2D(uPressure,vUv+vec2(0,uTexelSize.y)).x;
+  vec2 vel=texture2D(uVelocity,vUv).xy;
+  vel-=vec2(R-L,T-B)*0.5;
+  gl_FragColor=vec4(vel,0,1);
+}`;
+
+// Wetness: .r=wetness, advected + decaying
+const ADVECT_WET_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uVelocity;
+uniform sampler2D uWetness;
+uniform vec2 uTexelSize;
+uniform float uDt;
+uniform float uDryRate;
+void main(){
+  vec2 vel=texture2D(uVelocity,vUv).xy;
+  vec2 coord=vUv-vel*uDt*uTexelSize;
+  float w=texture2D(uWetness,coord).r;
+  w=max(0.0,w-uDryRate*uDt);
+  gl_FragColor=vec4(w,0,0,1);
+}`;
+
+const DISPLAY_FRAG = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uDye;
+uniform sampler2D uPaper;
+uniform sampler2D uWetness;
+void main(){
+  vec3 dye=texture2D(uDye,vUv).rgb;
+  float paper=texture2D(uPaper,vUv).r;
+  float wet=texture2D(uWetness,vUv).r;
+  // Paper shows through where there's no pigment
+  // Pigment density = length of dye (0=white paper, higher=more pigment)
+  float pigment=length(dye)*0.8;
+  pigment=min(pigment,1.0);
+  // Convert dye to display color (dye is subtractive pigment concentration)
+  // White paper minus absorbed wavelengths
+  vec3 paperColor=vec3(paper);
+  vec3 paintColor=vec3(1.0)-dye; // invert: dye stores absorption
+  paintColor=max(paintColor,vec3(0.0));
+  // Granulation: paper texture modulates pigment in rough areas
+  float grain=1.0-0.15*(1.0-paper)*pigment;
+  vec3 color=mix(paperColor,paintColor*grain,pigment);
+  // Edge darkening approximation: darker where pigment is medium density
+  float edgeDark=1.0-0.08*pigment*(1.0-pigment)*4.0;
+  color*=edgeDark;
+  // Wet sheen
+  float sheen=wet*0.06;
+  color=color+vec3(sheen);
+  gl_FragColor=vec4(color,1.0);
+}`;
+
+class FluidSim {
+  constructor(canvas) {
+    this.canvas = canvas;
+    const g = canvas.getContext('webgl', { alpha: false, premultipliedAlpha: false });
+    if (!g) throw new Error('WebGL not available');
+    this.gl = g;
+    gl = g;
+
+    // Enable float textures
+    const ext = g.getExtension('OES_texture_float');
+    this.hasFloat = !!ext;
+    if (!this.hasFloat) {
+      g.getExtension('OES_texture_half_float');
+    }
+    g.getExtension('OES_texture_float_linear');
+
+    this.resize();
+    this._initShaders();
+    this._initBuffers();
+    this._initTextures();
+    this._generatePaper();
+
+    this.lastTime = 0;
+    this._tick = this._tick.bind(this);
+    requestAnimationFrame(this._tick);
+  }
+
+  resize() {
+    const g = this.gl;
+    const rect = this.canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Use lower resolution for fluid sim (performance)
+    const simScale = 0.5;
+    this.w = Math.floor(rect.width * dpr * simScale);
+    this.h = Math.floor(rect.height * dpr * simScale);
+    this.canvas.width = Math.floor(rect.width * dpr);
+    this.canvas.height = Math.floor(rect.height * dpr);
+    this.aspect = this.w / this.h;
+    this.texelSize = [1.0 / this.w, 1.0 / this.h];
+  }
+
+  _compileShader(src, type) {
+    const g = this.gl;
+    const s = g.createShader(type);
+    g.shaderSource(s, src);
+    g.compileShader(s);
+    if (!g.getShaderParameter(s, g.COMPILE_STATUS))
+      console.error('Shader error:', g.getShaderInfoLog(s));
+    return s;
+  }
+
+  _createProgram(fragSrc) {
+    const g = this.gl;
+    const p = g.createProgram();
+    g.attachShader(p, this._compileShader(VERT_SRC, g.VERTEX_SHADER));
+    g.attachShader(p, this._compileShader(fragSrc, g.FRAGMENT_SHADER));
+    g.linkProgram(p);
+    if (!g.getShaderParameter) return p;
+    // Cache uniform locations
+    const uniforms = {};
+    const n = g.getProgramParameter(p, g.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) {
+      const info = g.getActiveUniform(p, i);
+      uniforms[info.name] = g.getUniformLocation(p, info.name);
+    }
+    return { program: p, uniforms };
+  }
+
+  _initShaders() {
+    this.splatProg = this._createProgram(SPLAT_FRAG);
+    this.splatVelProg = this._createProgram(SPLAT_VEL_FRAG);
+    this.advectProg = this._createProgram(ADVECT_FRAG);
+    this.divergenceProg = this._createProgram(DIVERGENCE_FRAG);
+    this.pressureProg = this._createProgram(PRESSURE_FRAG);
+    this.gradSubProg = this._createProgram(GRADIENT_SUB_FRAG);
+    this.advectWetProg = this._createProgram(ADVECT_WET_FRAG);
+    this.displayProg = this._createProgram(DISPLAY_FRAG);
+  }
+
+  _initBuffers() {
+    const g = this.gl;
+    const buf = g.createBuffer();
+    g.bindBuffer(g.ARRAY_BUFFER, buf);
+    g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), g.STATIC_DRAW);
+    this.quadBuf = buf;
+  }
+
+  _createFBO(w, h) {
+    const g = this.gl;
+    const tex = g.createTexture();
+    g.bindTexture(g.TEXTURE_2D, tex);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+    g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, g.FLOAT, null);
+    const fbo = g.createFramebuffer();
+    g.bindFramebuffer(g.FRAMEBUFFER, fbo);
+    g.framebufferTexture2D(g.FRAMEBUFFER, g.COLOR_ATTACHMENT0, g.TEXTURE_2D, tex, 0);
+    g.bindFramebuffer(g.FRAMEBUFFER, null);
+    return { tex, fbo, w, h };
+  }
+
+  _createDoubleFBO(w, h) {
+    return {
+      read: this._createFBO(w, h),
+      write: this._createFBO(w, h),
+      swap() { const t = this.read; this.read = this.write; this.write = t; }
+    };
+  }
+
+  _initTextures() {
+    const w = this.w, h = this.h;
+    this.velocity = this._createDoubleFBO(w, h);
+    this.dye = this._createDoubleFBO(w, h);
+    this.pressure = this._createDoubleFBO(w, h);
+    this.divergenceFBO = this._createFBO(w, h);
+    this.wetness = this._createDoubleFBO(w, h);
+  }
+
+  _generatePaper() {
+    const g = this.gl;
+    const w = this.w, h = this.h;
+    const data = new Float32Array(w * h * 4);
+    // Generate paper texture: Perlin-like noise
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        // Multi-octave noise for paper grain
+        let v = 0, amp = 1, freq = 1;
+        for (let oct = 0; oct < 4; oct++) {
+          v += amp * (Math.sin(x * freq * 0.1 + Math.sin(y * freq * 0.13)) *
+                      Math.cos(y * freq * 0.12 + Math.cos(x * freq * 0.11)) * 0.5 + 0.5);
+          amp *= 0.5; freq *= 2.1;
+        }
+        v = v / 1.875; // normalize
+        const grain = 0.92 + v * 0.08;
+        data[i] = grain;
+        data[i+1] = grain;
+        data[i+2] = grain;
+        data[i+3] = 1;
+      }
+    }
+    const tex = g.createTexture();
+    g.bindTexture(g.TEXTURE_2D, tex);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+    g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, w, h, 0, g.RGBA, g.FLOAT, data);
+    this.paperTex = tex;
+  }
+
+  _draw(prog, target) {
+    const g = this.gl;
+    g.useProgram(prog.program);
+    if (target) {
+      g.viewport(0, 0, target.w, target.h);
+      g.bindFramebuffer(g.FRAMEBUFFER, target.fbo);
+    } else {
+      g.viewport(0, 0, this.canvas.width, this.canvas.height);
+      g.bindFramebuffer(g.FRAMEBUFFER, null);
+    }
+    g.bindBuffer(g.ARRAY_BUFFER, this.quadBuf);
+    const loc = g.getAttribLocation(prog.program, 'a_pos');
+    g.enableVertexAttribArray(loc);
+    g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+    g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
+  }
+
+  _bindTex(prog, name, tex, unit) {
+    const g = this.gl;
+    g.activeTexture(g.TEXTURE0 + unit);
+    g.bindTexture(g.TEXTURE_2D, tex);
+    g.uniform1i(prog.uniforms[name], unit);
+  }
+
+  splat(x, y, dx, dy, color, radius) {
+    const g = this.gl;
+    // Splat velocity
+    const vp = this.splatVelProg;
+    g.useProgram(vp.program);
+    this._bindTex(vp, 'uTarget', this.velocity.read.tex, 0);
+    g.uniform2f(vp.uniforms.uPoint, x, y);
+    g.uniform2f(vp.uniforms.uVel, dx * 8.0, dy * 8.0);
+    g.uniform1f(vp.uniforms.uRadius, radius);
+    g.uniform1f(vp.uniforms.uAspect, this.aspect);
+    this._draw(vp, this.velocity.write);
+    this.velocity.swap();
+
+    // Splat dye (as absorption values — higher = more pigment)
+    const sp = this.splatProg;
+    g.useProgram(sp.program);
+    this._bindTex(sp, 'uTarget', this.dye.read.tex, 0);
+    g.uniform2f(sp.uniforms.uPoint, x, y);
+    // Convert RGB to absorption (1-rgb, normalized)
+    g.uniform3f(sp.uniforms.uColor,
+      (1 - color[0]/255) * 0.4,
+      (1 - color[1]/255) * 0.4,
+      (1 - color[2]/255) * 0.4);
+    g.uniform1f(sp.uniforms.uRadius, radius);
+    g.uniform1f(sp.uniforms.uAspect, this.aspect);
+    this._draw(sp, this.dye.write);
+    this.dye.swap();
+
+    // Splat wetness
+    const wp = this.splatProg;
+    g.useProgram(wp.program);
+    this._bindTex(wp, 'uTarget', this.wetness.read.tex, 0);
+    g.uniform2f(wp.uniforms.uPoint, x, y);
+    g.uniform3f(wp.uniforms.uColor, 0.5, 0.0, 0.0);
+    g.uniform1f(wp.uniforms.uRadius, radius);
+    g.uniform1f(wp.uniforms.uAspect, this.aspect);
+    this._draw(wp, this.wetness.write);
+    this.wetness.swap();
+  }
+
+  step(dt) {
+    const g = this.gl;
+    dt = Math.min(dt, 0.033);
+
+    // 1. Advect velocity
+    const ap = this.advectProg;
+    g.useProgram(ap.program);
+    this._bindTex(ap, 'uVelocity', this.velocity.read.tex, 0);
+    this._bindTex(ap, 'uSource', this.velocity.read.tex, 1);
+    g.uniform2f(ap.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    g.uniform1f(ap.uniforms.uDt, dt);
+    g.uniform1f(ap.uniforms.uDissipation, 0.98);
+    this._draw(ap, this.velocity.write);
+    this.velocity.swap();
+
+    // 2. Compute divergence
+    const dp = this.divergenceProg;
+    g.useProgram(dp.program);
+    this._bindTex(dp, 'uVelocity', this.velocity.read.tex, 0);
+    g.uniform2f(dp.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    this._draw(dp, this.divergenceFBO);
+
+    // 3. Pressure solve (Jacobi iterations)
+    const pp = this.pressureProg;
+    g.useProgram(pp.program);
+    g.uniform2f(pp.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    for (let i = 0; i < 20; i++) {
+      this._bindTex(pp, 'uPressure', this.pressure.read.tex, 0);
+      this._bindTex(pp, 'uDivergence', this.divergenceFBO.tex, 1);
+      this._draw(pp, this.pressure.write);
+      this.pressure.swap();
+    }
+
+    // 4. Gradient subtraction
+    const gp = this.gradSubProg;
+    g.useProgram(gp.program);
+    this._bindTex(gp, 'uPressure', this.pressure.read.tex, 0);
+    this._bindTex(gp, 'uVelocity', this.velocity.read.tex, 1);
+    g.uniform2f(gp.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    this._draw(gp, this.velocity.write);
+    this.velocity.swap();
+
+    // 5. Advect dye
+    g.useProgram(ap.program);
+    this._bindTex(ap, 'uVelocity', this.velocity.read.tex, 0);
+    this._bindTex(ap, 'uSource', this.dye.read.tex, 1);
+    g.uniform2f(ap.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    g.uniform1f(ap.uniforms.uDt, dt);
+    g.uniform1f(ap.uniforms.uDissipation, 0.999); // dye barely dissipates
+    this._draw(ap, this.dye.write);
+    this.dye.swap();
+
+    // 6. Advect + dry wetness
+    const wp = this.advectWetProg;
+    g.useProgram(wp.program);
+    this._bindTex(wp, 'uVelocity', this.velocity.read.tex, 0);
+    this._bindTex(wp, 'uWetness', this.wetness.read.tex, 1);
+    g.uniform2f(wp.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
+    g.uniform1f(wp.uniforms.uDt, dt);
+    g.uniform1f(wp.uniforms.uDryRate, 0.15);
+    this._draw(wp, this.wetness.write);
+    this.wetness.swap();
+  }
+
+  render() {
+    const g = this.gl;
+    const rp = this.displayProg;
+    g.useProgram(rp.program);
+    this._bindTex(rp, 'uDye', this.dye.read.tex, 0);
+    this._bindTex(rp, 'uPaper', this.paperTex, 1);
+    this._bindTex(rp, 'uWetness', this.wetness.read.tex, 2);
+    this._draw(rp, null);
+  }
+
+  clear() {
+    const g = this.gl;
+    const clearFBO = (dfbo) => {
+      g.bindFramebuffer(g.FRAMEBUFFER, dfbo.read.fbo);
+      g.clearColor(0,0,0,0);
+      g.clear(g.COLOR_BUFFER_BIT);
+      g.bindFramebuffer(g.FRAMEBUFFER, dfbo.write.fbo);
+      g.clear(g.COLOR_BUFFER_BIT);
+    };
+    clearFBO(this.velocity);
+    clearFBO(this.dye);
+    clearFBO(this.pressure);
+    clearFBO(this.wetness);
+    g.bindFramebuffer(g.FRAMEBUFFER, this.divergenceFBO.fbo);
+    g.clear(g.COLOR_BUFFER_BIT);
+    g.bindFramebuffer(g.FRAMEBUFFER, null);
+  }
+
+  _tick(now) {
+    requestAnimationFrame(this._tick);
+    const dt = this.lastTime ? (now - this.lastTime) / 1000 : 0.016;
+    this.lastTime = now;
+    this.step(dt);
+    this.render();
+  }
+}
 
 function setupDrawingCanvas() {
   drawCanvas = document.getElementById('drawing-canvas');
-  setupPointer(drawCanvas, 'canvas', 0);
 
   function initDraw() {
     const rect = drawCanvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    canvasW = Math.floor(rect.width * DPR);
-    canvasH = Math.floor(rect.height * DPR);
-    drawCanvas.width = canvasW;
-    drawCanvas.height = canvasH;
-    drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
-    drawCtx.scale(DPR, DPR);
-    canvasLatent = new Float64Array(canvasW * canvasH * LATENT_SIZE);
-    canvasAlpha = new Float32Array(canvasW * canvasH);
-    canvasWetness = new Float32Array(canvasW * canvasH);
-    const wl = mixbox.rgbToLatent([255, 255, 255]);
-    for (let i = 0; i < canvasW * canvasH; i++) {
-      for (let j = 0; j < LATENT_SIZE; j++)
-        canvasLatent[i * LATENT_SIZE + j] = wl[j];
-      canvasAlpha[i] = 1;
+    if (fluidSim) return; // Already initialized
+    try {
+      fluidSim = new FluidSim(drawCanvas);
+    } catch (e) {
+      console.error('WebGL init failed:', e);
     }
-
-    // Generate subtle paper texture (very slight grain, 0.97-1.0)
-    paperTexture = new Float32Array(canvasW * canvasH);
-    for (let i = 0; i < paperTexture.length; i++)
-      paperTexture[i] = 0.97 + Math.random() * 0.03;
-    // Smooth for natural feel
-    for (let y = 1; y < canvasH - 1; y++) {
-      for (let x = 1; x < canvasW - 1; x++) {
-        const idx = y * canvasW + x;
-        paperTexture[idx] = (paperTexture[idx] * 2 +
-          paperTexture[idx - 1] + paperTexture[idx + 1] +
-          paperTexture[idx - canvasW] + paperTexture[idx + canvasW]) / 6;
-      }
-    }
-
-    // Render textured white paper
-    drawCtx.fillStyle = '#fff';
-    drawCtx.fillRect(0, 0, rect.width, rect.height);
-    const imgData = drawCtx.getImageData(0, 0, canvasW, canvasH);
-    const px = imgData.data;
-    for (let i = 0; i < canvasW * canvasH; i++) {
-      const v = Math.round(255 * paperTexture[i]);
-      px[i * 4] = v; px[i * 4 + 1] = v; px[i * 4 + 2] = v;
-    }
-    drawCtx.putImageData(imgData, 0, 0);
   }
+
+  // Canvas pointer handling
+  for (const evt of ['touchstart', 'touchmove', 'touchend']) {
+    drawCanvas.addEventListener(evt, e => e.preventDefault(), { passive: false });
+  }
+
+  let lastSplatPos = null;
+
+  drawCanvas.addEventListener('pointerdown', (e) => {
+    if (!state.brushColor) return;
+    e.preventDefault();
+    drawCanvas.setPointerCapture(e.pointerId);
+    state.isDrawing = true;
+    state.activeTarget = { type: 'canvas', index: 0 };
+    const pos = getCanvasPos(e);
+    lastSplatPos = pos;
+    doSplat(pos, null);
+  });
+
+  drawCanvas.addEventListener('pointermove', (e) => {
+    if (!state.isDrawing || !state.activeTarget || state.activeTarget.type !== 'canvas') return;
+    e.preventDefault();
+    const pos = getCanvasPos(e);
+    doSplat(pos, lastSplatPos);
+    lastSplatPos = pos;
+  });
+
+  const endCanvas = () => {
+    if (state.activeTarget && state.activeTarget.type === 'canvas') {
+      state.isDrawing = false;
+      state.activeTarget = null;
+      lastSplatPos = null;
+    }
+  };
+  drawCanvas.addEventListener('pointerup', endCanvas);
+  drawCanvas.addEventListener('pointercancel', endCanvas);
+
+  function getCanvasPos(e) {
+    const rect = drawCanvas.getBoundingClientRect();
+    let pressure = 0.5;
+    if (e.pressure > 0 && e.pressure < 1) pressure = e.pressure;
+    return {
+      x: (e.clientX - rect.left) / rect.width,
+      y: 1.0 - (e.clientY - rect.top) / rect.height, // flip Y for GL
+      pressure
+    };
+  }
+
+  function doSplat(pos, prev) {
+    if (!fluidSim || !state.brushColor) return;
+    const p = pos.pressure;
+    const radius = (state.brushBaseSize / 800) * (0.4 + p * 1.1);
+    let dx = 0, dy = 0;
+    if (prev) {
+      dx = pos.x - prev.x;
+      dy = pos.y - prev.y;
+    }
+    fluidSim.splat(pos.x, pos.y, dx, dy, state.brushColor, radius);
+  }
+
   requestAnimationFrame(initDraw);
-  new ResizeObserver(initDraw).observe(drawCanvas.parentElement);
 }
 
 // ════════════════════════════════════════════
@@ -599,13 +1086,12 @@ function strokeTo(type, index, p1, p2) {
 }
 
 function dab(type, index, pos) {
+  if (type !== 'well') return; // Canvas handled by WebGL pointer events
   const p = pos.pressure;
   const sizeMul = 0.4 + p * 1.1;
   const radius = state.brushBaseSize * sizeMul * 0.5;
   const opacity = 0.3 + p * 0.7;
-  // On wells, deposit ~15% paint per dab so mixing is gradual
-  if (type === 'well') dabOnWell(index, pos.x, pos.y, radius, opacity * 0.15);
-  else dabOnCanvas(pos.x, pos.y, radius, opacity);
+  dabOnWell(index, pos.x, pos.y, radius, opacity * 0.15);
 }
 
 // ════════════════════════════════════════════
@@ -667,118 +1153,7 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
   if (pN > 0) updateBrushFromRgb([Math.round(pR/pN), Math.round(pG/pN), Math.round(pB/pN)]);
 }
 
-// ════════════════════════════════════════════
-//  DAB ON CANVAS  — wet-on-wet blending
-// ════════════════════════════════════════════
-
-function dabOnCanvas(cx, cy, radius, opacity) {
-  if (!drawCtx || !canvasLatent) return;
-  const bl = state.brushLatent;
-  const r = radius;
-  const x0 = Math.max(0, Math.floor((cx - r) * DPR));
-  const y0 = Math.max(0, Math.floor((cy - r) * DPR));
-  const x1 = Math.min(canvasW - 1, Math.ceil((cx + r) * DPR));
-  const y1 = Math.min(canvasH - 1, Math.ceil((cy + r) * DPR));
-  const imgW = x1 - x0 + 1, imgH = y1 - y0 + 1;
-  if (imgW <= 0 || imgH <= 0) return;
-
-  const imgData = drawCtx.getImageData(x0, y0, imgW, imgH);
-  const px = imgData.data;
-
-  for (let py = y0; py <= y1; py++) {
-    for (let ppx = x0; ppx <= x1; ppx++) {
-      const dx = ppx / DPR - cx, dy = py / DPR - cy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > r) continue;
-      const nd = dist / r;
-      const ef = 0.5 + 0.5 * nd * nd;
-      const da = opacity * ef * (1 - nd * nd * 0.3);
-
-      const idx = py * canvasW + ppx;
-      const wet = canvasWetness[idx];
-      const li = idx * LATENT_SIZE;
-
-      // Blend amount depends on wetness
-      const ba = wet > 0.1 ? da * (0.4 + 0.6 * wet) : da;
-      const k1 = 1 - ba;
-      for (let k = 0; k < LATENT_SIZE; k++)
-        canvasLatent[li + k] = canvasLatent[li + k] * k1 + bl[k] * ba;
-
-      canvasWetness[idx] = Math.min(1, wet + da * 0.8);
-
-      const sl = [];
-      for (let k = 0; k < LATENT_SIZE; k++) sl.push(canvasLatent[li + k]);
-      const rgb = mixbox.latentToRgb(sl);
-
-      // Subtle paper texture grain
-      const texVal = paperTexture ? paperTexture[idx] : 1;
-      const pi = ((py - y0) * imgW + (ppx - x0)) * 4;
-      px[pi]     = Math.round(rgb[0] * texVal);
-      px[pi + 1] = Math.round(rgb[1] * texVal);
-      px[pi + 2] = Math.round(rgb[2] * texVal);
-      px[pi + 3] = 255;
-    }
-  }
-  drawCtx.putImageData(imgData, x0, y0);
-}
-
-// ════════════════════════════════════════════
-//  WETNESS DECAY & BLEEDING
-// ════════════════════════════════════════════
-
-function startWetnessLoop() {
-  let lastT = 0;
-  function tick(now) {
-    requestAnimationFrame(tick);
-    if (!canvasWetness || !canvasLatent || !drawCtx) return;
-    const dt = lastT ? (now - lastT) / 1000 : 0.016;
-    lastT = now;
-
-    let hasWet = false;
-    for (let i = 0; i < canvasWetness.length; i++) {
-      if (canvasWetness[i] > 0.01) {
-        hasWet = true;
-        canvasWetness[i] = Math.max(0, canvasWetness[i] - 0.12 * dt);
-      }
-    }
-
-    // Subtle bleeding while not drawing
-    if (hasWet && !state.isDrawing) {
-      const w = canvasW, h = canvasH, step = 3;
-      let redraw = false;
-      const imgData = drawCtx.getImageData(0, 0, w, h);
-      const px = imgData.data;
-
-      for (let y = step; y < h - step; y += step) {
-        for (let x = step; x < w - step; x += step) {
-          const idx = y * w + x;
-          if (canvasWetness[idx] < 0.15) continue;
-          redraw = true;
-          const li = idx * LATENT_SIZE;
-          const nb = [idx - 1, idx + 1, idx - w, idx + w];
-          for (const ni of nb) {
-            if (ni < 0 || ni >= canvasWetness.length) continue;
-            const nli = ni * LATENT_SIZE;
-            const b = 0.012 * canvasWetness[idx];
-            for (let k = 0; k < LATENT_SIZE; k++)
-              canvasLatent[nli + k] += (canvasLatent[li + k] - canvasLatent[nli + k]) * b;
-            canvasWetness[ni] = Math.max(canvasWetness[ni], canvasWetness[idx] * 0.3);
-            const sl = [];
-            for (let k = 0; k < LATENT_SIZE; k++) sl.push(canvasLatent[nli + k]);
-            const rgb = mixbox.latentToRgb(sl);
-            const texVal = paperTexture ? paperTexture[ni] : 1;
-            const pi = ni * 4;
-            px[pi]     = Math.round(rgb[0] * texVal);
-            px[pi + 1] = Math.round(rgb[1] * texVal);
-            px[pi + 2] = Math.round(rgb[2] * texVal);
-          }
-        }
-      }
-      if (redraw) drawCtx.putImageData(imgData, 0, 0);
-    }
-  }
-  requestAnimationFrame(tick);
-}
+// (Canvas painting + fluid sim handled by FluidSim WebGL class above)
 
 // ════════════════════════════════════════════
 //  WATER JAR
@@ -854,23 +1229,7 @@ function setupControls() {
     for (let i = 0; i < NUM_WELLS; i++) clearWell(i);
   });
   document.getElementById('clear-canvas-btn').addEventListener('click', () => {
-    if (!drawCtx) return;
-    const rect = drawCanvas.getBoundingClientRect();
-    const wl = mixbox.rgbToLatent([255, 255, 255]);
-    for (let i = 0; i < canvasW * canvasH; i++) {
-      for (let j = 0; j < LATENT_SIZE; j++)
-        canvasLatent[i * LATENT_SIZE + j] = wl[j];
-      canvasAlpha[i] = 1;
-      canvasWetness[i] = 0;
-    }
-    // Re-render textured paper
-    const imgData = drawCtx.getImageData(0, 0, canvasW, canvasH);
-    const px = imgData.data;
-    for (let i = 0; i < canvasW * canvasH; i++) {
-      const v = Math.round(255 * (paperTexture ? paperTexture[i] : 1));
-      px[i*4] = v; px[i*4+1] = v; px[i*4+2] = v; px[i*4+3] = 255;
-    }
-    drawCtx.putImageData(imgData, 0, 0);
+    if (fluidSim) fluidSim.clear();
   });
 }
 
@@ -884,7 +1243,6 @@ function init() {
   setupDrawingCanvas();
   setupWaterJar();
   setupControls();
-  startWetnessLoop();
   selectColor(PALETTE_COLORS[0].rgb, 0);
 }
 
