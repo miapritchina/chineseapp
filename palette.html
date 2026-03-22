@@ -274,7 +274,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v5</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v5.1</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -1375,7 +1375,7 @@ function dab(type, index, pos) {
   const p = pos.pressure;
   const sizeMul = 0.4 + p * 1.1;
   const radius = state.brushBaseSize * sizeMul * 0.5;
-  const opacity = 0.7 + p * 0.3;
+  const opacity = 1.0;
   dabOnWell(index, pos.x, pos.y, radius, opacity);
 }
 
@@ -1541,6 +1541,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v5</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v5.1</div>
 </body>
 </html>
