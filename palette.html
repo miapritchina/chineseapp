@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v14.3</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v15</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -293,7 +293,8 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
     <div id="palette-controls">
       <button class="ctrl-btn" id="clean-palette">Clean Wells</button>
       <button class="ctrl-btn" id="clear-canvas-btn">Clear Canvas</button>
-      <button class="ctrl-btn" id="export-log-btn">Log</button>
+      <button class="ctrl-btn" id="export-log-btn">Save Strokes</button>
+      <button class="ctrl-btn" id="load-log-btn">Load &amp; Replay</button>
     </div>
   </div>
   <div id="canvas-panel">
@@ -323,6 +324,16 @@ const PALETTE_COLORS = [
 
 const WHITE_LATENT = mixbox.rgbToLatent([245, 243, 238]);
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+// ── Replay mode detection ──
+const REPLAY_MODE = new URLSearchParams(location.search).has('replay');
+
+// ── Stroke recording ──
+const strokeLog = [];
+let recordingEnabled = true;
+function logEvent(evt) {
+  if (recordingEnabled) strokeLog.push(evt);
+}
 
 // ── State ──
 const state = {
@@ -1233,6 +1244,7 @@ function setupDrawingCanvas() {
     state.isDrawing = true;
     state.activeTarget = { type: 'canvas', index: 0 };
     canvasStrokeDabs = 0; // reset water content for new stroke
+    logEvent({t:'strokeStart', c:[...state.brushColor], size:state.brushBaseSize});
     const pos = getCanvasPos(e);
     lastSplatPos = pos;
     doSplat(pos, null);
@@ -1267,6 +1279,7 @@ function setupDrawingCanvas() {
       state.isDrawing = false;
       state.activeTarget = null;
       lastSplatPos = null;
+      logEvent({t:'strokeEnd'});
     }
   };
   drawCanvas.addEventListener('pointerup', endCanvas);
@@ -1299,6 +1312,7 @@ function setupDrawingCanvas() {
     const strokeFade = Math.max(0.15, 1.0 - canvasStrokeDabs / 80);
     const waterContent = Math.min(1.0, strokeFade * (0.3 + p * 0.7));
     fluidSim.splat(pos.x, pos.y, dx, dy, state.brushColor, radius, waterContent);
+    logEvent({t:'splat', x:pos.x, y:pos.y, dx, dy, c:[...state.brushColor], r:radius, w:waterContent});
   }
 
   requestAnimationFrame(initDraw);
@@ -1526,14 +1540,121 @@ function setupControls() {
     if (fluidSim) fluidSim.clear();
   });
   document.getElementById('export-log-btn').addEventListener('click', () => {
-    const text = _dbg.textContent;
-    const blob = new Blob([text], { type: 'text/plain' });
+    if (strokeLog.length === 0) {
+      alert('No strokes recorded yet. Paint something first!');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(strokeLog)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'palette-log.txt';
+    a.download = 'strokes.json';
     a.click();
     URL.revokeObjectURL(a.href);
+    dbg('Exported ' + strokeLog.length + ' events');
   });
+
+  document.getElementById('load-log-btn').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      file.text().then(text => {
+        const events = JSON.parse(text);
+        dbg('Loaded ' + events.length + ' events, replaying...');
+        replayStrokes(events);
+      });
+    };
+    input.click();
+  });
+}
+
+// ════════════════════════════════════════════
+//  STROKE REPLAY
+// ════════════════════════════════════════════
+
+function replayStrokes(events) {
+  if (!fluidSim) { dbg('No FluidSim — cannot replay'); return; }
+  recordingEnabled = false; // don't re-record during replay
+  fluidSim.clear();
+
+  // Group events into batches separated by strokeEnd markers
+  // Replay splats with small delays to let simulation process between strokes
+  let i = 0;
+  const SPLATS_PER_FRAME = 8; // process N splats per animation frame
+
+  function replayBatch() {
+    let count = 0;
+    while (i < events.length && count < SPLATS_PER_FRAME) {
+      const ev = events[i++];
+      if (ev.t === 'splat') {
+        fluidSim.splat(ev.x, ev.y, ev.dx, ev.dy, ev.c, ev.r, ev.w);
+        count++;
+      }
+      // strokeStart/strokeEnd just advance — they're boundaries
+    }
+
+    if (i < events.length) {
+      requestAnimationFrame(replayBatch);
+    } else {
+      // Let simulation settle for ~60 frames, then screenshot
+      dbg('Replay done. Settling...');
+      let settleFrames = 0;
+      function settle() {
+        settleFrames++;
+        if (settleFrames < 60) {
+          requestAnimationFrame(settle);
+        } else {
+          captureScreenshot();
+          recordingEnabled = true;
+          dbg('Screenshot saved.');
+        }
+      }
+      requestAnimationFrame(settle);
+    }
+  }
+
+  requestAnimationFrame(replayBatch);
+}
+
+function captureScreenshot() {
+  const canvas = document.getElementById('drawing-canvas');
+  // Force a render so the canvas has current content
+  fluidSim.render();
+  const dataURL = canvas.toDataURL('image/png');
+  // Auto-download
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = 'replay-screenshot.png';
+  a.click();
+  // Also expose globally so it can be grabbed programmatically
+  window._lastScreenshot = dataURL;
+  dbg('Screenshot captured (' + Math.round(dataURL.length/1024) + 'KB)');
+}
+
+// Auto-replay if ?replay URL param points to a stroke file
+function checkAutoReplay() {
+  const params = new URLSearchParams(location.search);
+  const replayFile = params.get('replay');
+  if (replayFile) {
+    dbg('Auto-replay: loading ' + replayFile);
+    fetch(replayFile)
+      .then(r => r.json())
+      .then(events => {
+        dbg('Loaded ' + events.length + ' events');
+        // Wait for FluidSim to be ready
+        function waitAndReplay() {
+          if (fluidSim) {
+            replayStrokes(events);
+          } else {
+            requestAnimationFrame(waitAndReplay);
+          }
+        }
+        waitAndReplay();
+      })
+      .catch(e => dbg('Replay load error: ' + e.message));
+  }
 }
 
 // ════════════════════════════════════════════
@@ -1547,6 +1668,7 @@ function init() {
   setupWaterJar();
   setupControls();
   selectColor(PALETTE_COLORS[0].rgb, 0);
+  checkAutoReplay();
 }
 
 if (document.readyState === 'loading')
@@ -1556,6 +1678,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v14.3</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v15</div>
 </body>
 </html>
