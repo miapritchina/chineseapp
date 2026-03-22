@@ -233,13 +233,13 @@ html, body {
   #brush-preview { width: 28px; height: 28px; }
   #wells-grid {
     grid-template-columns: 1fr 1fr;
-    flex: 0 0 70px;
+    flex: 0 0 55px;
   }
   .well-container:nth-child(n+3) { display: none; }
-  #water-jar { height: 28px; font-size: 10px; flex: 0 0 28px; }
-  #brush-size-container { gap: 5px; flex: 0 0 auto; }
+  #water-jar { font-size: 10px; flex: 0 0 55px; }
+  #brush-size-container { gap: 4px; flex: 0 0 20px; }
   #palette-controls { gap: 4px; flex: 0 0 auto; }
-  .ctrl-btn { padding: 5px 4px; font-size: 10px; }
+  .ctrl-btn { padding: 4px 3px; font-size: 9px; }
 }
 
 /* Very small phones (iPhone SE etc.) */
@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v8</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v9</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -459,15 +459,10 @@ function initWell(well) {
   well.ctx.scale(DPR, DPR);
   well.latentBuffer = new Float64Array(w * h * LATENT_SIZE);
   well.alphaBuffer = new Float32Array(w * h);
-  const wl = mixbox.rgbToLatent([255, 255, 255]);
-  for (let i = 0; i < w * h; i++) {
-    for (let j = 0; j < LATENT_SIZE; j++)
-      well.latentBuffer[i * LATENT_SIZE + j] = wl[j];
-    well.alphaBuffer[i] = 1;
-  }
-  // Paint well white (not transparent)
-  well.ctx.fillStyle = '#fff';
-  well.ctx.fillRect(0, 0, rect.width, rect.height);
+  // Initialize as transparent (alpha=0) — no paint, no color influence
+  well.alphaBuffer.fill(0);
+  // Clear canvas to transparent
+  well.ctx.clearRect(0, 0, rect.width, rect.height);
 }
 
 function clearWell(i) {
@@ -475,15 +470,9 @@ function clearWell(i) {
   if (!w.ctx) return;
   const rect = w.canvas.getBoundingClientRect();
   w.ctx.clearRect(0, 0, rect.width, rect.height);
-  const wl = mixbox.rgbToLatent([255, 255, 255]);
-  for (let i = 0; i < w.w * w.h; i++)
-    for (let j = 0; j < LATENT_SIZE; j++)
-      w.latentBuffer[i * LATENT_SIZE + j] = wl[j];
-  w.alphaBuffer.fill(1);
-  // Repaint white
-  const rect2 = w.canvas.getBoundingClientRect();
-  w.ctx.fillStyle = '#fff';
-  w.ctx.fillRect(0, 0, rect2.width, rect2.height);
+  // Reset to transparent — no paint
+  w.latentBuffer.fill(0);
+  w.alphaBuffer.fill(0);
 }
 
 // ════════════════════════════════════════════
@@ -816,6 +805,7 @@ class FluidSim {
 
     this.lastTime = 0;
     this.frameCount = 0;
+    this._skipSteps = 0;
     this._tick = this._tick.bind(this);
     requestAnimationFrame(this._tick);
   }
@@ -1030,6 +1020,9 @@ class FluidSim {
     this._draw(sp, this.dye.write);
     this.dye.swap();
 
+    // Skip sim steps right after splat to let dye persist for rendering
+    this._skipSteps = 3;
+
     // Splat wetness (scaled by water content, simple additive)
     const wsp = this.splatSimpleProg;
     g.useProgram(wsp.program);
@@ -1162,7 +1155,11 @@ class FluidSim {
     requestAnimationFrame(this._tick);
     const dt = this.lastTime ? (now - this.lastTime) / 1000 : 0.016;
     this.lastTime = now;
-    this.step(dt);
+    if (this._skipSteps > 0) {
+      this._skipSteps--;
+    } else {
+      this.step(dt);
+    }
     this.render();
     this.frameCount++;
     if (this.frameCount === 1) {
@@ -1425,8 +1422,8 @@ function dabOnWell(wi, cx, cy, radius, opacity) {
       px[pi + 2] = Math.round(rgb[2]);
       px[pi + 3] = Math.round(well.alphaBuffer[idx] * 255);
 
-      // Only sample non-white pixels for pickup
-      if (nd < 0.3 && (rgb[0] < 245 || rgb[1] < 245 || rgb[2] < 245)) {
+      // Only sample painted pixels for pickup (alpha > 0.1)
+      if (nd < 0.3 && well.alphaBuffer[idx] > 0.1) {
         pR += rgb[0]; pG += rgb[1]; pB += rgb[2]; pN++;
       }
     }
@@ -1535,6 +1532,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v8</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v9</div>
 </body>
 </html>
