@@ -273,7 +273,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v12</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v13</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -517,7 +517,8 @@ void main(){
   // On wet surface, mix with existing color instead of pure additive
   float mixFactor=existingWet*0.4;
   vec3 blended=mix(base+uColor*s, mix(base,uColor,s*0.5), mixFactor);
-  gl_FragColor=vec4(blended,1.0);
+  // Clamp to prevent overflow artifacts
+  gl_FragColor=vec4(clamp(blended, vec3(0.0), vec3(1.0)),1.0);
 }`;
 
 // ── Simple additive splat (for wetness) ──
@@ -1488,12 +1489,9 @@ function createBrushSizeDots() {
   sizes.forEach(s => {
     const dot = document.createElement('div');
     dot.className = 'size-dot' + (s === state.brushBaseSize ? ' selected' : '');
-    const displaySize = Math.max(10, Math.round(s * 0.7));
+    const displaySize = Math.max(8, Math.round(s * 0.6));
     dot.style.width = displaySize + 'px';
     dot.style.height = displaySize + 'px';
-    // Pad for touch target (minimum 30px tap area)
-    dot.style.padding = Math.max(0, Math.floor((30 - displaySize) / 2)) + 'px';
-    dot.style.backgroundClip = 'content-box';
     dot.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       state.brushBaseSize = s;
@@ -1534,6 +1532,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v12</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v13</div>
 </body>
 </html>
