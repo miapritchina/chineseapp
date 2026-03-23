@@ -153,7 +153,7 @@ html, body {
   transition: background 0.5s;
   pointer-events: none;
 }
-#water-jar-label { position: relative; z-index: 1; pointer-events: none; }
+#water-jar-label { position: relative; z-index: 1; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 #water-jar:active { background: rgba(180,210,240,0.4); }
 
 #palette-controls {
@@ -220,7 +220,7 @@ html, body {
     padding: 6px;
     gap: 4px;
     max-height: none;
-    overflow: visible;
+    overflow: hidden;
   }
   #color-squares {
     grid-template-columns: repeat(6, 1fr);
@@ -236,10 +236,11 @@ html, body {
     flex: 0 0 65px;
   }
   .well-container:nth-child(n+3) { display: none; }
-  #water-jar { font-size: 10px; flex: 0 0 55px; }
+  #water-jar { font-size: 10px; flex: 0 0 40px; }
+  #water-jar-label { font-size: 9px; }
   #brush-size-container { gap: 6px; flex: 0 0 34px; justify-content: center; padding: 0 10px; }
-  #palette-controls { gap: 3px; flex: 0 0 auto; }
-  .ctrl-btn { padding: 5px 6px; font-size: 10px; flex: 1 1 0; min-width: 0; }
+  #palette-controls { gap: 3px; flex: 0 0 auto; flex-wrap: wrap; }
+  .ctrl-btn { padding: 5px 6px; font-size: 10px; flex: 1 1 calc(25% - 3px); min-width: 0; }
 }
 
 /* Very small phones (iPhone SE etc.) */
@@ -273,7 +274,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v15.1</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v15.2</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -1678,6 +1679,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v15.1</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v15.2</div>
 </body>
 </html>
