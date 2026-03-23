@@ -278,7 +278,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v18</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v19</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -548,8 +548,8 @@ void main(){
   // On wet surface, softer deposition for glazing effect
   deposit*=mix(1.0, 0.4, existingWet);
   vec3 blended=base+deposit;
-  // Keep below 0.92 — watercolor is always somewhat translucent
-  gl_FragColor=vec4(clamp(blended, vec3(0.0), vec3(0.92)),1.0);
+  // Cap absorption — watercolor stays somewhat translucent
+  gl_FragColor=vec4(clamp(blended, vec3(0.0), vec3(0.97)),1.0);
 }`;
 
 // ── Simple additive splat (for wetness) ──
@@ -818,7 +818,9 @@ void main(){
 
   // ── Watercolor color model ──
   // Paper is the light source — paint selectively absorbs wavelengths
-  vec3 paperWhite=vec3(0.97, 0.955, 0.94)*paper;
+  // Paper texture subtly modulates the white base
+  vec3 paperBase=vec3(0.97, 0.96, 0.94);
+  vec3 paperWhite=paperBase*(0.85+paper*0.15); // paper texture has subtle effect
 
   // Direct subtractive: paint color = paper * (1 - absorption)
   // Each dye channel says how much of that wavelength is absorbed
@@ -827,8 +829,8 @@ void main(){
 
   // ── Paper grain interaction ──
   float pigment=smoothstep(0.0, 0.2, density);
-  // Valleys catch pigment (darker), peaks stay lighter
-  float grainEffect=(1.0-paper)*pigment*0.15;
+  // Valleys catch pigment (darker), peaks stay lighter — subtle
+  float grainEffect=(1.0-paper)*pigment*0.08;
   paintColor*=1.0-grainEffect;
 
   // ── Final composite ──
@@ -1033,7 +1035,7 @@ class FluidSim {
           amp *= 0.5; freq *= 2.1;
         }
         v = v / 1.875;
-        const grain = Math.round((0.80 + v * 0.20) * 255);
+        const grain = Math.round((0.93 + v * 0.07) * 255);
         data[i] = grain; data[i+1] = grain; data[i+2] = grain; data[i+3] = 255;
       }
     }
@@ -1081,7 +1083,7 @@ class FluidSim {
     this._bindTex(vp, 'uTarget', this.velocity.read.tex, 0);
     this._bindTex(vp, 'uWetness', this.wetness.read.tex, 1);
     g.uniform2f(vp.uniforms.uPoint, x, y);
-    g.uniform2f(vp.uniforms.uVel, dx * 8.0, dy * 8.0);
+    g.uniform2f(vp.uniforms.uVel, dx * 4.0, dy * 4.0);
     g.uniform1f(vp.uniforms.uRadius, radius);
     g.uniform1f(vp.uniforms.uAspect, this.aspect);
     this._draw(vp, this.velocity.write);
@@ -1094,11 +1096,11 @@ class FluidSim {
     this._bindTex(sp, 'uPaper', this.paperTex, 1);
     this._bindTex(sp, 'uWetness', this.wetness.read.tex, 2);
     g.uniform2f(sp.uniforms.uPoint, x, y);
-    // Convert RGB to absorption — light washes, builds up with layers
+    // Convert RGB to absorption — visible washes, builds up with layers
     g.uniform3f(sp.uniforms.uColor,
-      (1 - color[0]/255) * 0.35,
-      (1 - color[1]/255) * 0.35,
-      (1 - color[2]/255) * 0.35);
+      (1 - color[0]/255) * 0.5,
+      (1 - color[1]/255) * 0.5,
+      (1 - color[2]/255) * 0.5);
     g.uniform1f(sp.uniforms.uRadius, radius);
     g.uniform1f(sp.uniforms.uAspect, this.aspect);
     g.uniform1f(sp.uniforms.uWaterContent, waterContent);
@@ -1165,7 +1167,7 @@ class FluidSim {
     this._bindTex(ap, 'uSource', this.dye.read.tex, 1);
     g.uniform2f(ap.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
     g.uniform1f(ap.uniforms.uDt, dt);
-    g.uniform1f(ap.uniforms.uDissipation, 0.997); // slight dissipation for softer edges
+    g.uniform1f(ap.uniforms.uDissipation, 0.9995); // minimal dissipation — preserve color
     this._draw(ap, this.dye.write);
     this.dye.swap();
 
@@ -1719,6 +1721,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v18</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v19</div>
 </body>
 </html>
