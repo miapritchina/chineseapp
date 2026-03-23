@@ -212,8 +212,10 @@ html, body {
 /* Portrait / phone layout */
 @media (max-width: 600px) {
   #app {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-columns: 100vw;
+    grid-template-rows: min-content 1fr;
+    max-width: 100vw;
+    overflow: hidden;
   }
   #palette-panel {
     flex-direction: column;
@@ -221,6 +223,8 @@ html, body {
     gap: 4px;
     max-height: none;
     overflow: hidden;
+    width: 100%;
+    min-width: 0;
   }
   #color-squares {
     grid-template-columns: repeat(6, 1fr);
@@ -236,11 +240,11 @@ html, body {
     flex: 0 0 65px;
   }
   .well-container:nth-child(n+3) { display: none; }
-  #water-jar { font-size: 10px; flex: 0 0 40px; }
+  #water-jar { font-size: 10px; flex: 0 0 36px; }
   #water-jar-label { font-size: 9px; }
   #brush-size-container { gap: 6px; flex: 0 0 34px; justify-content: center; padding: 0 10px; }
-  #palette-controls { gap: 3px; flex: 0 0 auto; flex-wrap: wrap; }
-  .ctrl-btn { padding: 5px 6px; font-size: 10px; flex: 1 1 calc(25% - 3px); min-width: 0; }
+  #palette-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; flex: 0 0 auto; }
+  .ctrl-btn { padding: 5px 2px; font-size: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* Very small phones (iPhone SE etc.) */
@@ -274,7 +278,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v15.2</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v15.3</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -1679,6 +1683,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v15.2</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v15.3</div>
 </body>
 </html>
