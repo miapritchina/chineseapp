@@ -278,7 +278,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v17</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v18</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -799,9 +799,9 @@ void main(){
   vec3 dye=texture2D(uDye,vUv).rgb;
   float paper=texture2D(uPaper,vUv).r;
   float wet=texture2D(uWetness,vUv).r;
+  float density=length(dye);
 
   // ── Edge darkening via Sobel on dye density ──
-  // Sample neighbors to detect paint boundaries
   float cL=length(texture2D(uDye,vUv-vec2(uTexelSize.x,0.0)).rgb);
   float cR=length(texture2D(uDye,vUv+vec2(uTexelSize.x,0.0)).rgb);
   float cB=length(texture2D(uDye,vUv-vec2(0.0,uTexelSize.y)).rgb);
@@ -810,42 +810,34 @@ void main(){
   float cTR=length(texture2D(uDye,vUv+vec2(uTexelSize.x,uTexelSize.y)).rgb);
   float cBL=length(texture2D(uDye,vUv+vec2(-uTexelSize.x,-uTexelSize.y)).rgb);
   float cBR=length(texture2D(uDye,vUv+vec2(uTexelSize.x,-uTexelSize.y)).rgb);
-  // Sobel gradient magnitude
   float gx=(-cTL-2.0*cL-cBL)+(cTR+2.0*cR+cBR);
   float gy=(-cBL-2.0*cB-cBR)+(cTL+2.0*cT+cTR);
   float edgeStrength=sqrt(gx*gx+gy*gy);
-  // Darken edges — only where there IS paint
-  float density=length(dye);
-  float edgeDarken=edgeStrength*smoothstep(0.02,0.15,density)*0.4;
+  // Subtle edge darkening — only where paint exists
+  float edgeDarken=edgeStrength*smoothstep(0.01,0.1,density)*0.15;
 
-  // ── Beer-Lambert absorption model ──
-  // Light enters paint, some absorbed, reflects off paper, absorbed again
+  // ── Watercolor color model ──
+  // Paper is the light source — paint selectively absorbs wavelengths
   vec3 paperWhite=vec3(0.97, 0.955, 0.94)*paper;
-  float thickness=2.2;
-  // Add edge concentration to absorption
-  vec3 totalAbsorption=dye*(1.0+edgeDarken*2.0);
-  vec3 paintColor=paperWhite*exp(-totalAbsorption*thickness);
+
+  // Direct subtractive: paint color = paper * (1 - absorption)
+  // Each dye channel says how much of that wavelength is absorbed
+  vec3 totalDye=dye*(1.0+edgeDarken*1.5);
+  vec3 paintColor=paperWhite*(vec3(1.0)-totalDye);
 
   // ── Paper grain interaction ──
-  float pigment=clamp(density*1.2, 0.0, 1.0);
-  // Valleys catch pigment, creating visible granulation in painted areas
-  float grainStrength=(1.0-paper)*pigment*0.3;
-  paintColor*=1.0-grainStrength;
-  // Light scatters off paper peaks through thin paint
-  paintColor+=paperWhite*grainStrength*0.2;
+  float pigment=smoothstep(0.0, 0.2, density);
+  // Valleys catch pigment (darker), peaks stay lighter
+  float grainEffect=(1.0-paper)*pigment*0.15;
+  paintColor*=1.0-grainEffect;
 
   // ── Final composite ──
-  // Smooth transition from paper to paint (watercolor transparency)
-  vec3 color=mix(paperWhite, paintColor, smoothstep(0.0, 0.1, pigment));
+  vec3 color=mix(paperWhite, paintColor, smoothstep(0.0, 0.05, density));
 
   // ── Wet paint effects ──
   if(wet>0.005){
     float wetFactor=smoothstep(0.0, 0.25, wet);
-    // Wet paint appears darker (water increases pigment depth)
-    color*=1.0-wetFactor*0.15;
-    // Wet areas slightly more saturated
-    vec3 mid=vec3(dot(color,vec3(0.3,0.59,0.11)));
-    color=mix(mid, color, 1.0+wetFactor*0.2);
+    color*=1.0-wetFactor*0.08; // subtle wet darkening
   }
 
   gl_FragColor=vec4(color,1.0);
@@ -1102,11 +1094,11 @@ class FluidSim {
     this._bindTex(sp, 'uPaper', this.paperTex, 1);
     this._bindTex(sp, 'uWetness', this.wetness.read.tex, 2);
     g.uniform2f(sp.uniforms.uPoint, x, y);
-    // Convert RGB to absorption — moderate for rich watercolor washes
+    // Convert RGB to absorption — light washes, builds up with layers
     g.uniform3f(sp.uniforms.uColor,
-      (1 - color[0]/255) * 0.55,
-      (1 - color[1]/255) * 0.55,
-      (1 - color[2]/255) * 0.55);
+      (1 - color[0]/255) * 0.35,
+      (1 - color[1]/255) * 0.35,
+      (1 - color[2]/255) * 0.35);
     g.uniform1f(sp.uniforms.uRadius, radius);
     g.uniform1f(sp.uniforms.uAspect, this.aspect);
     g.uniform1f(sp.uniforms.uWaterContent, waterContent);
@@ -1727,6 +1719,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v17</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v18</div>
 </body>
 </html>
