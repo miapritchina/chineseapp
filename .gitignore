@@ -45,3 +45,7 @@ android/app/build/
 # Misc
 .cache/
 .temp/
+
+# Test screenshots
+mobile-*.png
+replay-screenshot.png
