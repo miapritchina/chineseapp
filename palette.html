@@ -278,7 +278,7 @@ window.onerror=function(m,s,l){dbg('ERR:'+m+' L'+l);};
 </script>
 <div id="load-error" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#2a2520;color:#f88;font-family:monospace;padding:20px;z-index:99999;font-size:14px">
   <p>ERROR: mixbox.js failed to load</p>
-  <p style="color:#aaa;margin-top:10px">page:palette v19</p>
+  <p style="color:#aaa;margin-top:10px">page:palette v20</p>
   <p style="color:#666;margin-top:5px" id="error-url"></p>
   <script>document.getElementById('error-url').textContent='URL: '+location.href</script>
 </div>
@@ -517,19 +517,13 @@ void main(){
   float dist=length(p);
   float normDist=dist/uRadius;
 
-  // Core brush shape: wide Gaussian
-  float s=exp(-normDist*normDist*2.0);
+  // Solid Gaussian brush — center is full-strength.
+  // Rim darkening comes from the display shader's Sobel edge detection,
+  // which naturally creates watercolor edges from accumulated dye gradients.
+  float s=exp(-normDist*normDist*2.5);
 
-  // Edge concentration: pigment deposits more at brush edges (watercolor hallmark)
-  // Creates lighter center, darker rim — like real wet-on-dry strokes
-  float edgeConcentration=smoothstep(0.0, 0.5, normDist)*smoothstep(1.2, 0.7, normDist);
-  // Blend between uniform and edge-concentrated based on water content
-  // Wet brush = more uniform, dry brush = more edge-concentrated
-  float edgeMix=mix(0.6, 0.2, uWaterContent);
-  s=mix(s*edgeConcentration, s, edgeMix);
-
-  // Soft outer falloff
-  s*=smoothstep(1.3, 0.6, normDist);
+  // Soft outer cutoff so splats don't extend forever
+  s*=smoothstep(1.3, 0.5, normDist);
 
   // Paper height for dry-brush: skip valleys when brush is dry
   float paperH=texture2D(uPaper,vUv).r;
@@ -537,16 +531,15 @@ void main(){
   float paperMask=smoothstep(dryThresh-0.08, dryThresh+0.08, paperH);
   s*=paperMask;
 
-  // Wet-on-wet: existing wetness causes paint to bleed and diffuse
+  // Wet-on-wet: existing wetness softens NEW splat deposition slightly,
+  // but we don't want hollow strokes, so keep deposition mostly full.
   float existingWet=texture2D(uWetness,vUv).r;
-  // On wet surface, paint spreads wider but thinner (transparent washes)
-  float wetSpread=1.0+existingWet*1.5;
-  s*=wetSpread;
+  float wetClamped=clamp(existingWet, 0.0, 1.0);
 
   vec3 base=texture2D(uTarget,vUv).rgb;
   vec3 deposit=uColor*s;
-  // On wet surface, softer deposition for glazing effect
-  deposit*=mix(1.0, 0.4, existingWet);
+  // Very slight softening on truly saturated wet areas (glazing)
+  deposit*=1.0 - wetClamped*0.15;
   vec3 blended=base+deposit;
   // Cap absorption — watercolor stays somewhat translucent
   gl_FragColor=vec4(clamp(blended, vec3(0.0), vec3(0.97)),1.0);
@@ -1083,7 +1076,7 @@ class FluidSim {
     this._bindTex(vp, 'uTarget', this.velocity.read.tex, 0);
     this._bindTex(vp, 'uWetness', this.wetness.read.tex, 1);
     g.uniform2f(vp.uniforms.uPoint, x, y);
-    g.uniform2f(vp.uniforms.uVel, dx * 4.0, dy * 4.0);
+    g.uniform2f(vp.uniforms.uVel, dx * 1.5, dy * 1.5);
     g.uniform1f(vp.uniforms.uRadius, radius);
     g.uniform1f(vp.uniforms.uAspect, this.aspect);
     this._draw(vp, this.velocity.write);
@@ -1130,7 +1123,7 @@ class FluidSim {
     this._bindTex(ap, 'uSource', this.velocity.read.tex, 1);
     g.uniform2f(ap.uniforms.uTexelSize, this.texelSize[0], this.texelSize[1]);
     g.uniform1f(ap.uniforms.uDt, dt);
-    g.uniform1f(ap.uniforms.uDissipation, 0.98);
+    g.uniform1f(ap.uniforms.uDissipation, 0.88);
     this._draw(ap, this.velocity.write);
     this.velocity.swap();
 
@@ -1304,6 +1297,7 @@ function setupDrawingCanvas() {
       const dist = Math.sqrt(dx*dx + dy*dy);
       const step = Math.max(0.002, (state.brushBaseSize / 800) * 0.3);
       const steps = Math.max(1, Math.ceil(dist / step));
+      let prev = lastSplatPos;
       for (let i = 1; i <= steps; i++) {
         const t = i / steps;
         const p = {
@@ -1311,7 +1305,8 @@ function setupDrawingCanvas() {
           y: lastSplatPos.y + dy * t,
           pressure: lastSplatPos.pressure + (pos.pressure - lastSplatPos.pressure) * t
         };
-        doSplat(p, lastSplatPos);
+        doSplat(p, prev);
+        prev = p;
       }
     }
     lastSplatPos = pos;
@@ -1351,9 +1346,10 @@ function setupDrawingCanvas() {
       dx = pos.x - prev.x;
       dy = pos.y - prev.y;
     }
-    // Water content: starts high, decreases gradually as brush runs out
-    const strokeFade = Math.max(0.1, 1.0 - canvasStrokeDabs / 200);
-    const waterContent = Math.min(1.0, strokeFade * (0.4 + p * 0.6));
+    // Water content: starts high, decreases gradually as brush runs out.
+    // Fade calibrated to ~800 splats (roughly one full-width stroke).
+    const strokeFade = Math.max(0.2, 1.0 - canvasStrokeDabs / 800);
+    const waterContent = Math.min(1.0, strokeFade * (0.5 + p * 0.5));
     fluidSim.splat(pos.x, pos.y, dx, dy, state.brushColor, radius, waterContent);
     logEvent({t:'splat', x:pos.x, y:pos.y, dx, dy, c:[...state.brushColor], r:radius, w:waterContent});
   }
@@ -1721,6 +1717,6 @@ else
 
 })();
 </script>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v19</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#555;pointer-events:none;z-index:9999">page:palette v20</div>
 </body>
 </html>
