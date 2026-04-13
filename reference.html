@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Watercolor Reference</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #1e1e1e;
+    color: #bbb;
+    font-family: -apple-system, system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    text-align: center;
+  }
+  h1 {
+    font-weight: 300;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: #eee;
+    margin: 0 0 6px;
+  }
+  p.caption {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #888;
+    margin: 0 auto 32px;
+    max-width: 520px;
+  }
+  .paper {
+    display: inline-block;
+    background: #f5f1e8;
+    padding: 50px;
+    border-radius: 3px;
+    box-shadow:
+      0 2px 6px rgba(0,0,0,0.3),
+      0 20px 60px rgba(0,0,0,0.4);
+  }
+  canvas { display: block; }
+  .label {
+    margin-top: 36px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #666;
+    text-transform: uppercase;
+  }
+  .legend {
+    margin-top: 28px;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.8;
+    text-align: left;
+    display: inline-block;
+  }
+  .legend span { color: #ddd; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>WATERCOLOR REFERENCE</h1>
+  <p class="caption">
+    Static procedural render of a single watercolor wash — the target look
+    for the painting engine. Review the effects below and tell me what
+    should change before I tune the real engine.
+  </p>
+
+  <div class="paper">
+    <canvas id="canvas" width="500" height="500"></canvas>
+  </div>
+
+  <div class="label">ULTRAMARINE BLUE — SINGLE WASH</div>
+
+  <div class="legend">
+    What this render demonstrates:<br>
+    • <span>Irregular organic edge</span> — not a mathematical circle<br>
+    • <span>Rim darkening</span> — pigment concentrated where water dried<br>
+    • <span>Mottled interior</span> — uneven wash, lighter/darker zones<br>
+    • <span>Granulation</span> — speckled texture in paper valleys<br>
+    • <span>Paper grain</span> — cold-press texture visible through paint<br>
+    • <span>Soft halo</span> — faint wet ring just outside the main shape
+  </div>
+</div>
+
+<script>
+(function(){
+  // ════════════════════════════════════════════
+  //  VALUE NOISE + fBm
+  // ════════════════════════════════════════════
+  function hash(x, y) {
+    let h = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  }
+  function smooth(t) { return t*t*(3 - 2*t); }
+  function vnoise(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = smooth(x - xi), yf = smooth(y - yi);
+    const a = hash(xi,   yi);
+    const b = hash(xi+1, yi);
+    const c = hash(xi,   yi+1);
+    const d = hash(xi+1, yi+1);
+    return a*(1-xf)*(1-yf) + b*xf*(1-yf) + c*(1-xf)*yf + d*xf*yf;
+  }
+  function fbm(x, y, oct) {
+    let s = 0, a = 1, f = 1, n = 0;
+    for (let i = 0; i < oct; i++) {
+      s += a * vnoise(x*f, y*f);
+      n += a;
+      a *= 0.5;
+      f *= 2.03;
+    }
+    return s / n;
+  }
+
+  // ════════════════════════════════════════════
+  //  RENDER
+  // ════════════════════════════════════════════
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Paper base color (warm cream)
+  const PAPER = [245, 240, 228];
+
+  // Paint target: ultramarine blue (classic granulating pigment)
+  const PIGMENT = [55, 75, 155];
+
+  // Circle center & radius
+  const CX = W * 0.5;
+  const CY = H * 0.5;
+  const R  = Math.min(W, H) * 0.34;
+
+  // ── 1. Paper background with two-scale grain ──
+  const img = ctx.createImageData(W, H);
+  const data = img.data;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y*W + x) * 4;
+      // Fine grain (cold-press paper feel)
+      const fine   = fbm(x*0.35, y*0.35, 3);
+      // Large soft variation
+      const soft   = fbm(x*0.015, y*0.015, 2);
+      // Paper darker in valleys
+      const bright = 0.90 + fine*0.07 + soft*0.06;
+      data[i]   = PAPER[0] * bright;
+      data[i+1] = PAPER[1] * bright;
+      data[i+2] = PAPER[2] * bright;
+      data[i+3] = 255;
+    }
+  }
+
+  // ── 2. Pigment pass — procedural watercolor circle ──
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y*W + x) * 4;
+
+      // Distance from center, with irregular edge warping
+      const dx = x - CX, dy = y - CY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > R * 1.35) continue;
+
+      const angle = Math.atan2(dy, dx);
+
+      // Edge warp — angular noise pushes edge in/out
+      // Two octaves: big lobes + small scalloping
+      const warpLarge = fbm(Math.cos(angle)*2.2 + 7.1, Math.sin(angle)*2.2 + 3.4, 2);
+      const warpSmall = fbm(Math.cos(angle)*11  + 1.3, Math.sin(angle)*11  + 8.7, 3);
+      const warp = (warpLarge - 0.5) * 0.34 + (warpSmall - 0.5) * 0.09;
+      const effectiveR = R * (1.0 + warp);
+
+      // Normalized distance: 0 at center, 1 at (warped) edge
+      const nd = dist / effectiveR;
+
+      // Outside the wash + halo zone
+      if (nd > 1.12) continue;
+
+      // ── Wet halo (faint wet-edge tint outside the main shape) ──
+      if (nd > 1.0) {
+        const hd = (nd - 1.0) / 0.08;
+        const halo = Math.exp(-(hd*hd)) * 0.10;
+        const absR = 1 - PIGMENT[0]/255;
+        const absG = 1 - PIGMENT[1]/255;
+        const absB = 1 - PIGMENT[2]/255;
+        data[i]   *= 1 - halo * absR;
+        data[i+1] *= 1 - halo * absG;
+        data[i+2] *= 1 - halo * absB;
+        continue;
+      }
+
+      // ── Density model ──
+      //
+      // base: full coverage inside, smoothly falls off approaching the edge
+      const fall = Math.max(0, Math.min(1, (nd - 0.72) / 0.28));
+      const base = 1 - smooth(fall);
+
+      // rim: Gaussian ridge near nd = 0.9 (the cauliflower dark edge)
+      const rimPos   = 0.91;
+      const rimWidth = 0.075;
+      const rimD     = (nd - rimPos) / rimWidth;
+      const rim      = Math.exp(-rimD*rimD) * 0.55;
+
+      // Secondary back-run ring closer in (drying tide mark)
+      const backPos = 0.62;
+      const backD = (nd - backPos) / 0.10;
+      const back  = Math.exp(-backD*backD) * 0.12;
+
+      // Blotchy mottle: large-scale density variation
+      const blotch = 0.62 + fbm(x*0.022, y*0.022, 3) * 0.55;
+
+      // Fine granulation: pigment settles in paper valleys
+      const gran = fbm(x*0.38, y*0.38, 3);
+      const granMod = 0.75 + gran * 0.45;
+
+      // Combined density
+      let density = (base + rim + back) * blotch * granMod;
+
+      // Slight extra lift near center to show "lighter" wet-puddle area
+      density *= 0.85 + fbm(x*0.08, y*0.08, 2) * 0.25;
+
+      density = Math.max(0, Math.min(0.96, density));
+      if (density < 0.005) continue;
+
+      // ── Subtractive composite ──
+      //   new = paper * (1 - density * absorption)
+      const absR = 1 - PIGMENT[0]/255;
+      const absG = 1 - PIGMENT[1]/255;
+      const absB = 1 - PIGMENT[2]/255;
+      data[i]   *= Math.max(0, 1 - density * absR);
+      data[i+1] *= Math.max(0, 1 - density * absG);
+      data[i+2] *= Math.max(0, 1 - density * absB);
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+})();
+</script>
+</body>
+</html>
