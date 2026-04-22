@@ -16,6 +16,7 @@
     data: null,
     stack: [], // stack of entries: { kind: "word"|"char", key }
     writers: [], // active HanziWriter instances (per current modal render)
+    query: "",
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -23,6 +24,32 @@
 
   const grid = $("#grid");
   const modalRoot = $("#modal-root");
+  const searchInput = $("#search");
+  const emptyState = $("#empty");
+
+  // Strip combining tone marks and spaces so "laoshi" matches "lǎo shī".
+  function normalizePinyin(s) {
+    return (s || "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+  }
+
+  const HAN_RE = /[㐀-鿿]/;
+
+  function wordMatches(w, rawQuery) {
+    const q = rawQuery.trim();
+    if (!q) return true;
+    if (HAN_RE.test(q)) {
+      return w.simp.includes(q) || (w.trad && w.trad.includes(q));
+    }
+    const nq = normalizePinyin(q);
+    if (!nq) return true;
+    if (normalizePinyin(w.pinyin).includes(nq)) return true;
+    const lq = q.toLowerCase();
+    return (w.definitions || []).some((d) => d.toLowerCase().includes(lq));
+  }
 
   function mkEl(tag, attrs = {}, ...children) {
     const el = document.createElement(tag);
@@ -61,7 +88,10 @@
   function renderGrid() {
     grid.innerHTML = "";
     if (!state.data) return;
+    const q = state.query;
+    let shown = 0;
     for (const w of state.data.words) {
+      if (!wordMatches(w, q)) continue;
       const card = mkEl(
         "button",
         {
@@ -75,7 +105,9 @@
         mkEl("div", { class: "gloss" }, w.definitions[0] || ""),
       );
       grid.appendChild(card);
+      shown++;
     }
+    if (emptyState) emptyState.hidden = shown > 0 || !q.trim();
   }
 
   // ---------- modal / stack ----------
@@ -489,6 +521,26 @@
 
   // Dismiss on backdrop tap (when body is clicked outside the header/section content is tricky;
   // we just let back button / Esc / swipe-back handle it on mobile).
+
+  // ---------- search ----------
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      state.query = searchInput.value;
+      renderGrid();
+    });
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        searchInput.value = "";
+        state.query = "";
+        renderGrid();
+      } else if (e.key === "Enter") {
+        // Open the first visible card.
+        const first = grid.querySelector(".card");
+        if (first) first.click();
+      }
+    });
+  }
 
   // ---------- boot ----------
 

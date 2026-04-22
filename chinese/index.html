@@ -13,12 +13,26 @@
       <span class="spacer"></span>
     </header>
 
+    <div class="search-bar">
+      <input
+        id="search"
+        type="search"
+        autocomplete="off"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="Search — 汉字, pinyin, or English…"
+        aria-label="Search words"
+      />
+    </div>
+
     <main id="grid" class="grid" aria-label="Word cards"></main>
+    <div id="empty" class="empty-state" hidden>No matches.</div>
 
     <div id="modal-root" class="modal-root" aria-hidden="true"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js"></script>
-    <script src="app.js?v=3"></script>
-    <div class="page-id">chinese v3</div>
+    <script src="app.js?v=4"></script>
+    <div class="page-id">chinese v4</div>
   </body>
 </html>
