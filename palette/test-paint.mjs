@@ -10,7 +10,7 @@ const context = await browser.newContext({
   ...iPhone,
 });
 const page = await context.newPage();
-await page.goto('file:///home/user/Ai-/palette.html');
+await page.goto('file:///home/user/Ai-/palette/palette.html');
 await page.waitForTimeout(2000);
 
 // Select a color (e.g., the 3rd swatch - red)
