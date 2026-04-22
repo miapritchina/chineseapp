@@ -275,6 +275,44 @@ body {
   margin-bottom: 4px;
 }
 
+.ancient-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+}
+.ancient-form {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  min-width: 88px;
+}
+.ancient-form img {
+  width: 54px;
+  height: 72px;
+  object-fit: contain;
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  .ancient-form img {
+    /* The SVG glyphs are black; invert so they read on the dark surface. */
+    filter: invert(0.92) hue-rotate(180deg);
+  }
+}
+.ancient-form figcaption {
+  font-size: 11.5px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 80px;
+}
+
 .components {
   display: flex;
   flex-direction: column;

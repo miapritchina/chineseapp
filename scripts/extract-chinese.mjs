@@ -50,6 +50,18 @@ function normalizeChar(char) {
       }))
     : [];
 
+  // Images come as CSS url("...") strings; unwrap to a plain data: URL.
+  const images = Array.isArray(etym?.images)
+    ? etym.images
+        .map((img) => {
+          const raw = typeof img.url === "string" ? img.url : "";
+          const m = /^url\((?:"|')?(.*?)(?:"|')?\)$/s.exec(raw.trim());
+          const url = m ? m[1] : raw;
+          return { url, caption: img.caption || "" };
+        })
+        .filter((i) => i.url)
+    : [];
+
   return {
     char,
     pinyin,
@@ -57,6 +69,7 @@ function normalizeChar(char) {
     originalMeaning,
     notes: notes.trim(),
     components,
+    images,
     hasEtymology: !!etym,
   };
 }

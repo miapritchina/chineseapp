@@ -287,6 +287,23 @@
       section.append(etym);
     }
 
+    // Ancient forms (oracle / bronze / seal)
+    if (c.images && c.images.length) {
+      section.append(mkEl("div", { class: "section-title" }, "Ancient forms"));
+      const row = mkEl("div", { class: "ancient-row" });
+      for (const img of c.images) {
+        row.append(
+          mkEl(
+            "figure",
+            { class: "ancient-form" },
+            mkEl("img", { src: img.url, alt: img.caption || "ancient form", loading: "lazy" }),
+            img.caption ? mkEl("figcaption", {}, img.caption) : null,
+          ),
+        );
+      }
+      section.append(row);
+    }
+
     // Components
     if (c.components && c.components.length) {
       section.append(mkEl("div", { class: "section-title" }, "Components"));
