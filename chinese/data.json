@@ -1,0 +1,999 @@
+{
+  "generated": "2026-04-22T02:02:51.311Z",
+  "source": "chinese-lexicon v1.0.43",
+  "words": [
+    {
+      "word": "叫",
+      "simp": "叫",
+      "trad": "叫",
+      "pinyin": "jiào",
+      "definitions": [
+        "to shout",
+        "to call",
+        "to order",
+        "to ask",
+        "to be called",
+        "by (indicates agent in the passive mood)"
+      ],
+      "chars": [
+        "叫"
+      ]
+    },
+    {
+      "word": "对",
+      "simp": "对",
+      "trad": "對",
+      "pinyin": "duì",
+      "definitions": [
+        "right",
+        "correct",
+        "couple",
+        "pair",
+        "towards",
+        "at",
+        "for",
+        "to face",
+        "opposite",
+        "to treat (sb a certain way)",
+        "to match together",
+        "to adjust",
+        "to fit",
+        "to suit",
+        "to answer",
+        "to reply",
+        "classifier: couple"
+      ],
+      "chars": [
+        "对"
+      ]
+    },
+    {
+      "word": "你",
+      "simp": "你",
+      "trad": "你",
+      "pinyin": "nǐ",
+      "definitions": [
+        "you (informal, as opposed to courteous 您[nín])"
+      ],
+      "chars": [
+        "你"
+      ]
+    },
+    {
+      "word": "好",
+      "simp": "好",
+      "trad": "好",
+      "pinyin": "hǎo",
+      "definitions": [
+        "good",
+        "well",
+        "proper",
+        "good to",
+        "easy to",
+        "very",
+        "so",
+        "(suffix indicating completion or readiness)",
+        "(of two people) close",
+        "on intimate terms",
+        "(after a personal pronoun) hello"
+      ],
+      "chars": [
+        "好"
+      ]
+    },
+    {
+      "word": "我",
+      "simp": "我",
+      "trad": "我",
+      "pinyin": "wǒ",
+      "definitions": [
+        "I",
+        "me",
+        "my"
+      ],
+      "chars": [
+        "我"
+      ]
+    },
+    {
+      "word": "老师",
+      "simp": "老师",
+      "trad": "老師",
+      "pinyin": "lǎoshī",
+      "definitions": [
+        "teacher"
+      ],
+      "chars": [
+        "老",
+        "师"
+      ]
+    },
+    {
+      "word": "学生",
+      "simp": "学生",
+      "trad": "學生",
+      "pinyin": "xuésheng",
+      "definitions": [
+        "student",
+        "schoolchild"
+      ],
+      "chars": [
+        "学",
+        "生"
+      ]
+    },
+    {
+      "word": "水",
+      "simp": "水",
+      "trad": "水",
+      "pinyin": "shuǐ",
+      "definitions": [
+        "water",
+        "river",
+        "liquid",
+        "beverage",
+        "additional charges or income",
+        "(of clothes) classifier for number of washes"
+      ],
+      "chars": [
+        "水"
+      ]
+    },
+    {
+      "word": "瓶",
+      "simp": "瓶",
+      "trad": "瓶",
+      "pinyin": "píng",
+      "definitions": [
+        "bottle",
+        "vase",
+        "pitcher",
+        "classifier for wine and liquids"
+      ],
+      "chars": [
+        "瓶"
+      ]
+    },
+    {
+      "word": "一",
+      "simp": "一",
+      "trad": "一",
+      "pinyin": "yī",
+      "definitions": [
+        "one",
+        "1",
+        "single",
+        "a (article)",
+        "as soon as",
+        "entire",
+        "whole",
+        "all",
+        "throughout",
+        "\"one\" radical in Chinese characters (Kangxi radical 1)",
+        "also pr. [yāo] for greater clarity when spelling out numbers digit by digit"
+      ],
+      "chars": [
+        "一"
+      ]
+    },
+    {
+      "word": "咖啡",
+      "simp": "咖啡",
+      "trad": "咖啡",
+      "pinyin": "kāfēi",
+      "definitions": [
+        "coffee (loanword)"
+      ],
+      "chars": [
+        "咖",
+        "啡"
+      ]
+    }
+  ],
+  "chars": {
+    "叫": {
+      "char": "叫",
+      "pinyin": "jiào",
+      "definitions": [
+        "to shout",
+        "to call",
+        "to order",
+        "to ask",
+        "to be called",
+        "by (indicates agent in the passive mood)"
+      ],
+      "originalMeaning": "call; shout",
+      "notes": "Phonosemantic compound. 口 represents the meaning and 丩 represents the sound.",
+      "components": [
+        {
+          "char": "口",
+          "type": "meaning",
+          "pinyin": "kǒu",
+          "definition": "mouth",
+          "hint": ""
+        },
+        {
+          "char": "丩",
+          "type": "sound",
+          "pinyin": "jiū",
+          "definition": "entangle; gather",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "叫"
+      ]
+    },
+    "对": {
+      "char": "对",
+      "pinyin": "duì",
+      "definitions": [
+        "right",
+        "correct",
+        "couple",
+        "pair",
+        "towards",
+        "at",
+        "for",
+        "to face",
+        "opposite",
+        "to treat (sb a certain way)",
+        "to match together",
+        "to adjust",
+        "to fit",
+        "to suit",
+        "to answer",
+        "to reply",
+        "classifier: couple"
+      ],
+      "originalMeaning": "correct; pair; match",
+      "notes": "Simplified form of 對. Origin unclear. Appears to be a hand using some sort of tool, possibly a rake or a hoe.",
+      "components": [
+        {
+          "char": "又",
+          "type": "simplified",
+          "pinyin": "yòu",
+          "definition": "(hand); again",
+          "hint": "Shorthand for the left component of 對, possibly depicting a rake or hoe."
+        },
+        {
+          "char": "寸",
+          "type": "iconic",
+          "pinyin": "cùn",
+          "definition": "inch; thumb; (hand)",
+          "hint": "Used here to represent a hand."
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "对"
+      ]
+    },
+    "你": {
+      "char": "你",
+      "pinyin": "nǐ",
+      "definitions": [
+        "you (informal, as opposed to courteous 您[nín])"
+      ],
+      "originalMeaning": "you",
+      "notes": "Phonosemantic compound. 亻 represents the meaning and 尔 represents the sound.",
+      "components": [
+        {
+          "char": "亻",
+          "type": "meaning",
+          "pinyin": "rén",
+          "definition": "person",
+          "hint": "亻 is a component form of 人."
+        },
+        {
+          "char": "尔",
+          "type": "sound",
+          "pinyin": "ěr",
+          "definition": "you (archaic)",
+          "hint": "The pronunciation of 你 was similar to 尔 in old Chinese, but they no longer sound similar in modern Mandarin due to historical phonetic changes. 尔 also serves as a meaning component."
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "你"
+      ]
+    },
+    "好": {
+      "char": "好",
+      "pinyin": "hǎo",
+      "definitions": [
+        "good",
+        "well",
+        "proper",
+        "good to",
+        "easy to",
+        "very",
+        "so",
+        "(suffix indicating completion or readiness)",
+        "(of two people) close",
+        "on intimate terms",
+        "(after a personal pronoun) hello"
+      ],
+      "originalMeaning": "good; to like, love",
+      "notes": "It is good (好) for a woman (女) and her child (子) to be together.",
+      "components": [
+        {
+          "char": "女",
+          "type": "meaning",
+          "pinyin": "nǚ; rǔ",
+          "definition": "woman; female",
+          "hint": ""
+        },
+        {
+          "char": "子",
+          "type": "meaning",
+          "pinyin": "zǐ; zi",
+          "definition": "son; child",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "好"
+      ]
+    },
+    "我": {
+      "char": "我",
+      "pinyin": "wǒ",
+      "definitions": [
+        "I",
+        "me",
+        "my"
+      ],
+      "originalMeaning": "I; me",
+      "notes": "Pictograph of a weapon or farming tool with a forked blade and long handle. The meaning \"I; me\" is a phonetic loan.",
+      "components": [
+        {
+          "char": "戈",
+          "type": "iconic",
+          "pinyin": "gē",
+          "definition": "dagger-axe",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "我"
+      ]
+    },
+    "老": {
+      "char": "老",
+      "pinyin": "lǎo",
+      "definitions": [
+        "prefix used before the surname of a person or a numeral indicating the order of birth of the children in a family or to indicate affection or familiarity",
+        "old (of people)",
+        "venerable (person)",
+        "experienced",
+        "of long standing",
+        "always",
+        "all the time",
+        "of the past",
+        "very",
+        "outdated",
+        "(of meat etc) tough"
+      ],
+      "originalMeaning": "old",
+      "notes": "Pictograph of an old person with long hair bent over and leaning on a cane.",
+      "components": [
+        {
+          "char": "◎",
+          "type": "iconic",
+          "pinyin": "xx",
+          "definition": "characterless component",
+          "hint": "Depicts long hair."
+        },
+        {
+          "char": "◎",
+          "type": "iconic",
+          "pinyin": "xx",
+          "definition": "characterless component",
+          "hint": "Depicts an old man bent over."
+        },
+        {
+          "char": "◎",
+          "type": "iconic",
+          "pinyin": "xx",
+          "definition": "characterless component",
+          "hint": "Depicts a cane."
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "老师"
+      ]
+    },
+    "师": {
+      "char": "师",
+      "pinyin": "shī",
+      "definitions": [
+        "teacher",
+        "master",
+        "expert",
+        "model",
+        "army division",
+        "(old) troops",
+        "to dispatch troops"
+      ],
+      "originalMeaning": "teacher; master; expert",
+      "notes": "Simplified form of 師.  Origin unclear.",
+      "components": [
+        {
+          "char": "刂",
+          "type": "simplified",
+          "pinyin": "dāo",
+          "definition": "knife",
+          "hint": "Shorthand for the 𠂤 component in the traditional character 師. The purpose of this component is unclear."
+        },
+        {
+          "char": "帀",
+          "type": "unknown",
+          "pinyin": "zā",
+          "definition": "circle; surround; everywhere",
+          "hint": "The purpose of this component is unclear."
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "老师"
+      ]
+    },
+    "学": {
+      "char": "学",
+      "pinyin": "xué",
+      "definitions": [
+        "to learn",
+        "to study",
+        "to imitate",
+        "science",
+        "-ology"
+      ],
+      "originalMeaning": "learn; study",
+      "notes": "Simplified form of 學.  Originally composed of the numbers five (㐅) and six (六), representing study of arithmetic. \nLater two hands (又) were added on the left and right side of the character, possibly depicting counting with fingers or hands-on teaching.\nFinally a child (子) was added to the bottom, depicting a child being educated.\nThe bottom part of 六 (six) was reanalyzed as 宀 (roof) and interpreted as a building for learning.",
+      "components": [
+        {
+          "char": "◎",
+          "type": "simplified",
+          "pinyin": "xx",
+          "definition": "characterless component",
+          "hint": "Shorthand form of the 㐅 (five), 六 (six), and 又 (hand) components in the top part of the traditional character 學."
+        },
+        {
+          "char": "宀",
+          "type": "iconic",
+          "pinyin": "mián",
+          "definition": "roof",
+          "hint": ""
+        },
+        {
+          "char": "子",
+          "type": "iconic",
+          "pinyin": "zǐ; zi",
+          "definition": "son; child",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "学生"
+      ]
+    },
+    "生": {
+      "char": "生",
+      "pinyin": "shēng",
+      "definitions": [
+        "to be born",
+        "to give birth",
+        "life",
+        "to grow",
+        "raw",
+        "uncooked",
+        "student"
+      ],
+      "originalMeaning": "be born; life",
+      "notes": "Pictograph of a sprout emerging from the ground.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "学生"
+      ]
+    },
+    "水": {
+      "char": "水",
+      "pinyin": "shuǐ",
+      "definitions": [
+        "water",
+        "river",
+        "liquid",
+        "beverage",
+        "additional charges or income",
+        "(of clothes) classifier for number of washes"
+      ],
+      "originalMeaning": "water",
+      "notes": "Pictograph of a river.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "水"
+      ]
+    },
+    "瓶": {
+      "char": "瓶",
+      "pinyin": "píng",
+      "definitions": [
+        "bottle",
+        "vase",
+        "pitcher",
+        "classifier for wine and liquids"
+      ],
+      "originalMeaning": "bottle, jug, pitcher, vase",
+      "notes": "Phonosemantic compound. 瓦 represents the meaning and 并 represents the sound. Simplified form of 缾.",
+      "components": [
+        {
+          "char": "瓦",
+          "type": "meaning",
+          "pinyin": "wǎ",
+          "definition": "roof tile; (pottery)",
+          "hint": ""
+        },
+        {
+          "char": "并",
+          "type": "sound",
+          "pinyin": "bìng",
+          "definition": "also; furthermore; simultaneously, join",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "瓶"
+      ]
+    },
+    "一": {
+      "char": "一",
+      "pinyin": "yī",
+      "definitions": [
+        "one",
+        "1",
+        "single",
+        "a (article)",
+        "as soon as",
+        "entire",
+        "whole",
+        "all",
+        "throughout",
+        "\"one\" radical in Chinese characters (Kangxi radical 1)",
+        "also pr. [yāo] for greater clarity when spelling out numbers digit by digit"
+      ],
+      "originalMeaning": "one",
+      "notes": "A single horizontal stroke, representing the number one.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "一"
+      ]
+    },
+    "咖": {
+      "char": "咖",
+      "pinyin": "kā",
+      "definitions": [
+        "coffee",
+        "class",
+        "grade"
+      ],
+      "originalMeaning": "coffee; used in transliterations",
+      "notes": "Phonosemantic compound. 口 represents the meaning and 加 represents the sound.",
+      "components": [
+        {
+          "char": "口",
+          "type": "meaning",
+          "pinyin": "kǒu",
+          "definition": "mouth",
+          "hint": ""
+        },
+        {
+          "char": "加",
+          "type": "sound",
+          "pinyin": "jiā",
+          "definition": "add; plus",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "咖啡"
+      ]
+    },
+    "啡": {
+      "char": "啡",
+      "pinyin": "fēi",
+      "definitions": [
+        "(phonetic component)"
+      ],
+      "originalMeaning": "coffee; morphine",
+      "notes": "Phonosemantic compound. 口 represents the meaning and 非 represents the sound.",
+      "components": [
+        {
+          "char": "口",
+          "type": "meaning",
+          "pinyin": "kǒu",
+          "definition": "mouth",
+          "hint": ""
+        },
+        {
+          "char": "非",
+          "type": "sound",
+          "pinyin": "fēi",
+          "definition": "not",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "咖啡"
+      ]
+    },
+    "口": {
+      "char": "口",
+      "pinyin": "kǒu",
+      "definitions": [
+        "mouth",
+        "classifier for things with mouths (people, domestic animals, cannons, wells etc)",
+        "classifier for bites or mouthfuls"
+      ],
+      "originalMeaning": "mouth",
+      "notes": "Pictograph of a mouth.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "叫",
+        "咖啡"
+      ]
+    },
+    "丩": {
+      "char": "丩",
+      "pinyin": "jiū",
+      "definitions": [
+        "archaic variant of 糾|纠[jiū]"
+      ],
+      "originalMeaning": "entangle; gather",
+      "notes": "Pictograph of two ropes entangled together, now written as 糾.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "叫"
+      ]
+    },
+    "又": {
+      "char": "又",
+      "pinyin": "yòu",
+      "definitions": [
+        "(once) again",
+        "also",
+        "both... and...",
+        "and yet",
+        "(used for emphasis) anyway"
+      ],
+      "originalMeaning": "(hand); again",
+      "notes": "Pictograph of a hand. The character is based on the original meaning \"right hand\", which is unrelated to the modern meaning.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "对"
+      ]
+    },
+    "寸": {
+      "char": "寸",
+      "pinyin": "cùn",
+      "definitions": [
+        "a unit of length",
+        "inch",
+        "thumb"
+      ],
+      "originalMeaning": "inch; thumb; (hand)",
+      "notes": "Pictograph of a hand with a line marking a spot on the wrist. In traditional Chinese medicine this spot on the wrist where the pulse can be taken is called the 寸口.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "对"
+      ]
+    },
+    "亻": {
+      "char": "亻",
+      "pinyin": "rén",
+      "definitions": [
+        "\"person\" radical in Chinese characters (Kangxi radical 9)"
+      ],
+      "originalMeaning": "person",
+      "notes": "亻 is a component form of 人.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "你"
+      ]
+    },
+    "尔": {
+      "char": "尔",
+      "pinyin": "ěr",
+      "definitions": [
+        "thus",
+        "so",
+        "like that",
+        "you",
+        "thou"
+      ],
+      "originalMeaning": "you (archaic)",
+      "notes": "Simplified form of 爾.  Origin unclear. Used in ancient texts to mean \"you\".",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "你"
+      ]
+    },
+    "女": {
+      "char": "女",
+      "pinyin": "nǚ",
+      "definitions": [
+        "female",
+        "woman",
+        "daughter"
+      ],
+      "originalMeaning": "woman; female",
+      "notes": "Pictograph of a woman. Depicts a stick-figure with breasts sitting or squatting down.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "好"
+      ]
+    },
+    "子": {
+      "char": "子",
+      "pinyin": "zǐ",
+      "definitions": [
+        "son",
+        "child",
+        "seed",
+        "egg",
+        "small thing",
+        "1st earthly branch: 11 p.m.-1 a.m., midnight, 11th solar month (7th December to 5th January), year of the Rat",
+        "Viscount, fourth of five orders of nobility 五等爵位[wǔ​děng​jué​wèi]",
+        "ancient Chinese compass point: 0° (north)"
+      ],
+      "originalMeaning": "son; child",
+      "notes": "Pictograph of a small child with its two arms outstretched.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "好",
+        "学生"
+      ]
+    },
+    "戈": {
+      "char": "戈",
+      "pinyin": "gē",
+      "definitions": [
+        "dagger-axe",
+        "abbr. for 戈瑞[gē​ruì]",
+        "(Tw) abbr. for 戈雷[gē​léi]"
+      ],
+      "originalMeaning": "dagger-axe",
+      "notes": "Pictograph of a weapon with a long shaft and horizontal blade.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "我"
+      ]
+    },
+    "◎": {
+      "char": "◎",
+      "pinyin": "xx",
+      "definitions": [
+        "characterless component"
+      ],
+      "originalMeaning": "characterless component",
+      "notes": "Placeholder for components that are unknown objects or for which a character does not exist.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "老师",
+        "学生"
+      ]
+    },
+    "刂": {
+      "char": "刂",
+      "pinyin": "dāo",
+      "definitions": [
+        "\"knife\" radical in Chinese characters (Kangxi radical 18)",
+        "see also 立刀旁[lì​dāo​páng]",
+        "see also 側刀旁|侧刀旁[cè​dāo​páng]"
+      ],
+      "originalMeaning": "knife",
+      "notes": "刂 is a component form of 刀.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "老师"
+      ]
+    },
+    "帀": {
+      "char": "帀",
+      "pinyin": "zā",
+      "definitions": [
+        "variant of 匝[zā]"
+      ],
+      "originalMeaning": "circle; surround; everywhere",
+      "notes": "Origin unclear.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "老师"
+      ]
+    },
+    "宀": {
+      "char": "宀",
+      "pinyin": "mián",
+      "definitions": [
+        "\"roof\" radical in Chinese characters (Kangxi radical 40), occurring in 家, 定, 安 etc",
+        "see also 寶蓋|宝盖[bǎo​gài]"
+      ],
+      "originalMeaning": "roof",
+      "notes": "Pictograph of a roof.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "学生"
+      ]
+    },
+    "瓦": {
+      "char": "瓦",
+      "pinyin": "wǎ",
+      "definitions": [
+        "roof tile",
+        "abbr. for 瓦特[wǎ​tè]"
+      ],
+      "originalMeaning": "roof tile; (pottery)",
+      "notes": "Pictograph of a tool for making pottery.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "瓶"
+      ]
+    },
+    "并": {
+      "char": "并",
+      "pinyin": "bìng",
+      "definitions": [
+        "and",
+        "furthermore",
+        "also",
+        "together with",
+        "(not) at all",
+        "simultaneously",
+        "to combine",
+        "to join",
+        "to merge"
+      ],
+      "originalMeaning": "also; furthermore; simultaneously, join",
+      "notes": "Simplified form of 並.  Depits two people standing (立) side-by-side.",
+      "components": [
+        {
+          "char": "立",
+          "type": "iconic",
+          "pinyin": "lì",
+          "definition": "stand; establish",
+          "hint": ""
+        },
+        {
+          "char": "立",
+          "type": "iconic",
+          "pinyin": "lì",
+          "definition": "stand; establish",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "瓶"
+      ]
+    },
+    "加": {
+      "char": "加",
+      "pinyin": "jiā",
+      "definitions": [
+        "to add",
+        "plus",
+        "(used after an adverb such as 不, 大, 稍 etc, and before a disyllabic verb, to indicate that the action of the verb is applied to sth or sb previously mentioned)",
+        "to apply (restrictions etc) to (sb)",
+        "to give (support, consideration etc) to (sth)"
+      ],
+      "originalMeaning": "add; plus",
+      "notes": "Depicts making noises with the mouth (口) while exerting strength (力). Based on the original meaning \"exert strength\". The meaning later shifted to \"raise; increase; add\"",
+      "components": [
+        {
+          "char": "力",
+          "type": "meaning",
+          "pinyin": "lì",
+          "definition": "strength; power",
+          "hint": ""
+        },
+        {
+          "char": "口",
+          "type": "meaning",
+          "pinyin": "kǒu",
+          "definition": "mouth",
+          "hint": ""
+        }
+      ],
+      "hasEtymology": true,
+      "appearsIn": [
+        "咖啡"
+      ]
+    },
+    "非": {
+      "char": "非",
+      "pinyin": "fēi",
+      "definitions": [
+        "to not be",
+        "not",
+        "wrong",
+        "incorrect",
+        "non-",
+        "un-",
+        "in-",
+        "to reproach or blame",
+        "(colloquial) to insist on",
+        "simply must"
+      ],
+      "originalMeaning": "not",
+      "notes": "Pictograph of two wings facing opposite directions.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "咖啡"
+      ]
+    },
+    "立": {
+      "char": "立",
+      "pinyin": "lì",
+      "definitions": [
+        "to stand",
+        "to set up",
+        "to establish",
+        "to lay down",
+        "to draw up",
+        "at once",
+        "immediately"
+      ],
+      "originalMeaning": "stand; establish",
+      "notes": "Pictograph of a person standing on the ground.",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "瓶"
+      ]
+    },
+    "力": {
+      "char": "力",
+      "pinyin": "lì",
+      "definitions": [
+        "power",
+        "force",
+        "strength",
+        "ability",
+        "strenuously"
+      ],
+      "originalMeaning": "strength; power",
+      "notes": "Pictograph of a plow, representing strength",
+      "components": [],
+      "hasEtymology": true,
+      "appearsIn": [
+        "咖啡"
+      ]
+    }
+  }
+}

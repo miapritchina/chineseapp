@@ -25,11 +25,16 @@ jobs:
 
       - name: Prepare site
         run: |
-          mkdir -p _site
-          cp palette.html _site/index.html
-          cp palette.html _site/palette.html
-          cp mixbox.js _site/mixbox.js
-          cp index.html _site/debug.html
+          mkdir -p _site/palette _site/chinese
+          cp index.html                _site/index.html
+          cp palette/palette.html      _site/palette/index.html
+          cp palette/palette.html      _site/palette/palette.html
+          cp palette/mixbox.js         _site/palette/mixbox.js
+          cp palette/reference.html    _site/palette/reference.html
+          cp chinese/index.html        _site/chinese/index.html
+          cp chinese/styles.css        _site/chinese/styles.css
+          cp chinese/app.js            _site/chinese/app.js
+          cp chinese/data.json         _site/chinese/data.json
           echo "Build OK - $(date)" > _site/build-info.txt
 
       - uses: actions/configure-pages@v4

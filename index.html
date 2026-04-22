@@ -2,16 +2,88 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=palette.html" />
-    <title>Artist Palette</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Apps</title>
     <style>
-      body { background: #2a2520; color: #aaa; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-      a { color: #8cf; font-size: 18px; }
-      .page-id { position: fixed; bottom: 4px; right: 6px; font-size: 10px; color: #555; }
+      :root {
+        color-scheme: dark;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #1a1916;
+        color: #d8d4ce;
+        font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        padding: 40px 20px;
+        box-sizing: border-box;
+      }
+      h1 {
+        margin: 0;
+        font-weight: 500;
+        font-size: 22px;
+        color: #a8a198;
+        letter-spacing: 0.5px;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        width: min(640px, 100%);
+      }
+      a.tile {
+        display: block;
+        padding: 28px 22px;
+        border-radius: 14px;
+        background: #262320;
+        border: 1px solid #3a332d;
+        color: inherit;
+        text-decoration: none;
+        transition: transform 0.12s ease, background 0.12s ease;
+      }
+      a.tile:hover, a.tile:focus {
+        background: #2e2a25;
+        transform: translateY(-2px);
+        outline: none;
+      }
+      .tile-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .tile-sub {
+        font-size: 14px;
+        color: #8a847a;
+        line-height: 1.45;
+      }
+      .page-id {
+        position: fixed;
+        bottom: 6px;
+        right: 8px;
+        font-size: 10px;
+        color: #4a4540;
+      }
     </style>
   </head>
   <body>
-    <a href="palette.html">Open Palette</a>
-    <div class="page-id">page:index v1</div>
+    <h1>Apps</h1>
+    <div class="tiles">
+      <a class="tile" href="chinese/">
+        <div class="tile-title">中文 · Chinese</div>
+        <div class="tile-sub">Learn characters by building connections — strokes, etymology, clickable components.</div>
+      </a>
+      <a class="tile" href="palette/">
+        <div class="tile-title">Palette</div>
+        <div class="tile-sub">Browser watercolor painting with pigment-based mixing.</div>
+      </a>
+    </div>
+    <div class="page-id">index v2</div>
   </body>
 </html>
