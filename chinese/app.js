@@ -2,32 +2,48 @@
   "use strict";
 
   const ROLE_LABEL = {
-    iconic: "Iconic component",
-    meaning: "Meaning component",
-    sound: "Sound component",
-    simplified: "Simplified component",
-    deleted: "Deleted component",
+    iconic: "Iconic",
+    meaning: "Meaning",
+    sound: "Sound",
+    simplified: "Simplified",
+    deleted: "Deleted",
     unknown: "Component",
   };
 
+  const ROLE_FALLBACK = {
+    iconic: "#2563eb",
+    meaning: "#16a34a",
+    sound: "#dc2626",
+    simplified: "#9333ea",
+    deleted: "#6b7280",
+    unknown: "#6b7280",
+  };
+
   const CHARACTERLESS = "◎";
+  const PAGE_SIZE = 60;
+  const MAX_RESULTS = 30;
 
   const state = {
     data: null,
-    stack: [], // stack of entries: { kind: "word"|"char", key }
-    writers: [], // active HanziWriter instances (per current modal render)
+    stack: [],
+    writers: [],
     query: "",
+    page: 1,
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+  const home = $("#home");
   const grid = $("#grid");
+  const suggestedSection = $("#suggested-section");
+  const suggestedShelf = $("#suggested-shelf");
+  const loadMoreBtn = $("#load-more");
+  const resultsRoot = $("#results");
   const modalRoot = $("#modal-root");
   const searchInput = $("#search");
   const emptyState = $("#empty");
 
-  // Strip combining tone marks and spaces so "laoshi" matches "lǎo shī".
   function normalizePinyin(s) {
     return (s || "")
       .normalize("NFD")
@@ -36,20 +52,7 @@
       .toLowerCase();
   }
 
-  const HAN_RE = /[㐀-鿿]/;
-
-  function wordMatches(w, rawQuery) {
-    const q = rawQuery.trim();
-    if (!q) return true;
-    if (HAN_RE.test(q)) {
-      return w.simp.includes(q) || (w.trad && w.trad.includes(q));
-    }
-    const nq = normalizePinyin(q);
-    if (!nq) return true;
-    if (normalizePinyin(w.pinyin).includes(nq)) return true;
-    const lq = q.toLowerCase();
-    return (w.definitions || []).some((d) => d.toLowerCase().includes(lq));
-  }
+  const HAN_RE = /[㐀-鿿豈-﫿]/;
 
   function mkEl(tag, attrs = {}, ...children) {
     const el = document.createElement(tag);
@@ -83,40 +86,136 @@
     }
   }
 
-  // ---------- home grid ----------
+  // ---------- search ranking ----------
 
-  function renderGrid() {
-    grid.innerHTML = "";
-    if (!state.data) return;
-    const q = state.query;
-    let shown = 0;
+  function rankResults(query) {
+    if (!state.data) return [];
+    const q = query.trim();
+    if (!q) return [];
+    const isHan = HAN_RE.test(q);
+    const np = normalizePinyin(q);
+    const lq = q.toLowerCase();
+
+    const tiered = [];
     for (const w of state.data.words) {
-      if (!wordMatches(w, q)) continue;
-      const card = mkEl(
-        "button",
-        {
-          class: "card",
-          type: "button",
-          "aria-label": `${w.word} ${w.pinyin}`,
-          onclick: () => openWord(w.word),
-        },
-        mkEl("div", { class: "char" }, w.simp),
-        mkEl("div", { class: "pinyin" }, w.pinyin),
-        mkEl("div", { class: "gloss" }, w.definitions[0] || ""),
-      );
-      grid.appendChild(card);
-      shown++;
+      const simp = w.simp || w.word;
+      const sp = w.searchablePinyin || normalizePinyin(w.pinyin);
+      let tier = -1;
+      if (isHan) {
+        if (simp === q) tier = 0;
+        else if (simp.startsWith(q)) tier = 1;
+        else if (simp.includes(q)) tier = 2;
+      } else {
+        if (np && sp.startsWith(np)) tier = 1;
+        else if (np && sp.includes(np)) tier = 3;
+        else if ((w.definitions || []).some((d) => d.toLowerCase().includes(lq))) tier = 4;
+      }
+      if (tier === -1) continue;
+      tiered.push({ w, tier, rank: w.rank ?? 999999 });
     }
-    if (emptyState) emptyState.hidden = shown > 0 || !q.trim();
+    tiered.sort((a, b) => a.tier - b.tier || a.rank - b.rank);
+    return tiered.slice(0, MAX_RESULTS).map((x) => x.w);
+  }
+
+  // ---------- card builder ----------
+
+  function buildCard(w) {
+    return mkEl(
+      "button",
+      {
+        class: "card",
+        type: "button",
+        "aria-label": `${w.simp} ${w.pinyin}`,
+        onclick: () => openWord(w.word),
+      },
+      w.hsk != null ? mkEl("div", { class: "hsk-badge" }, `HSK ${w.hsk}`) : null,
+      mkEl("div", { class: "char" }, w.simp),
+      mkEl("div", { class: "pinyin" }, w.pinyin),
+      mkEl("div", { class: "gloss" }, w.definitions?.[0] || ""),
+    );
+  }
+
+  function buildResultRow(w) {
+    return mkEl(
+      "button",
+      {
+        class: "result-row",
+        type: "button",
+        onclick: () => openWord(w.word),
+      },
+      mkEl("div", { class: "r-hanzi" }, w.simp),
+      mkEl(
+        "div",
+        { class: "r-mid" },
+        mkEl("div", { class: "r-pinyin" }, w.pinyin),
+        mkEl("div", { class: "r-gloss" }, (w.definitions || []).slice(0, 3).join("; ")),
+      ),
+      w.hsk != null ? mkEl("div", { class: "r-hsk" }, `HSK ${w.hsk}`) : null,
+    );
+  }
+
+  // ---------- home / results render ----------
+
+  function renderHome() {
+    if (!state.data) return;
+
+    if (state.query.trim()) {
+      home.hidden = true;
+      renderResults();
+      return;
+    }
+
+    home.hidden = false;
+    resultsRoot.hidden = true;
+    if (emptyState) emptyState.hidden = true;
+
+    renderSuggestedShelf();
+    renderGridPage();
+  }
+
+  function renderSuggestedShelf() {
+    suggestedShelf.innerHTML = "";
+    const list = state.data.suggested || [];
+    if (!list.length) {
+      suggestedSection.hidden = true;
+      return;
+    }
+    suggestedSection.hidden = false;
+    for (const word of list) {
+      const w = findWord(word);
+      if (w) suggestedShelf.append(buildCard(w));
+    }
+  }
+
+  function renderGridPage() {
+    grid.innerHTML = "";
+    const total = state.data.words.length;
+    const upTo = Math.min(state.page * PAGE_SIZE, total);
+    for (let i = 0; i < upTo; i++) {
+      grid.append(buildCard(state.data.words[i]));
+    }
+    if (loadMoreBtn) loadMoreBtn.hidden = upTo >= total;
+  }
+
+  function renderResults() {
+    resultsRoot.hidden = false;
+    resultsRoot.innerHTML = "";
+    const matches = rankResults(state.query);
+    if (!matches.length) {
+      if (emptyState) emptyState.hidden = false;
+      return;
+    }
+    if (emptyState) emptyState.hidden = true;
+    for (const w of matches) resultsRoot.append(buildResultRow(w));
   }
 
   // ---------- modal / stack ----------
 
   function openWord(word) {
-    pushEntry({ kind: "word", key: word }, /*fromHistory*/ false);
+    pushEntry({ kind: "word", key: word }, false);
   }
   function openChar(char) {
-    pushEntry({ kind: "char", key: char }, /*fromHistory*/ false);
+    pushEntry({ kind: "char", key: char }, false);
   }
 
   function pushEntry(entry, fromHistory) {
@@ -153,7 +252,6 @@
   }
 
   function destroyWriters() {
-    // hanzi-writer has no destroy; just drop references and clear their DOM.
     state.writers = [];
   }
 
@@ -190,9 +288,8 @@
     modalRoot.append(header, body);
     modalRoot.scrollTop = 0;
 
-    // Kick off writers after layout
     requestAnimationFrame(() => {
-      $$(".writer-wrap[data-char]", modalRoot).forEach((el) => attachWriter(el));
+      $$(".glyph-wrap[data-char]", modalRoot).forEach((el) => attachWriter(el));
     });
   }
 
@@ -228,7 +325,6 @@
       return;
     }
 
-    // For single-char words, the per-char section already shows these definitions.
     if (w.definitions && w.definitions.length && w.chars.length > 1) {
       root.append(
         mkEl("div", { class: "section-title" }, "Meaning"),
@@ -237,7 +333,7 @@
           { class: "etym" },
           mkEl(
             "div",
-            { style: "font-size: 15px" },
+            { style: "font-size: 15px; text-align: center" },
             w.definitions.join("; "),
           ),
         ),
@@ -254,12 +350,11 @@
   function renderCharBody(root, charKey) {
     const c = state.data.chars[charKey];
     if (!c) {
-      // Characterless placeholders or chars we never extracted.
       root.append(
         mkEl(
           "div",
           { class: "char-section" },
-          mkEl("div", { class: "writer-fallback" }, charKey),
+          mkEl("div", { class: "glyph-fallback" }, charKey),
           mkEl("p", { class: "etym" }, "No etymology available for this component."),
         ),
       );
@@ -268,7 +363,7 @@
     root.append(renderCharSection(charKey));
   }
 
-  // ---------- char section (reusable) ----------
+  // ---------- char section (Dong-Chinese style) ----------
 
   function renderCharSection(charKey) {
     const c = state.data.chars[charKey];
@@ -276,49 +371,45 @@
 
     if (!c) {
       section.append(
+        mkEl("div", { class: "glyph-fallback" }, charKey),
         mkEl(
           "div",
-          { class: "char-header" },
-          mkEl("div", { class: "writer-wrap" }, mkEl("div", { class: "writer-fallback" }, charKey)),
-          mkEl(
-            "div",
-            { class: "char-meta" },
-            mkEl("div", { class: "char-big" }, charKey),
-            mkEl("div", { class: "char-defs" }, "No data for this character."),
-          ),
+          { class: "char-meta-block" },
+          mkEl("div", { class: "char-defs" }, "No data for this character."),
         ),
       );
       return section;
     }
 
-    // Header: stroke writer + meta (no duplicated big character — the writer IS the character)
-    const writerWrap = mkEl("div", { class: "writer-wrap", dataset: { char: charKey } });
-    const header = mkEl(
-      "div",
-      { class: "char-header" },
-      writerWrap,
-      mkEl(
-        "div",
-        { class: "char-meta" },
-        c.pinyin ? mkEl("div", { class: "char-pinyin" }, c.pinyin) : null,
-        c.definitions && c.definitions.length
-          ? mkEl("div", { class: "char-defs" }, c.definitions.join("; "))
-          : null,
-      ),
-    );
-    section.append(header);
+    const glyphWrap = mkEl("div", {
+      class: "glyph-wrap",
+      dataset: { char: charKey },
+      tabindex: "0",
+      role: "button",
+      "aria-label": `Replay stroke animation for ${charKey}`,
+    });
 
-    // Components
+    const meta = mkEl(
+      "div",
+      { class: "char-meta-block" },
+      c.pinyin ? mkEl("div", { class: "char-pinyin" }, c.pinyin) : null,
+      c.definitions && c.definitions.length
+        ? mkEl("div", { class: "char-defs" }, c.definitions.join("; "))
+        : null,
+      mkEl("div", { class: "replay-hint" }, "Tap to replay strokes"),
+    );
+
+    section.append(glyphWrap, meta);
+
     if (c.components && c.components.length) {
       section.append(mkEl("div", { class: "section-title" }, "Components"));
       const list = mkEl("div", { class: "components" });
       for (const comp of c.components) {
-        list.append(renderComponentRow(comp));
+        list.append(renderComponentRow(comp, glyphWrap));
       }
       section.append(list);
     }
 
-    // Etymology (after components)
     if (c.notes || c.originalMeaning) {
       section.append(mkEl("div", { class: "section-title" }, "Etymology"));
       const etym = mkEl("div", { class: "etym" });
@@ -329,77 +420,61 @@
       section.append(etym);
     }
 
-    // Also appears in — exclude the character itself's word-presence ambiguity;
-    // only show other seed words that reference this char.
     if (c.appearsIn && c.appearsIn.length) {
       const currentTopWord =
         state.stack[state.stack.length - 1]?.kind === "word"
           ? state.stack[state.stack.length - 1].key
           : null;
-      const others = c.appearsIn.filter((w) => w !== currentTopWord);
+      const others = c.appearsIn.filter((w) => w !== currentTopWord).slice(0, 30);
       if (others.length) {
         section.append(mkEl("div", { class: "section-title" }, "Also appears in"));
         const chips = mkEl("div", { class: "appears-in" });
         for (const w of others) {
           const wordObj = findWord(w);
+          if (!wordObj) continue;
           chips.append(
             mkEl(
               "button",
               { class: "chip", type: "button", onclick: () => openWord(w) },
-              `${w}${wordObj ? ` · ${wordObj.pinyin}` : ""}`,
+              `${w} · ${wordObj.pinyin}`,
             ),
           );
         }
-        section.append(chips);
+        if (chips.children.length) section.append(chips);
       }
     }
 
-    // My story (mnemonic)
     section.append(mkEl("div", { class: "section-title" }, "My story"));
     section.append(renderMnemonic(charKey));
-
-    // Ancient forms (oracle / bronze / seal) — kept last as a visual reference.
-    if (c.images && c.images.length) {
-      section.append(mkEl("div", { class: "section-title" }, "Ancient forms"));
-      const row = mkEl("div", { class: "ancient-row" });
-      for (const img of c.images) {
-        row.append(
-          mkEl(
-            "figure",
-            { class: "ancient-form" },
-            mkEl("img", { src: img.url, alt: img.caption || "ancient form", loading: "lazy" }),
-            img.caption ? mkEl("figcaption", {}, img.caption) : null,
-          ),
-        );
-      }
-      section.append(row);
-    }
 
     return section;
   }
 
-  function renderComponentRow(comp) {
+  function renderComponentRow(comp, glyphWrap) {
     const role = ROLE_LABEL[comp.type] || "Component";
     const hasData = comp.char !== CHARACTERLESS && !!state.data.chars[comp.char];
     const clickable = hasData;
 
-    const info = mkEl(
-      "div",
-      { class: "component-info" },
-      mkEl(
-        "div",
-        {},
-        mkEl("span", { class: `component-role role-${comp.type}` }, role),
-      ),
-      mkEl(
-        "div",
-        { class: "component-gloss" },
-        [comp.char, comp.pinyin, comp.definition].filter(Boolean).join(" · "),
-      ),
-      comp.hint ? mkEl("div", { class: "component-hint" }, comp.hint) : null,
-    );
+    const setActive = (active) => {
+      if (!glyphWrap) return;
+      const svg = glyphWrap.querySelector("svg");
+      if (!svg) return;
+      glyphWrap.classList.toggle("has-active", active);
+      $$(`path[data-stroke-idx]`, svg).forEach((p) => {
+        const idx = +p.dataset.strokeIdx;
+        const f = comp.fragment;
+        if (!Array.isArray(f)) {
+          p.removeAttribute("data-role-active");
+          return;
+        }
+        const [s, e] = f;
+        const end = e == null ? Infinity : e;
+        if (active && idx >= s && idx < end) p.setAttribute("data-role-active", "");
+        else p.removeAttribute("data-role-active");
+      });
+    };
 
-    return mkEl(
+    const row = mkEl(
       "button",
       {
         class: `component-row${clickable ? "" : " inert"}`,
@@ -408,8 +483,29 @@
         onclick: clickable ? () => openChar(comp.char) : null,
       },
       mkEl("span", { class: `component-char role-${comp.type}` }, comp.char),
-      info,
+      mkEl(
+        "div",
+        { class: "component-info" },
+        mkEl(
+          "div",
+          {},
+          mkEl("span", { class: `component-role role-${comp.type}` }, role),
+        ),
+        mkEl(
+          "div",
+          { class: "component-gloss" },
+          [comp.char, comp.pinyin, comp.definition].filter(Boolean).join(" · "),
+        ),
+        comp.hint ? mkEl("div", { class: "component-hint" }, comp.hint) : null,
+      ),
     );
+
+    row.addEventListener("mouseenter", () => setActive(true));
+    row.addEventListener("mouseleave", () => setActive(false));
+    row.addEventListener("focus", () => setActive(true));
+    row.addEventListener("blur", () => setActive(false));
+
+    return row;
   }
 
   // ---------- mnemonic ----------
@@ -422,7 +518,6 @@
     const ta = mkEl("textarea", {
       placeholder:
         "Write your own mnemonic — a short story connecting the character's shape, components, and meaning. The more vivid and personal, the stickier it gets.",
-      value: existing,
     });
     ta.value = existing;
 
@@ -450,23 +545,59 @@
     );
   }
 
-  // ---------- hanzi-writer attachment ----------
+  // ---------- hanzi-writer + stroke tinting ----------
+
+  function paintComponentColors(svg, components) {
+    const paths = $$("path[data-stroke-idx]", svg);
+    if (!paths.length || !Array.isArray(components)) return;
+    const total = paths.length;
+    for (const path of paths) {
+      const idx = +path.dataset.strokeIdx;
+      let role = "unknown";
+      for (const comp of components) {
+        const f = comp.fragment;
+        if (!Array.isArray(f)) continue;
+        const [s, e] = f;
+        const end = e == null ? total : e;
+        if (idx >= s && idx < end) {
+          role = comp.type || "unknown";
+          break;
+        }
+      }
+      path.setAttribute("data-role", role);
+      path.setAttribute("stroke", ROLE_FALLBACK[role] || ROLE_FALLBACK.unknown);
+    }
+  }
+
+  function tagStrokePaths(el) {
+    const svg = el.querySelector("svg");
+    if (!svg) return [];
+    // Hanzi-writer creates one stroke-animation <path> per stroke directly in <svg>;
+    // each has a clip-path attribute (outline paths don't). DOM order = stroke order.
+    const all = Array.from(svg.querySelectorAll("path[clip-path]"));
+    all.forEach((p, i) => p.setAttribute("data-stroke-idx", String(i)));
+    return all;
+  }
 
   function attachWriter(el) {
     const ch = el.dataset.char;
     if (!ch) return;
     el.innerHTML = "";
     if (typeof HanziWriter === "undefined") {
-      el.append(mkEl("div", { class: "writer-fallback" }, ch));
+      el.append(mkEl("div", { class: "glyph-fallback" }, ch));
       return;
     }
+    const charData = state.data.chars[ch];
+    const components = charData?.components || [];
+
     try {
-      const size = el.clientWidth || 220;
+      const size = el.clientWidth || 240;
       const writer = HanziWriter.create(el, ch, {
         width: size,
         height: size,
-        padding: 10,
+        padding: 8,
         showOutline: true,
+        showCharacter: true,
         strokeAnimationSpeed: 1,
         delayBetweenStrokes: 140,
         strokeColor: getComputedStyle(document.documentElement)
@@ -477,15 +608,28 @@
           .trim() || "#ddd",
         onLoadCharDataError: () => {
           el.innerHTML = "";
-          el.append(mkEl("div", { class: "writer-fallback" }, ch));
+          el.append(mkEl("div", { class: "glyph-fallback" }, ch));
+        },
+        onLoadCharDataSuccess: () => {
+          // Wait for hanzi-writer to mount paths, then tint.
+          requestAnimationFrame(() => {
+            tagStrokePaths(el);
+            paintComponentColors(el.querySelector("svg"), components);
+          });
         },
       });
-      writer.animateCharacter();
       state.writers.push(writer);
-      el.setAttribute("role", "button");
-      el.setAttribute("aria-label", `Replay stroke animation for ${ch}`);
-      el.tabIndex = 0;
-      const replay = () => writer.animateCharacter();
+
+      const replay = () => {
+        const p = writer.animateCharacter();
+        if (p && typeof p.then === "function") {
+          p.then(() => {
+            tagStrokePaths(el);
+            paintComponentColors(el.querySelector("svg"), components);
+          });
+        }
+      };
+
       el.addEventListener("click", replay);
       el.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -495,7 +639,7 @@
       });
     } catch (e) {
       console.error("HanziWriter error for", ch, e);
-      el.append(mkEl("div", { class: "writer-fallback" }, ch));
+      el.append(mkEl("div", { class: "glyph-fallback" }, ch));
     }
   }
 
@@ -510,7 +654,6 @@
   window.addEventListener("popstate", (ev) => {
     const desiredLen = (ev.state && ev.state.stackLen) || 0;
     while (state.stack.length > desiredLen) state.stack.pop();
-    // If we popped into an intermediate state (after nested details), hash may still be present.
     if (state.stack.length === 0) closeModal();
     else renderModal();
   });
@@ -519,26 +662,33 @@
     if (ev.key === "Escape" && state.stack.length > 0) popEntry(false);
   });
 
-  // Dismiss on backdrop tap (when body is clicked outside the header/section content is tricky;
-  // we just let back button / Esc / swipe-back handle it on mobile).
-
-  // ---------- search ----------
+  // ---------- search wiring ----------
 
   if (searchInput) {
+    let debounceTimer = null;
     searchInput.addEventListener("input", () => {
-      state.query = searchInput.value;
-      renderGrid();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        state.query = searchInput.value;
+        renderHome();
+      }, 90);
     });
     searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         searchInput.value = "";
         state.query = "";
-        renderGrid();
+        renderHome();
       } else if (e.key === "Enter") {
-        // Open the first visible card.
-        const first = grid.querySelector(".card");
+        const first = resultsRoot.querySelector(".result-row") || grid.querySelector(".card");
         if (first) first.click();
       }
+    });
+  }
+
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener("click", () => {
+      state.page += 1;
+      renderGridPage();
     });
   }
 
@@ -546,13 +696,12 @@
 
   (async function boot() {
     await loadData();
-    renderGrid();
+    renderHome();
 
-    // Deep-link: open entry for initial hash, if present and valid.
     const initial = parseHash();
     if (initial) {
       if (initial.kind === "word" && findWord(initial.key)) openWord(initial.key);
-      else if (initial.kind === "char" && state.data.chars[initial.key]) openChar(initial.key);
+      else if (initial.kind === "char" && state.data?.chars?.[initial.key]) openChar(initial.key);
     }
   })();
 })();
