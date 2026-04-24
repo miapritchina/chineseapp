@@ -77,16 +77,16 @@ body {
   top: calc(49px + env(safe-area-inset-top));
   z-index: 4;
   background: var(--bg);
-  padding: 12px 18px 4px;
+  padding: 14px 18px 8px;
   max-width: 880px;
   margin: 0 auto;
 }
 .search-bar input {
   width: 100%;
-  padding: 10px 14px;
-  font-size: 15px;
+  padding: 12px 16px;
+  font-size: 16px;
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -109,27 +109,58 @@ body {
   font-size: 15px;
 }
 
+/* Home layout */
+.home {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 4px 0 80px;
+}
+.shelf-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--muted);
+  padding: 14px 18px 8px;
+}
+.shelf-section { margin-bottom: 6px; }
+
+/* Suggested shelf — horizontal scroll */
+.shelf {
+  display: flex;
+  gap: 10px;
+  padding: 6px 18px 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.shelf::-webkit-scrollbar { display: none; }
+.shelf .card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: 110px;
+}
+
 /* Grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 14px;
-  padding: 18px;
-  max-width: 880px;
-  margin: 0 auto;
+  gap: 12px;
+  padding: 6px 18px 18px;
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 18px 14px 14px;
+  padding: 16px 12px 12px;
   text-align: center;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
   box-shadow: var(--shadow);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 .card:hover, .card:focus-visible {
   transform: translateY(-2px);
@@ -139,23 +170,102 @@ body {
 .card:active { transform: translateY(0); }
 
 .card .char {
-  font-size: 56px;
+  font-size: 44px;
   line-height: 1;
   font-weight: 500;
   letter-spacing: 2px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .card .pinyin {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
   margin-bottom: 4px;
 }
 .card .gloss {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.card .hsk-badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.load-more {
+  display: block;
+  margin: 8px auto 16px;
+  padding: 10px 22px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.load-more:hover { background: var(--surface-2); }
+
+/* Search results — replaces home when query non-empty */
+.results {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 12px 80px;
+}
+.result-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: baseline;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.result-row:hover, .result-row:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.result-row .r-hanzi {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  align-self: center;
+}
+.result-row .r-mid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.result-row .r-pinyin { font-size: 14px; color: var(--muted); }
+.result-row .r-gloss {
+  font-size: 13.5px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.result-row .r-hsk {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  align-self: center;
 }
 
 /* Modal */
@@ -212,28 +322,23 @@ body {
   padding: 22px 18px 80px;
 }
 
+/* Dong-Chinese-style detail card */
 .char-section {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 18px;
+  padding: 24px 22px;
   margin-bottom: 22px;
   box-shadow: var(--shadow);
-}
-.char-section + .char-section { margin-top: 0; }
-
-.char-header {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 14px;
 }
-.writer-wrap {
-  width: 220px;
-  height: 220px;
+.glyph-wrap {
+  width: min(280px, 70vw);
+  height: min(280px, 70vw);
   background: var(--surface-2);
-  border-radius: 14px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -244,30 +349,52 @@ body {
   user-select: none;
   transition: background 0.12s ease;
 }
-.writer-wrap:hover { background: var(--surface); }
-.writer-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.writer-wrap svg {
-  display: block;
-}
-.writer-fallback {
-  font-size: 140px;
+.glyph-wrap:hover { background: var(--surface); }
+.glyph-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.glyph-wrap svg { display: block; }
+.glyph-fallback {
+  font-size: 180px;
   line-height: 1;
   font-weight: 400;
 }
 
-.char-meta {
+/* Stroke tinting — applied via setAttribute on <path> stroke,
+   but CSS classes also serve as a fallback for inert paths */
+.glyph-wrap svg path[data-role="iconic"]    { stroke: var(--role-iconic); }
+.glyph-wrap svg path[data-role="meaning"]   { stroke: var(--role-meaning); }
+.glyph-wrap svg path[data-role="sound"]     { stroke: var(--role-sound); }
+.glyph-wrap svg path[data-role="simplified"]{ stroke: var(--role-simplified); }
+.glyph-wrap svg path[data-role="deleted"]   { stroke: var(--role-deleted); }
+.glyph-wrap svg path[data-role="unknown"]   { stroke: var(--role-unknown); }
+
+/* When a component is "active" (hovered/focused), dim non-matching strokes */
+.glyph-wrap.has-active svg path[data-role]:not([data-role-active]) { opacity: 0.18; }
+
+.char-meta-block {
+  text-align: center;
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-.char-meta .char-pinyin {
-  font-size: 20px;
+.char-meta-block .char-pinyin {
+  font-size: 22px;
   color: var(--muted);
+  letter-spacing: 0.5px;
 }
-.char-meta .char-defs {
-  font-size: 14px;
+.char-meta-block .char-defs {
+  font-size: 14.5px;
   color: var(--text);
-  line-height: 1.4;
+  line-height: 1.5;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.replay-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+  opacity: 0.75;
 }
 
 .section-title {
@@ -275,11 +402,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 1.2px;
   color: var(--muted);
-  margin: 18px 0 10px;
+  margin: 22px 0 10px;
   text-align: center;
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
 }
 .section-title::before,
 .section-title::after {
@@ -293,6 +421,7 @@ body {
   font-size: 14.5px;
   line-height: 1.55;
   color: var(--text);
+  width: 100%;
 }
 .etym .orig {
   color: var(--muted);
@@ -300,55 +429,18 @@ body {
   margin-bottom: 4px;
 }
 
-.ancient-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  justify-content: center;
-}
-.ancient-form {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: var(--surface-2);
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  min-width: 88px;
-}
-.ancient-form img {
-  width: 54px;
-  height: 72px;
-  object-fit: contain;
-  display: block;
-}
-@media (prefers-color-scheme: dark) {
-  .ancient-form img {
-    /* The SVG glyphs are black; invert so they read on the dark surface. */
-    filter: invert(0.92) hue-rotate(180deg);
-  }
-}
-.ancient-form figcaption {
-  font-size: 11.5px;
-  color: var(--muted);
-  text-align: center;
-  line-height: 1.2;
-  max-width: 80px;
-}
-
 .components {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
 }
 .component-row {
   display: grid;
   grid-template-columns: 56px 1fr;
   gap: 14px;
   align-items: center;
-  padding: 10px;
+  padding: 12px;
   background: var(--surface-2);
   border-radius: 12px;
   border: 1px solid transparent;
@@ -423,6 +515,7 @@ body {
 }
 .chip:hover { background: var(--surface); }
 
+.mnemonic { width: 100%; }
 .mnemonic textarea {
   width: 100%;
   min-height: 90px;
@@ -463,20 +556,14 @@ body {
 
 @media (max-width: 480px) {
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    padding: 4px 12px 14px;
   }
-  .card { padding: 14px 10px 12px; border-radius: 12px; }
-  .card .char { font-size: 48px; }
-  .char-header {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
-  }
-  .char-meta { align-items: center; text-align: center; }
+  .card { padding: 12px 8px 10px; border-radius: 12px; }
+  .card .char { font-size: 38px; }
   .modal-body { padding: 16px 14px 80px; }
-  .char-section { padding: 16px; }
-  .writer-wrap { width: min(280px, 82vw); height: min(280px, 82vw); }
-  .writer-fallback { font-size: 160px; }
+  .char-section { padding: 18px 16px; border-radius: 16px; }
+  .glyph-fallback { font-size: 160px; }
+  .result-row .r-hanzi { font-size: 24px; }
 }

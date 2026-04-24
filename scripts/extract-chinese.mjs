@@ -9,22 +9,26 @@ const lex = require("chinese-lexicon");
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outPath = resolve(__dirname, "..", "chinese", "data.json");
 
-const SEED_WORDS = [
-  "叫", "对", "你", "好", "我", "老师", "学生", "水", "瓶", "一", "咖啡",
-  "杯", "牛", "奶", "三", "要", "五", "四", "面包", "八", "九", "十", "七", "六",
-  "说话", "文", "天", "丈", "大", "日", "本", "国", "英", "韩",
-  "公司", "班", "学院", "都", "大学", "中学", "小学", "工人",
-  "茶", "不", "有", "没有", "爱", "喝",
-  "儿子", "女", "孩子", "猫", "狗",
-  "妹妹", "哥哥", "弟弟", "妈妈", "爸爸", "爷爷", "奶奶", "姐姐", "叔叔", "阿姨",
-  "哪", "那", "这个", "哪里", "那里",
-  "外边", "里边", "后边", "前边",
-  "商场", "电影院", "餐厅", "医院", "洗手间",
-  "网友", "朋友", "人", "女人", "男人", "同学", "宿舍",
-  "面条", "米饭", "寿司", "饺子", "包子", "馄饨", "油条", "坚果",
-  "币", "铜币", "纸币", "两", "汤", "活", "多少", "一百", "二十",
-  "英文", "韩文",
+const SEED_SIZE = 2000;
+
+// Hand-picked beginner-friendly shelf shown above the full list on the home screen.
+const SUGGESTED_SHELF = [
+  "你好", "我", "是", "好", "想", "学", "吃", "家", "喝", "茶", "水", "猫", "狗",
+  "妈妈", "爸爸", "朋友", "老师", "学生", "学校", "中国", "美国", "今天", "明天",
+  "爱", "笑", "看", "听", "说", "走", "跑",
 ];
+
+const HANZI_RE = /^[㐀-鿿豈-﫿]+$/;
+
+function isProperNoun(entry) {
+  return /^[A-Z]/.test(entry.pinyin || "");
+}
+
+function isOnlyCrossRef(entry) {
+  const defs = entry.definitions || [];
+  if (defs.length === 0) return true;
+  return defs.every((d) => /^see /i.test(d) || /^variant of /i.test(d));
+}
 
 function bestEntry(entries, preferredSimp) {
   if (!entries || entries.length === 0) return null;
@@ -32,14 +36,36 @@ function bestEntry(entries, preferredSimp) {
     const match = entries.find((e) => e.simp === preferredSimp);
     if (match) return match;
   }
-  // Highest boost wins by default
   return entries.reduce((a, b) => ((a.boost ?? 0) >= (b.boost ?? 0) ? a : b));
 }
 
 function cleanDefinitions(defs) {
   if (!Array.isArray(defs)) return [];
-  // Strip the CL: cross-references to keep the UI tidy
   return defs.filter((d) => !/^CL:/.test(d));
+}
+
+function buildSeedFromRank() {
+  const ranked = lex.allEntries
+    .filter((e) => {
+      if (!e.statistics) return false;
+      if (e.statistics.movieWordRank == null) return false;
+      if (!HANZI_RE.test(e.simp)) return false;
+      if (e.simp.length > 4) return false;
+      if (isProperNoun(e)) return false;
+      if (isOnlyCrossRef(e)) return false;
+      return true;
+    })
+    .sort((a, b) => a.statistics.movieWordRank - b.statistics.movieWordRank);
+
+  const seen = new Set();
+  const seed = [];
+  for (const e of ranked) {
+    if (seen.has(e.simp)) continue;
+    seen.add(e.simp);
+    seed.push(e);
+    if (seed.length >= SEED_SIZE) break;
+  }
+  return seed;
 }
 
 function normalizeChar(char) {
@@ -48,9 +74,7 @@ function normalizeChar(char) {
   const etym = lex.getEtymology(char);
 
   const pinyin =
-    topEntry?.pinyin?.replace(/​/g, "") ||
-    etym?.pinyin ||
-    "";
+    topEntry?.pinyin?.replace(/​/g, "") || etym?.pinyin || "";
   const definitions = cleanDefinitions(topEntry?.definitions);
   const originalMeaning = etym?.definition || "";
   const notes = etym?.notes || "";
@@ -59,32 +83,20 @@ function normalizeChar(char) {
     ? etym.components.map((c) => ({
         char: c.char,
         type: c.type || "unknown",
-        pinyin: c.pinyin || "",
+        pinyin: (c.pinyin || "").replace(/​/g, ""),
         definition: c.definition || "",
         hint: (c.notes || "").trim(),
+        fragment: Array.isArray(c.fragment) ? c.fragment : null,
       }))
-    : [];
-
-  // Images come as CSS url("...") strings; unwrap to a plain data: URL.
-  const images = Array.isArray(etym?.images)
-    ? etym.images
-        .map((img) => {
-          const raw = typeof img.url === "string" ? img.url : "";
-          const m = /^url\((?:"|')?(.*?)(?:"|')?\)$/s.exec(raw.trim());
-          const url = m ? m[1] : raw;
-          return { url, caption: img.caption || "" };
-        })
-        .filter((i) => i.url)
     : [];
 
   return {
     char,
     pinyin,
-    definitions,
+    definitions: definitions.slice(0, 6),
     originalMeaning,
     notes: notes.trim(),
     components,
-    images,
     hasEtymology: !!etym,
   };
 }
@@ -94,26 +106,56 @@ function splitChars(str) {
 }
 
 function main() {
+  const seedEntries = buildSeedFromRank();
+  console.log(`Seed: top ${seedEntries.length} entries by movieWordRank`);
+
   const words = [];
   const charsMap = new Map();
   const queue = [];
   const seen = new Set();
 
-  for (const word of SEED_WORDS) {
-    const entries = lex.getEntries(word) || [];
-    const entry = bestEntry(entries, word);
+  for (const entry of seedEntries) {
+    const word = entry.simp;
     const chars = splitChars(word);
 
     words.push({
       word,
-      simp: entry?.simp || word,
-      trad: entry?.trad || word,
-      pinyin: (entry?.pinyin || "").replace(/​/g, ""),
-      definitions: cleanDefinitions(entry?.definitions),
+      simp: entry.simp,
+      trad: entry.trad,
+      pinyin: (entry.pinyin || "").replace(/​/g, ""),
+      searchablePinyin: (entry.searchablePinyin || "").replace(/\s+/g, ""),
+      definitions: cleanDefinitions(entry.definitions).slice(0, 6),
+      hsk: entry.statistics?.hskLevel ?? null,
+      rank: entry.statistics?.movieWordRank ?? null,
       chars,
     });
 
     for (const ch of chars) {
+      if (!seen.has(ch)) {
+        seen.add(ch);
+        queue.push(ch);
+      }
+    }
+  }
+
+  // Also pull suggested-shelf words even if they fell outside the rank cutoff.
+  for (const word of SUGGESTED_SHELF) {
+    if (words.some((w) => w.word === word)) continue;
+    const entries = lex.getEntries(word) || [];
+    const entry = bestEntry(entries, word);
+    if (!entry) continue;
+    words.push({
+      word,
+      simp: entry.simp,
+      trad: entry.trad,
+      pinyin: (entry.pinyin || "").replace(/​/g, ""),
+      searchablePinyin: (entry.searchablePinyin || "").replace(/\s+/g, ""),
+      definitions: cleanDefinitions(entry.definitions).slice(0, 6),
+      hsk: entry.statistics?.hskLevel ?? null,
+      rank: entry.statistics?.movieWordRank ?? null,
+      chars: splitChars(word),
+    });
+    for (const ch of splitChars(word)) {
       if (!seen.has(ch)) {
         seen.add(ch);
         queue.push(ch);
@@ -133,9 +175,7 @@ function main() {
     }
   }
 
-  // Build "also appears in" — which seed words reference this char
-  // either as a character of the word, or as a component of any of that word's chars.
-  const appearsIn = new Map(); // char -> Set<wordString>
+  const appearsIn = new Map();
   for (const w of words) {
     const touched = new Set();
     for (const ch of w.chars) {
@@ -144,7 +184,6 @@ function main() {
       if (entry) {
         for (const c of entry.components) {
           touched.add(c.char);
-          // Also include component's components (one more level) so 口 in 咖 shows 叫 too
           const nested = charsMap.get(c.char);
           if (nested) for (const cc of nested.components) touched.add(cc.char);
         }
@@ -167,15 +206,20 @@ function main() {
   const data = {
     generated: new Date().toISOString(),
     source: "chinese-lexicon v" + require("chinese-lexicon/package.json").version,
+    suggested: SUGGESTED_SHELF.filter((w) => words.some((x) => x.word === w)),
     words,
     chars,
   };
 
-  writeFileSync(outPath, JSON.stringify(data, null, 2) + "\n");
+  writeFileSync(outPath, JSON.stringify(data) + "\n");
   console.log(`Wrote ${outPath}`);
   console.log(`  ${words.length} words, ${Object.keys(chars).length} unique chars`);
-  const noEtym = Object.values(chars).filter((c) => !c.hasEtymology).map((c) => c.char);
-  if (noEtym.length) console.log(`  chars without etymology: ${noEtym.join(" ")}`);
+  const noEtym = Object.values(chars).filter((c) => !c.hasEtymology).length;
+  console.log(`  chars without etymology: ${noEtym}`);
+  const noFrag = Object.values(chars).filter(
+    (c) => c.hasEtymology && c.components.length > 0 && c.components.every((co) => !co.fragment)
+  ).length;
+  console.log(`  chars with components but no fragment ranges: ${noFrag}`);
 }
 
 main();
