@@ -16,6 +16,7 @@
     data: null,
     stack: [], // stack of entries: { kind: "word"|"char", key }
     writers: [], // active HanziWriter instances (per current modal render)
+    query: "",
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -23,6 +24,32 @@
 
   const grid = $("#grid");
   const modalRoot = $("#modal-root");
+  const searchInput = $("#search");
+  const emptyState = $("#empty");
+
+  // Strip combining tone marks and spaces so "laoshi" matches "lǎo shī".
+  function normalizePinyin(s) {
+    return (s || "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+  }
+
+  const HAN_RE = /[㐀-鿿]/;
+
+  function wordMatches(w, rawQuery) {
+    const q = rawQuery.trim();
+    if (!q) return true;
+    if (HAN_RE.test(q)) {
+      return w.simp.includes(q) || (w.trad && w.trad.includes(q));
+    }
+    const nq = normalizePinyin(q);
+    if (!nq) return true;
+    if (normalizePinyin(w.pinyin).includes(nq)) return true;
+    const lq = q.toLowerCase();
+    return (w.definitions || []).some((d) => d.toLowerCase().includes(lq));
+  }
 
   function mkEl(tag, attrs = {}, ...children) {
     const el = document.createElement(tag);
@@ -61,7 +88,10 @@
   function renderGrid() {
     grid.innerHTML = "";
     if (!state.data) return;
+    const q = state.query;
+    let shown = 0;
     for (const w of state.data.words) {
+      if (!wordMatches(w, q)) continue;
       const card = mkEl(
         "button",
         {
@@ -75,7 +105,9 @@
         mkEl("div", { class: "gloss" }, w.definitions[0] || ""),
       );
       grid.appendChild(card);
+      shown++;
     }
+    if (emptyState) emptyState.hidden = shown > 0 || !q.trim();
   }
 
   // ---------- modal / stack ----------
@@ -196,7 +228,8 @@
       return;
     }
 
-    if (w.definitions && w.definitions.length) {
+    // For single-char words, the per-char section already shows these definitions.
+    if (w.definitions && w.definitions.length && w.chars.length > 1) {
       root.append(
         mkEl("div", { class: "section-title" }, "Meaning"),
         mkEl(
@@ -258,7 +291,7 @@
       return section;
     }
 
-    // Header: stroke writer + meta
+    // Header: stroke writer + meta (no duplicated big character — the writer IS the character)
     const writerWrap = mkEl("div", { class: "writer-wrap", dataset: { char: charKey } });
     const header = mkEl(
       "div",
@@ -267,7 +300,6 @@
       mkEl(
         "div",
         { class: "char-meta" },
-        mkEl("div", { class: "char-big" }, c.char),
         c.pinyin ? mkEl("div", { class: "char-pinyin" }, c.pinyin) : null,
         c.definitions && c.definitions.length
           ? mkEl("div", { class: "char-defs" }, c.definitions.join("; "))
@@ -275,34 +307,6 @@
       ),
     );
     section.append(header);
-
-    // Etymology
-    if (c.notes || c.originalMeaning) {
-      section.append(mkEl("div", { class: "section-title" }, "Etymology"));
-      const etym = mkEl("div", { class: "etym" });
-      if (c.originalMeaning && c.originalMeaning !== "characterless component") {
-        etym.append(mkEl("div", { class: "orig" }, `Original meaning: ${c.originalMeaning}`));
-      }
-      if (c.notes) etym.append(mkEl("div", {}, c.notes));
-      section.append(etym);
-    }
-
-    // Ancient forms (oracle / bronze / seal)
-    if (c.images && c.images.length) {
-      section.append(mkEl("div", { class: "section-title" }, "Ancient forms"));
-      const row = mkEl("div", { class: "ancient-row" });
-      for (const img of c.images) {
-        row.append(
-          mkEl(
-            "figure",
-            { class: "ancient-form" },
-            mkEl("img", { src: img.url, alt: img.caption || "ancient form", loading: "lazy" }),
-            img.caption ? mkEl("figcaption", {}, img.caption) : null,
-          ),
-        );
-      }
-      section.append(row);
-    }
 
     // Components
     if (c.components && c.components.length) {
@@ -312,6 +316,17 @@
         list.append(renderComponentRow(comp));
       }
       section.append(list);
+    }
+
+    // Etymology (after components)
+    if (c.notes || c.originalMeaning) {
+      section.append(mkEl("div", { class: "section-title" }, "Etymology"));
+      const etym = mkEl("div", { class: "etym" });
+      if (c.originalMeaning && c.originalMeaning !== "characterless component") {
+        etym.append(mkEl("div", { class: "orig" }, `Original meaning: ${c.originalMeaning}`));
+      }
+      if (c.notes) etym.append(mkEl("div", {}, c.notes));
+      section.append(etym);
     }
 
     // Also appears in — exclude the character itself's word-presence ambiguity;
@@ -342,6 +357,23 @@
     // My story (mnemonic)
     section.append(mkEl("div", { class: "section-title" }, "My story"));
     section.append(renderMnemonic(charKey));
+
+    // Ancient forms (oracle / bronze / seal) — kept last as a visual reference.
+    if (c.images && c.images.length) {
+      section.append(mkEl("div", { class: "section-title" }, "Ancient forms"));
+      const row = mkEl("div", { class: "ancient-row" });
+      for (const img of c.images) {
+        row.append(
+          mkEl(
+            "figure",
+            { class: "ancient-form" },
+            mkEl("img", { src: img.url, alt: img.caption || "ancient form", loading: "lazy" }),
+            img.caption ? mkEl("figcaption", {}, img.caption) : null,
+          ),
+        );
+      }
+      section.append(row);
+    }
 
     return section;
   }
@@ -429,13 +461,14 @@
       return;
     }
     try {
+      const size = el.clientWidth || 220;
       const writer = HanziWriter.create(el, ch, {
-        width: 150,
-        height: 150,
-        padding: 8,
+        width: size,
+        height: size,
+        padding: 10,
         showOutline: true,
         strokeAnimationSpeed: 1,
-        delayBetweenStrokes: 120,
+        delayBetweenStrokes: 140,
         strokeColor: getComputedStyle(document.documentElement)
           .getPropertyValue("--text")
           .trim() || "#222",
@@ -447,21 +480,19 @@
           el.append(mkEl("div", { class: "writer-fallback" }, ch));
         },
       });
-      writer.loopCharacterAnimation();
+      writer.animateCharacter();
       state.writers.push(writer);
-      const replay = mkEl(
-        "button",
-        {
-          class: "replay-btn",
-          type: "button",
-          onclick: (e) => {
-            e.stopPropagation();
-            writer.animateCharacter();
-          },
-        },
-        "↻ Replay",
-      );
-      el.append(replay);
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-label", `Replay stroke animation for ${ch}`);
+      el.tabIndex = 0;
+      const replay = () => writer.animateCharacter();
+      el.addEventListener("click", replay);
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          replay();
+        }
+      });
     } catch (e) {
       console.error("HanziWriter error for", ch, e);
       el.append(mkEl("div", { class: "writer-fallback" }, ch));
@@ -490,6 +521,26 @@
 
   // Dismiss on backdrop tap (when body is clicked outside the header/section content is tricky;
   // we just let back button / Esc / swipe-back handle it on mobile).
+
+  // ---------- search ----------
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      state.query = searchInput.value;
+      renderGrid();
+    });
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        searchInput.value = "";
+        state.query = "";
+        renderGrid();
+      } else if (e.key === "Enter") {
+        // Open the first visible card.
+        const first = grid.querySelector(".card");
+        if (first) first.click();
+      }
+    });
+  }
 
   // ---------- boot ----------
 
