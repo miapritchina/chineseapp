@@ -113,6 +113,26 @@ body {
   color: var(--muted);
   padding: 14px 18px 4px;
 }
+.shelf-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-right: 14px;
+}
+.shelf-header .shelf-title { padding-right: 8px; }
+.shelf-action {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.shelf-action:hover { color: var(--text); border-color: var(--text); }
 .shelf-section { margin-bottom: 4px; }
 
 .shelf {

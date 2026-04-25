@@ -37,6 +37,7 @@
 
   const home = $("#home");
   const grid = $("#grid");
+  const exportSavedBtn = $("#export-saved");
   const suggestedSection = $("#suggested-section");
   const suggestedShelf = $("#suggested-shelf");
   const savedSection = $("#saved-section");
@@ -95,6 +96,27 @@
     if (state.saved.has(word)) state.saved.delete(word);
     else state.saved.add(word);
     persistSaved();
+  }
+
+  function exportSaved() {
+    const items = [...state.saved];
+    if (!items.length) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const payload = {
+      app: "chinese",
+      exported: new Date().toISOString(),
+      count: items.length,
+      saved: items,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chinese-saved-${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   // ---------- data load ----------
@@ -866,6 +888,10 @@
       state.page += 1;
       renderGridPage();
     });
+  }
+
+  if (exportSavedBtn) {
+    exportSavedBtn.addEventListener("click", exportSaved);
   }
 
   // ---------- boot ----------
