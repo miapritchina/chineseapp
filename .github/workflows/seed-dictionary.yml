@@ -1,0 +1,70 @@
+name: Seed Supabase Dictionary
+
+# Manual trigger — runs the schema migration and (optionally) the bulk seed.
+# Mobile-friendly path: open the repo in your phone browser → Actions tab →
+# "Seed Supabase Dictionary" → Run workflow. No local Node or SQL editor needed.
+#
+# Required secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL              — Postgres connection string with password.
+#                                  Format:
+#                                    postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres
+#                                  Get the password from
+#                                  Project Settings → Database → Connection string.
+#   SUPABASE_SERVICE_ROLE_KEY    — service_role key from Project Settings →
+#                                  API Keys (NOT the publishable key).
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_migration:
+        description: "Apply schema migration (idempotent — safe to re-run)"
+        type: boolean
+        default: true
+      run_seed:
+        description: "Upsert all ~91k words (~1-2 min)"
+        type: boolean
+        default: true
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply migration
+        if: ${{ inputs.apply_migration }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret is missing."
+            exit 1
+          fi
+          psql "$SUPABASE_DB_URL" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/0001_dictionary.sql
+
+      - name: Set up Node
+        if: ${{ inputs.run_seed }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        if: ${{ inputs.run_seed }}
+        run: npm ci
+
+      - name: Seed dictionary
+        if: ${{ inputs.run_seed }}
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/seed-supabase.mjs
+
+      - name: Verify
+        if: ${{ inputs.apply_migration || inputs.run_seed }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$SUPABASE_DB_URL" -c "SELECT count(*) AS words FROM words;"
+          psql "$SUPABASE_DB_URL" -c "SELECT * FROM search_words('hao') LIMIT 5;"
