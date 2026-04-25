@@ -358,43 +358,87 @@ body {
 .tree-svg .link.role-word      { stroke: var(--role-word); opacity: 0.4; }
 
 .tree-svg .node { cursor: pointer; }
-.tree-svg .node-glyph path { stroke: none; }
+.tree-svg .node-card-fo { overflow: visible; }
 
-.tree-svg .node-pinyin,
-.tree-svg .node-gloss {
-  fill: var(--muted);
+/* Each tree node is a card */
+.node-card {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   font-family: inherit;
-  text-anchor: middle;
-  pointer-events: none;
-}
-.tree-svg .node-pinyin {
-  font-size: 12px;
-  letter-spacing: 0.3px;
-}
-.tree-svg .node-gloss {
-  font-size: 11px;
-}
-
-.tree-svg .node-fallback {
-  fill: var(--text);
-  text-anchor: middle;
-  font-family: inherit;
-}
-
-/* Etymology surfaces only at high zoom */
-.tree-svg .node-etym-fo {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
-}
-.tree-svg.zoom-lg .node-etym-fo { opacity: 1; }
-.node-etym {
-  font-family: inherit;
-  font-size: 9.5px;
-  line-height: 1.35;
-  color: var(--muted);
   text-align: center;
-  padding: 0 4px;
+  overflow: hidden;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+.tree-svg .node:hover .node-card { background: var(--surface-2); }
+
+.node-card.role-iconic    { border-color: var(--role-iconic); }
+.node-card.role-meaning   { border-color: var(--role-meaning); }
+.node-card.role-sound     { border-color: var(--role-sound); }
+.node-card.role-simplified{ border-color: var(--role-simplified); }
+.node-card.role-deleted   { border-color: var(--role-deleted); }
+.node-card.role-unknown   { border-color: var(--border); }
+.node-card.is-word        { border-color: var(--border); border-style: dashed; }
+
+.card-pinyin {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.card-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+}
+.card-glyph-svg { width: 100%; height: 100%; }
+.card-glyph-svg path { stroke: none; }
+.card-glyph-fallback {
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.card-role {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.card-gloss {
+  font-size: 11.5px;
+  color: var(--text);
+  line-height: 1.3;
+  max-height: 30px;
+  overflow: hidden;
+}
+
+/* Etymology stays inside the card; revealed at high zoom */
+.card-etym {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.35;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.18s ease, margin-top 0.18s ease;
+}
+.tree-svg.zoom-lg .card-etym {
+  max-height: 80px;
+  margin-top: 2px;
 }
 
 .tree-hint {

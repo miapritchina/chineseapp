@@ -8,6 +8,21 @@
   const HAN_RE = /[㐀-鿿豈-﫿]/;
   const SAVED_KEY = "chinese.saved";
 
+  const ROLE_LABEL = {
+    iconic: "Iconic",
+    meaning: "Meaning",
+    sound: "Sound",
+    simplified: "Simplified",
+    deleted: "Deleted",
+    unknown: "Component",
+  };
+
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const XHTML_NS = "http://www.w3.org/1999/xhtml";
+
+  const CARD_W = 180;
+  const CARD_H = 200;
+
   const state = {
     data: null,
     stack: [],
@@ -417,6 +432,92 @@
     return wrap;
   }
 
+  function appendCardGlyph(parent, node, strokeData) {
+    if (strokeData?.strokes?.length) {
+      const inner = document.createElementNS(SVG_NS, "svg");
+      inner.setAttribute("viewBox", "0 0 1024 1024");
+      inner.setAttribute("class", "card-glyph-svg");
+      const tg = document.createElementNS(SVG_NS, "g");
+      tg.setAttribute("transform", "translate(0, 900) scale(1, -1)");
+      inner.appendChild(tg);
+      const total = strokeData.strokes.length;
+      for (let i = 0; i < total; i++) {
+        const role = strokeRoleForIndex(node, i, total);
+        const path = document.createElementNS(SVG_NS, "path");
+        path.setAttribute("d", strokeData.strokes[i]);
+        path.setAttribute("fill", `var(--role-${role})`);
+        tg.appendChild(path);
+      }
+      parent.appendChild(inner);
+    } else {
+      const txt = document.createElementNS(XHTML_NS, "div");
+      txt.className = "card-glyph-fallback";
+      txt.textContent = node.char;
+      if (node.isWord) txt.style.color = "var(--text)";
+      else txt.style.color = `var(--role-${node.role || "unknown"})`;
+      parent.appendChild(txt);
+    }
+  }
+
+  function buildNodeCard(gEl, d) {
+    const node = d.data;
+    const role = node.role || "unknown";
+    const cd = state.data.chars[node.char];
+    const py = node.pinyin || cd?.pinyin || "";
+    const gloss = node.gloss || node.compDef || cd?.definitions?.[0] || "";
+    const etymText = node.isWord
+      ? ""
+      : (cd?.notes?.trim()
+        || (cd?.originalMeaning && cd.originalMeaning !== "characterless component"
+              ? `Originally: ${cd.originalMeaning}`
+              : ""));
+
+    const fo = document.createElementNS(SVG_NS, "foreignObject");
+    fo.setAttribute("class", "node-card-fo");
+    fo.setAttribute("x", String(-CARD_W / 2));
+    fo.setAttribute("y", String(-CARD_H / 2));
+    fo.setAttribute("width", String(CARD_W));
+    fo.setAttribute("height", String(CARD_H));
+    gEl.appendChild(fo);
+
+    const card = document.createElementNS(XHTML_NS, "div");
+    card.className = `node-card role-${role}${node.isWord ? " is-word" : ""}`;
+    fo.appendChild(card);
+
+    if (py) {
+      const p = document.createElementNS(XHTML_NS, "div");
+      p.className = "card-pinyin";
+      p.textContent = py;
+      card.appendChild(p);
+    }
+
+    const glyphSlot = document.createElementNS(XHTML_NS, "div");
+    glyphSlot.className = "card-glyph";
+    card.appendChild(glyphSlot);
+    appendCardGlyph(glyphSlot, node, state.strokeCache.get(node.char));
+
+    if (!node.isWord && role && role !== "iconic") {
+      const r = document.createElementNS(XHTML_NS, "div");
+      r.className = `card-role role-${role}`;
+      r.textContent = ROLE_LABEL[role] || "Component";
+      card.appendChild(r);
+    }
+
+    if (gloss) {
+      const g = document.createElementNS(XHTML_NS, "div");
+      g.className = "card-gloss";
+      g.textContent = gloss.length > 60 ? gloss.slice(0, 59) + "…" : gloss;
+      card.appendChild(g);
+    }
+
+    if (etymText) {
+      const e = document.createElementNS(XHTML_NS, "div");
+      e.className = "card-etym";
+      e.textContent = etymText.length > 240 ? etymText.slice(0, 239) + "…" : etymText;
+      card.appendChild(e);
+    }
+  }
+
   // For a stroke at index `idx` in the parent, return the role color of whichever
   // child component owns that stroke (per chinese-lexicon's `fragment` ranges),
   // or the parent's own role if no child claims it.
@@ -441,8 +542,8 @@
     await Promise.all([...chars].map((c) => loadStrokeData(c)));
 
     const root = d3.hierarchy(treeData);
-    const dx = 110;
-    const dy = 140;
+    const dx = CARD_W + 24;
+    const dy = CARD_H + 40;
     d3.tree().nodeSize([dx, dy])(root);
 
     let minX = Infinity, maxX = -Infinity, maxY = 0;
@@ -451,9 +552,9 @@
       if (d.x > maxX) maxX = d.x;
       if (d.y > maxY) maxY = d.y;
     });
-    const padX = dx / 2 + 10;
-    const padTop = 40;
-    const padBottom = 100;
+    const padX = CARD_W / 2 + 16;
+    const padTop = CARD_H / 2 + 16;
+    const padBottom = CARD_H / 2 + 24;
     const vbX = minX - padX;
     const vbY = -padTop;
     const vbW = maxX - minX + padX * 2;
@@ -465,9 +566,10 @@
 
     const root_g = svg.append("g");
 
+    const HALF = CARD_H / 2;
     const linkPath = (d) => {
-      const sx = d.source.x, sy = d.source.y + 30;
-      const tx = d.target.x, ty = d.target.y - 38;
+      const sx = d.source.x, sy = d.source.y + HALF;
+      const tx = d.target.x, ty = d.target.y - HALF;
       const my = (sy + ty) / 2;
       return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
     };
@@ -493,68 +595,7 @@
       });
 
     node.each(function (d) {
-      const sel = d3.select(this);
-      const data = state.strokeCache.get(d.data.char);
-      const role = d.data.role || "unknown";
-      const size = d.data.isWord ? 70 : Math.max(48, 64 - d.depth * 4);
-      const ownFill = d.data.isWord ? "var(--text)" : `var(--role-${role})`;
-
-      if (data?.strokes?.length) {
-        const inner = sel.append("svg")
-          .attr("class", "node-glyph")
-          .attr("viewBox", "0 0 1024 1024")
-          .attr("width", size).attr("height", size)
-          .attr("x", -size / 2).attr("y", -size / 2);
-        const tg = inner.append("g").attr("transform", "translate(0, 900) scale(1, -1)");
-        const total = data.strokes.length;
-        for (let i = 0; i < total; i++) {
-          const r = strokeRoleForIndex(d.data, i, total);
-          tg.append("path")
-            .attr("d", data.strokes[i])
-            .attr("fill", `var(--role-${r})`);
-        }
-      } else {
-        sel.append("text")
-          .attr("class", "node-fallback")
-          .attr("y", size * 0.32)
-          .attr("font-size", size * 0.95)
-          .attr("fill", ownFill)
-          .text(d.data.char);
-      }
-
-      const cd = state.data.chars[d.data.char];
-      const py = d.data.pinyin || cd?.pinyin;
-      if (py) {
-        sel.append("text")
-          .attr("class", "node-pinyin")
-          .attr("y", -size / 2 - 10)
-          .text(py);
-      }
-
-      const gloss = d.data.gloss || d.data.compDef || cd?.definitions?.[0] || "";
-      if (gloss) {
-        sel.append("text")
-          .attr("class", "node-gloss")
-          .attr("y", size / 2 + 18)
-          .text(gloss.length > 22 ? gloss.slice(0, 21) + "…" : gloss);
-      }
-
-      const etymText = (cd?.notes && cd.notes.trim())
-        || (cd?.originalMeaning && cd.originalMeaning !== "characterless component"
-              ? `Originally: ${cd.originalMeaning}`
-              : "");
-      if (etymText) {
-        const fo = sel.append("foreignObject")
-          .attr("class", "node-etym-fo")
-          .attr("x", -90)
-          .attr("y", size / 2 + 28)
-          .attr("width", 180)
-          .attr("height", 80);
-        const div = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
-        div.className = "node-etym";
-        div.textContent = etymText;
-        fo.node().appendChild(div);
-      }
+      buildNodeCard(this, d);
     });
 
     const zoom = d3.zoom()
