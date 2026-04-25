@@ -23,19 +23,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
       - name: Prepare site
         run: |
-          mkdir -p _site/palette _site/chinese
-          cp index.html                _site/index.html
-          cp palette/palette.html      _site/palette/index.html
-          cp palette/palette.html      _site/palette/palette.html
-          cp palette/mixbox.js         _site/palette/mixbox.js
-          cp palette/reference.html    _site/palette/reference.html
-          cp chinese/index.html        _site/chinese/index.html
-          cp chinese/styles.css        _site/chinese/styles.css
-          cp chinese/app.js            _site/chinese/app.js
-          cp chinese/data.json         _site/chinese/data.json
-          cp chinese/data-chars.json   _site/chinese/data-chars.json
+          mkdir -p _site/palette
+          cp -r dist/.                _site/
+          cp palette/palette.html     _site/palette/index.html
+          cp palette/palette.html     _site/palette/palette.html
+          cp palette/mixbox.js        _site/palette/mixbox.js
+          cp palette/reference.html   _site/palette/reference.html
           echo "Build OK - $(date)" > _site/build-info.txt
 
       - uses: actions/configure-pages@v4
