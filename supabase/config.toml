@@ -1,0 +1,5 @@
+project_id = "oigbbgtzzqiceetasayy"
+
+[api]
+# PostgREST safety net: client requests can't accidentally pull all 91k rows.
+max_rows = 1000
