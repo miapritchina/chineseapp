@@ -1,7 +1,6 @@
 :root {
   color-scheme: light dark;
   --bg: #faf8f4;
-  --surface: #ffffff;
   --surface-2: #f0ece4;
   --text: #1d1b18;
   --muted: #6b6359;
@@ -14,12 +13,12 @@
   --role-simplified: #9333ea;
   --role-deleted: #6b7280;
   --role-unknown: #6b7280;
+  --role-word: #1d1b18;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #16140f;
-    --surface: #1f1c16;
     --surface-2: #272319;
     --text: #ece7dc;
     --muted: #a39c8f;
@@ -31,6 +30,7 @@
     --role-simplified: #c084fc;
     --role-deleted: #9ca3af;
     --role-unknown: #9ca3af;
+    --role-word: #ece7dc;
   }
 }
 
@@ -43,7 +43,7 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Topbar — minimal */
+/* Topbar */
 .topbar {
   display: flex;
   align-items: center;
@@ -66,7 +66,7 @@ body {
 .home-link:hover { color: var(--text); }
 .spacer { min-width: 60px; }
 
-/* Search — single line under the topbar, no shadow */
+/* Search */
 .search-bar {
   position: sticky;
   top: calc(45px + env(safe-area-inset-top));
@@ -115,7 +115,6 @@ body {
 }
 .shelf-section { margin-bottom: 4px; }
 
-/* Suggested shelf — flat, horizontal scroll */
 .shelf {
   display: flex;
   gap: 2px;
@@ -132,7 +131,6 @@ body {
   width: 92px;
 }
 
-/* Grid — flat tiles, no card backgrounds */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -202,7 +200,7 @@ body {
 }
 .load-more:hover { color: var(--text); border-color: var(--text); }
 
-/* Search results — flat rows, no card */
+/* Search results */
 .results {
   max-width: 720px;
   margin: 0 auto;
@@ -284,6 +282,8 @@ body {
   padding: 8px 10px;
   cursor: pointer;
   border-radius: 8px;
+  min-width: 62px;
+  text-align: left;
 }
 .back-btn:hover, .back-btn:focus-visible { background: var(--surface-2); outline: none; }
 .modal-title {
@@ -301,16 +301,41 @@ body {
   letter-spacing: normal;
 }
 
+.star-slot, .star-btn { min-width: 62px; }
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  text-align: right;
+}
+.star-btn:hover, .star-btn:focus-visible {
+  background: var(--surface-2);
+  color: var(--text);
+  outline: none;
+}
+.star-btn.active { color: #d97706; }
+@media (prefers-color-scheme: dark) {
+  .star-btn.active { color: #f59e0b; }
+}
+
 .modal-body {
   max-width: 720px;
   margin: 0 auto;
-  padding: 8px 14px 80px;
+  padding: 0 6px 80px;
 }
 
-/* Decomposition tree (the centerpiece) */
+/* Decomposition tree */
+.tree-container {
+  width: 100%;
+}
 .tree-svg {
   width: 100%;
-  height: min(70vh, 520px);
+  height: min(75vh, 580px);
   display: block;
   background: transparent;
   cursor: grab;
@@ -321,8 +346,8 @@ body {
 .tree-svg .link {
   fill: none;
   stroke: var(--border);
-  stroke-width: 1.2;
-  opacity: 0.7;
+  stroke-width: 1.4;
+  opacity: 0.85;
 }
 .tree-svg .link.role-iconic    { stroke: var(--role-iconic); }
 .tree-svg .link.role-meaning   { stroke: var(--role-meaning); }
@@ -330,118 +355,56 @@ body {
 .tree-svg .link.role-simplified{ stroke: var(--role-simplified); }
 .tree-svg .link.role-deleted   { stroke: var(--role-deleted); }
 .tree-svg .link.role-unknown   { stroke: var(--role-unknown); }
+.tree-svg .link.role-word      { stroke: var(--role-word); opacity: 0.4; }
 
 .tree-svg .node { cursor: pointer; }
 .tree-svg .node-glyph path { stroke: none; }
-.tree-svg .node-bg {
-  fill: transparent;
-}
-.tree-svg .node:hover .node-bg,
-.tree-svg .node.active .node-bg {
-  fill: var(--surface-2);
-}
+
 .tree-svg .node-pinyin,
-.tree-svg .node-role,
 .tree-svg .node-gloss {
   fill: var(--muted);
   font-family: inherit;
   text-anchor: middle;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s ease;
 }
-.tree-svg .node-pinyin { font-size: 12px; }
-.tree-svg .node-role {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
+.tree-svg .node-pinyin {
+  font-size: 12px;
+  letter-spacing: 0.3px;
 }
-.tree-svg .node-gloss { font-size: 10.5px; }
+.tree-svg .node-gloss {
+  font-size: 11px;
+}
 
-/* Semantic zoom: progressively reveal info as the user zooms in */
-.tree-svg.zoom-md .node-pinyin { opacity: 1; }
-.tree-svg.zoom-lg .node-pinyin,
-.tree-svg.zoom-lg .node-role,
-.tree-svg.zoom-lg .node-gloss { opacity: 1; }
 .tree-svg .node-fallback {
-  fill: var(--muted);
+  fill: var(--text);
   text-anchor: middle;
   font-family: inherit;
 }
 
-.tree-controls {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin: 4px 0 8px;
-  font-size: 12px;
-  color: var(--muted);
+/* Etymology surfaces only at high zoom */
+.tree-svg .node-etym-fo {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
 }
-.tree-controls button {
-  background: transparent;
-  border: 1px solid var(--border);
+.tree-svg.zoom-lg .node-etym-fo { opacity: 1; }
+.node-etym {
+  font-family: inherit;
+  font-size: 9.5px;
+  line-height: 1.35;
   color: var(--muted);
-  padding: 4px 10px;
-  font: inherit;
-  font-size: 12px;
-  border-radius: 999px;
-  cursor: pointer;
+  text-align: center;
+  padding: 0 4px;
 }
-.tree-controls button:hover { color: var(--text); border-color: var(--text); }
+
 .tree-hint {
   text-align: center;
   font-size: 11px;
   color: var(--muted);
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-  opacity: 0.7;
-}
-
-/* Per-char details below the tree — flat, no card */
-.char-detail {
-  margin-top: 28px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
-}
-.char-detail:first-of-type { border-top: none; padding-top: 4px; margin-top: 8px; }
-.char-detail-header {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-.char-detail-header .ch {
-  font-size: 32px;
-  font-weight: 400;
-}
-.char-detail-header .py {
-  font-size: 16px;
-  color: var(--muted);
-}
-.char-detail-header .df {
-  font-size: 13.5px;
-  color: var(--text);
-  flex: 1;
-}
-
-.section-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1.4px;
-  color: var(--muted);
-  margin: 18px 0 8px;
-}
-
-.etym {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--text);
-}
-.etym .orig {
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 4px;
+  letter-spacing: 0.4px;
+  margin-top: -4px;
+  margin-bottom: 12px;
+  opacity: 0.6;
 }
 
 .role-iconic    { color: var(--role-iconic); }
@@ -450,44 +413,6 @@ body {
 .role-simplified{ color: var(--role-simplified); }
 .role-deleted   { color: var(--role-deleted); }
 .role-unknown   { color: var(--role-unknown); }
-
-.appears-in {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.chip {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 5px 11px;
-  font-size: 13px;
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-}
-.chip:hover { background: var(--surface-2); }
-
-.mnemonic { width: 100%; }
-.mnemonic textarea {
-  width: 100%;
-  min-height: 80px;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 9px 12px;
-  font: inherit;
-  font-size: 14px;
-  line-height: 1.5;
-  resize: vertical;
-}
-.mnemonic textarea:focus { outline: 1px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
-.mnemonic-hint {
-  font-size: 11.5px;
-  color: var(--muted);
-  margin-top: 4px;
-}
 
 .error-banner {
   background: #b03a2e;
@@ -514,7 +439,7 @@ body {
   }
   .card { padding: 10px 6px 8px; }
   .card .char { font-size: 32px; }
-  .modal-body { padding: 8px 12px 80px; }
+  .modal-body { padding: 0 4px 80px; }
   .result-row .r-hanzi { font-size: 22px; }
-  .tree-svg { height: 56vh; }
+  .tree-svg { height: 62vh; }
 }

@@ -1,20 +1,12 @@
 (() => {
   "use strict";
 
-  const ROLE_LABEL = {
-    iconic: "Iconic",
-    meaning: "Meaning",
-    sound: "Sound",
-    simplified: "Simplified",
-    deleted: "Deleted",
-    unknown: "Component",
-  };
-
   const CHARACTERLESS = "◎";
   const PAGE_SIZE = 60;
   const MAX_RESULTS = 30;
   const MAX_TREE_DEPTH = 5;
   const HAN_RE = /[㐀-鿿豈-﫿]/;
+  const SAVED_KEY = "chinese.saved";
 
   const state = {
     data: null,
@@ -22,15 +14,17 @@
     query: "",
     page: 1,
     strokeCache: new Map(),
+    saved: loadSaved(),
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const home = $("#home");
   const grid = $("#grid");
   const suggestedSection = $("#suggested-section");
   const suggestedShelf = $("#suggested-shelf");
+  const savedSection = $("#saved-section");
+  const savedShelf = $("#saved-shelf");
   const loadMoreBtn = $("#load-more");
   const resultsRoot = $("#results");
   const modalRoot = $("#modal-root");
@@ -59,6 +53,32 @@
       .replace(/[̀-ͯ]/g, "")
       .replace(/\s+/g, "")
       .toLowerCase();
+  }
+
+  // ---------- saved words ----------
+
+  function loadSaved() {
+    try {
+      const raw = localStorage.getItem(SAVED_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  function persistSaved() {
+    try {
+      localStorage.setItem(SAVED_KEY, JSON.stringify([...state.saved]));
+    } catch {
+      /* storage blocked */
+    }
+  }
+
+  function toggleSaved(word) {
+    if (state.saved.has(word)) state.saved.delete(word);
+    else state.saved.add(word);
+    persistSaved();
   }
 
   // ---------- data load ----------
@@ -150,8 +170,23 @@
     home.hidden = false;
     resultsRoot.hidden = true;
     if (emptyState) emptyState.hidden = true;
+    renderSavedShelf();
     renderSuggestedShelf();
     renderGridPage();
+  }
+
+  function renderSavedShelf() {
+    savedShelf.replaceChildren();
+    const list = [...state.saved];
+    if (!list.length) {
+      savedSection.hidden = true;
+      return;
+    }
+    savedSection.hidden = false;
+    for (const word of list) {
+      const w = findWord(word);
+      if (w) savedShelf.append(buildCard(w));
+    }
   }
 
   function renderSuggestedShelf() {
@@ -213,6 +248,7 @@
     modalRoot.classList.remove("open");
     modalRoot.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
+    renderHome();
   }
 
   function locationForEntry(e) {
@@ -244,12 +280,14 @@
         state.stack.length > 1 ? "← Back" : "← Close",
       ),
       renderModalTitle(entry),
-      mkEl("span", { style: "min-width: 62px" }),
+      renderStarSlot(entry),
     );
 
     const body = mkEl("div", { class: "modal-body" });
-    if (entry.kind === "word") renderWordBody(body, entry.key);
-    else renderCharModalBody(body, entry.key);
+    const tree = entry.kind === "word"
+      ? buildTreeForWord(entry.key)
+      : buildTreeForChar(entry.key);
+    if (tree) body.append(tree);
 
     modalRoot.append(header, body);
     modalRoot.scrollTop = 0;
@@ -274,113 +312,38 @@
     );
   }
 
-  function renderWordBody(root, wordKey) {
-    const w = findWord(wordKey);
-    if (!w) {
-      root.append(mkEl("p", {}, `Unknown word: ${wordKey}`));
-      return;
-    }
-
-    root.append(buildTreeContainer(buildWordTree(w)));
-
-    if (w.definitions?.length && w.chars.length > 1) {
-      root.append(
-        mkEl("div", { class: "section-title" }, "Meaning"),
-        mkEl("div", { class: "etym" }, w.definitions.join("; ")),
+  function renderStarSlot(entry) {
+    if (entry.kind !== "word") return mkEl("span", { class: "star-slot" });
+    const word = entry.key;
+    const btn = mkEl("button", {
+      class: "star-btn",
+      type: "button",
+      "aria-label": state.saved.has(word) ? "Remove from saved" : "Save word",
+      "aria-pressed": state.saved.has(word) ? "true" : "false",
+    });
+    btn.textContent = state.saved.has(word) ? "★" : "☆";
+    if (state.saved.has(word)) btn.classList.add("active");
+    btn.addEventListener("click", () => {
+      toggleSaved(word);
+      btn.textContent = state.saved.has(word) ? "★" : "☆";
+      btn.classList.toggle("active", state.saved.has(word));
+      btn.setAttribute("aria-pressed", state.saved.has(word) ? "true" : "false");
+      btn.setAttribute(
+        "aria-label",
+        state.saved.has(word) ? "Remove from saved" : "Save word",
       );
-    }
-
-    for (const ch of w.chars) root.append(renderCharDetail(ch));
-  }
-
-  function renderCharModalBody(root, charKey) {
-    const c = state.data.chars[charKey];
-    root.append(buildTreeContainer(buildCharTree(charKey, "iconic")));
-    if (c) root.append(renderCharDetail(charKey));
-    else root.append(mkEl("p", { class: "etym" }, "No data for this character."));
-  }
-
-  function renderCharDetail(charKey) {
-    const c = state.data.chars[charKey];
-    const wrap = mkEl("section", { class: "char-detail" });
-
-    if (!c) {
-      wrap.append(mkEl("div", {}, charKey + ": no data."));
-      return wrap;
-    }
-
-    wrap.append(
-      mkEl(
-        "div",
-        { class: "char-detail-header" },
-        mkEl("span", { class: "ch" }, charKey),
-        c.pinyin ? mkEl("span", { class: "py" }, c.pinyin) : null,
-        c.definitions?.length
-          ? mkEl("span", { class: "df" }, c.definitions.join("; "))
-          : null,
-      ),
-    );
-
-    if (c.notes || c.originalMeaning) {
-      const etym = mkEl("div", { class: "etym" });
-      if (c.originalMeaning && c.originalMeaning !== "characterless component") {
-        etym.append(mkEl("div", { class: "orig" }, `Original meaning: ${c.originalMeaning}`));
-      }
-      if (c.notes) etym.append(mkEl("div", {}, c.notes));
-      wrap.append(mkEl("div", { class: "section-title" }, "Etymology"), etym);
-    }
-
-    const top = state.stack[state.stack.length - 1];
-    const currentTopWord = top?.kind === "word" ? top.key : null;
-    const others = (c.appearsIn || [])
-      .filter((w) => w !== currentTopWord)
-      .map((w) => findWord(w))
-      .filter(Boolean)
-      .slice(0, 30);
-    if (others.length) {
-      const chips = mkEl("div", { class: "appears-in" });
-      for (const w of others) {
-        chips.append(
-          mkEl(
-            "button",
-            { class: "chip", type: "button", onclick: () => openWord(w.word) },
-            `${w.word} · ${w.pinyin}`,
-          ),
-        );
-      }
-      wrap.append(mkEl("div", { class: "section-title" }, "Also appears in"), chips);
-    }
-
-    wrap.append(mkEl("div", { class: "section-title" }, "My story"), renderMnemonic(charKey));
-    return wrap;
-  }
-
-  function renderMnemonic(charKey) {
-    const storageKey = `chinese.mnemonic.${charKey}`;
-    const existing = localStorage.getItem(storageKey) || "";
-    const ta = mkEl("textarea", {
-      placeholder:
-        "Write a short story connecting the components, shape, and meaning. The more vivid and personal, the stickier it gets.",
     });
-    ta.value = existing;
+    return btn;
+  }
 
-    const hint = mkEl("div", { class: "mnemonic-hint" }, existing ? "Saved locally." : "Saved to this device only.");
+  function buildTreeForWord(wordKey) {
+    const w = findWord(wordKey);
+    if (!w) return mkEl("p", { class: "etym" }, `Unknown word: ${wordKey}`);
+    return buildTreeContainer(buildWordTree(w));
+  }
 
-    let timer = null;
-    ta.addEventListener("input", () => {
-      hint.textContent = "Saving…";
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        try {
-          localStorage.setItem(storageKey, ta.value);
-          hint.textContent = "Saved locally.";
-        } catch {
-          hint.textContent = "Could not save (storage blocked).";
-        }
-      }, 350);
-    });
-
-    return mkEl("div", { class: "mnemonic" }, ta, hint);
+  function buildTreeForChar(charKey) {
+    return buildTreeContainer(buildCharTree(charKey, "iconic"));
   }
 
   // ---------- decomposition tree ----------
@@ -400,7 +363,6 @@
       if (comp.char === CHARACTERLESS) continue;
       const child = buildCharTree(comp.char, comp.type || "unknown", depth + 1, next);
       child.fragment = comp.fragment;
-      child.compPinyin = comp.pinyin;
       child.compDef = comp.definition;
       node.children.push(child);
     }
@@ -444,25 +406,31 @@
 
   function buildTreeContainer(treeData) {
     const wrap = mkEl("div", { class: "tree-container" });
-    const controls = mkEl(
-      "div",
-      { class: "tree-controls" },
-      mkEl("button", { type: "button", "data-zoom": "out", title: "Zoom out" }, "−"),
-      mkEl("button", { type: "button", "data-zoom": "reset", title: "Reset" }, "Reset"),
-      mkEl("button", { type: "button", "data-zoom": "in", title: "Zoom in" }, "+"),
-    );
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.classList.add("tree-svg");
     svg.setAttribute("role", "img");
     svg.setAttribute("aria-label", `Decomposition tree for ${treeData.char}`);
-    const hint = mkEl("div", { class: "tree-hint" }, "Drag to pan · pinch / scroll to zoom · tap a node");
-    wrap.append(controls, svg, hint);
+    const hint = mkEl("div", { class: "tree-hint" }, "drag to pan · pinch / scroll to zoom");
+    wrap.append(svg, hint);
 
-    requestAnimationFrame(() => renderTree(svg, controls, treeData));
+    requestAnimationFrame(() => renderTree(svg, treeData));
     return wrap;
   }
 
-  async function renderTree(svgEl, controls, treeData) {
+  // For a stroke at index `idx` in the parent, return the role color of whichever
+  // child component owns that stroke (per chinese-lexicon's `fragment` ranges),
+  // or the parent's own role if no child claims it.
+  function strokeRoleForIndex(node, idx, totalStrokes) {
+    for (const child of node.children || []) {
+      if (!Array.isArray(child.fragment)) continue;
+      const [s, e] = child.fragment;
+      const end = e == null ? totalStrokes : e;
+      if (idx >= s && idx < end) return child.role || "unknown";
+    }
+    return node.role || "unknown";
+  }
+
+  async function renderTree(svgEl, treeData) {
     if (typeof d3 === "undefined") {
       svgEl.replaceWith(mkEl("div", { class: "etym" }, "Tree library failed to load."));
       return;
@@ -474,7 +442,7 @@
 
     const root = d3.hierarchy(treeData);
     const dx = 110;
-    const dy = 130;
+    const dy = 140;
     d3.tree().nodeSize([dx, dy])(root);
 
     let minX = Infinity, maxX = -Infinity, maxY = 0;
@@ -484,8 +452,8 @@
       if (d.y > maxY) maxY = d.y;
     });
     const padX = dx / 2 + 10;
-    const padTop = 30;
-    const padBottom = 80;
+    const padTop = 40;
+    const padBottom = 100;
     const vbX = minX - padX;
     const vbY = -padTop;
     const vbW = maxX - minX + padX * 2;
@@ -498,8 +466,8 @@
     const root_g = svg.append("g");
 
     const linkPath = (d) => {
-      const sx = d.source.x, sy = d.source.y + 32;
-      const tx = d.target.x, ty = d.target.y - 32;
+      const sx = d.source.x, sy = d.source.y + 30;
+      const tx = d.target.x, ty = d.target.y - 38;
       const my = (sy + ty) / 2;
       return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
     };
@@ -519,22 +487,17 @@
       .attr("transform", (d) => `translate(${d.x},${d.y})`)
       .on("click", (_, d) => {
         if (d.data.isWord) return;
+        if (d.depth === 0) return;
         if (d.data.char === CHARACTERLESS) return;
         openChar(d.data.char);
       });
-
-    node.append("rect")
-      .attr("class", "node-bg")
-      .attr("x", -42).attr("y", -42)
-      .attr("width", 84).attr("height", 84)
-      .attr("rx", 8);
 
     node.each(function (d) {
       const sel = d3.select(this);
       const data = state.strokeCache.get(d.data.char);
       const role = d.data.role || "unknown";
       const size = d.data.isWord ? 70 : Math.max(48, 64 - d.depth * 4);
-      const fill = d.data.isWord ? "var(--text)" : `var(--role-${role})`;
+      const ownFill = d.data.isWord ? "var(--text)" : `var(--role-${role})`;
 
       if (data?.strokes?.length) {
         const inner = sel.append("svg")
@@ -543,34 +506,54 @@
           .attr("width", size).attr("height", size)
           .attr("x", -size / 2).attr("y", -size / 2);
         const tg = inner.append("g").attr("transform", "translate(0, 900) scale(1, -1)");
-        for (const path of data.strokes) tg.append("path").attr("d", path).attr("fill", fill);
+        const total = data.strokes.length;
+        for (let i = 0; i < total; i++) {
+          const r = strokeRoleForIndex(d.data, i, total);
+          tg.append("path")
+            .attr("d", data.strokes[i])
+            .attr("fill", `var(--role-${r})`);
+        }
       } else {
         sel.append("text")
           .attr("class", "node-fallback")
           .attr("y", size * 0.32)
           .attr("font-size", size * 0.95)
-          .attr("fill", fill)
+          .attr("fill", ownFill)
           .text(d.data.char);
       }
 
       const cd = state.data.chars[d.data.char];
       const py = d.data.pinyin || cd?.pinyin;
-      if (py) sel.append("text").attr("class", "node-pinyin").attr("y", 56).text(py);
-
-      if (!d.data.isWord && d.data.role && d.data.role !== "iconic") {
+      if (py) {
         sel.append("text")
-          .attr("class", `node-role role-${d.data.role}`)
-          .attr("y", 70)
-          .attr("fill", `var(--role-${d.data.role})`)
-          .text(ROLE_LABEL[d.data.role] || "");
+          .attr("class", "node-pinyin")
+          .attr("y", -size / 2 - 10)
+          .text(py);
       }
 
       const gloss = d.data.gloss || d.data.compDef || cd?.definitions?.[0] || "";
       if (gloss) {
         sel.append("text")
           .attr("class", "node-gloss")
-          .attr("y", 84)
-          .text(gloss.length > 18 ? gloss.slice(0, 17) + "…" : gloss);
+          .attr("y", size / 2 + 18)
+          .text(gloss.length > 22 ? gloss.slice(0, 21) + "…" : gloss);
+      }
+
+      const etymText = (cd?.notes && cd.notes.trim())
+        || (cd?.originalMeaning && cd.originalMeaning !== "characterless component"
+              ? `Originally: ${cd.originalMeaning}`
+              : "");
+      if (etymText) {
+        const fo = sel.append("foreignObject")
+          .attr("class", "node-etym-fo")
+          .attr("x", -90)
+          .attr("y", size / 2 + 28)
+          .attr("width", 180)
+          .attr("height", 80);
+        const div = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+        div.className = "node-etym";
+        div.textContent = etymText;
+        fo.node().appendChild(div);
       }
     });
 
@@ -579,21 +562,10 @@
       .on("zoom", (e) => {
         root_g.attr("transform", e.transform.toString());
         const k = e.transform.k;
-        svgEl.classList.toggle("zoom-md", k > 1.2);
-        svgEl.classList.toggle("zoom-lg", k > 2.0);
+        svgEl.classList.toggle("zoom-lg", k > 1.7);
       });
 
     svg.call(zoom);
-
-    controls.querySelector('[data-zoom="in"]').onclick = () =>
-      svg.transition().duration(180).call(zoom.scaleBy, 1.4);
-    controls.querySelector('[data-zoom="out"]').onclick = () =>
-      svg.transition().duration(180).call(zoom.scaleBy, 0.7);
-    controls.querySelector('[data-zoom="reset"]').onclick = () =>
-      svg.transition().duration(220).call(zoom.transform, d3.zoomIdentity);
-
-    // Initial state: pinyin/role/gloss hidden until zoom; reveal at default scale by setting threshold check.
-    svgEl.classList.add("zoom-sm");
   }
 
   // ---------- wiring ----------
