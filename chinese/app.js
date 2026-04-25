@@ -20,8 +20,8 @@
   const SVG_NS = "http://www.w3.org/2000/svg";
   const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
-  const CARD_W = 180;
-  const CARD_H = 200;
+  const CARD_W = 168;
+  const CARD_H = 210;
 
   const state = {
     data: null,
@@ -425,8 +425,7 @@
     svg.classList.add("tree-svg");
     svg.setAttribute("role", "img");
     svg.setAttribute("aria-label", `Decomposition tree for ${treeData.char}`);
-    const hint = mkEl("div", { class: "tree-hint" }, "drag to pan · pinch / scroll to zoom");
-    wrap.append(svg, hint);
+    wrap.append(svg);
 
     requestAnimationFrame(() => renderTree(svg, treeData));
     return wrap;
@@ -453,8 +452,7 @@
       const txt = document.createElementNS(XHTML_NS, "div");
       txt.className = "card-glyph-fallback";
       txt.textContent = node.char;
-      if (node.isWord) txt.style.color = "var(--text)";
-      else txt.style.color = `var(--role-${node.role || "unknown"})`;
+      txt.style.color = `var(--role-${node.role || "unknown"})`;
       parent.appendChild(txt);
     }
   }
@@ -465,12 +463,10 @@
     const cd = state.data.chars[node.char];
     const py = node.pinyin || cd?.pinyin || "";
     const gloss = node.gloss || node.compDef || cd?.definitions?.[0] || "";
-    const etymText = node.isWord
-      ? ""
-      : (cd?.notes?.trim()
-        || (cd?.originalMeaning && cd.originalMeaning !== "characterless component"
-              ? `Originally: ${cd.originalMeaning}`
-              : ""));
+    const etymText = cd?.notes?.trim()
+      || (cd?.originalMeaning && cd.originalMeaning !== "characterless component"
+            ? `Originally: ${cd.originalMeaning}`
+            : "");
 
     const fo = document.createElementNS(SVG_NS, "foreignObject");
     fo.setAttribute("class", "node-card-fo");
@@ -481,7 +477,7 @@
     gEl.appendChild(fo);
 
     const card = document.createElementNS(XHTML_NS, "div");
-    card.className = `node-card role-${role}${node.isWord ? " is-word" : ""}`;
+    card.className = `node-card role-${role}`;
     fo.appendChild(card);
 
     if (py) {
@@ -496,7 +492,7 @@
     card.appendChild(glyphSlot);
     appendCardGlyph(glyphSlot, node, state.strokeCache.get(node.char));
 
-    if (!node.isWord && role && role !== "iconic") {
+    if (role && role !== "iconic") {
       const r = document.createElementNS(XHTML_NS, "div");
       r.className = `card-role role-${role}`;
       r.textContent = ROLE_LABEL[role] || "Component";
@@ -542,16 +538,24 @@
     await Promise.all([...chars].map((c) => loadStrokeData(c)));
 
     const root = d3.hierarchy(treeData);
-    const dx = CARD_W + 24;
-    const dy = CARD_H + 40;
+    const dx = CARD_W + 22;
+    const dy = CARD_H + 50;
     d3.tree().nodeSize([dx, dy])(root);
 
+    // The synthetic word-root is purely a layout anchor — never rendered.
+    // Shift everything up so the first visible row sits at y = 0.
+    const hasHiddenRoot = !!treeData.isWord;
+    if (hasHiddenRoot) root.each((d) => { d.y -= dy; });
+
+    const visibleNodes = root.descendants().filter((d) => !d.data.isWord);
+    const visibleLinks = root.links().filter((d) => !d.source.data.isWord);
+
     let minX = Infinity, maxX = -Infinity, maxY = 0;
-    root.each((d) => {
+    for (const d of visibleNodes) {
       if (d.x < minX) minX = d.x;
       if (d.x > maxX) maxX = d.x;
       if (d.y > maxY) maxY = d.y;
-    });
+    }
     const padX = CARD_W / 2 + 16;
     const padTop = CARD_H / 2 + 16;
     const padBottom = CARD_H / 2 + 24;
@@ -576,20 +580,19 @@
 
     root_g.append("g")
       .selectAll("path")
-      .data(root.links())
+      .data(visibleLinks)
       .join("path")
       .attr("class", (d) => `link role-${d.target.data.role || "unknown"}`)
       .attr("d", linkPath);
 
     const node = root_g.append("g")
       .selectAll("g")
-      .data(root.descendants())
+      .data(visibleNodes)
       .join("g")
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x},${d.y})`)
       .on("click", (_, d) => {
-        if (d.data.isWord) return;
-        if (d.depth === 0) return;
+        if (d.depth === 0 && !hasHiddenRoot) return;
         if (d.data.char === CHARACTERLESS) return;
         openChar(d.data.char);
       });
