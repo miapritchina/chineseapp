@@ -258,19 +258,18 @@ body {
   inset: 0;
   z-index: 10;
   display: none;
-  overflow-y: auto;
   background: var(--bg);
+  flex-direction: column;
 }
-.modal-root.open { display: block; }
+.modal-root.open { display: flex; }
 
 .modal-header {
-  position: sticky;
-  top: 0;
+  flex: 0 0 auto;
   background: var(--bg);
   display: flex;
   align-items: center;
-  padding: 12px 14px;
-  padding-top: calc(12px + env(safe-area-inset-top));
+  padding: 10px 14px;
+  padding-top: calc(10px + env(safe-area-inset-top));
   gap: 10px;
   z-index: 2;
 }
@@ -324,18 +323,21 @@ body {
 }
 
 .modal-body {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 6px 80px;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
-/* Decomposition tree */
+/* Decomposition tree fills the rest of the modal viewport */
 .tree-container {
   width: 100%;
+  height: 100%;
 }
 .tree-svg {
   width: 100%;
-  height: min(75vh, 580px);
+  height: 100%;
   display: block;
   background: transparent;
   cursor: grab;
@@ -360,18 +362,18 @@ body {
 .tree-svg .node { cursor: pointer; }
 .tree-svg .node-card-fo { overflow: visible; }
 
-/* Each tree node is a card */
+/* Each tree node is a card — minimal chrome, glyph dominates */
 .node-card {
   width: 100%;
   height: 100%;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: 14px;
-  padding: 12px 10px;
+  padding: 6px 8px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-family: inherit;
   text-align: center;
   overflow: hidden;
@@ -386,10 +388,9 @@ body {
 .node-card.role-simplified{ border-color: var(--role-simplified); }
 .node-card.role-deleted   { border-color: var(--role-deleted); }
 .node-card.role-unknown   { border-color: var(--border); }
-.node-card.is-word        { border-color: var(--border); border-style: dashed; }
 
 .card-pinyin {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   letter-spacing: 0.3px;
   line-height: 1;
@@ -399,14 +400,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 110px;
+  height: 110px;
   flex: 0 0 auto;
+  margin-top: 2px;
 }
 .card-glyph-svg { width: 100%; height: 100%; }
 .card-glyph-svg path { stroke: none; }
 .card-glyph-fallback {
-  font-size: 56px;
+  font-size: 92px;
   line-height: 1;
   font-weight: 400;
 }
@@ -437,18 +439,8 @@ body {
   transition: max-height 0.18s ease, margin-top 0.18s ease;
 }
 .tree-svg.zoom-lg .card-etym {
-  max-height: 80px;
+  max-height: 70px;
   margin-top: 2px;
-}
-
-.tree-hint {
-  text-align: center;
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.4px;
-  margin-top: -4px;
-  margin-bottom: 12px;
-  opacity: 0.6;
 }
 
 .role-iconic    { color: var(--role-iconic); }
@@ -485,5 +477,4 @@ body {
   .card .char { font-size: 32px; }
   .modal-body { padding: 0 4px 80px; }
   .result-row .r-hanzi { font-size: 22px; }
-  .tree-svg { height: 62vh; }
 }
