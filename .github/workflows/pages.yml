@@ -35,6 +35,7 @@ jobs:
           cp chinese/styles.css        _site/chinese/styles.css
           cp chinese/app.js            _site/chinese/app.js
           cp chinese/data.json         _site/chinese/data.json
+          cp chinese/data-chars.json   _site/chinese/data-chars.json
           echo "Build OK - $(date)" > _site/build-info.txt
 
       - uses: actions/configure-pages@v4

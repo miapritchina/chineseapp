@@ -606,6 +606,20 @@ body {
 }
 .popup-saved-chips .chip:hover { background: var(--surface-2); }
 
+.boot-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  z-index: 30;
+  pointer-events: none;
+}
+
 .error-banner {
   background: #b03a2e;
   color: white;

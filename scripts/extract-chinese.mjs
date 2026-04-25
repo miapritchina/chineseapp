@@ -7,9 +7,10 @@ const require = createRequire(import.meta.url);
 const lex = require("chinese-lexicon");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outPath = resolve(__dirname, "..", "chinese", "data.json");
+const wordsPath = resolve(__dirname, "..", "chinese", "data.json");
+const charsPath = resolve(__dirname, "..", "chinese", "data-chars.json");
 
-const SEED_SIZE = 8000;
+const MAX_WORD_LEN = 8;
 
 // Hand-picked beginner-friendly shelf shown above the full list on the home screen.
 const SUGGESTED_SHELF = [
@@ -44,28 +45,33 @@ function cleanDefinitions(defs) {
   return defs.filter((d) => !/^CL:/.test(d));
 }
 
-function buildSeedFromRank() {
-  const ranked = lex.allEntries
-    .filter((e) => {
-      if (!e.statistics) return false;
-      if (e.statistics.movieWordRank == null) return false;
-      if (!HANZI_RE.test(e.simp)) return false;
-      if (e.simp.length > 4) return false;
-      if (isProperNoun(e)) return false;
-      if (isOnlyCrossRef(e)) return false;
-      return true;
-    })
-    .sort((a, b) => a.statistics.movieWordRank - b.statistics.movieWordRank);
-
+// Ship every chinese-lexicon entry whose simp looks like a real word (CJK only,
+// length ≤ MAX_WORD_LEN, not a proper noun, not just a cross-reference).
+// Sort by movieWordRank ascending; entries without a rank go to the end in
+// stable simp order.
+function buildAllEntries() {
+  const filtered = [];
+  for (const e of lex.allEntries) {
+    if (!HANZI_RE.test(e.simp)) continue;
+    if (e.simp.length > MAX_WORD_LEN) continue;
+    if (isProperNoun(e)) continue;
+    if (isOnlyCrossRef(e)) continue;
+    filtered.push(e);
+  }
+  filtered.sort((a, b) => {
+    const ar = a.statistics?.movieWordRank ?? Infinity;
+    const br = b.statistics?.movieWordRank ?? Infinity;
+    if (ar !== br) return ar - br;
+    return a.simp.localeCompare(b.simp);
+  });
   const seen = new Set();
-  const seed = [];
-  for (const e of ranked) {
+  const out = [];
+  for (const e of filtered) {
     if (seen.has(e.simp)) continue;
     seen.add(e.simp);
-    seed.push(e);
-    if (seed.length >= SEED_SIZE) break;
+    out.push(e);
   }
-  return seed;
+  return out;
 }
 
 function normalizeChar(char) {
@@ -93,7 +99,7 @@ function normalizeChar(char) {
   return {
     char,
     pinyin,
-    definitions: definitions.slice(0, 4),
+    definitions,
     originalMeaning,
     notes: notes.trim(),
     components,
@@ -106,56 +112,33 @@ function splitChars(str) {
 }
 
 function main() {
-  const seedEntries = buildSeedFromRank();
-  console.log(`Seed: top ${seedEntries.length} entries by movieWordRank`);
+  const allEntries = buildAllEntries();
+  console.log(`Filtered entries (full lexicon): ${allEntries.length}`);
 
   const words = [];
   const charsMap = new Map();
   const queue = [];
   const seen = new Set();
 
-  for (const entry of seedEntries) {
+  for (const entry of allEntries) {
     const word = entry.simp;
     const chars = splitChars(word);
 
+    // Trim per-word JSON: drop fields the runtime can derive (simp == word,
+    // chars == [...word]) or doesn't use (trad). The savings dominate at
+    // 90k+ entries.
+    const trad = entry.trad !== entry.simp ? entry.trad : undefined;
     words.push({
       word,
-      simp: entry.simp,
-      trad: entry.trad,
+      ...(trad ? { trad } : {}),
       pinyin: (entry.pinyin || "").replace(/​/g, ""),
       searchablePinyin: (entry.searchablePinyin || "").replace(/\s+/g, ""),
-      definitions: cleanDefinitions(entry.definitions).slice(0, 4),
+      definitions: cleanDefinitions(entry.definitions),
       hsk: entry.statistics?.hskLevel ?? null,
       rank: entry.statistics?.movieWordRank ?? null,
-      chars,
     });
 
     for (const ch of chars) {
-      if (!seen.has(ch)) {
-        seen.add(ch);
-        queue.push(ch);
-      }
-    }
-  }
-
-  // Also pull suggested-shelf words even if they fell outside the rank cutoff.
-  for (const word of SUGGESTED_SHELF) {
-    if (words.some((w) => w.word === word)) continue;
-    const entries = lex.getEntries(word) || [];
-    const entry = bestEntry(entries, word);
-    if (!entry) continue;
-    words.push({
-      word,
-      simp: entry.simp,
-      trad: entry.trad,
-      pinyin: (entry.pinyin || "").replace(/​/g, ""),
-      searchablePinyin: (entry.searchablePinyin || "").replace(/\s+/g, ""),
-      definitions: cleanDefinitions(entry.definitions).slice(0, 4),
-      hsk: entry.statistics?.hskLevel ?? null,
-      rank: entry.statistics?.movieWordRank ?? null,
-      chars: splitChars(word),
-    });
-    for (const ch of splitChars(word)) {
       if (!seen.has(ch)) {
         seen.add(ch);
         queue.push(ch);
@@ -175,46 +158,28 @@ function main() {
     }
   }
 
-  const appearsIn = new Map();
-  for (const w of words) {
-    const touched = new Set();
-    for (const ch of w.chars) {
-      touched.add(ch);
-      const entry = charsMap.get(ch);
-      if (entry) {
-        for (const c of entry.components) {
-          touched.add(c.char);
-          const nested = charsMap.get(c.char);
-          if (nested) for (const cc of nested.components) touched.add(cc.char);
-        }
-      }
-    }
-    for (const ch of touched) {
-      if (!appearsIn.has(ch)) appearsIn.set(ch, new Set());
-      appearsIn.get(ch).add(w.word);
-    }
-  }
-
-  // Cap appearsIn at 40 — common chars like 的 appear in thousands of words and
-  // dump a huge list; the UI never shows more than 30 chips anyway.
+  // appearsIn is computed client-side from `words` at boot — no need to
+  // pre-bake it into the JSON, especially for the full lexicon where common
+  // chars (e.g. 的) appear in tens of thousands of words.
   const chars = {};
   for (const [ch, entry] of charsMap) {
-    chars[ch] = {
-      ...entry,
-      appearsIn: Array.from(appearsIn.get(ch) || []).slice(0, 40),
-    };
+    chars[ch] = entry;
   }
 
-  const data = {
+  // Split into two files so the home/search can render as soon as the smaller
+  // words file arrives; chars are loaded in parallel and awaited only when a
+  // modal/popup actually needs them.
+  const wordsData = {
     generated: new Date().toISOString(),
     source: "chinese-lexicon v" + require("chinese-lexicon/package.json").version,
     suggested: SUGGESTED_SHELF.filter((w) => words.some((x) => x.word === w)),
     words,
-    chars,
   };
+  const charsData = { chars };
 
-  writeFileSync(outPath, JSON.stringify(data) + "\n");
-  console.log(`Wrote ${outPath}`);
+  writeFileSync(wordsPath, JSON.stringify(wordsData) + "\n");
+  writeFileSync(charsPath, JSON.stringify(charsData) + "\n");
+  console.log(`Wrote ${wordsPath} and ${charsPath}`);
   console.log(`  ${words.length} words, ${Object.keys(chars).length} unique chars`);
   const noEtym = Object.values(chars).filter((c) => !c.hasEtymology).length;
   console.log(`  chars without etymology: ${noEtym}`);

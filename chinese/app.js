@@ -99,21 +99,49 @@
 
   // ---------- data load ----------
 
-  async function loadData() {
-    try {
-      const resp = await fetch("./data.json", { cache: "no-cache" });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      state.data = await resp.json();
-    } catch (err) {
-      console.error(err);
-      document.body.prepend(
-        mkEl("div", { class: "error-banner" }, `Failed to load data.json: ${err.message}`),
-      );
-    }
+  // Fetch words (small, drives the home render) and chars (bigger, only needed
+  // when a modal opens) in parallel. `state.charsReady` resolves once the
+  // chars file lands so modal/popup rendering can await it on demand.
+  function loadData() {
+    state.charsReady = (async () => {
+      try {
+        const resp = await fetch("./data-chars.json", { cache: "no-cache" });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const json = await resp.json();
+        if (state.data) state.data.chars = json.chars;
+        else state.pendingChars = json.chars;
+      } catch (err) {
+        console.error("chars load failed:", err);
+      }
+    })();
+
+    return (async () => {
+      try {
+        const resp = await fetch("./data.json", { cache: "no-cache" });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        // Hydrate trimmed word entries: data.json drops simp (== word) and chars
+        // (== [...word]) to keep download size down.
+        const wordIndex = new Map();
+        for (const w of data.words) {
+          w.simp = w.word;
+          w.chars = [...w.word];
+          wordIndex.set(w.word, w);
+        }
+        data.chars = state.pendingChars || {};
+        state.data = data;
+        state.wordIndex = wordIndex;
+      } catch (err) {
+        console.error(err);
+        document.body.prepend(
+          mkEl("div", { class: "error-banner" }, `Failed to load data.json: ${err.message}`),
+        );
+      }
+    })();
   }
 
   function findWord(wordKey) {
-    return state.data.words.find((w) => w.word === wordKey) || null;
+    return state.wordIndex?.get(wordKey) || null;
   }
 
   // ---------- search ranking ----------
@@ -254,11 +282,18 @@
 
   // ---------- modal stack ----------
 
-  function openWord(word) {
+  async function ensureCharsLoaded() {
+    if (state.data?.chars && Object.keys(state.data.chars).length > 0) return;
+    if (state.charsReady) await state.charsReady;
+  }
+
+  async function openWord(word) {
+    await ensureCharsLoaded();
     pushEntry({ kind: "word", key: word }, false);
   }
 
-  function openChar(char) {
+  async function openChar(char) {
+    await ensureCharsLoaded();
     pushEntry({ kind: "char", key: char }, false);
   }
 
@@ -354,8 +389,9 @@
   let popupWriter = null;
   let popupEl = null;
 
-  function openCharPopup(char) {
+  async function openCharPopup(char) {
     closePopup();
+    await ensureCharsLoaded();
     const c = state.data.chars[char];
 
     popupEl = mkEl("div", {
@@ -835,7 +871,14 @@
   // ---------- boot ----------
 
   (async function boot() {
+    const loader = mkEl(
+      "div",
+      { class: "boot-loading", id: "boot-loading" },
+      "Loading dictionary…",
+    );
+    document.body.appendChild(loader);
     await loadData();
+    loader.remove();
     if (!state.data) return;
     renderHome();
 
