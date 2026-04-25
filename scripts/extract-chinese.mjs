@@ -9,7 +9,7 @@ const lex = require("chinese-lexicon");
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outPath = resolve(__dirname, "..", "chinese", "data.json");
 
-const SEED_SIZE = 2000;
+const SEED_SIZE = 8000;
 
 // Hand-picked beginner-friendly shelf shown above the full list on the home screen.
 const SUGGESTED_SHELF = [
@@ -93,7 +93,7 @@ function normalizeChar(char) {
   return {
     char,
     pinyin,
-    definitions: definitions.slice(0, 6),
+    definitions: definitions.slice(0, 4),
     originalMeaning,
     notes: notes.trim(),
     components,
@@ -124,7 +124,7 @@ function main() {
       trad: entry.trad,
       pinyin: (entry.pinyin || "").replace(/​/g, ""),
       searchablePinyin: (entry.searchablePinyin || "").replace(/\s+/g, ""),
-      definitions: cleanDefinitions(entry.definitions).slice(0, 6),
+      definitions: cleanDefinitions(entry.definitions).slice(0, 4),
       hsk: entry.statistics?.hskLevel ?? null,
       rank: entry.statistics?.movieWordRank ?? null,
       chars,
@@ -150,7 +150,7 @@ function main() {
       trad: entry.trad,
       pinyin: (entry.pinyin || "").replace(/​/g, ""),
       searchablePinyin: (entry.searchablePinyin || "").replace(/\s+/g, ""),
-      definitions: cleanDefinitions(entry.definitions).slice(0, 6),
+      definitions: cleanDefinitions(entry.definitions).slice(0, 4),
       hsk: entry.statistics?.hskLevel ?? null,
       rank: entry.statistics?.movieWordRank ?? null,
       chars: splitChars(word),
@@ -195,11 +195,13 @@ function main() {
     }
   }
 
+  // Cap appearsIn at 40 — common chars like 的 appear in thousands of words and
+  // dump a huge list; the UI never shows more than 30 chips anyway.
   const chars = {};
   for (const [ch, entry] of charsMap) {
     chars[ch] = {
       ...entry,
-      appearsIn: Array.from(appearsIn.get(ch) || []),
+      appearsIn: Array.from(appearsIn.get(ch) || []).slice(0, 40),
     };
   }
 

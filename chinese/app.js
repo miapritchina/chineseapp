@@ -20,8 +20,9 @@
   const SVG_NS = "http://www.w3.org/2000/svg";
   const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
-  const CARD_W = 168;
-  const CARD_H = 210;
+  const CARD_W = 220;
+  const CARD_H = 280;
+  const CARD_H_EXPANDED = 380;
 
   const state = {
     data: null,
@@ -198,10 +199,31 @@
       return;
     }
     savedSection.hidden = false;
-    for (const word of list) {
-      const w = findWord(word);
-      if (w) savedShelf.append(buildCard(w));
+    for (const key of list) {
+      const w = findWord(key);
+      if (w) {
+        savedShelf.append(buildCard(w));
+        continue;
+      }
+      // Char-only saved entry — render a minimal card from data.chars
+      const c = state.data.chars[key];
+      if (c) savedShelf.append(buildCharOnlyCard(key, c));
     }
+  }
+
+  function buildCharOnlyCard(charKey, c) {
+    return mkEl(
+      "button",
+      {
+        class: "card",
+        type: "button",
+        "aria-label": `${charKey} ${c.pinyin || ""}`,
+        onclick: () => openCharPopup(charKey),
+      },
+      mkEl("div", { class: "char" }, charKey),
+      mkEl("div", { class: "pinyin" }, c.pinyin || ""),
+      mkEl("div", { class: "gloss" }, c.definitions?.[0] || ""),
+    );
   }
 
   function renderSuggestedShelf() {
@@ -325,6 +347,149 @@
       entry.key,
       c?.pinyin ? mkEl("span", { class: "title-pinyin" }, c.pinyin) : null,
     );
+  }
+
+  // ---------- character popup ----------
+
+  let popupWriter = null;
+  let popupEl = null;
+
+  function openCharPopup(char) {
+    closePopup();
+    const c = state.data.chars[char];
+
+    popupEl = mkEl("div", {
+      class: "popup-root",
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": `Details for ${char}`,
+    });
+
+    const backdrop = mkEl("div", {
+      class: "popup-backdrop",
+      onclick: () => closePopup(),
+    });
+    const panel = mkEl("div", { class: "popup-panel" });
+
+    const closeBtn = mkEl("button", {
+      class: "popup-close",
+      type: "button",
+      "aria-label": "Close",
+      onclick: () => closePopup(),
+    }, "×");
+    panel.append(closeBtn);
+
+    const star = mkEl("button", {
+      class: "popup-star" + (state.saved.has(char) ? " active" : ""),
+      type: "button",
+      "aria-pressed": state.saved.has(char) ? "true" : "false",
+      "aria-label": state.saved.has(char) ? "Remove from saved" : "Save",
+    }, state.saved.has(char) ? "★" : "☆");
+    star.addEventListener("click", () => {
+      toggleSaved(char);
+      const on = state.saved.has(char);
+      star.classList.toggle("active", on);
+      star.textContent = on ? "★" : "☆";
+      star.setAttribute("aria-pressed", on ? "true" : "false");
+      star.setAttribute("aria-label", on ? "Remove from saved" : "Save");
+      renderPopupSavedList();
+    });
+    panel.append(star);
+
+    panel.append(mkEl("div", { class: "popup-pinyin" }, c?.pinyin || ""));
+
+    const writerWrap = mkEl("div", { class: "popup-writer", "data-char": char });
+    panel.append(writerWrap);
+
+    if (c?.definitions?.length) {
+      panel.append(mkEl("div", { class: "popup-meaning" }, c.definitions.join("; ")));
+    } else {
+      panel.append(mkEl("div", { class: "popup-meaning popup-muted" }, "No dictionary entry."));
+    }
+
+    if (c?.originalMeaning && c.originalMeaning !== "characterless component") {
+      panel.append(
+        mkEl("div", { class: "popup-orig" }, `Originally: ${c.originalMeaning}`),
+      );
+    }
+    if (c?.notes) {
+      panel.append(mkEl("div", { class: "popup-etym" }, c.notes));
+    }
+
+    const savedList = mkEl("div", { class: "popup-saved" });
+    panel.append(savedList);
+
+    popupEl.append(backdrop, panel);
+    document.body.appendChild(popupEl);
+
+    renderPopupSavedList();
+    requestAnimationFrame(() => mountPopupWriter(writerWrap));
+
+    function renderPopupSavedList() {
+      savedList.replaceChildren();
+      const matches = [...state.saved].filter((w) => w !== char && w.includes(char));
+      if (!matches.length) return;
+      savedList.append(mkEl("div", { class: "popup-saved-title" }, "In your saved words"));
+      const chips = mkEl("div", { class: "popup-saved-chips" });
+      for (const w of matches) {
+        const word = findWord(w);
+        chips.append(
+          mkEl(
+            "button",
+            {
+              class: "chip",
+              type: "button",
+              onclick: () => {
+                closePopup();
+                openWord(w);
+              },
+            },
+            word ? `${w} · ${word.pinyin}` : w,
+          ),
+        );
+      }
+      savedList.append(chips);
+    }
+  }
+
+  function mountPopupWriter(el) {
+    const ch = el.dataset.char;
+    if (!ch || typeof HanziWriter === "undefined") {
+      el.append(mkEl("div", { class: "popup-writer-fallback" }, ch));
+      return;
+    }
+    try {
+      const size = Math.min(280, el.clientWidth || 280);
+      popupWriter = HanziWriter.create(el, ch, {
+        width: size,
+        height: size,
+        padding: 6,
+        showOutline: true,
+        strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 120,
+        strokeColor: getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#222",
+        outlineColor: getComputedStyle(document.documentElement).getPropertyValue("--border").trim() || "#ddd",
+        onLoadCharDataError: () => {
+          el.replaceChildren(mkEl("div", { class: "popup-writer-fallback" }, ch));
+        },
+      });
+      popupWriter.animateCharacter();
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("aria-label", `Replay stroke animation for ${ch}`);
+      const replay = () => popupWriter && popupWriter.animateCharacter();
+      el.addEventListener("click", replay);
+    } catch (e) {
+      el.append(mkEl("div", { class: "popup-writer-fallback" }, ch));
+    }
+  }
+
+  function closePopup() {
+    popupWriter = null;
+    if (popupEl) {
+      popupEl.remove();
+      popupEl = null;
+    }
   }
 
   function renderStarSlot(entry) {
@@ -463,10 +628,12 @@
     const cd = state.data.chars[node.char];
     const py = node.pinyin || cd?.pinyin || "";
     const gloss = node.gloss || node.compDef || cd?.definitions?.[0] || "";
-    const etymText = cd?.notes?.trim()
-      || (cd?.originalMeaning && cd.originalMeaning !== "characterless component"
-            ? `Originally: ${cd.originalMeaning}`
-            : "");
+    const etymText = node.isWord
+      ? ""
+      : (cd?.notes?.trim()
+        || (cd?.originalMeaning && cd.originalMeaning !== "characterless component"
+              ? `Originally: ${cd.originalMeaning}`
+              : ""));
 
     const fo = document.createElementNS(SVG_NS, "foreignObject");
     fo.setAttribute("class", "node-card-fo");
@@ -477,7 +644,7 @@
     gEl.appendChild(fo);
 
     const card = document.createElementNS(XHTML_NS, "div");
-    card.className = `node-card role-${role}`;
+    card.className = `node-card role-${role}${node.isWord ? " is-word" : ""}`;
     fo.appendChild(card);
 
     if (py) {
@@ -487,29 +654,40 @@
       card.appendChild(p);
     }
 
-    const glyphSlot = document.createElementNS(XHTML_NS, "div");
-    glyphSlot.className = "card-glyph";
-    card.appendChild(glyphSlot);
-    appendCardGlyph(glyphSlot, node, state.strokeCache.get(node.char));
+    if (node.isWord) {
+      // Render the multi-char word horizontally — pure text, sized to fit.
+      const word = document.createElementNS(XHTML_NS, "div");
+      word.className = "card-word";
+      const n = Math.max(2, node.char.length);
+      const fontSize = Math.min(96, Math.floor((CARD_W - 32) / n) - 2);
+      word.style.fontSize = `${fontSize}px`;
+      word.textContent = node.char;
+      card.appendChild(word);
+    } else {
+      const glyphSlot = document.createElementNS(XHTML_NS, "div");
+      glyphSlot.className = "card-glyph";
+      card.appendChild(glyphSlot);
+      appendCardGlyph(glyphSlot, node, state.strokeCache.get(node.char));
 
-    if (role && role !== "iconic") {
-      const r = document.createElementNS(XHTML_NS, "div");
-      r.className = `card-role role-${role}`;
-      r.textContent = ROLE_LABEL[role] || "Component";
-      card.appendChild(r);
+      if (role && role !== "iconic") {
+        const r = document.createElementNS(XHTML_NS, "div");
+        r.className = `card-role role-${role}`;
+        r.textContent = ROLE_LABEL[role] || "Component";
+        card.appendChild(r);
+      }
     }
 
     if (gloss) {
       const g = document.createElementNS(XHTML_NS, "div");
       g.className = "card-gloss";
-      g.textContent = gloss.length > 60 ? gloss.slice(0, 59) + "…" : gloss;
+      g.textContent = gloss.length > 80 ? gloss.slice(0, 79) + "…" : gloss;
       card.appendChild(g);
     }
 
     if (etymText) {
       const e = document.createElementNS(XHTML_NS, "div");
       e.className = "card-etym";
-      e.textContent = etymText.length > 240 ? etymText.slice(0, 239) + "…" : etymText;
+      e.textContent = etymText;
       card.appendChild(e);
     }
   }
@@ -538,27 +716,19 @@
     await Promise.all([...chars].map((c) => loadStrokeData(c)));
 
     const root = d3.hierarchy(treeData);
-    const dx = CARD_W + 22;
-    const dy = CARD_H + 50;
+    const dx = CARD_W + 10;
+    const dy = CARD_H + 24;
     d3.tree().nodeSize([dx, dy])(root);
 
-    // The synthetic word-root is purely a layout anchor — never rendered.
-    // Shift everything up so the first visible row sits at y = 0.
-    const hasHiddenRoot = !!treeData.isWord;
-    if (hasHiddenRoot) root.each((d) => { d.y -= dy; });
-
-    const visibleNodes = root.descendants().filter((d) => !d.data.isWord);
-    const visibleLinks = root.links().filter((d) => !d.source.data.isWord);
-
     let minX = Infinity, maxX = -Infinity, maxY = 0;
-    for (const d of visibleNodes) {
+    root.each((d) => {
       if (d.x < minX) minX = d.x;
       if (d.x > maxX) maxX = d.x;
       if (d.y > maxY) maxY = d.y;
-    }
-    const padX = CARD_W / 2 + 16;
-    const padTop = CARD_H / 2 + 16;
-    const padBottom = CARD_H / 2 + 24;
+    });
+    const padX = CARD_W / 2 + 12;
+    const padTop = CARD_H / 2 + 12;
+    const padBottom = CARD_H_EXPANDED / 2 + 16;
     const vbX = minX - padX;
     const vbY = -padTop;
     const vbW = maxX - minX + padX * 2;
@@ -580,33 +750,41 @@
 
     root_g.append("g")
       .selectAll("path")
-      .data(visibleLinks)
+      .data(root.links())
       .join("path")
       .attr("class", (d) => `link role-${d.target.data.role || "unknown"}`)
       .attr("d", linkPath);
 
     const node = root_g.append("g")
       .selectAll("g")
-      .data(visibleNodes)
+      .data(root.descendants())
       .join("g")
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x},${d.y})`)
       .on("click", (_, d) => {
-        if (d.depth === 0 && !hasHiddenRoot) return;
+        if (d.data.isWord) return;
         if (d.data.char === CHARACTERLESS) return;
-        openChar(d.data.char);
+        openCharPopup(d.data.char);
       });
 
     node.each(function (d) {
       buildNodeCard(this, d);
     });
 
+    let lastExpanded = false;
     const zoom = d3.zoom()
       .scaleExtent([0.4, 6])
       .on("zoom", (e) => {
         root_g.attr("transform", e.transform.toString());
         const k = e.transform.k;
-        svgEl.classList.toggle("zoom-lg", k > 1.7);
+        const expanded = k > 1.7;
+        if (expanded !== lastExpanded) {
+          lastExpanded = expanded;
+          svgEl.classList.toggle("zoom-lg", expanded);
+          // Keep top edge anchored; grow downward so card overlaps link area.
+          svg.selectAll(".node-card-fo")
+            .attr("height", expanded ? CARD_H_EXPANDED : CARD_H);
+        }
       });
 
     svg.call(zoom);
@@ -621,7 +799,9 @@
   });
 
   document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape" && state.stack.length > 0) popEntry(false);
+    if (ev.key !== "Escape") return;
+    if (popupEl) closePopup();
+    else if (state.stack.length > 0) popEntry(false);
   });
 
   if (searchInput) {
