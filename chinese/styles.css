@@ -158,19 +158,19 @@ body {
 }
 
 .card .char {
-  font-size: 38px;
+  font-size: 46px;
   line-height: 1;
   font-weight: 400;
   letter-spacing: 1px;
   margin-bottom: 6px;
 }
 .card .pinyin {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   margin-bottom: 2px;
 }
 .card .gloss {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -227,7 +227,7 @@ body {
   outline: none;
 }
 .result-row .r-hanzi {
-  font-size: 26px;
+  font-size: 32px;
   line-height: 1;
   font-weight: 400;
   letter-spacing: 1.5px;
@@ -362,18 +362,18 @@ body {
 .tree-svg .node { cursor: pointer; }
 .tree-svg .node-card-fo { overflow: visible; }
 
-/* Each tree node is a card — minimal chrome, glyph dominates */
+/* Each tree node is a card — large, easy-to-read glyph dominates */
 .node-card {
   width: 100%;
   height: 100%;
   background: var(--bg);
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 6px 8px 8px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-family: inherit;
   text-align: center;
   overflow: hidden;
@@ -388,11 +388,12 @@ body {
 .node-card.role-simplified{ border-color: var(--role-simplified); }
 .node-card.role-deleted   { border-color: var(--role-deleted); }
 .node-card.role-unknown   { border-color: var(--border); }
+.node-card.is-word        { border-color: var(--text); }
 
 .card-pinyin {
-  font-size: 12px;
+  font-size: 16px;
   color: var(--muted);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   line-height: 1;
 }
 
@@ -400,47 +401,63 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 110px;
-  height: 110px;
+  width: 150px;
+  height: 150px;
   flex: 0 0 auto;
-  margin-top: 2px;
 }
 .card-glyph-svg { width: 100%; height: 100%; }
 .card-glyph-svg path { stroke: none; }
 .card-glyph-fallback {
-  font-size: 92px;
+  font-size: 132px;
   line-height: 1;
   font-weight: 400;
 }
 
+/* Word-root card: horizontal text rather than glyph slot */
+.card-word {
+  flex: 0 0 auto;
+  width: 100%;
+  line-height: 1.05;
+  font-weight: 400;
+  letter-spacing: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 110px;
+}
+
 .card-role {
-  font-size: 9.5px;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 1.4px;
+  letter-spacing: 1.6px;
   font-weight: 600;
   line-height: 1;
 }
 
 .card-gloss {
-  font-size: 11.5px;
+  font-size: 14px;
   color: var(--text);
   line-height: 1.3;
-  max-height: 30px;
+  max-height: 38px;
   overflow: hidden;
 }
 
-/* Etymology stays inside the card; revealed at high zoom */
+/* Etymology grows the foreignObject (height attribute is updated in JS on zoom),
+   stays hidden at baseline so the card is compact. */
 .card-etym {
-  font-size: 10px;
+  font-size: 12.5px;
   color: var(--muted);
-  line-height: 1.35;
+  line-height: 1.4;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.18s ease, margin-top 0.18s ease;
 }
 .tree-svg.zoom-lg .card-etym {
-  max-height: 70px;
-  margin-top: 2px;
+  max-height: 120px;
+  margin-top: 4px;
 }
 
 .role-iconic    { color: var(--role-iconic); }
@@ -449,6 +466,145 @@ body {
 .role-simplified{ color: var(--role-simplified); }
 .role-deleted   { color: var(--role-deleted); }
 .role-unknown   { color: var(--role-unknown); }
+
+/* Character popup */
+.popup-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+.popup-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 18, 14, 0.42);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+@media (prefers-color-scheme: dark) {
+  .popup-backdrop { background: rgba(0, 0, 0, 0.6); }
+}
+.popup-panel {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 22px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: inherit;
+}
+.popup-close {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.popup-close:hover { background: var(--surface-2); color: var(--text); }
+.popup-star {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.popup-star:hover { background: var(--surface-2); color: var(--text); }
+.popup-star.active { color: #d97706; }
+@media (prefers-color-scheme: dark) {
+  .popup-star.active { color: #f59e0b; }
+}
+.popup-pinyin {
+  font-size: 18px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+}
+.popup-writer {
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border-radius: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.popup-writer svg { display: block; }
+.popup-writer-fallback {
+  font-size: 200px;
+  line-height: 1;
+  color: var(--text);
+}
+.popup-meaning {
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--text);
+  text-align: center;
+}
+.popup-meaning.popup-muted { color: var(--muted); font-style: italic; }
+.popup-orig {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+.popup-etym {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  text-align: center;
+  padding: 0 4px;
+}
+.popup-saved { width: 100%; }
+.popup-saved-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--muted);
+  margin: 8px 0 8px;
+  text-align: center;
+}
+.popup-saved-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.popup-saved-chips .chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+.popup-saved-chips .chip:hover { background: var(--surface-2); }
 
 .error-banner {
   background: #b03a2e;
@@ -474,7 +630,7 @@ body {
     padding: 4px 4px 14px;
   }
   .card { padding: 10px 6px 8px; }
-  .card .char { font-size: 32px; }
+  .card .char { font-size: 38px; }
   .modal-body { padding: 0 4px 80px; }
   .result-row .r-hanzi { font-size: 22px; }
 }
