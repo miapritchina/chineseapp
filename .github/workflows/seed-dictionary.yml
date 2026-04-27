@@ -6,10 +6,14 @@ name: Seed Supabase Dictionary
 #
 # Required secrets (Settings → Secrets and variables → Actions):
 #   SUPABASE_DB_URL              — Postgres connection string with password.
-#                                  Format:
-#                                    postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres
-#                                  Get the password from
-#                                  Project Settings → Database → Connection string.
+#                                  IMPORTANT: use the **Session Pooler** URL
+#                                  (port 5432, host *.pooler.supabase.com),
+#                                  NOT the "Direct connection" URL —
+#                                  Supabase free tier doesn't expose IPv4 on
+#                                  direct, and Actions runners are IPv4-only.
+#                                    postgresql://postgres.<ref>:PASSWORD@aws-0-<region>.pooler.supabase.com:5432/postgres
+#                                  Get it from
+#                                  Project Settings → Database → Connection string → Session pooler.
 #   SUPABASE_SERVICE_ROLE_KEY    — service_role key from Project Settings →
 #                                  API Keys (NOT the publishable key).
 

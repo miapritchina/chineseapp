@@ -14,16 +14,20 @@ copy the **service_role** key (the one labeled "secret" — NOT the publishable
 key already wired into the app).
 
 From <https://app.supabase.com/project/oigbbgtzzqiceetasayy/settings/database>
-under "Connection string", choose **URI**, reveal the password, and copy the
-full string — it looks like:
+under "Connection string", **pick the Session Pooler tab** (NOT "Direct
+connection") — Supabase's free tier no longer ships a public IPv4 for the
+direct connection, and GitHub Actions runners are IPv4-only. The Session
+Pooler URL routes over IPv4 and behaves like a real Postgres connection
+(works with psql, supports DDL, etc.). It looks like:
 
 ```
-postgresql://postgres:YOUR_PASSWORD@db.oigbbgtzzqiceetasayy.supabase.co:5432/postgres
+postgresql://postgres.oigbbgtzzqiceetasayy:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres
 ```
 
-Make sure `YOUR_PASSWORD` has been substituted in (the dashboard does this for
-you when you reveal it; double-check there's no `[YOUR-PASSWORD]` placeholder
-left).
+Reveal the password in the dashboard, then copy the whole string. Make sure
+`YOUR_PASSWORD` has been substituted (no `[YOUR-PASSWORD]` placeholder left).
+Avoid the **Transaction pooler** (port 6543) — it doesn't support all the
+statements our migration uses.
 
 ### 2. Add both as repo secrets
 
