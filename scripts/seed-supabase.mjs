@@ -73,11 +73,16 @@ function buildAllEntries() {
 
 function toRow(entry) {
   const trad = entry.trad !== entry.simp ? entry.trad : null;
+  const defs = cleanDefinitions(entry.definitions);
   return {
     word: entry.simp,
     pinyin: (entry.pinyin || "").replace(/​/g, ""),
     searchable_pinyin: (entry.searchablePinyin || "").replace(/\s+/g, ""),
-    definitions: cleanDefinitions(entry.definitions),
+    definitions: defs,
+    // Pre-join definitions for the trigram English-gloss index. Schema can't
+    // express this as a GENERATED column (subqueries forbidden), so we
+    // populate it client-side here.
+    definitions_text: defs.join(" "),
     hsk: entry.statistics?.hskLevel ?? null,
     rank: entry.statistics?.movieWordRank ?? null,
     trad,

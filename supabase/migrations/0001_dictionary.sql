@@ -17,12 +17,12 @@ CREATE TABLE IF NOT EXISTS words (
   hsk               SMALLINT,
   rank              INT,
   trad              TEXT,
-  -- Generated flat-text column for trigram search across English glosses.
-  -- Avoids JSONB containment limitations and tsvector stemming surprises
-  -- (e.g. "running" -> "run" would break exact tier ordering).
-  definitions_text  TEXT GENERATED ALWAYS AS (
-    array_to_string(ARRAY(SELECT jsonb_array_elements_text(definitions)), ' ')
-  ) STORED
+  -- Flat-text projection of `definitions` for trigram English-gloss search.
+  -- Postgres won't let us declare this as a GENERATED column because the
+  -- expression we'd need (array_to_string(ARRAY(SELECT jsonb_array_elements_text…)))
+  -- contains a subquery, which generated columns disallow. Populated by
+  -- scripts/seed-supabase.mjs as `defs.join(" ")` instead.
+  definitions_text  TEXT NOT NULL DEFAULT ''
 );
 
 -- Frequency-ordered scan for the home grid.
