@@ -2,83 +2,95 @@
 
 Project: `https://oigbbgtzzqiceetasayy.supabase.co` (`oigbbgtzzqiceetasayy`).
 
-## Mobile-friendly path (recommended)
+## One-paste setup (mobile-friendly)
 
-Everything below can be done from a phone browser using the GitHub mobile UI
-and the Supabase web dashboard. No SQL editor or local Node setup required.
+You hand over **one token, one time**, and the workflow does everything else
+(applies the schema, fetches the service_role key, seeds 91k words, verifies).
+No repo secrets to configure. No SQL editor. No terminal.
 
-### 1. Get the two values you'll need
+### 1. Generate a Supabase Personal Access Token
 
-From <https://app.supabase.com/project/oigbbgtzzqiceetasayy/settings/api-keys>
-copy the **service_role** key (the one labeled "secret" — NOT the publishable
-key already wired into the app).
+Open <https://supabase.com/dashboard/account/tokens> on your phone.
+Click **Generate new token**, give it any name (e.g. `chinese-app-seed`),
+copy the token.
 
-From <https://app.supabase.com/project/oigbbgtzzqiceetasayy/settings/database>
-under "Connection string", **pick the Session Pooler tab** (NOT "Direct
-connection") — Supabase's free tier no longer ships a public IPv4 for the
-direct connection, and GitHub Actions runners are IPv4-only. The Session
-Pooler URL routes over IPv4 and behaves like a real Postgres connection
-(works with psql, supports DDL, etc.). It looks like:
+The token is sensitive but **temporary** — you can revoke it the moment the
+workflow finishes.
+
+### 2. Run the workflow
+
+Open `github.com/decobots/Ai-/actions` on your phone.
+
+- Tap **Seed Supabase Dictionary** → **Run workflow**.
+- Paste the PAT into the **Supabase Personal Access Token** field.
+- Leave the two checkboxes ticked.
+- Tap **Run workflow**.
+
+Takes ~2-3 min. The final step prints:
 
 ```
-postgresql://postgres.oigbbgtzzqiceetasayy:YOUR_PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres
+[
+  { "words": 91508 },
+  { "word": "好", "tier": 0, "rank": 10 },
+  …
+]
 ```
 
-Reveal the password in the dashboard, then copy the whole string. Make sure
-`YOUR_PASSWORD` has been substituted (no `[YOUR-PASSWORD]` placeholder left).
-Avoid the **Transaction pooler** (port 6543) — it doesn't support all the
-statements our migration uses.
+If you see a `words` count near 91 000, you're done.
 
-### 2. Add both as repo secrets
+### 3. Revoke the PAT (optional but recommended)
 
-In the GitHub mobile UI:
+Back at <https://supabase.com/dashboard/account/tokens>, revoke the token you
+just created. The seed already ran; you don't need it again unless you want
+to re-seed (e.g. after a `chinese-lexicon` update). If you do, generate a
+fresh token then.
 
-- Open the repo → **Settings** → **Secrets and variables** → **Actions**
-- **New repository secret** twice:
-  - Name `SUPABASE_DB_URL`, value = the full connection string from step 1.
-  - Name `SUPABASE_SERVICE_ROLE_KEY`, value = the service_role key from step 1.
+## How it works
 
-### 3. Run the workflow
+The workflow uses the Supabase Management API
+(`https://api.supabase.com/v1/...`) with your PAT as a Bearer token to:
 
-In the same repo on mobile:
+1. Verify the PAT has access to the project.
+2. `POST /projects/<ref>/database/query` with the contents of
+   `migrations/0001_dictionary.sql` — applies the schema in one round-trip.
+3. `GET /projects/<ref>/api-keys` — fetches the `service_role` key (used
+   only inside the runner, masked in logs, never stored anywhere).
+4. Run `node scripts/seed-supabase.mjs` with that key — batched upserts,
+   idempotent on the `word` PK.
+5. `POST /projects/<ref>/database/query` again to verify counts.
 
-- **Actions** tab → **Seed Supabase Dictionary** → **Run workflow**
-- Leave both checkboxes ticked (apply migration + run seed)
-- Tap **Run workflow**
-
-It takes ~2-3 min total. The workflow's last step prints a `count(*)` of the
-`words` table (~91 000) and a sample of `search_words('hao')`. If those look
-sane, you're done.
-
-The workflow is idempotent — re-run it any time `chinese-lexicon` updates or
-to repair a partial run.
+Nothing about your project leaves the GitHub Actions runner. The PAT exists
+only as the workflow's input value (auto-masked in logs, never written to
+disk, gone the moment the run finishes).
 
 ## Local-developer path (alternate)
 
-If you have psql + Node on your machine instead:
+If you ever want to seed from a laptop instead of CI:
 
 ```sh
-# Apply schema (idempotent)
+# Apply schema
 psql "$SUPABASE_DB_URL" -f supabase/migrations/0001_dictionary.sql
 
 # Seed
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_... node scripts/seed-supabase.mjs
 ```
 
-## Verifying
+`$SUPABASE_DB_URL` should be the **Session pooler** URL (port 5432, host
+`*.pooler.supabase.com`), not the direct one — Supabase free tier doesn't
+expose IPv4 on direct.
 
-In the SQL Editor (web) or psql:
+## Verifying via SQL
+
+In the SQL Editor (or via psql):
 
 ```sql
 SELECT count(*) FROM words;             -- ~91 000
 SELECT * FROM search_words('hao');      -- top 30 by tier + rank
-SELECT * FROM search_words('胡萝卜');    -- exact-match tier 0
+SELECT * FROM search_words('胡萝卜');    -- exact match, tier 0
 ```
 
-## Re-deploy
+## Rotating the publishable key
 
-GitHub Pages picks up new builds automatically; nothing extra to do once the
-seed has run. The app's anon (publishable) key is hard-coded in
-`src/lib/supabase.ts` and is intentionally public — RLS gates everything. If
-you ever rotate the publishable key, update that file and any hardcoded
-references in `scripts/seed-supabase.mjs`.
+The app's anon (publishable) key is hard-coded in `src/lib/supabase.ts` and
+is intentionally public — RLS gates everything. If you ever rotate it,
+update that file and the constant in `scripts/seed-supabase.mjs`.
