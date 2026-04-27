@@ -7,17 +7,10 @@ const require = createRequire(import.meta.url);
 const lex = require("chinese-lexicon");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const wordsPath = resolve(__dirname, "..", "chinese", "data.json");
-const charsPath = resolve(__dirname, "..", "chinese", "data-chars.json");
+const wordsPath = resolve(__dirname, "..", "public", "data.json");
+const charsPath = resolve(__dirname, "..", "public", "data-chars.json");
 
 const MAX_WORD_LEN = 8;
-
-// Hand-picked beginner-friendly shelf shown above the full list on the home screen.
-const SUGGESTED_SHELF = [
-  "你好", "我", "是", "好", "想", "学", "吃", "家", "喝", "茶", "水", "猫", "狗",
-  "妈妈", "爸爸", "朋友", "老师", "学生", "学校", "中国", "美国", "今天", "明天",
-  "爱", "笑", "看", "听", "说", "走", "跑",
-];
 
 const HANZI_RE = /^[㐀-鿿豈-﫿]+$/;
 
@@ -172,7 +165,6 @@ function main() {
   const wordsData = {
     generated: new Date().toISOString(),
     source: "chinese-lexicon v" + require("chinese-lexicon/package.json").version,
-    suggested: SUGGESTED_SHELF.filter((w) => words.some((x) => x.word === w)),
     words,
   };
   const charsData = { chars };

@@ -1,0 +1,131 @@
+name: Seed Supabase Dictionary
+
+# One-token setup: paste a Supabase Personal Access Token (PAT) into the
+# workflow run UI and click Run. Everything else is driven by the Supabase
+# Management API — no repo secrets, no DB connection string, no service_role
+# key persisted anywhere.
+#
+# Generate a PAT (one-time, takes 10 seconds):
+#   https://supabase.com/dashboard/account/tokens
+# Then on a phone:
+#   github.com/<owner>/<repo>/actions
+#     → "Seed Supabase Dictionary" → Run workflow
+#     → paste PAT → Run
+# That's it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      supabase_pat:
+        description: |
+          Supabase Personal Access Token. Generate at
+          https://supabase.com/dashboard/account/tokens — paste here, never stored.
+        required: true
+        type: string
+      apply_migration:
+        description: "Apply schema migration (idempotent)"
+        type: boolean
+        default: true
+      run_seed:
+        description: "Upsert all ~91k words"
+        type: boolean
+        default: true
+
+env:
+  PROJECT_REF: oigbbgtzzqiceetasayy
+  MGMT_API: https://api.supabase.com/v1
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mask PAT in logs
+        run: echo "::add-mask::${{ inputs.supabase_pat }}"
+
+      - uses: actions/checkout@v4
+
+      - name: Verify PAT works
+        env:
+          SUPABASE_PAT: ${{ inputs.supabase_pat }}
+        run: |
+          set -euo pipefail
+          status=$(curl -sS -o /tmp/proj.json -w '%{http_code}' \
+            -H "Authorization: Bearer $SUPABASE_PAT" \
+            "$MGMT_API/projects/$PROJECT_REF")
+          if [ "$status" != "200" ]; then
+            echo "::error::Management API returned $status. Check the PAT and that it has access to project $PROJECT_REF."
+            cat /tmp/proj.json
+            exit 1
+          fi
+          echo "Project: $(jq -r '.name' /tmp/proj.json) (region: $(jq -r '.region' /tmp/proj.json))"
+
+      - name: Apply migration via Management API
+        if: ${{ inputs.apply_migration }}
+        env:
+          SUPABASE_PAT: ${{ inputs.supabase_pat }}
+        run: |
+          set -euo pipefail
+          # Wrap the migration SQL into a JSON body. -Rs reads stdin into a
+          # single string and JSON-escapes it.
+          MIGRATION_SQL=$(jq -Rs . < supabase/migrations/0001_dictionary.sql)
+          BODY=$(jq -n --argjson q "$MIGRATION_SQL" '{query: $q}')
+          status=$(curl -sS -o /tmp/migrate.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_PAT" \
+            -H "Content-Type: application/json" \
+            -d "$BODY" \
+            "$MGMT_API/projects/$PROJECT_REF/database/query")
+          if [ "$status" -ge 400 ]; then
+            echo "::error::Migration failed (HTTP $status):"
+            cat /tmp/migrate.json
+            exit 1
+          fi
+          echo "Migration applied."
+
+      - name: Fetch service_role key
+        if: ${{ inputs.run_seed }}
+        id: keys
+        env:
+          SUPABASE_PAT: ${{ inputs.supabase_pat }}
+        run: |
+          set -euo pipefail
+          KEYS=$(curl -fsSL \
+            -H "Authorization: Bearer $SUPABASE_PAT" \
+            "$MGMT_API/projects/$PROJECT_REF/api-keys")
+          SR_KEY=$(echo "$KEYS" | jq -r '.[] | select(.name=="service_role") | .api_key')
+          if [ -z "$SR_KEY" ] || [ "$SR_KEY" = "null" ]; then
+            echo "::error::Could not extract service_role key from Management API response."
+            echo "$KEYS"
+            exit 1
+          fi
+          echo "::add-mask::$SR_KEY"
+          echo "sr_key=$SR_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node
+        if: ${{ inputs.run_seed }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        if: ${{ inputs.run_seed }}
+        run: npm ci
+
+      - name: Seed dictionary
+        if: ${{ inputs.run_seed }}
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.sr_key }}
+        run: node scripts/seed-supabase.mjs
+
+      - name: Verify
+        env:
+          SUPABASE_PAT: ${{ inputs.supabase_pat }}
+        run: |
+          set -euo pipefail
+          BODY='{"query":"SELECT count(*) AS words FROM words; SELECT word, tier, rank FROM search_words('"'"'hao'"'"') LIMIT 5;"}'
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer $SUPABASE_PAT" \
+            -H "Content-Type: application/json" \
+            -d "$BODY" \
+            "$MGMT_API/projects/$PROJECT_REF/database/query" \
+            | jq .

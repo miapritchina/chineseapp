@@ -1,0 +1,187 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import "./styles.css";
+
+import { useDictionary } from "./hooks/useDictionary";
+import { useChars } from "./hooks/useChars";
+import { useSaved } from "./hooks/useSaved";
+import { useModalStack, parseHash } from "./hooks/useModalStack";
+import { wakeUp } from "./lib/supabase";
+
+import { SearchBar } from "./components/SearchBar";
+import { SavedShelf } from "./components/SavedShelf";
+import { HomeGrid } from "./components/HomeGrid";
+import { ResultsList } from "./components/ResultsList";
+import { TreeModal } from "./components/TreeModal";
+import { CharPopup } from "./components/CharPopup";
+
+import type { Word } from "./lib/types";
+
+const SEARCH_DEBOUNCE_MS = 300;
+
+export function App() {
+  const dict = useDictionary();
+  const charsData = useChars();
+  const { saved, toggle, exportSaved } = useSaved();
+  const { stack, push, pop } = useModalStack();
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Word[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [popupChar, setPopupChar] = useState<string | null>(null);
+
+  // Wake the Supabase project early to mask cold-start latency.
+  useEffect(() => {
+    wakeUp();
+  }, []);
+
+  // Debounce search input.
+  const searchTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    searchTimer.current = window.setTimeout(() => {
+      setDebouncedQuery(query);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (searchTimer.current) window.clearTimeout(searchTimer.current);
+    };
+  }, [query]);
+
+  // Run search when the debounced query changes.
+  useEffect(() => {
+    let cancelled = false;
+    if (!debouncedQuery.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    (async () => {
+      const rows = await dict.search(debouncedQuery);
+      if (cancelled) return;
+      setSearchResults(rows);
+      setSearching(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery, dict.search]);
+
+  // Pre-hydrate saved words so the Saved shelf renders without per-card flicker.
+  useEffect(() => {
+    if (saved.size === 0) return;
+    void dict.ensureCached([...saved]);
+  }, [saved, dict.ensureCached]);
+
+  // Deep-link via hash on first load (after dictionary is reachable).
+  const deepLinkRunRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkRunRef.current) return;
+    if (dict.loadingHome) return;
+    deepLinkRunRef.current = true;
+    const initial = parseHash();
+    if (!initial) return;
+    if (initial.kind === "word") {
+      void dict.ensureCached([initial.key]).then(() => push(initial));
+    } else if (initial.kind === "char") {
+      push(initial);
+    }
+  }, [dict.loadingHome, dict.ensureCached, push]);
+
+  const handleEnter = () => {
+    if (searchResults.length > 0) {
+      void openWord(searchResults[0].word);
+    }
+  };
+
+  const openWord = async (word: string) => {
+    await dict.ensureCached([word]);
+    push({ kind: "word", key: word });
+  };
+
+  const openCharPopup = (char: string) => setPopupChar(char);
+
+  const top = stack[stack.length - 1];
+  const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
+
+  if (dict.loadingHome) {
+    return (
+      <div className="boot-loading" aria-live="polite">
+        Loading dictionary…
+      </div>
+    );
+  }
+
+  if (dict.error && !dict.homeWords) {
+    return (
+      <div className="error-banner">
+        Failed to load dictionary: {dict.error}
+        <div style={{ fontSize: 12, marginTop: 8, opacity: 0.85 }}>
+          Did the migration apply and the seed run? See README.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <header className="topbar">
+        <span className="home-link" />
+        <h1>中文</h1>
+        <span className="spacer" />
+      </header>
+
+      <SearchBar value={query} onChange={setQuery} onEnter={handleEnter} />
+
+      {debouncedQuery.trim() ? (
+        searching && searchResults.length === 0 ? (
+          <div className="empty-state">Searching…</div>
+        ) : (
+          <ResultsList matches={searchResults} onOpen={(w) => void openWord(w)} />
+        )
+      ) : (
+        <main className="home" aria-label="Home">
+          <SavedShelf
+            saved={saved}
+            findWord={dict.findWord}
+            chars={charsData.chars}
+            onOpenWord={(w) => void openWord(w)}
+            onOpenChar={openCharPopup}
+            onExport={exportSaved}
+          />
+          <HomeGrid
+            words={dict.homeWords ?? []}
+            hasMore={dict.homeHasMore}
+            loadingMore={dict.loadingMore}
+            onLoadMore={() => void dict.loadMoreHome()}
+            onOpen={(w) => void openWord(w)}
+          />
+        </main>
+      )}
+
+      {top && (
+        <TreeModal
+          entry={top}
+          word={topWord}
+          chars={charsData.chars}
+          stackLen={stack.length}
+          onPop={pop}
+          onNodeClick={openCharPopup}
+        />
+      )}
+
+      {popupChar && (
+        <CharPopup
+          char={popupChar}
+          charData={charsData.chars[popupChar]}
+          saved={saved}
+          onToggleSave={toggle}
+          onClose={() => setPopupChar(null)}
+          onJumpToWord={(w) => void openWord(w)}
+          findWord={dict.findWord}
+        />
+      )}
+
+      <div className="page-id">chinese v14</div>
+    </>
+  );
+}
