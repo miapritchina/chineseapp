@@ -1,4 +1,4 @@
-name: Seed Supabase Dictionary
+name: Setup Supabase
 
 # One-token setup: paste a Supabase Personal Access Token (PAT) into the
 # workflow run UI and click Run. Everything else is driven by the Supabase
@@ -9,7 +9,7 @@ name: Seed Supabase Dictionary
 #   https://supabase.com/dashboard/account/tokens
 # Then on a phone:
 #   github.com/<owner>/<repo>/actions
-#     → "Seed Supabase Dictionary" → Run workflow
+#     → "Setup Supabase" → Run workflow
 #     → paste PAT → Run
 # That's it.
 
@@ -22,21 +22,26 @@ on:
           https://supabase.com/dashboard/account/tokens — paste here, never stored.
         required: true
         type: string
-      apply_migration:
-        description: "Apply schema migration (idempotent)"
+      apply_migrations:
+        description: "Apply all SQL migrations (idempotent)"
         type: boolean
         default: true
       run_seed:
-        description: "Upsert all ~91k words"
+        description: "Upsert all ~91k words (idempotent — safe to skip after first run)"
+        type: boolean
+        default: true
+      configure_auth:
+        description: "Configure auth redirect URLs for the deployed app"
         type: boolean
         default: true
 
 env:
   PROJECT_REF: oigbbgtzzqiceetasayy
   MGMT_API: https://api.supabase.com/v1
+  SITE_URL: https://decobots.github.io/Ai-/
 
 jobs:
-  seed:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - name: Mask PAT in logs
@@ -59,27 +64,51 @@ jobs:
           fi
           echo "Project: $(jq -r '.name' /tmp/proj.json) (region: $(jq -r '.region' /tmp/proj.json))"
 
-      - name: Apply migration via Management API
-        if: ${{ inputs.apply_migration }}
+      - name: Apply migrations via Management API
+        if: ${{ inputs.apply_migrations }}
         env:
           SUPABASE_PAT: ${{ inputs.supabase_pat }}
         run: |
           set -euo pipefail
-          # Wrap the migration SQL into a JSON body. -Rs reads stdin into a
-          # single string and JSON-escapes it.
-          MIGRATION_SQL=$(jq -Rs . < supabase/migrations/0001_dictionary.sql)
-          BODY=$(jq -n --argjson q "$MIGRATION_SQL" '{query: $q}')
-          status=$(curl -sS -o /tmp/migrate.json -w '%{http_code}' -X POST \
+          for f in supabase/migrations/*.sql; do
+            echo "::group::Applying $(basename "$f")"
+            MIGRATION_SQL=$(jq -Rs . < "$f")
+            BODY=$(jq -n --argjson q "$MIGRATION_SQL" '{query: $q}')
+            status=$(curl -sS -o /tmp/migrate.json -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $SUPABASE_PAT" \
+              -H "Content-Type: application/json" \
+              -d "$BODY" \
+              "$MGMT_API/projects/$PROJECT_REF/database/query")
+            if [ "$status" -ge 400 ]; then
+              echo "::error::Migration $(basename "$f") failed (HTTP $status):"
+              cat /tmp/migrate.json
+              exit 1
+            fi
+            echo "Applied."
+            echo "::endgroup::"
+          done
+
+      - name: Configure auth redirect URLs
+        if: ${{ inputs.configure_auth }}
+        env:
+          SUPABASE_PAT: ${{ inputs.supabase_pat }}
+        run: |
+          set -euo pipefail
+          BODY=$(jq -n \
+            --arg site_url "$SITE_URL" \
+            --arg uri_allow_list "$SITE_URL**,http://localhost:5173/**" \
+            '{site_url: $site_url, uri_allow_list: $uri_allow_list}')
+          status=$(curl -sS -o /tmp/auth.json -w '%{http_code}' -X PATCH \
             -H "Authorization: Bearer $SUPABASE_PAT" \
             -H "Content-Type: application/json" \
             -d "$BODY" \
-            "$MGMT_API/projects/$PROJECT_REF/database/query")
+            "$MGMT_API/projects/$PROJECT_REF/config/auth")
           if [ "$status" -ge 400 ]; then
-            echo "::error::Migration failed (HTTP $status):"
-            cat /tmp/migrate.json
+            echo "::error::Auth config update failed (HTTP $status):"
+            cat /tmp/auth.json
             exit 1
           fi
-          echo "Migration applied."
+          echo "Auth redirect URLs configured: $SITE_URL"
 
       - name: Fetch service_role key
         if: ${{ inputs.run_seed }}
