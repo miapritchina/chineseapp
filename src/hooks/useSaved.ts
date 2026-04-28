@@ -203,6 +203,23 @@ export function useSaved({ userId }: UseSavedOpts) {
     [userId],
   );
 
+  const clearAll = useCallback(async (): Promise<{ cleared: number }> => {
+    let count = 0;
+    setItems((prev) => {
+      count = prev.size;
+      persistLocal(new Map());
+      return new Map();
+    });
+    if (userId) {
+      const { error } = await supabase
+        .from("user_saves")
+        .delete()
+        .eq("user_id", userId);
+      if (error) console.error("clearAll user_saves delete failed:", error);
+    }
+    return { cleared: count };
+  }, [userId]);
+
   const exportSaved = useCallback(() => {
     if (savedList.length === 0) return;
     const today = new Date().toISOString().slice(0, 10);
@@ -225,5 +242,5 @@ export function useSaved({ userId }: UseSavedOpts) {
     URL.revokeObjectURL(url);
   }, [savedList]);
 
-  return { saved, savedList, toggle, exportSaved, importSaved, syncing };
+  return { saved, savedList, toggle, exportSaved, importSaved, clearAll, syncing };
 }

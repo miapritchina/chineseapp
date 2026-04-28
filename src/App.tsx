@@ -24,7 +24,7 @@ export function App() {
   const dict = useDictionary();
   const charsData = useChars();
   const auth = useAuth();
-  const { saved, savedList, toggle, exportSaved, importSaved } = useSaved({
+  const { saved, savedList, toggle, exportSaved, importSaved, clearAll } = useSaved({
     userId: auth.user?.id ?? null,
   });
   const { stack, push, pop } = useModalStack();
@@ -155,6 +155,29 @@ export function App() {
     })();
   }, [importSaved]);
 
+  // Auto-clear via ?clear=1. Symmetric to ?import=. Always confirms first;
+  // wipes localStorage + (if signed in) every user_saves row for the user.
+  const autoClearRanRef = useRef(false);
+  useEffect(() => {
+    if (autoClearRanRef.current) return;
+    autoClearRanRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("clear") !== "1") return;
+
+    (async () => {
+      const ok = window.confirm(
+        "Clear ALL your saved words? This removes them from this device and (if you're signed in) from your account on every device. This cannot be undone.",
+      );
+      if (ok) {
+        const { cleared } = await clearAll();
+        alert(`Cleared ${cleared} saved word${cleared === 1 ? "" : "s"}.`);
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.delete("clear");
+      window.history.replaceState({}, "", url.toString());
+    })();
+  }, [clearAll]);
+
   const handleEnter = () => {
     if (searchResults.length > 0) {
       void openWord(searchResults[0].word);
@@ -248,7 +271,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v20</div>
+      <div className="page-id">chinese v21</div>
     </>
   );
 }
