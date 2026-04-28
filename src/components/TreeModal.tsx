@@ -9,7 +9,9 @@ interface Props {
   chars: Record<string, Char>;
   stackLen: number;
   saved: Set<string>;
+  learned: Set<string>;
   onToggleSave: (key: string) => void;
+  onToggleLearned: (key: string) => void;
   onPop: () => void;
   onNodeClick: (char: string) => void;
 }
@@ -20,7 +22,9 @@ export function TreeModal({
   chars,
   stackLen,
   saved,
+  learned,
   onToggleSave,
+  onToggleLearned,
   onPop,
   onNodeClick,
 }: Props) {
@@ -37,6 +41,7 @@ export function TreeModal({
     entry.kind === "word" ? word?.pinyin ?? "" : chars[entry.key]?.pinyin ?? "";
   const hsk = entry.kind === "word" ? word?.hsk ?? null : null;
   const isSaved = saved.has(entry.key);
+  const isLearned = learned.has(entry.key);
 
   return (
     <div className="modal-root open" aria-hidden="false">
@@ -49,16 +54,28 @@ export function TreeModal({
           {titlePinyin && <span className="title-pinyin">{titlePinyin}</span>}
           {hsk != null && <span className="title-hsk">HSK {hsk}</span>}
         </h2>
-        <button
-          className={`header-star${isSaved ? " active" : ""}`}
-          type="button"
-          aria-pressed={isSaved}
-          aria-label={isSaved ? "Remove from saved" : "Save"}
-          title={isSaved ? "Saved · tap to remove" : "Save to my words"}
-          onClick={() => onToggleSave(entry.key)}
-        >
-          {isSaved ? "★" : "☆"}
-        </button>
+        <div className="header-actions">
+          <button
+            className={`header-grad${isLearned ? " active" : ""}`}
+            type="button"
+            aria-pressed={isLearned}
+            aria-label={isLearned ? "Mark as not learned" : "Mark as learned"}
+            title={isLearned ? "Learned · tap to unmark" : "Mark as learned"}
+            onClick={() => onToggleLearned(entry.key)}
+          >
+            🎓
+          </button>
+          <button
+            className={`header-star${isSaved ? " active" : ""}`}
+            type="button"
+            aria-pressed={isSaved}
+            aria-label={isSaved ? "Remove from saved" : "Save"}
+            title={isSaved ? "Saved · tap to remove" : "Save to my words"}
+            onClick={() => onToggleSave(entry.key)}
+          >
+            {isSaved ? "★" : "☆"}
+          </button>
+        </div>
       </div>
       <div className="modal-body">
         {tree ? (

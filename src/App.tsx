@@ -24,9 +24,16 @@ export function App() {
   const dict = useDictionary();
   const charsData = useChars();
   const auth = useAuth();
-  const { saved, savedList, toggle, exportSaved, importSaved, clearAll } = useSaved({
-    userId: auth.user?.id ?? null,
-  });
+  const {
+    saved,
+    savedList,
+    learned,
+    toggle,
+    toggleLearned,
+    exportSaved,
+    importSaved,
+    clearAll,
+  } = useSaved({ userId: auth.user?.id ?? null });
   const { stack, push, pop } = useModalStack();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -258,7 +265,9 @@ export function App() {
           chars={charsData.chars}
           stackLen={stack.length}
           saved={saved}
+          learned={learned}
           onToggleSave={toggle}
+          onToggleLearned={toggleLearned}
           onPop={pop}
           onNodeClick={openCharPopup}
         />
@@ -282,7 +291,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v24</div>
+      <div className="page-id">chinese v25</div>
     </>
   );
 }

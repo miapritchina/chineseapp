@@ -452,23 +452,48 @@ body {
 }
 .back-btn:hover, .back-btn:focus-visible { background: var(--surface-2); outline: none; }
 
-.header-star {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 62px;
+  justify-content: flex-end;
+}
+.header-star,
+.header-grad {
   background: none;
   border: none;
-  font-size: 22px;
   line-height: 1;
-  color: var(--muted);
-  padding: 8px 12px;
   cursor: pointer;
   border-radius: 8px;
-  min-width: 62px;
-  text-align: right;
+  padding: 8px 8px;
   -webkit-tap-highlight-color: transparent;
+}
+.header-star {
+  font-size: 22px;
+  color: var(--muted);
 }
 .header-star:hover { background: var(--surface-2); color: var(--text); }
 .header-star.active { color: #d97706; }
 @media (prefers-color-scheme: dark) {
   .header-star.active { color: #f59e0b; }
+}
+
+/* Cap = "I learned this word well". Emoji is grayscaled + dim by default;
+   regains full color when active. */
+.header-grad {
+  font-size: 18px;
+  filter: grayscale(1);
+  opacity: 0.4;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+.header-grad:hover {
+  background: var(--surface-2);
+  opacity: 0.75;
+}
+.header-grad.active {
+  filter: none;
+  opacity: 1;
 }
 .modal-title {
   margin: 0;
