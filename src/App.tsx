@@ -248,6 +248,7 @@ export function App() {
         <main className="home" aria-label="Home">
           <SavedShelf
             savedList={savedList}
+            learned={learned}
             findWord={dict.findWord}
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
@@ -291,7 +292,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v38</div>
+      <div className="page-id">chinese v39</div>
     </>
   );
 }

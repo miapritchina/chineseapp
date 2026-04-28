@@ -299,6 +299,12 @@ body {
 }
 .saved-section { margin-bottom: 4px; }
 
+.shelf-header-secondary {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+
 .saved-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

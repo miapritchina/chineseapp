@@ -5,6 +5,7 @@ import { Card, CharOnlyCard } from "./Card";
 
 interface Props {
   savedList: SavedEntry[];
+  learned: Set<string>;
   findWord: (key: string) => Word | null;
   chars: Record<string, Char>;
   onOpenWord: (word: string) => void;
@@ -30,8 +31,46 @@ function parseExport(text: string): string[] | null {
   }
 }
 
+function renderCard(
+  entry: SavedEntry,
+  findWord: (key: string) => Word | null,
+  chars: Record<string, Char>,
+  onOpenWord: (word: string) => void,
+  onOpenChar: (char: string) => void,
+) {
+  const key = entry.word;
+  const w = findWord(key);
+  if (w) return <Card key={key} word={w} onOpen={onOpenWord} />;
+  const c = chars[key];
+  if (c) {
+    return (
+      <CharOnlyCard
+        key={key}
+        charKey={key}
+        pinyin={c.pinyin || ""}
+        gloss={c.definitions?.[0] || ""}
+        onOpen={onOpenChar}
+      />
+    );
+  }
+  // Cache miss (network in flight) — render a minimal placeholder so the grid
+  // doesn't reflow when ensureCached resolves.
+  return (
+    <button
+      key={key}
+      className="card card-pending"
+      type="button"
+      onClick={() => onOpenWord(key)}
+      aria-label={key}
+    >
+      <div className="char">{key}</div>
+    </button>
+  );
+}
+
 export function SavedShelf({
   savedList,
+  learned,
   findWord,
   chars,
   onOpenWord,
@@ -41,6 +80,14 @@ export function SavedShelf({
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const isEmpty = savedList.length === 0;
+
+  // Two buckets: not-yet-learned at top, learned at bottom under its own
+  // header. Both already arrive in newest-first order from useSaved.
+  const learnedList: SavedEntry[] = [];
+  const unlearnedList: SavedEntry[] = [];
+  for (const e of savedList) {
+    (learned.has(e.word) ? learnedList : unlearnedList).push(e);
+  }
 
   const triggerImport = () => fileRef.current?.click();
 
@@ -74,7 +121,9 @@ export function SavedShelf({
       <div className="shelf-header">
         <div className="shelf-title">
           Saved
-          {!isEmpty && <span className="shelf-count">· {savedList.length}</span>}
+          {unlearnedList.length > 0 && (
+            <span className="shelf-count">· {unlearnedList.length}</span>
+          )}
         </div>
         <div className="shelf-actions">
           {!isEmpty && (
@@ -113,39 +162,32 @@ export function SavedShelf({
             Search above to find a word, then tap ☆ on its character to save it here.
           </div>
         </div>
+      ) : unlearnedList.length === 0 ? (
+        <div className="saved-empty">
+          <div className="saved-empty-hint">
+            Everything you've saved is marked learned. Tap ☆ on a new word to save it.
+          </div>
+        </div>
       ) : (
         <div className="saved-grid">
-          {savedList.map(({ word: key }) => {
-            const w = findWord(key);
-            if (w) return <Card key={key} word={w} onOpen={onOpenWord} />;
-            const c = chars[key];
-            if (c) {
-              return (
-                <CharOnlyCard
-                  key={key}
-                  charKey={key}
-                  pinyin={c.pinyin || ""}
-                  gloss={c.definitions?.[0] || ""}
-                  onOpen={onOpenChar}
-                />
-              );
-            }
-            // Cache miss (network in flight) — render a minimal placeholder so
-            // the grid doesn't reflow when ensureCached resolves.
-            return (
-              <button
-                key={key}
-                className="card card-pending"
-                type="button"
-                onClick={() => onOpenWord(key)}
-                aria-label={key}
-              >
-                <div className="char">{key}</div>
-              </button>
-            );
-          })}
+          {unlearnedList.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
         </div>
+      )}
+
+      {learnedList.length > 0 && (
+        <>
+          <div className="shelf-header shelf-header-secondary">
+            <div className="shelf-title">
+              Learned
+              <span className="shelf-count">· {learnedList.length}</span>
+            </div>
+          </div>
+          <div className="saved-grid">
+            {learnedList.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+          </div>
+        </>
       )}
     </section>
   );
 }
+
