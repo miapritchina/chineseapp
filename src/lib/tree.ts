@@ -85,16 +85,23 @@ export function strokeRoleForIndex(node: TreeNode, idx: number, totalStrokes: nu
 // chinese-lexicon's fragment arrays encode disjoint ranges:
 //   even length: [s0, e0, s1, e1, …]   pairs of [start, end) ranges
 //   odd length:  [s0, e0, …, sN]       last value starts a range to total
-// e.g. 园's 囗 has fragment [0, 2, 6] over 7 strokes → strokes {0,1,6}.
+// `-1` is a sentinel meaning "to the end" — used both as start and end.
+// Examples:
+//   [3]              → strokes 3..end           (e.g. 好's 子)
+//   [4, 7]           → strokes 4..6             (事's 又)
+//   [0, 2, 6]        → strokes 0..1 ∪ 6..end    (园's 囗 with 7 total)
+//   [0, 2, -1]       → strokes 0..1 ∪ -1..end   ≡ {0, 1, last}
+//   [0, 4, 7]        → strokes 0..3 ∪ 7..end    (事's ◎ with 8 total)
 function fragmentContains(
   fragment: number[] | null | undefined,
   idx: number,
   total: number,
 ): boolean {
   if (!Array.isArray(fragment) || fragment.length === 0) return false;
+  const resolve = (v: number) => (v === -1 ? total : v);
   for (let i = 0; i < fragment.length; i += 2) {
-    const start = fragment[i];
-    const end = i + 1 < fragment.length ? fragment[i + 1] : total;
+    const start = resolve(fragment[i]);
+    const end = i + 1 < fragment.length ? resolve(fragment[i + 1]) : total;
     if (idx >= start && idx < end) return true;
   }
   return false;
