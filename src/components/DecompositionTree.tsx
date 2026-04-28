@@ -83,7 +83,16 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       const root = d3.hierarchy<TreeNode>(tree, (d) => d.children);
       // Use d3.tree purely for X-axis spacing; we override Y per depth row to
       // accommodate variable-height cards.
-      d3.tree<TreeNode>().nodeSize([CARD_W + X_GAP, 1])(root);
+      //
+      // d3.tree's default separation is `(a.parent === b.parent ? 1 : 2)` —
+      // non-sibling subtrees double the gap, which spread top-level chars
+      // (e.g. 休 / 息 of 休息) far apart. Down to 1.15 for non-siblings: a
+      // visible but minor extra gap; siblings still tight.
+      d3
+        .tree<TreeNode>()
+        .nodeSize([CARD_W + X_GAP, 1])
+        .separation((a, b) => (a.parent === b.parent ? 1 : 1.15))
+        (root);
 
       // Per-node estimated heights + group by depth.
       const heightOf = new Map<d3.HierarchyPointNode<TreeNode>, number>();
