@@ -6,6 +6,7 @@ import { Card, CharOnlyCard } from "./Card";
 interface Props {
   savedList: SavedEntry[];
   learned: Set<string>;
+  wrote: Set<string>;
   findWord: (key: string) => Word | null;
   chars: Record<string, Char>;
   onOpenWord: (word: string) => void;
@@ -71,6 +72,7 @@ function renderCard(
 export function SavedShelf({
   savedList,
   learned,
+  wrote,
   findWord,
   chars,
   onOpenWord,
@@ -81,12 +83,17 @@ export function SavedShelf({
   const fileRef = useRef<HTMLInputElement>(null);
   const isEmpty = savedList.length === 0;
 
-  // Two buckets: not-yet-learned at top, learned at bottom under its own
-  // header. Both already arrive in newest-first order from useSaved.
+  // Three buckets, by highest tier achieved:
+  //   wrote            ✒ Wrote
+  //   learned !wrote   🎓 Learned
+  //   !learned         ★ Saved
+  const wroteList: SavedEntry[] = [];
   const learnedList: SavedEntry[] = [];
   const unlearnedList: SavedEntry[] = [];
   for (const e of savedList) {
-    (learned.has(e.word) ? learnedList : unlearnedList).push(e);
+    if (wrote.has(e.word)) wroteList.push(e);
+    else if (learned.has(e.word)) learnedList.push(e);
+    else unlearnedList.push(e);
   }
 
   const triggerImport = () => fileRef.current?.click();
@@ -184,6 +191,20 @@ export function SavedShelf({
           </div>
           <div className="saved-grid">
             {learnedList.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+          </div>
+        </>
+      )}
+
+      {wroteList.length > 0 && (
+        <>
+          <div className="shelf-header shelf-header-secondary">
+            <div className="shelf-title">
+              Wrote
+              <span className="shelf-count">· {wroteList.length}</span>
+            </div>
+          </div>
+          <div className="saved-grid">
+            {wroteList.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
           </div>
         </>
       )}

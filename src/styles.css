@@ -465,7 +465,8 @@ body {
   justify-content: flex-end;
 }
 .header-star,
-.header-grad {
+.header-grad,
+.header-brush {
   background: none;
   border: none;
   line-height: 1;
@@ -501,6 +502,27 @@ body {
 }
 .header-grad.active {
   color: var(--role-meaning);
+  opacity: 1;
+}
+
+/* Brush — "I learned to write this." Highest tier. Flat gray inactive,
+   role-sound red active to read as a third distinct color from
+   gold (saved) and green (learned). */
+.header-brush {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  opacity: 0.55;
+  transition: color 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+}
+.header-brush svg { display: block; }
+.header-brush:hover {
+  background: var(--surface-2);
+  opacity: 0.85;
+}
+.header-brush.active {
+  color: var(--role-sound);
   opacity: 1;
 }
 .modal-title {
