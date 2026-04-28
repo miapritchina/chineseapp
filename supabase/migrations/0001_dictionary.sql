@@ -55,7 +55,15 @@ REVOKE INSERT, UPDATE, DELETE ON words FROM authenticated;
 -- Tiered search: one round-trip, server-side ranking. Returns top 30.
 -- tier 0 = exact hanzi, 1 = hanzi prefix, 2 = hanzi substring,
 -- 3 = pinyin prefix, 4 = pinyin substring, 5 = English-gloss substring.
-CREATE OR REPLACE FUNCTION search_words(q TEXT)
+--
+-- DROP first because Postgres won't let CREATE OR REPLACE change a function's
+-- RETURNS TABLE signature, and 0004_search_words_rich.sql widens this same
+-- function to include pinyin/definitions/hsk/trad. After 0004 has applied,
+-- a subsequent re-run that loops back through 0001 would otherwise fail with
+-- HTTP 400 ("cannot change return type of existing function").
+DROP FUNCTION IF EXISTS search_words(TEXT);
+
+CREATE FUNCTION search_words(q TEXT)
 RETURNS TABLE (word TEXT, tier SMALLINT, rank INT)
 LANGUAGE SQL STABLE AS $$
   WITH lq AS (SELECT trim(q) AS q),
