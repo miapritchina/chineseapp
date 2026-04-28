@@ -86,12 +86,13 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       //
       // d3.tree's default separation is `(a.parent === b.parent ? 1 : 2)` —
       // non-sibling subtrees double the gap, which spread top-level chars
-      // (e.g. 休 / 息 of 休息) far apart. Down to 1.15 for non-siblings: a
-      // visible but minor extra gap; siblings still tight.
+      // (e.g. 休 / 息 of 休息) far apart. 1.4 for non-siblings strikes a
+      // balance: visible gap between independent subtrees, tighter than the
+      // original 2×.
       d3
         .tree<TreeNode>()
         .nodeSize([CARD_W + X_GAP, 1])
-        .separation((a, b) => (a.parent === b.parent ? 1 : 1.15))
+        .separation((a, b) => (a.parent === b.parent ? 1 : 1.4))
         (root);
 
       // Per-node estimated heights + group by depth.
