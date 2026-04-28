@@ -6,10 +6,13 @@
 --   3. Per-tier LIMIT keeps intermediate row counts bounded for high-frequency
 --      English glosses (e.g. ILIKE '%a%' would otherwise fan out).
 --
--- Idempotent (CREATE OR REPLACE FUNCTION). Re-run "Setup Supabase" with your
--- PAT to apply.
+-- Idempotent — DROP FUNCTION IF EXISTS first because Postgres won't let
+-- CREATE OR REPLACE change a function's RETURNS TABLE signature
+-- (0001_dictionary.sql created the lean shape; we need the wider one).
 
-CREATE OR REPLACE FUNCTION search_words(q TEXT)
+DROP FUNCTION IF EXISTS search_words(TEXT);
+
+CREATE FUNCTION search_words(q TEXT)
 RETURNS TABLE (
   word               TEXT,
   tier               SMALLINT,
