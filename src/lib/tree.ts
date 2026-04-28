@@ -30,11 +30,15 @@ function buildCharNode(
   if (!c?.hasEtymology) return node;
 
   for (const comp of c.components) {
-    if (comp.char === CHARACTERLESS) continue;
+    // Keep CHARACTERLESS (◎) components — they convey real structure (e.g.
+    // 事's ◎ owns strokes 0-3 + 7, with the hand 又 owning 4-6). Skipping
+    // them hid the second component entirely. The click handler still
+    // refuses to open ◎ since there's no etymology to drill into.
     const child = buildCharNode(comp.char, comp.type || "unknown", chars, depth + 1, next);
     child.fragment = comp.fragment;
     child.compPinyin = comp.pinyin;
     child.compDef = comp.definition;
+    child.compHint = comp.hint;
     node.children.push(child);
   }
   return node;
