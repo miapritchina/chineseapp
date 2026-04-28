@@ -24,7 +24,7 @@ export function ResultsList({ matches, saved, onOpen }: Props) {
             <div className="r-hanzi">{w.simp}</div>
             <div className="r-mid">
               <div className="r-pinyin">{w.pinyin}</div>
-              <div className="r-gloss">{(w.definitions || []).slice(0, 3).join("; ")}</div>
+              <div className="r-gloss">{(w.definitions || []).join("; ")}</div>
             </div>
             {isSaved && (
               <span className="r-saved" aria-label="In your saved list" title="Saved">
