@@ -63,9 +63,7 @@ export function NodeCard({ node, charData, strokeData, cardW }: Props) {
         <div className={`card-role role-${role}`}>{ROLE_LABEL[role] || "Component"}</div>
       )}
 
-      {gloss && (
-        <div className="card-gloss">{gloss.length > 80 ? gloss.slice(0, 79) + "…" : gloss}</div>
-      )}
+      {gloss && <div className="card-gloss">{gloss}</div>}
 
       {etymText && <div className="card-etym">{etymText}</div>}
     </div>

@@ -6,10 +6,11 @@ import { useStrokeData } from "../hooks/useStrokeData";
 import { NodeCard } from "./NodeCard";
 
 const CARD_W = 220;
-// Per-card heights are computed from content (note length, role label, etc).
-// CARD_BASE_H is everything except the etymology block: pinyin + glyph slot
-// + role label + gloss; it's the floor we never go below.
-const CARD_BASE_H = 240;
+// Per-card heights are computed from content (note + gloss length, role
+// label, etc). CARD_BASE_H is the floor for the non-text chrome:
+// pinyin + glyph slot + role label + paddings; gloss + etymology are added
+// on top in estimateCardHeight().
+const CARD_BASE_H = 220;
 const CARD_MIN_H = 240;
 const CARD_NOTE_LINE_H = 16;       // px per wrapped note line
 const CARD_NOTE_CHARS_PER_LINE = 28; // ~ at 11.5px font in 220px width
@@ -43,23 +44,39 @@ interface Link {
 // to keep rows from overlapping. Slight under-estimate → minor overlap; we
 // add a small safety pad to bias toward over-estimate.
 function estimateCardHeight(node: TreeNode, charsData: Record<string, Char>): number {
-  if (node.isWord) return CARD_MIN_H + 20; // word root is short
   const c = charsData[node.char];
   const isCharacterless = node.char === CHARACTERLESS;
 
-  const noteText = isCharacterless
-    ? node.compHint?.trim() || ""
-    : c?.notes?.trim() ||
-      (c?.originalMeaning && c.originalMeaning !== "characterless component"
-        ? `Originally: ${c.originalMeaning}`
-        : "");
+  // Gloss text — same source the NodeCard uses.
+  const glossText = node.isWord
+    ? node.gloss || ""
+    : node.gloss ||
+      (isCharacterless && node.compHint
+        ? node.compHint
+        : node.compDef || c?.definitions?.[0] || "");
 
+  // Etymology text — same source the NodeCard uses.
+  const noteText = node.isWord
+    ? ""
+    : isCharacterless
+      ? ""
+      : c?.notes?.trim() ||
+        (c?.originalMeaning && c.originalMeaning !== "characterless component"
+          ? `Originally: ${c.originalMeaning}`
+          : "");
+
+  const glossLines = glossText
+    ? Math.max(1, Math.ceil(glossText.length / CARD_NOTE_CHARS_PER_LINE))
+    : 0;
   const noteLines = noteText
     ? Math.max(1, Math.ceil(noteText.length / CARD_NOTE_CHARS_PER_LINE))
     : 0;
-  const noteHeight = noteLines * CARD_NOTE_LINE_H + (noteText ? 12 : 0);
 
-  return Math.max(CARD_MIN_H, CARD_BASE_H + noteHeight + 12 /* pad */);
+  // Heights per text block.
+  const glossH = glossLines * 18;          // gloss is 14px font, line-height ~1.3
+  const noteH = noteLines * CARD_NOTE_LINE_H + (noteText ? 12 /* margin-top */ : 0);
+
+  return Math.max(CARD_MIN_H, CARD_BASE_H + glossH + noteH + 12 /* pad */);
 }
 
 export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
