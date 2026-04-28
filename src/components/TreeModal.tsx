@@ -63,7 +63,14 @@ export function TreeModal({
             title={isLearned ? "Learned · tap to unmark" : "Mark as learned"}
             onClick={() => onToggleLearned(entry.key)}
           >
-            🎓
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+              {/* mortarboard top diamond */}
+              <path d="M12 3 L23 9 L12 15 L1 9 Z" />
+              {/* cap base / band below */}
+              <path d="M5 11.4 L5 16 C5 16.9 8.2 18.2 12 18.2 C15.8 18.2 19 16.9 19 16 L19 11.4 L12 14.6 Z" />
+              {/* tassel */}
+              <path d="M21.6 9.4 L21.6 13.5 C21.6 14 22 14.4 22.4 14.4 C22.8 14.4 23.2 14 23.2 13.5 L23.2 9.4 Z" />
+            </svg>
           </button>
           <button
             className={`header-star${isSaved ? " active" : ""}`}

@@ -325,7 +325,7 @@ body {
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 12px;
   padding: 14px 8px 12px;
   text-align: center;
@@ -333,13 +333,12 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   position: relative;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: background 0.12s ease;
   font: inherit;
   color: inherit;
 }
 .card:hover, .card:focus-visible {
   background: var(--surface-2);
-  border-color: var(--text);
   outline: none;
 }
 
@@ -479,20 +478,23 @@ body {
   .header-star.active { color: #f59e0b; }
 }
 
-/* Cap = "I learned this word well". Emoji is grayscaled + dim by default;
-   regains full color when active. */
+/* Cap = "I learned this word well". Flat gray inline SVG; tints darker
+   when active. No emoji so rendering is consistent across platforms. */
 .header-grad {
-  font-size: 18px;
-  filter: grayscale(1);
-  opacity: 0.4;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  opacity: 0.55;
+  transition: color 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 }
+.header-grad svg { display: block; }
 .header-grad:hover {
   background: var(--surface-2);
-  opacity: 0.75;
+  opacity: 0.85;
 }
 .header-grad.active {
-  filter: none;
+  color: var(--text);
   opacity: 1;
 }
 .modal-title {
