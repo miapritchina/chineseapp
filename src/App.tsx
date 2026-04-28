@@ -28,8 +28,10 @@ export function App() {
     saved,
     savedList,
     learned,
+    wrote,
     toggle,
     toggleLearned,
+    toggleWrote,
     exportSaved,
     importSaved,
     clearAll,
@@ -249,6 +251,7 @@ export function App() {
           <SavedShelf
             savedList={savedList}
             learned={learned}
+            wrote={wrote}
             findWord={dict.findWord}
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
@@ -267,8 +270,10 @@ export function App() {
           stackLen={stack.length}
           saved={saved}
           learned={learned}
+          wrote={wrote}
           onToggleSave={toggle}
           onToggleLearned={toggleLearned}
+          onToggleWrote={toggleWrote}
           onPop={pop}
           onNodeClick={openCharPopup}
         />
@@ -292,7 +297,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v39</div>
+      <div className="page-id">chinese v41</div>
     </>
   );
 }

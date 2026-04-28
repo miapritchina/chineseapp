@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 
 const SAVED_KEY = "chinese.saved";
 const LEARNED_KEY = "chinese.learned";
+const WROTE_KEY = "chinese.wrote";
 
 export interface SavedEntry {
   word: string;
@@ -52,17 +53,20 @@ interface UseSavedOpts {
   userId: string | null;
 }
 
-// Saved + learned state. Both live in localStorage (offline resilience and
-// to survive sign-out) AND mirror the per-user `user_saves` table — the
-// `learned` flag is encoded as a non-NULL `learned_at` column on the same row
-// (see supabase/migrations/0003_user_saves_learned.sql).
+// Three-tier saved/learned/wrote progression. Each tier implies the previous:
+//   ★ saved       (user_saves row exists)
+//   🎓 learned    (learned_at NOT NULL) ⇒ also saved
+//   ✒  wrote      (wrote_at NOT NULL)   ⇒ also learned ⇒ also saved
 //
-// Constraint: "learned implies saved". Tapping the cap on a not-yet-saved word
-// auto-saves it. Unsaving (★→☆) also clears the learned flag.
+// All three live in localStorage (offline resilience + survives sign-out)
+// AND mirror to user_saves columns when signed in.
 export function useSaved({ userId }: UseSavedOpts) {
   const [items, setItems] = useState<Map<string, number>>(() => loadLocalMap(SAVED_KEY));
   const [learnedItems, setLearnedItems] = useState<Map<string, number>>(() =>
     loadLocalMap(LEARNED_KEY),
+  );
+  const [wroteItems, setWroteItems] = useState<Map<string, number>>(() =>
+    loadLocalMap(WROTE_KEY),
   );
   const [syncing, setSyncing] = useState(false);
   const lastSyncedUserRef = useRef<string | null>(null);
@@ -70,6 +74,7 @@ export function useSaved({ userId }: UseSavedOpts) {
   // Read-only views.
   const saved = useMemo(() => new Set(items.keys()), [items]);
   const learned = useMemo(() => new Set(learnedItems.keys()), [learnedItems]);
+  const wrote = useMemo(() => new Set(wroteItems.keys()), [wroteItems]);
   const savedList = useMemo<SavedEntry[]>(
     () =>
       [...items.entries()]
@@ -92,7 +97,7 @@ export function useSaved({ userId }: UseSavedOpts) {
     (async () => {
       const { data, error } = await supabase
         .from("user_saves")
-        .select("word, saved_at, learned_at")
+        .select("word, saved_at, learned_at, wrote_at")
         .eq("user_id", userId);
       if (cancelled) return;
       if (error) {
@@ -103,19 +108,21 @@ export function useSaved({ userId }: UseSavedOpts) {
 
       const remoteSaved = new Map<string, number>();
       const remoteLearned = new Map<string, number>();
+      const remoteWrote = new Map<string, number>();
       for (const r of (data || []) as {
         word: string;
         saved_at: string;
         learned_at: string | null;
+        wrote_at: string | null;
       }[]) {
         remoteSaved.set(r.word, new Date(r.saved_at).getTime());
-        if (r.learned_at) {
-          remoteLearned.set(r.word, new Date(r.learned_at).getTime());
-        }
+        if (r.learned_at) remoteLearned.set(r.word, new Date(r.learned_at).getTime());
+        if (r.wrote_at) remoteWrote.set(r.word, new Date(r.wrote_at).getTime());
       }
 
       let localSavedBefore: Map<string, number> = new Map();
       let localLearnedBefore: Map<string, number> = new Map();
+      let localWroteBefore: Map<string, number> = new Map();
 
       setItems((prev) => {
         localSavedBefore = prev;
@@ -131,21 +138,32 @@ export function useSaved({ userId }: UseSavedOpts) {
         persistLocalMap(LEARNED_KEY, merged);
         return merged;
       });
+      setWroteItems((prev) => {
+        localWroteBefore = prev;
+        const merged = new Map(prev);
+        for (const [word, ts] of remoteWrote) merged.set(word, ts);
+        persistLocalMap(WROTE_KEY, merged);
+        return merged;
+      });
 
-      // Upload anything local-only (saved or learned).
-      const savedToUpload = [...localSavedBefore.keys()].filter((w) => !remoteSaved.has(w));
-      const learnedToUpload = [...localLearnedBefore.keys()].filter(
-        (w) => !remoteLearned.has(w),
+      const allLocalKeys = new Set<string>([
+        ...localSavedBefore.keys(),
+        ...localLearnedBefore.keys(),
+        ...localWroteBefore.keys(),
+      ]);
+      const toUpload = [...allLocalKeys].filter(
+        (w) =>
+          !remoteSaved.has(w) ||
+          (localLearnedBefore.has(w) && !remoteLearned.has(w)) ||
+          (localWroteBefore.has(w) && !remoteWrote.has(w)),
       );
-
-      if (savedToUpload.length || learnedToUpload.length) {
-        // Build rows: every saved-or-learned word gets a row with the right flags.
-        const allKeys = new Set<string>([...savedToUpload, ...learnedToUpload]);
+      if (toUpload.length > 0) {
         const now = new Date().toISOString();
-        const rows = [...allKeys].map((w) => ({
+        const rows = toUpload.map((w) => ({
           user_id: userId,
           word: w,
           ...(localLearnedBefore.has(w) ? { learned_at: now } : {}),
+          ...(localWroteBefore.has(w) ? { wrote_at: now } : {}),
         }));
         const { error: upErr } = await supabase
           .from("user_saves")
@@ -160,6 +178,8 @@ export function useSaved({ userId }: UseSavedOpts) {
     };
   }, [userId]);
 
+  // Toggle saved (star). When turning OFF, also clears learned + wrote since
+  // both depend on saved.
   const toggle = useCallback(
     (key: string) => {
       let willBeSaved = false;
@@ -176,13 +196,20 @@ export function useSaved({ userId }: UseSavedOpts) {
         return next;
       });
 
-      // If un-saving, also clear learned (learned implies saved).
       if (!willBeSaved) {
+        // cascade clear
         setLearnedItems((prev) => {
           if (!prev.has(key)) return prev;
           const next = new Map(prev);
           next.delete(key);
           persistLocalMap(LEARNED_KEY, next);
+          return next;
+        });
+        setWroteItems((prev) => {
+          if (!prev.has(key)) return prev;
+          const next = new Map(prev);
+          next.delete(key);
+          persistLocalMap(WROTE_KEY, next);
           return next;
         });
       }
@@ -210,17 +237,14 @@ export function useSaved({ userId }: UseSavedOpts) {
     [userId],
   );
 
-  // Toggle the "learned" flag. If turning on for a not-yet-saved word, also
-  // saves the word (learned implies saved).
+  // Toggle learned (cap). Implies saved — auto-saves if not already. When
+  // turning OFF, also clears wrote (wrote implies learned).
   const toggleLearned = useCallback(
     (key: string) => {
       let willBeLearned = false;
-      let didAutoSave = false;
 
       setItems((prev) => {
         if (prev.has(key)) return prev;
-        // Auto-save first if not already saved.
-        didAutoSave = true;
         const next = new Map(prev);
         next.set(key, Date.now());
         persistLocalMap(SAVED_KEY, next);
@@ -240,13 +264,22 @@ export function useSaved({ userId }: UseSavedOpts) {
         return next;
       });
 
+      if (!willBeLearned) {
+        // cascade clear: turning off learned also clears wrote
+        setWroteItems((prev) => {
+          if (!prev.has(key)) return prev;
+          const next = new Map(prev);
+          next.delete(key);
+          persistLocalMap(WROTE_KEY, next);
+          return next;
+        });
+      }
+
       if (userId) {
         const now = new Date().toISOString();
-        const row: { user_id: string; word: string; learned_at: string | null } = {
-          user_id: userId,
-          word: key,
-          learned_at: willBeLearned ? now : null,
-        };
+        const row = willBeLearned
+          ? { user_id: userId, word: key, learned_at: now }
+          : { user_id: userId, word: key, learned_at: null, wrote_at: null };
         supabase
           .from("user_saves")
           .upsert(row, { onConflict: "user_id,word" })
@@ -254,10 +287,57 @@ export function useSaved({ userId }: UseSavedOpts) {
             if (error) console.error("toggleLearned upsert failed:", error);
           });
       }
+    },
+    [userId],
+  );
 
-      // Suppress the unused-warning when in dev — both flags are used in the
-      // closure but TS/ESLint sometimes doesn't see it.
-      void didAutoSave;
+  // Toggle wrote (brush). Implies learned + saved — auto-saves and auto-caps
+  // if not already. Turning OFF clears only wrote (cap and star stay).
+  const toggleWrote = useCallback(
+    (key: string) => {
+      let willBeWrote = false;
+      const now = Date.now();
+
+      setItems((prev) => {
+        if (prev.has(key)) return prev;
+        const next = new Map(prev);
+        next.set(key, now);
+        persistLocalMap(SAVED_KEY, next);
+        return next;
+      });
+      setLearnedItems((prev) => {
+        if (prev.has(key)) return prev;
+        const next = new Map(prev);
+        next.set(key, now);
+        persistLocalMap(LEARNED_KEY, next);
+        return next;
+      });
+
+      setWroteItems((prev) => {
+        const next = new Map(prev);
+        if (next.has(key)) {
+          next.delete(key);
+          willBeWrote = false;
+        } else {
+          next.set(key, now);
+          willBeWrote = true;
+        }
+        persistLocalMap(WROTE_KEY, next);
+        return next;
+      });
+
+      if (userId) {
+        const iso = new Date(now).toISOString();
+        const row = willBeWrote
+          ? { user_id: userId, word: key, learned_at: iso, wrote_at: iso }
+          : { user_id: userId, word: key, wrote_at: null };
+        supabase
+          .from("user_saves")
+          .upsert(row, { onConflict: "user_id,word" })
+          .then(({ error }) => {
+            if (error) console.error("toggleWrote upsert failed:", error);
+          });
+      }
     },
     [userId],
   );
@@ -302,6 +382,10 @@ export function useSaved({ userId }: UseSavedOpts) {
       persistLocalMap(LEARNED_KEY, new Map());
       return new Map();
     });
+    setWroteItems(() => {
+      persistLocalMap(WROTE_KEY, new Map());
+      return new Map();
+    });
     if (userId) {
       const { error } = await supabase
         .from("user_saves")
@@ -324,6 +408,7 @@ export function useSaved({ userId }: UseSavedOpts) {
         word: s.word,
         savedAt: s.savedAt,
         learned: learnedItems.has(s.word),
+        wrote: wroteItems.has(s.word),
       })),
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -335,14 +420,16 @@ export function useSaved({ userId }: UseSavedOpts) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }, [savedList, learnedItems]);
+  }, [savedList, learnedItems, wroteItems]);
 
   return {
     saved,
     savedList,
     learned,
+    wrote,
     toggle,
     toggleLearned,
+    toggleWrote,
     exportSaved,
     importSaved,
     clearAll,
