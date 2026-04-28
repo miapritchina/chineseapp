@@ -683,19 +683,23 @@ body {
   overflow: hidden;
 }
 
-/* Etymology grows the foreignObject (height attribute is updated in JS on zoom),
-   stays hidden at baseline so the card is compact. */
+/* Etymology visible by default — line-clamp at small zoom so cards stay a
+   manageable height; unclamp at zoom-lg to reveal full notes. */
 .card-etym {
-  font-size: 12.5px;
+  font-size: 11.5px;
   color: var(--muted);
   line-height: 1.4;
-  max-height: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  transition: max-height 0.18s ease, margin-top 0.18s ease;
+  text-align: center;
+  margin-top: 4px;
+  transition: -webkit-line-clamp 0.18s ease;
 }
 .tree-svg.zoom-lg .card-etym {
-  max-height: 120px;
-  margin-top: 4px;
+  display: block;
+  -webkit-line-clamp: unset;
 }
 
 .role-iconic    { color: var(--role-iconic); }

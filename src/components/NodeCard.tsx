@@ -11,14 +11,32 @@ interface Props {
 
 export function NodeCard({ node, charData, strokeData, cardW }: Props) {
   const role = node.role || "unknown";
-  const py = node.pinyin || charData?.pinyin || "";
-  const gloss = node.gloss || node.compDef || charData?.definitions?.[0] || "";
+  const isCharacterless = node.char === "◎";
+
+  // Suppress placeholder pinyin "xx" for characterless components; otherwise
+  // prefer pinyin from the tree node (word root) → from char data.
+  const py = isCharacterless ? "" : node.pinyin || charData?.pinyin || "";
+
+  // Gloss preference: explicit node gloss → component definition → char's
+  // first dictionary def. For characterless components, the comp definition
+  // is just "characterless component" — prefer the parent's hint instead.
+  const gloss =
+    node.gloss ||
+    (isCharacterless && node.compHint
+      ? node.compHint
+      : node.compDef || charData?.definitions?.[0] || "");
+
+  // Etymology shown on every card by default (line-clamped via CSS at small
+  // zoom; full at zoom > 1.7×). For characterless components we don't have a
+  // separate notes field — the hint already covers it via gloss above.
   const etymText = node.isWord
     ? ""
-    : (charData?.notes?.trim() ||
+    : isCharacterless
+      ? ""
+      : charData?.notes?.trim() ||
         (charData?.originalMeaning && charData.originalMeaning !== "characterless component"
           ? `Originally: ${charData.originalMeaning}`
-          : ""));
+          : "");
 
   return (
     <div className={`node-card role-${role}${node.isWord ? " is-word" : ""}`}>
@@ -41,7 +59,7 @@ export function NodeCard({ node, charData, strokeData, cardW }: Props) {
         </div>
       )}
 
-      {!node.isWord && role && role !== "iconic" && (
+      {!node.isWord && role && (
         <div className={`card-role role-${role}`}>{ROLE_LABEL[role] || "Component"}</div>
       )}
 

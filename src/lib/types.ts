@@ -54,6 +54,7 @@ export interface TreeNode {
   fragment?: [number, number?] | null;
   compPinyin?: string;
   compDef?: string;
+  compHint?: string;
   children: TreeNode[];
 }
 
