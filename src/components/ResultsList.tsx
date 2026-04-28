@@ -26,14 +26,11 @@ export function ResultsList({ matches, saved, onOpen }: Props) {
               <div className="r-pinyin">{w.pinyin}</div>
               <div className="r-gloss">{(w.definitions || []).slice(0, 3).join("; ")}</div>
             </div>
-            <div className="r-meta">
-              {isSaved && (
-                <span className="r-saved" aria-label="In your saved list" title="Saved">
-                  ★
-                </span>
-              )}
-              {w.hsk != null && <div className="r-hsk">HSK {w.hsk}</div>}
-            </div>
+            {isSaved && (
+              <span className="r-saved" aria-label="In your saved list" title="Saved">
+                ★
+              </span>
+            )}
           </button>
         );
       })}

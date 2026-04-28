@@ -13,7 +13,6 @@ export function Card({ word, onOpen }: Props) {
       aria-label={`${word.simp} ${word.pinyin}`}
       onClick={() => onOpen(word.word)}
     >
-      {word.hsk != null && <div className="hsk-badge">HSK {word.hsk}</div>}
       <div className="char">{word.simp}</div>
       <div className="pinyin">{word.pinyin}</div>
       <div className="gloss">{word.definitions?.[0] || ""}</div>
