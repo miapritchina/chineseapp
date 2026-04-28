@@ -1,6 +1,7 @@
 :root {
   color-scheme: light dark;
   --bg: #faf8f4;
+  --card-bg: #ffffff;
   --surface-2: #f0ece4;
   --text: #1d1b18;
   --muted: #6b6359;
@@ -19,6 +20,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #16140f;
+    --card-bg: #211e15;
     --surface-2: #272319;
     --text: #ece7dc;
     --muted: #a39c8f;
@@ -324,7 +326,7 @@ body {
 .card-pending { opacity: 0.55; }
 
 .card {
-  background: var(--surface);
+  background: var(--card-bg);
   border: none;
   border-radius: 12px;
   padding: 14px 8px 12px;
@@ -333,12 +335,10 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   position: relative;
-  transition: background 0.12s ease;
   font: inherit;
   color: inherit;
 }
 .card:hover, .card:focus-visible {
-  background: var(--surface-2);
   outline: none;
 }
 
@@ -494,7 +494,7 @@ body {
   opacity: 0.85;
 }
 .header-grad.active {
-  color: var(--text);
+  color: var(--role-meaning);
   opacity: 1;
 }
 .modal-title {

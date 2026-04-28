@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import type { Word } from "../lib/types";
 
@@ -19,10 +19,15 @@ function hydrate(row: any): Word {
   };
 }
 
+const SEARCH_CACHE_LIMIT = 50;
+
 export function useDictionary() {
   // State-backed cache so consumers re-render when missing words arrive.
   const [cache, setCache] = useState<Map<string, Word>>(new Map());
   const [error, setError] = useState<string | null>(null);
+  // In-memory cache of recent search results. Per-query Word[] in tier order.
+  // LRU-ish: evicted in insertion order once the size cap is reached.
+  const searchCacheRef = useRef<Map<string, Word[]>>(new Map());
 
   const ingest = useCallback((rows: Word[]) => {
     if (rows.length === 0) return;
@@ -37,33 +42,39 @@ export function useDictionary() {
     async (q: string): Promise<Word[]> => {
       const trimmed = q.trim();
       if (!trimmed) return [];
-      const { data: hits, error: rpcErr } = await supabase.rpc("search_words", { q: trimmed });
+
+      // Cache hit: instant. Refreshes recency by re-inserting.
+      const cached = searchCacheRef.current.get(trimmed);
+      if (cached) {
+        searchCacheRef.current.delete(trimmed);
+        searchCacheRef.current.set(trimmed, cached);
+        return cached;
+      }
+
+      // search_words RPC now returns full row data — no second hydrate query.
+      const { data, error: rpcErr } = await supabase.rpc("search_words", { q: trimmed });
       if (rpcErr) {
         console.error("search_words RPC failed:", rpcErr);
         setError(rpcErr.message);
         return [];
       }
-      if (!hits || hits.length === 0) return [];
-      const need: string[] = hits.map((h: { word: string }) => h.word);
-      const { data: rows, error: rowsErr } = await supabase
-        .from("words")
-        .select("*")
-        .in("word", need);
-      if (rowsErr) {
-        console.error("search hydrate failed:", rowsErr);
-        setError(rowsErr.message);
+      const rows = (data || []) as any[];
+      if (rows.length === 0) {
+        searchCacheRef.current.set(trimmed, []);
         return [];
       }
-      const hydrated = (rows || []).map(hydrate);
+      const hydrated = rows.map(hydrate);
       ingest(hydrated);
-      const byWord = new Map(hydrated.map((w) => [w.word, w]));
-      // Preserve RPC tier order.
-      const out: Word[] = [];
-      for (const h of hits) {
-        const w = byWord.get(h.word);
-        if (w) out.push(w);
+
+      // Cache + bound size.
+      searchCacheRef.current.set(trimmed, hydrated);
+      while (searchCacheRef.current.size > SEARCH_CACHE_LIMIT) {
+        const firstKey = searchCacheRef.current.keys().next().value;
+        if (firstKey === undefined) break;
+        searchCacheRef.current.delete(firstKey);
       }
-      return out;
+
+      return hydrated;
     },
     [ingest],
   );

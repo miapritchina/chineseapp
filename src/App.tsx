@@ -18,7 +18,7 @@ import { SignInModal } from "./components/SignInModal";
 
 import type { Word } from "./lib/types";
 
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 export function App() {
   const dict = useDictionary();
@@ -291,7 +291,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v26</div>
+      <div className="page-id">chinese v28</div>
     </>
   );
 }
