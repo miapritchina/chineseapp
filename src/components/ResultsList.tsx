@@ -10,9 +10,16 @@ export function ResultsList({ matches, saved, onOpen }: Props) {
   if (matches.length === 0) {
     return <div className="empty-state">No matches.</div>;
   }
+  // Saved words first, then the rest. Within each group the RPC's tier
+  // ordering is preserved (Array.prototype.sort is stable in ES2019+).
+  const ordered = [...matches].sort((a, b) => {
+    const sa = saved.has(a.word) ? 0 : 1;
+    const sb = saved.has(b.word) ? 0 : 1;
+    return sa - sb;
+  });
   return (
     <section className="results" aria-label="Search results">
-      {matches.map((w) => {
+      {ordered.map((w) => {
         const isSaved = saved.has(w.word);
         return (
           <button
