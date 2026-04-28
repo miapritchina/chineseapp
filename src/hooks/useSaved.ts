@@ -125,6 +125,33 @@ export function useSaved({ userId }: UseSavedOpts) {
     [userId],
   );
 
+  const importSaved = useCallback(
+    async (items: string[]): Promise<{ added: number; total: number }> => {
+      const total = items.length;
+      if (!total) return { added: 0, total: 0 };
+      let added = 0;
+      setSaved((prev) => {
+        const next = new Set(prev);
+        for (const w of items) {
+          if (!next.has(w)) added++;
+          next.add(w);
+        }
+        persistLocal(next);
+        return next;
+      });
+      // If signed in, upload everything (idempotent on PK).
+      if (userId) {
+        const rows = items.map((w) => ({ user_id: userId, word: w }));
+        const { error } = await supabase
+          .from("user_saves")
+          .upsert(rows, { onConflict: "user_id,word" });
+        if (error) console.error("import upload failed:", error);
+      }
+      return { added, total };
+    },
+    [userId],
+  );
+
   const exportSaved = useCallback(() => {
     const items = [...saved];
     if (!items.length) return;
@@ -146,5 +173,5 @@ export function useSaved({ userId }: UseSavedOpts) {
     URL.revokeObjectURL(url);
   }, [saved]);
 
-  return { saved, toggle, exportSaved, syncing };
+  return { saved, toggle, exportSaved, importSaved, syncing };
 }

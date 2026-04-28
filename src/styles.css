@@ -257,6 +257,17 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .shelf-action:hover { color: var(--text); border-color: var(--text); }
+.shelf-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.shelf-empty {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 8px 18px 12px;
+  font-style: italic;
+}
 .shelf-section { margin-bottom: 4px; }
 
 .shelf {
