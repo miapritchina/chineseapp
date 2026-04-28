@@ -13,6 +13,58 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
     <link rel="preconnect" href="https://oigbbgtzzqiceetasayy.supabase.co" />
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js"></script>
+    <!-- Diagnostic shim. Mobile users can't open dev tools; if the React app
+         fails to mount this paints the cause directly onto the page. -->
+    <script>
+      (function () {
+        function paint(label, body) {
+          var box = document.getElementById('error-overlay');
+          if (!box) {
+            box = document.createElement('div');
+            box.id = 'error-overlay';
+            box.style.cssText =
+              'position:fixed;inset:0;z-index:99999;background:#fff8e1;color:#7a3b00;' +
+              'font:12px/1.4 ui-monospace,Menlo,monospace;padding:14px;overflow:auto;' +
+              'white-space:pre-wrap;word-break:break-word;';
+            (document.body || document.documentElement).appendChild(box);
+          }
+          var prev = box.textContent || '';
+          box.textContent = (label + '\n\n' + body + '\n\n' + prev).slice(0, 8000);
+        }
+        function fmtErr(e) {
+          if (!e) return String(e);
+          if (e instanceof Error) return e.name + ': ' + e.message + '\n' + (e.stack || '');
+          try { return JSON.stringify(e, Object.getOwnPropertyNames(e)); } catch (_) { return String(e); }
+        }
+        window.addEventListener('error', function (ev) {
+          var src = ev.filename ? ' [' + ev.filename + ':' + ev.lineno + ':' + ev.colno + ']' : '';
+          paint('window error' + src, fmtErr(ev.error || ev.message));
+        }, true);
+        window.addEventListener('unhandledrejection', function (ev) {
+          paint('unhandled rejection', fmtErr(ev.reason));
+        });
+        // After 4s, if root is still empty, dump environment info so we can
+        // diagnose without dev tools.
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && root.childElementCount > 0) return;
+          var ls = {};
+          try {
+            for (var i = 0; i < localStorage.length; i++) {
+              var k = localStorage.key(i);
+              ls[k] = (localStorage.getItem(k) || '').slice(0, 120);
+            }
+          } catch (e) { ls = { error: fmtErr(e) }; }
+          var info = [
+            'URL: ' + location.href,
+            'UA:  ' + navigator.userAgent,
+            'localStorage:',
+            JSON.stringify(ls, null, 2),
+          ].join('\n');
+          paint('app did not mount within 4s', info);
+        }, 4000);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
