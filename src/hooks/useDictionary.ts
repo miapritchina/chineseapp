@@ -51,7 +51,11 @@ export function useDictionary() {
         return cached;
       }
 
-      // search_words RPC now returns full row data — no second hydrate query.
+      // search_words RPC ideally returns full row data (after migration 0004).
+      // If the older "lean" RPC is still in place — returning only word/tier/
+      // rank — pinyin/definitions/etc come back undefined and the UI looks
+      // empty. Detect that and fall back to a hydrate query so the app keeps
+      // working while you re-run "Setup Supabase" to apply 0004.
       const { data, error: rpcErr } = await supabase.rpc("search_words", { q: trimmed });
       if (rpcErr) {
         console.error("search_words RPC failed:", rpcErr);
@@ -63,7 +67,28 @@ export function useDictionary() {
         searchCacheRef.current.set(trimmed, []);
         return [];
       }
-      const hydrated = rows.map(hydrate);
+
+      const isRich = rows[0].pinyin !== undefined;
+      let hydrated: Word[];
+      if (isRich) {
+        hydrated = rows.map(hydrate);
+      } else {
+        // Lean RPC — fall back to a hydrate query, preserve RPC tier order.
+        const need = rows.map((r) => r.word as string);
+        const { data: full, error: rowsErr } = await supabase
+          .from("words")
+          .select("*")
+          .in("word", need);
+        if (rowsErr) {
+          console.error("search hydrate failed:", rowsErr);
+          setError(rowsErr.message);
+          return [];
+        }
+        const byWord = new Map((full || []).map((r) => [r.word, hydrate(r)]));
+        hydrated = rows
+          .map((r) => byWord.get(r.word))
+          .filter((w): w is Word => !!w);
+      }
       ingest(hydrated);
 
       // Cache + bound size.
