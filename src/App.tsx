@@ -199,7 +199,11 @@ export function App() {
         searching && searchResults.length === 0 ? (
           <div className="empty-state">Searching…</div>
         ) : (
-          <ResultsList matches={searchResults} onOpen={(w) => void openWord(w)} />
+          <ResultsList
+            matches={searchResults}
+            saved={saved}
+            onOpen={(w) => void openWord(w)}
+          />
         )
       ) : (
         <main className="home" aria-label="Home">
@@ -244,7 +248,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v18</div>
+      <div className="page-id">chinese v19</div>
     </>
   );
 }

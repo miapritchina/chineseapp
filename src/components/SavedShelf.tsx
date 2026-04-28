@@ -72,7 +72,10 @@ export function SavedShelf({
   return (
     <section className="saved-section">
       <div className="shelf-header">
-        <div className="shelf-title">Saved</div>
+        <div className="shelf-title">
+          Saved
+          {!isEmpty && <span className="shelf-count">· {savedList.length}</span>}
+        </div>
         <div className="shelf-actions">
           {!isEmpty && (
             <button
