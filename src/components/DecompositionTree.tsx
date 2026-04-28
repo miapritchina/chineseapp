@@ -6,12 +6,16 @@ import { useStrokeData } from "../hooks/useStrokeData";
 import { NodeCard } from "./NodeCard";
 
 const CARD_W = 220;
-const CARD_H = 280;
-const CARD_H_EXPANDED = 380;
-const Y_GAP = 24;
+// Per-card heights are computed from content (note length, role label, etc).
+// CARD_BASE_H is everything except the etymology block: pinyin + glyph slot
+// + role label + gloss; it's the floor we never go below.
+const CARD_BASE_H = 240;
+const CARD_MIN_H = 240;
+const CARD_NOTE_LINE_H = 16;       // px per wrapped note line
+const CARD_NOTE_CHARS_PER_LINE = 28; // ~ at 11.5px font in 220px width
+const Y_GAP = 28;
 const X_GAP = 10;
 const CHARACTERLESS = "◎";
-const ZOOM_EXPAND_AT = 1.7;
 
 interface Props {
   tree: TreeNode;
@@ -22,7 +26,8 @@ interface Props {
 interface Placement {
   node: TreeNode;
   x: number;
-  y: number;
+  y: number;            // vertical center of the card
+  cardH: number;        // this card's actual height
   parent: Placement | null;
   id: string;
 }
@@ -33,24 +38,39 @@ interface Link {
   role: string;
 }
 
+// Estimate a card's pixel height from its content. We don't measure DOM here
+// because d3 layout runs before the cards mount; an estimate is good enough
+// to keep rows from overlapping. Slight under-estimate → minor overlap; we
+// add a small safety pad to bias toward over-estimate.
+function estimateCardHeight(node: TreeNode, charsData: Record<string, Char>): number {
+  if (node.isWord) return CARD_MIN_H + 20; // word root is short
+  const c = charsData[node.char];
+  const isCharacterless = node.char === CHARACTERLESS;
+
+  const noteText = isCharacterless
+    ? node.compHint?.trim() || ""
+    : c?.notes?.trim() ||
+      (c?.originalMeaning && c.originalMeaning !== "characterless component"
+        ? `Originally: ${c.originalMeaning}`
+        : "");
+
+  const noteLines = noteText
+    ? Math.max(1, Math.ceil(noteText.length / CARD_NOTE_CHARS_PER_LINE))
+    : 0;
+  const noteHeight = noteLines * CARD_NOTE_LINE_H + (noteText ? 12 : 0);
+
+  return Math.max(CARD_MIN_H, CARD_BASE_H + noteHeight + 12 /* pad */);
+}
+
 export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const innerRef = useRef<SVGGElement>(null);
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
   const [strokesReady, setStrokesReady] = useState(false);
-  // True once the user zooms past ZOOM_EXPAND_AT — drives both the per-card
-  // height (etymology becomes visible) and the overall row spacing so cards
-  // don't stomp on each other when they grow.
-  const [expanded, setExpanded] = useState(false);
   const stroke = useStrokeData();
 
-  const cardH = expanded ? CARD_H_EXPANDED : CARD_H;
-  const cardHalf = cardH / 2;
-
-  // Build layout when the tree (or expansion state) changes.
-  // Stroke loading is idempotent — preloading on every layout pass is cheap
-  // because useStrokeData caches per-char.
+  // Build layout when the tree (or chars data) changes.
   useEffect(() => {
     let cancelled = false;
     setStrokesReady(false);
@@ -61,9 +81,29 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       if (cancelled) return;
 
       const root = d3.hierarchy<TreeNode>(tree, (d) => d.children);
-      const dx = CARD_W + X_GAP;
-      const dy = cardH + Y_GAP;
-      d3.tree<TreeNode>().nodeSize([dx, dy])(root);
+      // Use d3.tree purely for X-axis spacing; we override Y per depth row to
+      // accommodate variable-height cards.
+      d3.tree<TreeNode>().nodeSize([CARD_W + X_GAP, 1])(root);
+
+      // Per-node estimated heights + group by depth.
+      const heightOf = new Map<d3.HierarchyPointNode<TreeNode>, number>();
+      const byDepth: d3.HierarchyPointNode<TreeNode>[][] = [];
+      root.each((d) => {
+        const dd = d as d3.HierarchyPointNode<TreeNode>;
+        heightOf.set(dd, estimateCardHeight(dd.data, chars));
+        if (!byDepth[dd.depth]) byDepth[dd.depth] = [];
+        byDepth[dd.depth].push(dd);
+      });
+
+      // Row height = max card height in that depth. Cumulative y centers per row.
+      const rowH: number[] = byDepth.map((row) =>
+        Math.max(...row.map((n) => heightOf.get(n) || CARD_MIN_H)),
+      );
+      const depthCenterY: number[] = [];
+      for (let d = 0; d < byDepth.length; d++) {
+        if (d === 0) depthCenterY[d] = rowH[d] / 2;
+        else depthCenterY[d] = depthCenterY[d - 1] + rowH[d - 1] / 2 + Y_GAP + rowH[d] / 2;
+      }
 
       const newPlacements: Placement[] = [];
       const newLinks: Link[] = [];
@@ -73,7 +113,14 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
         idx: number,
       ): Placement => {
         const id = parentId ? `${parentId}.${idx}` : "0";
-        const p: Placement = { node: d.data, x: d.x, y: d.y, parent: null, id };
+        const p: Placement = {
+          node: d.data,
+          x: d.x,
+          y: depthCenterY[d.depth],
+          cardH: heightOf.get(d) || CARD_MIN_H,
+          parent: null,
+          id,
+        };
         newPlacements.push(p);
         for (let i = 0; i < (d.children?.length ?? 0); i++) {
           const child = d.children![i];
@@ -85,23 +132,22 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       };
       visit(root as d3.HierarchyPointNode<TreeNode>, "", 0);
 
-      // viewBox: pad with the expanded card size so the box never has to grow
-      // mid-interaction. d3-zoom transforms inside this box; if the viewBox
-      // jumped on expansion, panning offsets would feel unstable.
-      let minX = Infinity, maxX = -Infinity, maxY = 0;
+      // viewBox bounds.
+      let minX = Infinity, maxX = -Infinity, maxBottom = 0;
       for (const p of newPlacements) {
         if (p.x < minX) minX = p.x;
         if (p.x > maxX) maxX = p.x;
-        if (p.y > maxY) maxY = p.y;
+        const bottom = p.y + p.cardH / 2;
+        if (bottom > maxBottom) maxBottom = bottom;
       }
       const padX = CARD_W / 2 + 12;
-      const padTop = CARD_H_EXPANDED / 2 + 12;
-      const padBottom = CARD_H_EXPANDED / 2 + 16;
+      const padTop = CARD_MIN_H / 2 + 12;
+      const padBottom = 24;
       const svg = svgRef.current;
       if (!svg) return;
       svg.setAttribute(
         "viewBox",
-        `${minX - padX} ${-padTop} ${maxX - minX + padX * 2} ${maxY + padTop + padBottom}`,
+        `${minX - padX} ${-padTop} ${maxX - minX + padX * 2} ${maxBottom + padTop + padBottom}`,
       );
       svg.setAttribute("preserveAspectRatio", "xMidYMin meet");
 
@@ -112,9 +158,9 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tree, stroke, cardH]);
+  }, [tree, stroke, chars]);
 
-  // Pan/zoom — attached once. Cross-the-threshold drives `expanded`.
+  // Pan/zoom — attached once.
   useEffect(() => {
     const svg = svgRef.current;
     const inner = innerRef.current;
@@ -124,12 +170,6 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       .scaleExtent([0.4, 6])
       .on("zoom", (e) => {
         inner.setAttribute("transform", e.transform.toString());
-        const k = e.transform.k;
-        const next = k > ZOOM_EXPAND_AT;
-        // Only flip state when the threshold is crossed; otherwise React
-        // would re-run the layout effect on every zoom tick.
-        setExpanded((prev) => (prev !== next ? next : prev));
-        svg.classList.toggle("zoom-lg", next);
       });
     d3.select(svg).call(zoom);
     return () => {
@@ -138,8 +178,8 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
   }, [strokesReady]);
 
   const linkPath = (l: Link) => {
-    const sx = l.source.x, sy = l.source.y + cardHalf;
-    const tx = l.target.x, ty = l.target.y - cardHalf;
+    const sx = l.source.x, sy = l.source.y + l.source.cardH / 2;
+    const tx = l.target.x, ty = l.target.y - l.target.cardH / 2;
     const my = (sy + ty) / 2;
     return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
   };
@@ -159,14 +199,12 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
         <g>
           {placements.map((p) => {
             const clickable = !p.node.isWord && p.node.char !== CHARACTERLESS;
+            const half = p.cardH / 2;
             return (
               <g
                 key={p.id}
                 className="node"
                 style={{
-                  // SVG `transform` attribute doesn't animate via CSS; styling
-                  // it does. Lets the .node CSS rule transition position
-                  // smoothly when expanded toggles.
                   transform: `translate(${p.x}px, ${p.y}px)`,
                   cursor: clickable ? "pointer" : "default",
                 }}
@@ -175,9 +213,9 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
                 <foreignObject
                   className="node-card-fo"
                   x={-CARD_W / 2}
-                  y={-cardHalf}
+                  y={-half}
                   width={CARD_W}
-                  height={cardH}
+                  height={p.cardH}
                 >
                   <NodeCard
                     node={p.node}

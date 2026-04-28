@@ -21,7 +21,14 @@ export interface Component {
   pinyin: string;
   definition: string;
   hint: string;
-  fragment: [number, number?] | null;
+  // Fragment encodes which strokes of the parent character belong to this
+  // component. Even-length arrays are alternating [start, end) pairs;
+  // odd-length arrays mean the last value starts a half-open range that ends
+  // at the parent's total stroke count. Examples:
+  //   [4, 7]      → strokes 4..6
+  //   [0, 4, 7]   → strokes 0..3 ∪ 7..end (events 事's "characterless" piece)
+  //   [0, 2, 6]   → strokes 0..1 ∪ 6..end (the 囗 in 园)
+  fragment: number[] | null;
 }
 
 export interface Char {
@@ -51,7 +58,7 @@ export interface TreeNode {
   isWord?: boolean;
   pinyin?: string;
   gloss?: string;
-  fragment?: [number, number?] | null;
+  fragment?: number[] | null;
   compPinyin?: string;
   compDef?: string;
   compHint?: string;

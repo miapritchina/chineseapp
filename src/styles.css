@@ -683,23 +683,14 @@ body {
   overflow: hidden;
 }
 
-/* Etymology visible by default — line-clamp at small zoom so cards stay a
-   manageable height; unclamp at zoom-lg to reveal full notes. */
+/* Etymology fully visible — cards size to fit (DecompositionTree estimates
+   per-card heights from note length and reflows row spacing). */
 .card-etym {
   font-size: 11.5px;
   color: var(--muted);
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   text-align: center;
   margin-top: 4px;
-  transition: -webkit-line-clamp 0.18s ease;
-}
-.tree-svg.zoom-lg .card-etym {
-  display: block;
-  -webkit-line-clamp: unset;
 }
 
 .role-iconic    { color: var(--role-iconic); }
