@@ -73,10 +73,21 @@ export function walkTree(node: TreeNode, fn: (n: TreeNode) => void): void {
 // For a stroke at index `idx` in the parent, return the role color of whichever
 // child component owns that stroke (per chinese-lexicon's `fragment` ranges),
 // or the parent's own role if no child claims it.
+//
+// Split-tinting only applies when the node's role is "iconic" (the default for
+// the top of a tree — the character has no phonosemantic role w.r.t. anything
+// above). For nodes with a specific role (meaning, sound, simplified, deleted,
+// unknown), we paint solidly in that role so the strokes match the card's
+// border + label. The internal sub-decomposition is visible via child cards
+// below the node, not by smearing it across the parent's strokes — otherwise
+// you get a green-bordered "MEANING" card whose strokes are all blue (as 兮
+// in 超市 looked before this fix).
 export function strokeRoleForIndex(node: TreeNode, idx: number, totalStrokes: number): string {
-  for (const child of node.children || []) {
-    if (fragmentContains(child.fragment, idx, totalStrokes)) {
-      return child.role || "unknown";
+  if (node.role === "iconic") {
+    for (const child of node.children || []) {
+      if (fragmentContains(child.fragment, idx, totalStrokes)) {
+        return child.role || "unknown";
+      }
     }
   }
   return node.role || "unknown";
