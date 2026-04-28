@@ -200,9 +200,10 @@ body {
   max-width: 880px;
   margin: 0 auto;
 }
+.search-field { position: relative; display: block; }
 .search-bar input {
   width: 100%;
-  padding: 11px 16px;
+  padding: 11px 40px 11px 16px;
   font-size: 16px;
   font: inherit;
   font-size: 16px;
@@ -214,8 +215,32 @@ body {
   -webkit-appearance: none;
   appearance: none;
 }
+/* Hide native X on the type="search" input so we don't double up on the button. */
+.search-bar input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 .search-bar input::placeholder { color: var(--muted); }
 .search-bar input:focus { border-color: var(--accent); }
+
+.search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.search-clear:hover { color: var(--text); background: var(--surface-2); }
 
 .empty-state {
   text-align: center;
@@ -244,6 +269,14 @@ body {
   padding-right: 14px;
 }
 .shelf-header .shelf-title { padding-right: 8px; }
+.shelf-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+  letter-spacing: 0.6px;
+  opacity: 0.85;
+}
 .shelf-action {
   background: transparent;
   border: 1px solid var(--border);
@@ -328,16 +361,6 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.card .hsk-badge {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  font-size: 9.5px;
-  color: var(--muted);
-  letter-spacing: 0.5px;
-  opacity: 0.6;
-}
-
 /* Search results */
 .results {
   max-width: 720px;
@@ -384,10 +407,14 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.result-row .r-hsk {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.5px;
+.result-row .r-saved {
+  font-size: 16px;
+  line-height: 1;
+  color: #d97706;
+  align-self: center;
+}
+@media (prefers-color-scheme: dark) {
+  .result-row .r-saved { color: #f59e0b; }
 }
 
 /* Modal */
@@ -436,6 +463,18 @@ body {
   font-size: 13px;
   margin-left: 8px;
   letter-spacing: normal;
+}
+.modal-title .title-hsk {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--muted);
+  vertical-align: middle;
 }
 
 .star-slot, .star-btn { min-width: 62px; }

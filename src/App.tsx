@@ -98,6 +98,63 @@ export function App() {
     }
   }, [dict.ensureCached, push]);
 
+  // Auto-import via ?import=<url> on first load. Same-origin only; the user
+  // confirms before anything writes. Useful for one-tap "save these N words"
+  // links instead of a file-picker dance on mobile.
+  const autoImportRanRef = useRef(false);
+  useEffect(() => {
+    if (autoImportRanRef.current) return;
+    autoImportRanRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const importUrl = params.get("import");
+    if (!importUrl) return;
+
+    (async () => {
+      try {
+        const target = new URL(importUrl, window.location.href);
+        if (target.origin !== window.location.origin) {
+          alert("Import URL must be same-origin.");
+          return;
+        }
+        const resp = await fetch(target.toString());
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const json: unknown = await resp.json();
+        let items: string[] | null = null;
+        if (Array.isArray(json)) {
+          items = json.filter((x): x is string => typeof x === "string");
+        } else if (
+          json &&
+          typeof json === "object" &&
+          Array.isArray((json as { saved?: unknown }).saved)
+        ) {
+          items = (json as { saved: unknown[] }).saved.filter(
+            (x): x is string => typeof x === "string",
+          );
+        }
+        if (!items || items.length === 0) {
+          alert("Import URL did not return a valid saved-words file.");
+          return;
+        }
+        const ok = window.confirm(
+          `Import ${items.length} word${items.length === 1 ? "" : "s"} into your saved list?`,
+        );
+        if (!ok) return;
+        const { added, total } = await importSaved(items);
+        const skipped = total - added;
+        const skippedNote = skipped > 0 ? ` (${skipped} already saved)` : "";
+        alert(`Imported ${added} word${added === 1 ? "" : "s"}${skippedNote}.`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        alert(`Import failed: ${message}`);
+      } finally {
+        // Clear the import param from the URL so a refresh doesn't re-import.
+        const url = new URL(window.location.href);
+        url.searchParams.delete("import");
+        window.history.replaceState({}, "", url.toString());
+      }
+    })();
+  }, [importSaved]);
+
   const handleEnter = () => {
     if (searchResults.length > 0) {
       void openWord(searchResults[0].word);
@@ -142,7 +199,11 @@ export function App() {
         searching && searchResults.length === 0 ? (
           <div className="empty-state">Searching…</div>
         ) : (
-          <ResultsList matches={searchResults} onOpen={(w) => void openWord(w)} />
+          <ResultsList
+            matches={searchResults}
+            saved={saved}
+            onOpen={(w) => void openWord(w)}
+          />
         )
       ) : (
         <main className="home" aria-label="Home">
@@ -187,7 +248,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v17</div>
+      <div className="page-id">chinese v20</div>
     </>
   );
 }

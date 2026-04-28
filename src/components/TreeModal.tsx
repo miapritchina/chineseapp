@@ -24,6 +24,7 @@ export function TreeModal({ entry, word, chars, stackLen, onPop, onNodeClick }: 
   const titleHanzi = entry.kind === "word" ? word?.simp ?? entry.key : entry.key;
   const titlePinyin =
     entry.kind === "word" ? word?.pinyin ?? "" : chars[entry.key]?.pinyin ?? "";
+  const hsk = entry.kind === "word" ? word?.hsk ?? null : null;
 
   return (
     <div className="modal-root open" aria-hidden="false">
@@ -34,6 +35,7 @@ export function TreeModal({ entry, word, chars, stackLen, onPop, onNodeClick }: 
         <h2 className="modal-title">
           {titleHanzi}
           {titlePinyin && <span className="title-pinyin">{titlePinyin}</span>}
+          {hsk != null && <span className="title-hsk">HSK {hsk}</span>}
         </h2>
         <span style={{ minWidth: 62 }} />
       </div>
