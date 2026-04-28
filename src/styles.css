@@ -583,8 +583,22 @@ body {
 .tree-svg .link.role-unknown   { stroke: var(--role-unknown); }
 .tree-svg .link.role-word      { stroke: var(--role-word); opacity: 0.4; }
 
-.tree-svg .node { cursor: pointer; }
-.tree-svg .node-card-fo { overflow: visible; }
+.tree-svg .node {
+  cursor: pointer;
+  /* Animate position changes when the tree relayouts (e.g. on zoom-driven
+     card expansion). Transform set via `style` so CSS can transition it. */
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tree-svg .node-card-fo {
+  overflow: visible;
+  /* Smooth the card's height + y change when expanded toggles. SVG attribute
+     animation isn't supported via CSS, so we transition both as inline-style
+     fallback equivalents — modern browsers also animate the attribute on
+     foreignObject if it's set via setAttribute, but React updates them as
+     attributes here so the transition acts on whichever the browser picks. */
+  transition: height 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+              y 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
 /* Each tree node is a card — large, easy-to-read glyph dominates */
 .node-card {

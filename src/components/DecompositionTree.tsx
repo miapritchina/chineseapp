@@ -8,7 +8,10 @@ import { NodeCard } from "./NodeCard";
 const CARD_W = 220;
 const CARD_H = 280;
 const CARD_H_EXPANDED = 380;
+const Y_GAP = 24;
+const X_GAP = 10;
 const CHARACTERLESS = "◎";
+const ZOOM_EXPAND_AT = 1.7;
 
 interface Props {
   tree: TreeNode;
@@ -36,9 +39,18 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
   const [strokesReady, setStrokesReady] = useState(false);
+  // True once the user zooms past ZOOM_EXPAND_AT — drives both the per-card
+  // height (etymology becomes visible) and the overall row spacing so cards
+  // don't stomp on each other when they grow.
+  const [expanded, setExpanded] = useState(false);
   const stroke = useStrokeData();
 
-  // Build layout + preload stroke data when the tree changes.
+  const cardH = expanded ? CARD_H_EXPANDED : CARD_H;
+  const cardHalf = cardH / 2;
+
+  // Build layout when the tree (or expansion state) changes.
+  // Stroke loading is idempotent — preloading on every layout pass is cheap
+  // because useStrokeData caches per-char.
   useEffect(() => {
     let cancelled = false;
     setStrokesReady(false);
@@ -49,12 +61,10 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       if (cancelled) return;
 
       const root = d3.hierarchy<TreeNode>(tree, (d) => d.children);
-      const dx = CARD_W + 10;
-      const dy = CARD_H + 24;
+      const dx = CARD_W + X_GAP;
+      const dy = cardH + Y_GAP;
       d3.tree<TreeNode>().nodeSize([dx, dy])(root);
 
-      // Walk root and pair up parent/child placements with stable ids.
-      const placementsById = new Map<d3.HierarchyPointNode<TreeNode>, Placement>();
       const newPlacements: Placement[] = [];
       const newLinks: Link[] = [];
       const visit = (
@@ -64,7 +74,6 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       ): Placement => {
         const id = parentId ? `${parentId}.${idx}` : "0";
         const p: Placement = { node: d.data, x: d.x, y: d.y, parent: null, id };
-        placementsById.set(d, p);
         newPlacements.push(p);
         for (let i = 0; i < (d.children?.length ?? 0); i++) {
           const child = d.children![i];
@@ -76,7 +85,9 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
       };
       visit(root as d3.HierarchyPointNode<TreeNode>, "", 0);
 
-      // viewBox: pad enough for expanded etymology cards.
+      // viewBox: pad with the expanded card size so the box never has to grow
+      // mid-interaction. d3-zoom transforms inside this box; if the viewBox
+      // jumped on expansion, panning offsets would feel unstable.
       let minX = Infinity, maxX = -Infinity, maxY = 0;
       for (const p of newPlacements) {
         if (p.x < minX) minX = p.x;
@@ -84,7 +95,7 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
         if (p.y > maxY) maxY = p.y;
       }
       const padX = CARD_W / 2 + 12;
-      const padTop = CARD_H / 2 + 12;
+      const padTop = CARD_H_EXPANDED / 2 + 12;
       const padBottom = CARD_H_EXPANDED / 2 + 16;
       const svg = svgRef.current;
       if (!svg) return;
@@ -101,28 +112,24 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tree, stroke]);
+  }, [tree, stroke, cardH]);
 
-  // Pan/zoom — attached once per tree.
+  // Pan/zoom — attached once. Cross-the-threshold drives `expanded`.
   useEffect(() => {
     const svg = svgRef.current;
     const inner = innerRef.current;
     if (!svg || !inner) return;
-    let lastExpanded = false;
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.4, 6])
       .on("zoom", (e) => {
         inner.setAttribute("transform", e.transform.toString());
         const k = e.transform.k;
-        const expanded = k > 1.7;
-        if (expanded !== lastExpanded) {
-          lastExpanded = expanded;
-          svg.classList.toggle("zoom-lg", expanded);
-          svg
-            .querySelectorAll<SVGForeignObjectElement>(".node-card-fo")
-            .forEach((fo) => fo.setAttribute("height", String(expanded ? CARD_H_EXPANDED : CARD_H)));
-        }
+        const next = k > ZOOM_EXPAND_AT;
+        // Only flip state when the threshold is crossed; otherwise React
+        // would re-run the layout effect on every zoom tick.
+        setExpanded((prev) => (prev !== next ? next : prev));
+        svg.classList.toggle("zoom-lg", next);
       });
     d3.select(svg).call(zoom);
     return () => {
@@ -130,10 +137,9 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
     };
   }, [strokesReady]);
 
-  const HALF = CARD_H / 2;
   const linkPath = (l: Link) => {
-    const sx = l.source.x, sy = l.source.y + HALF;
-    const tx = l.target.x, ty = l.target.y - HALF;
+    const sx = l.source.x, sy = l.source.y + cardHalf;
+    const tx = l.target.x, ty = l.target.y - cardHalf;
     const my = (sy + ty) / 2;
     return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
   };
@@ -157,16 +163,21 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
               <g
                 key={p.id}
                 className="node"
-                transform={`translate(${p.x},${p.y})`}
-                style={{ cursor: clickable ? "pointer" : "default" }}
+                style={{
+                  // SVG `transform` attribute doesn't animate via CSS; styling
+                  // it does. Lets the .node CSS rule transition position
+                  // smoothly when expanded toggles.
+                  transform: `translate(${p.x}px, ${p.y}px)`,
+                  cursor: clickable ? "pointer" : "default",
+                }}
                 onClick={() => clickable && onNodeClick(p.node.char)}
               >
                 <foreignObject
                   className="node-card-fo"
                   x={-CARD_W / 2}
-                  y={-CARD_H / 2}
+                  y={-cardHalf}
                   width={CARD_W}
-                  height={CARD_H}
+                  height={cardH}
                 >
                   <NodeCard
                     node={p.node}
