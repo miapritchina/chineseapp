@@ -271,7 +271,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v21</div>
+      <div className="page-id">chinese v22</div>
     </>
   );
 }

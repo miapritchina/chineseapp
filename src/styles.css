@@ -300,8 +300,8 @@ body {
 .saved-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 0;
-  padding: 4px 6px 18px;
+  gap: 8px;
+  padding: 8px 12px 18px;
 }
 
 .saved-empty {
@@ -324,21 +324,22 @@ body {
 .card-pending { opacity: 0.55; }
 
 .card {
-  background: transparent;
-  border: none;
-  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   padding: 14px 8px 12px;
   text-align: center;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   position: relative;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
   font: inherit;
   color: inherit;
 }
 .card:hover, .card:focus-visible {
   background: var(--surface-2);
+  border-color: var(--text);
   outline: none;
 }
 
