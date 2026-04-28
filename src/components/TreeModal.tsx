@@ -8,11 +8,22 @@ interface Props {
   word: Word | null;
   chars: Record<string, Char>;
   stackLen: number;
+  saved: Set<string>;
+  onToggleSave: (key: string) => void;
   onPop: () => void;
   onNodeClick: (char: string) => void;
 }
 
-export function TreeModal({ entry, word, chars, stackLen, onPop, onNodeClick }: Props) {
+export function TreeModal({
+  entry,
+  word,
+  chars,
+  stackLen,
+  saved,
+  onToggleSave,
+  onPop,
+  onNodeClick,
+}: Props) {
   const tree = useMemo(() => {
     if (entry.kind === "word") {
       if (!word) return null;
@@ -25,6 +36,7 @@ export function TreeModal({ entry, word, chars, stackLen, onPop, onNodeClick }: 
   const titlePinyin =
     entry.kind === "word" ? word?.pinyin ?? "" : chars[entry.key]?.pinyin ?? "";
   const hsk = entry.kind === "word" ? word?.hsk ?? null : null;
+  const isSaved = saved.has(entry.key);
 
   return (
     <div className="modal-root open" aria-hidden="false">
@@ -37,7 +49,16 @@ export function TreeModal({ entry, word, chars, stackLen, onPop, onNodeClick }: 
           {titlePinyin && <span className="title-pinyin">{titlePinyin}</span>}
           {hsk != null && <span className="title-hsk">HSK {hsk}</span>}
         </h2>
-        <span style={{ minWidth: 62 }} />
+        <button
+          className={`header-star${isSaved ? " active" : ""}`}
+          type="button"
+          aria-pressed={isSaved}
+          aria-label={isSaved ? "Remove from saved" : "Save"}
+          title={isSaved ? "Saved · tap to remove" : "Save to my words"}
+          onClick={() => onToggleSave(entry.key)}
+        >
+          {isSaved ? "★" : "☆"}
+        </button>
       </div>
       <div className="modal-body">
         {tree ? (

@@ -257,6 +257,8 @@ export function App() {
           word={topWord}
           chars={charsData.chars}
           stackLen={stack.length}
+          saved={saved}
+          onToggleSave={toggle}
           onPop={pop}
           onNodeClick={openCharPopup}
         />
@@ -280,7 +282,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v23</div>
+      <div className="page-id">chinese v24</div>
     </>
   );
 }

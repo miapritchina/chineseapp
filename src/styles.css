@@ -451,6 +451,25 @@ body {
   text-align: left;
 }
 .back-btn:hover, .back-btn:focus-visible { background: var(--surface-2); outline: none; }
+
+.header-star {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  min-width: 62px;
+  text-align: right;
+  -webkit-tap-highlight-color: transparent;
+}
+.header-star:hover { background: var(--surface-2); color: var(--text); }
+.header-star.active { color: #d97706; }
+@media (prefers-color-scheme: dark) {
+  .header-star.active { color: #f59e0b; }
+}
 .modal-title {
   margin: 0;
   font-size: 18px;
