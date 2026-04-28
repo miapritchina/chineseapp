@@ -75,11 +75,27 @@ export function walkTree(node: TreeNode, fn: (n: TreeNode) => void): void {
 // or the parent's own role if no child claims it.
 export function strokeRoleForIndex(node: TreeNode, idx: number, totalStrokes: number): string {
   for (const child of node.children || []) {
-    const f = child.fragment;
-    if (!Array.isArray(f)) continue;
-    const [s, e] = f;
-    const end = e == null ? totalStrokes : e;
-    if (idx >= s && idx < end) return child.role || "unknown";
+    if (fragmentContains(child.fragment, idx, totalStrokes)) {
+      return child.role || "unknown";
+    }
   }
   return node.role || "unknown";
+}
+
+// chinese-lexicon's fragment arrays encode disjoint ranges:
+//   even length: [s0, e0, s1, e1, …]   pairs of [start, end) ranges
+//   odd length:  [s0, e0, …, sN]       last value starts a range to total
+// e.g. 园's 囗 has fragment [0, 2, 6] over 7 strokes → strokes {0,1,6}.
+function fragmentContains(
+  fragment: number[] | null | undefined,
+  idx: number,
+  total: number,
+): boolean {
+  if (!Array.isArray(fragment) || fragment.length === 0) return false;
+  for (let i = 0; i < fragment.length; i += 2) {
+    const start = fragment[i];
+    const end = i + 1 < fragment.length ? fragment[i + 1] : total;
+    if (idx >= start && idx < end) return true;
+  }
+  return false;
 }
