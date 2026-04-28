@@ -95,26 +95,48 @@ export function useSaved({ userId }: UseSavedOpts) {
     let cancelled = false;
     setSyncing(true);
     (async () => {
-      const { data, error } = await supabase
-        .from("user_saves")
-        .select("word, saved_at, learned_at, wrote_at")
-        .eq("user_id", userId);
-      if (cancelled) return;
-      if (error) {
-        console.error("user_saves load failed:", error);
-        setSyncing(false);
-        return;
+      // Try the full shape first. If migration 0005 (wrote_at) hasn't applied
+      // for some reason, fall back to the v25 shape so the page still
+      // populates instead of going empty on a 400.
+      type FullRow = {
+        word: string;
+        saved_at: string;
+        learned_at: string | null;
+        wrote_at: string | null;
+      };
+      type LegacyRow = Omit<FullRow, "wrote_at">;
+      let rows: FullRow[] = [];
+      {
+        const { data, error } = await supabase
+          .from("user_saves")
+          .select("word, saved_at, learned_at, wrote_at")
+          .eq("user_id", userId);
+        if (cancelled) return;
+        if (error) {
+          console.warn(
+            "user_saves wide select failed, falling back without wrote_at:",
+            error,
+          );
+          const fallback = await supabase
+            .from("user_saves")
+            .select("word, saved_at, learned_at")
+            .eq("user_id", userId);
+          if (cancelled) return;
+          if (fallback.error) {
+            console.error("user_saves load failed:", fallback.error);
+            setSyncing(false);
+            return;
+          }
+          rows = (fallback.data as LegacyRow[]).map((r) => ({ ...r, wrote_at: null }));
+        } else {
+          rows = (data || []) as FullRow[];
+        }
       }
 
       const remoteSaved = new Map<string, number>();
       const remoteLearned = new Map<string, number>();
       const remoteWrote = new Map<string, number>();
-      for (const r of (data || []) as {
-        word: string;
-        saved_at: string;
-        learned_at: string | null;
-        wrote_at: string | null;
-      }[]) {
+      for (const r of rows) {
         remoteSaved.set(r.word, new Date(r.saved_at).getTime());
         if (r.learned_at) remoteLearned.set(r.word, new Date(r.learned_at).getTime());
         if (r.wrote_at) remoteWrote.set(r.word, new Date(r.wrote_at).getTime());
