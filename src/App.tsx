@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./styles.css";
 
 import { useDictionary } from "./hooks/useDictionary";
 import { useChars } from "./hooks/useChars";
 import { useSaved } from "./hooks/useSaved";
 import { useModalStack, parseHash } from "./hooks/useModalStack";
+import { useAuth } from "./hooks/useAuth";
 import { wakeUp } from "./lib/supabase";
 
 import { SearchBar } from "./components/SearchBar";
@@ -13,6 +14,8 @@ import { HomeGrid } from "./components/HomeGrid";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
 import { CharPopup } from "./components/CharPopup";
+import { AuthButton } from "./components/AuthButton";
+import { SignInModal } from "./components/SignInModal";
 
 import type { Word } from "./lib/types";
 
@@ -21,18 +24,26 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function App() {
   const dict = useDictionary();
   const charsData = useChars();
-  const { saved, toggle, exportSaved } = useSaved();
+  const auth = useAuth();
+  const { saved, toggle, exportSaved } = useSaved({ userId: auth.user?.id ?? null });
   const { stack, push, pop } = useModalStack();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Word[]>([]);
   const [searching, setSearching] = useState(false);
   const [popupChar, setPopupChar] = useState<string | null>(null);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   // Wake the Supabase project early to mask cold-start latency.
   useEffect(() => {
     wakeUp();
   }, []);
+
+  // Close the sign-in modal as soon as a session lands (auth flows from
+  // a different tab still propagate via onAuthStateChange).
+  useEffect(() => {
+    if (auth.user) setShowSignIn(false);
+  }, [auth.user]);
 
   // Debounce search input.
   const searchTimer = useRef<number | null>(null);
@@ -127,8 +138,25 @@ export function App() {
       <header className="topbar">
         <span className="home-link" />
         <h1>中文</h1>
-        <span className="spacer" />
+        <div className="topbar-end">
+          <AuthButton
+            user={auth.user}
+            loading={auth.loading}
+            onSignInClick={() => setShowSignIn(true)}
+            onSignOut={() => void auth.signOut()}
+          />
+        </div>
       </header>
+
+      {showSignIn && (
+        <SignInModal
+          onClose={() => setShowSignIn(false)}
+          onSignIn={async (email) => {
+            const result = await auth.signInWithEmail(email);
+            return result;
+          }}
+        />
+      )}
 
       <SearchBar value={query} onChange={setQuery} onEnter={handleEnter} />
 
@@ -181,7 +209,7 @@ export function App() {
         />
       )}
 
-      <div className="page-id">chinese v14</div>
+      <div className="page-id">chinese v15</div>
     </>
   );
 }
