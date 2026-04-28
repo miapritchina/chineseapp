@@ -10,7 +10,6 @@ import { wakeUp } from "./lib/supabase";
 
 import { SearchBar } from "./components/SearchBar";
 import { SavedShelf } from "./components/SavedShelf";
-import { HomeGrid } from "./components/HomeGrid";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
 import { CharPopup } from "./components/CharPopup";
@@ -25,7 +24,9 @@ export function App() {
   const dict = useDictionary();
   const charsData = useChars();
   const auth = useAuth();
-  const { saved, toggle, exportSaved, importSaved } = useSaved({ userId: auth.user?.id ?? null });
+  const { saved, savedList, toggle, exportSaved, importSaved } = useSaved({
+    userId: auth.user?.id ?? null,
+  });
   const { stack, push, pop } = useModalStack();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -83,11 +84,10 @@ export function App() {
     void dict.ensureCached([...saved]);
   }, [saved, dict.ensureCached]);
 
-  // Deep-link via hash on first load (after dictionary is reachable).
+  // Deep-link via hash on first load.
   const deepLinkRunRef = useRef(false);
   useEffect(() => {
     if (deepLinkRunRef.current) return;
-    if (dict.loadingHome) return;
     deepLinkRunRef.current = true;
     const initial = parseHash();
     if (!initial) return;
@@ -96,7 +96,7 @@ export function App() {
     } else if (initial.kind === "char") {
       push(initial);
     }
-  }, [dict.loadingHome, dict.ensureCached, push]);
+  }, [dict.ensureCached, push]);
 
   const handleEnter = () => {
     if (searchResults.length > 0) {
@@ -113,25 +113,6 @@ export function App() {
 
   const top = stack[stack.length - 1];
   const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
-
-  if (dict.loadingHome) {
-    return (
-      <div className="boot-loading" aria-live="polite">
-        Loading dictionary…
-      </div>
-    );
-  }
-
-  if (dict.error && !dict.homeWords) {
-    return (
-      <div className="error-banner">
-        Failed to load dictionary: {dict.error}
-        <div style={{ fontSize: 12, marginTop: 8, opacity: 0.85 }}>
-          Did the migration apply and the seed run? See README.
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -151,10 +132,7 @@ export function App() {
       {showSignIn && (
         <SignInModal
           onClose={() => setShowSignIn(false)}
-          onSignIn={async (email) => {
-            const result = await auth.signInWithEmail(email);
-            return result;
-          }}
+          onSignIn={(email) => auth.signInWithEmail(email)}
         />
       )}
 
@@ -169,20 +147,13 @@ export function App() {
       ) : (
         <main className="home" aria-label="Home">
           <SavedShelf
-            saved={saved}
+            savedList={savedList}
             findWord={dict.findWord}
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
             onOpenChar={openCharPopup}
             onExport={exportSaved}
             onImport={importSaved}
-          />
-          <HomeGrid
-            words={dict.homeWords ?? []}
-            hasMore={dict.homeHasMore}
-            loadingMore={dict.loadingMore}
-            onLoadMore={() => void dict.loadMoreHome()}
-            onOpen={(w) => void openWord(w)}
           />
         </main>
       )}
@@ -210,7 +181,13 @@ export function App() {
         />
       )}
 
-      <div className="page-id">chinese v16</div>
+      {dict.error && (
+        <div className="error-banner">
+          Dictionary error: {dict.error}
+        </div>
+      )}
+
+      <div className="page-id">chinese v17</div>
     </>
   );
 }

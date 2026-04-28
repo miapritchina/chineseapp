@@ -1,22 +1,48 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const STORAGE_KEY = "chinese.saved";
 
-function loadLocal(): Set<string> {
+export interface SavedEntry {
+  word: string;
+  savedAt: number; // epoch ms
+}
+
+// localStorage v2 shape: { version: 2, items: [[word, savedAt], ...] }.
+// v1 shape (legacy): plain string[] — migrated on read with savedAt = now.
+function loadLocal(): Map<string, number> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return new Set();
+    if (!raw) return new Map();
     const parsed = JSON.parse(raw);
-    return new Set(Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : []);
+    if (parsed && parsed.version === 2 && Array.isArray(parsed.items)) {
+      return new Map(
+        (parsed.items as unknown[])
+          .filter(
+            (it): it is [string, number] =>
+              Array.isArray(it) && typeof it[0] === "string" && typeof it[1] === "number",
+          ),
+      );
+    }
+    if (Array.isArray(parsed)) {
+      const now = Date.now();
+      const entries = (parsed as unknown[])
+        .filter((x): x is string => typeof x === "string")
+        .map((w) => [w, now] as const);
+      return new Map(entries);
+    }
+    return new Map();
   } catch {
-    return new Set();
+    return new Map();
   }
 }
 
-function persistLocal(set: Set<string>) {
+function persistLocal(items: Map<string, number>) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 2, items: [...items.entries()] }),
+    );
   } catch {
     /* private mode / quota — silent */
   }
@@ -26,18 +52,28 @@ interface UseSavedOpts {
   userId: string | null;
 }
 
-// Saved words live in two places when signed in: localStorage (for offline
-// resilience and to survive sign-out) and the per-user `user_saves` table.
+// Saved words live in two places when signed in: localStorage (offline
+// resilience and survives sign-out) and the per-user `user_saves` table.
 //
 //   Signed out  → reads/writes localStorage only.
-//   Signed in   → on first sync: union localStorage + DB; upload anything
-//                 local-only to the DB; mirror DB-only down to local.
-//                 Every subsequent toggle writes through to both.
+//   Signed in   → on first sync: union localStorage + DB (DB saved_at wins
+//                 when both exist); upload local-only entries; subsequent
+//                 toggles write through to both.
 //   Sign out    → keeps the localStorage copy as-is.
 export function useSaved({ userId }: UseSavedOpts) {
-  const [saved, setSaved] = useState<Set<string>>(() => loadLocal());
+  const [items, setItems] = useState<Map<string, number>>(() => loadLocal());
   const [syncing, setSyncing] = useState(false);
   const lastSyncedUserRef = useRef<string | null>(null);
+
+  // Read-only views derived from `items`.
+  const saved = useMemo(() => new Set(items.keys()), [items]);
+  const savedList = useMemo<SavedEntry[]>(
+    () =>
+      [...items.entries()]
+        .sort(([, a], [, b]) => b - a) // newest first
+        .map(([word, savedAt]) => ({ word, savedAt })),
+    [items],
+  );
 
   // Initial sync when a user signs in (or switches accounts).
   useEffect(() => {
@@ -51,10 +87,9 @@ export function useSaved({ userId }: UseSavedOpts) {
     let cancelled = false;
     setSyncing(true);
     (async () => {
-      const local = loadLocal();
       const { data, error } = await supabase
         .from("user_saves")
-        .select("word")
+        .select("word, saved_at")
         .eq("user_id", userId);
       if (cancelled) return;
       if (error) {
@@ -62,9 +97,27 @@ export function useSaved({ userId }: UseSavedOpts) {
         setSyncing(false);
         return;
       }
-      const remote = new Set<string>((data || []).map((r: { word: string }) => r.word));
 
-      const toUpload = [...local].filter((w) => !remote.has(w));
+      const remote = new Map<string, number>(
+        (data || []).map((r: { word: string; saved_at: string }) => [
+          r.word,
+          new Date(r.saved_at).getTime(),
+        ]),
+      );
+
+      // Snapshot current local state for the diff.
+      let localBeforeMerge: Map<string, number> = new Map();
+      setItems((prev) => {
+        localBeforeMerge = prev;
+        // Merge: prefer DB saved_at when both exist.
+        const merged = new Map(prev);
+        for (const [word, ts] of remote) merged.set(word, ts);
+        persistLocal(merged);
+        return merged;
+      });
+
+      // Upload anything local-only (no explicit saved_at — DB default now()).
+      const toUpload = [...localBeforeMerge.keys()].filter((w) => !remote.has(w));
       if (toUpload.length > 0) {
         const { error: upErr } = await supabase
           .from("user_saves")
@@ -75,11 +128,7 @@ export function useSaved({ userId }: UseSavedOpts) {
         if (upErr) console.error("user_saves upload failed:", upErr);
       }
 
-      const union = new Set<string>([...local, ...remote]);
-      persistLocal(union);
-      if (cancelled) return;
-      setSaved(union);
-      setSyncing(false);
+      if (!cancelled) setSyncing(false);
     })();
     return () => {
       cancelled = true;
@@ -89,13 +138,13 @@ export function useSaved({ userId }: UseSavedOpts) {
   const toggle = useCallback(
     (key: string) => {
       let willBeSaved = false;
-      setSaved((prev) => {
-        const next = new Set(prev);
+      setItems((prev) => {
+        const next = new Map(prev);
         if (next.has(key)) {
           next.delete(key);
           willBeSaved = false;
         } else {
-          next.add(key);
+          next.set(key, Date.now());
           willBeSaved = true;
         }
         persistLocal(next);
@@ -126,22 +175,24 @@ export function useSaved({ userId }: UseSavedOpts) {
   );
 
   const importSaved = useCallback(
-    async (items: string[]): Promise<{ added: number; total: number }> => {
-      const total = items.length;
+    async (words: string[]): Promise<{ added: number; total: number }> => {
+      const total = words.length;
       if (!total) return { added: 0, total: 0 };
+      const now = Date.now();
       let added = 0;
-      setSaved((prev) => {
-        const next = new Set(prev);
-        for (const w of items) {
-          if (!next.has(w)) added++;
-          next.add(w);
+      setItems((prev) => {
+        const next = new Map(prev);
+        for (const w of words) {
+          if (!next.has(w)) {
+            next.set(w, now);
+            added++;
+          }
         }
         persistLocal(next);
         return next;
       });
-      // If signed in, upload everything (idempotent on PK).
       if (userId) {
-        const rows = items.map((w) => ({ user_id: userId, word: w }));
+        const rows = words.map((w) => ({ user_id: userId, word: w }));
         const { error } = await supabase
           .from("user_saves")
           .upsert(rows, { onConflict: "user_id,word" });
@@ -153,14 +204,15 @@ export function useSaved({ userId }: UseSavedOpts) {
   );
 
   const exportSaved = useCallback(() => {
-    const items = [...saved];
-    if (!items.length) return;
+    if (savedList.length === 0) return;
     const today = new Date().toISOString().slice(0, 10);
     const payload = {
       app: "chinese",
       exported: new Date().toISOString(),
-      count: items.length,
-      saved: items,
+      count: savedList.length,
+      saved: savedList.map((s) => s.word),
+      // Round-trippable v2 shape with timestamps.
+      items: savedList.map((s) => ({ word: s.word, savedAt: s.savedAt })),
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -171,7 +223,7 @@ export function useSaved({ userId }: UseSavedOpts) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }, [saved]);
+  }, [savedList]);
 
-  return { saved, toggle, exportSaved, importSaved, syncing };
+  return { saved, savedList, toggle, exportSaved, importSaved, syncing };
 }

@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { supabase } from "../lib/supabase";
 import type { Word } from "../lib/types";
-
-const HOME_PAGE_SIZE = 60;
 
 // Hydrate a row from Supabase (snake_case, no derived fields) into the
 // camelCase Word shape the rest of the app expects.
@@ -21,24 +19,10 @@ function hydrate(row: any): Word {
   };
 }
 
-interface DictState {
-  homeWords: Word[] | null;
-  homeHasMore: boolean;
-  loadingHome: boolean;
-  loadingMore: boolean;
-  error: string | null;
-}
-
 export function useDictionary() {
-  const [state, setState] = useState<DictState>({
-    homeWords: null,
-    homeHasMore: true,
-    loadingHome: true,
-    loadingMore: false,
-    error: null,
-  });
   // State-backed cache so consumers re-render when missing words arrive.
   const [cache, setCache] = useState<Map<string, Word>>(new Map());
+  const [error, setError] = useState<string | null>(null);
 
   const ingest = useCallback((rows: Word[]) => {
     if (rows.length === 0) return;
@@ -49,66 +33,6 @@ export function useDictionary() {
     });
   }, []);
 
-  // Initial home page (top 60 by movieWordRank).
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("words")
-          .select("*")
-          .order("rank", { ascending: true, nullsFirst: false })
-          .range(0, HOME_PAGE_SIZE - 1);
-        if (cancelled) return;
-        if (error) throw error;
-        const rows = (data || []).map(hydrate);
-        ingest(rows);
-        setState({
-          homeWords: rows,
-          homeHasMore: rows.length === HOME_PAGE_SIZE,
-          loadingHome: false,
-          loadingMore: false,
-          error: null,
-        });
-      } catch (err) {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
-        setState((s) => ({ ...s, loadingHome: false, error: message }));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [ingest]);
-
-  const loadMoreHome = useCallback(async () => {
-    setState((s) => ({ ...s, loadingMore: true }));
-    let offset = 0;
-    setState((s) => {
-      offset = s.homeWords?.length ?? 0;
-      return s;
-    });
-    try {
-      const { data, error } = await supabase
-        .from("words")
-        .select("*")
-        .order("rank", { ascending: true, nullsFirst: false })
-        .range(offset, offset + HOME_PAGE_SIZE - 1);
-      if (error) throw error;
-      const rows = (data || []).map(hydrate);
-      ingest(rows);
-      setState((s) => ({
-        ...s,
-        homeWords: [...(s.homeWords ?? []), ...rows],
-        homeHasMore: rows.length === HOME_PAGE_SIZE,
-        loadingMore: false,
-      }));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setState((s) => ({ ...s, loadingMore: false, error: message }));
-    }
-  }, [ingest]);
-
   const search = useCallback(
     async (q: string): Promise<Word[]> => {
       const trimmed = q.trim();
@@ -116,18 +40,18 @@ export function useDictionary() {
       const { data: hits, error: rpcErr } = await supabase.rpc("search_words", { q: trimmed });
       if (rpcErr) {
         console.error("search_words RPC failed:", rpcErr);
+        setError(rpcErr.message);
         return [];
       }
       if (!hits || hits.length === 0) return [];
-      const need: string[] = hits.map((h: any) => h.word);
-      // Always fetch the rows we need — gives us fresh data and ensures we
-      // hold a Word object for every hit.
+      const need: string[] = hits.map((h: { word: string }) => h.word);
       const { data: rows, error: rowsErr } = await supabase
         .from("words")
         .select("*")
         .in("word", need);
       if (rowsErr) {
         console.error("search hydrate failed:", rowsErr);
+        setError(rowsErr.message);
         return [];
       }
       const hydrated = (rows || []).map(hydrate);
@@ -149,12 +73,13 @@ export function useDictionary() {
     async (keys: string[]): Promise<void> => {
       const missing = keys.filter((k) => !cache.has(k));
       if (missing.length === 0) return;
-      const { data, error } = await supabase
+      const { data, error: err } = await supabase
         .from("words")
         .select("*")
         .in("word", missing);
-      if (error) {
-        console.error("ensureCached failed:", error);
+      if (err) {
+        console.error("ensureCached failed:", err);
+        setError(err.message);
         return;
       }
       ingest((data || []).map(hydrate));
@@ -164,15 +89,5 @@ export function useDictionary() {
 
   const findWord = useCallback((key: string): Word | null => cache.get(key) ?? null, [cache]);
 
-  return {
-    homeWords: state.homeWords,
-    homeHasMore: state.homeHasMore,
-    loadingHome: state.loadingHome,
-    loadingMore: state.loadingMore,
-    error: state.error,
-    loadMoreHome,
-    search,
-    ensureCached,
-    findWord,
-  };
+  return { error, search, ensureCached, findWord };
 }
