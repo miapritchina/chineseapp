@@ -25,7 +25,7 @@ export function App() {
   const dict = useDictionary();
   const charsData = useChars();
   const auth = useAuth();
-  const { saved, toggle, exportSaved } = useSaved({ userId: auth.user?.id ?? null });
+  const { saved, toggle, exportSaved, importSaved } = useSaved({ userId: auth.user?.id ?? null });
   const { stack, push, pop } = useModalStack();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -175,6 +175,7 @@ export function App() {
             onOpenWord={(w) => void openWord(w)}
             onOpenChar={openCharPopup}
             onExport={exportSaved}
+            onImport={importSaved}
           />
           <HomeGrid
             words={dict.homeWords ?? []}
@@ -209,7 +210,7 @@ export function App() {
         />
       )}
 
-      <div className="page-id">chinese v15</div>
+      <div className="page-id">chinese v16</div>
     </>
   );
 }
