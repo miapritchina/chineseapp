@@ -13,8 +13,8 @@ export function Card({ word, onOpen }: Props) {
       aria-label={`${word.simp} ${word.pinyin}`}
       onClick={() => onOpen(word.word)}
     >
-      <div className="char">{word.simp}</div>
       <div className="pinyin">{word.pinyin}</div>
+      <div className="char">{word.simp}</div>
       <div className="gloss">{word.definitions?.[0] || ""}</div>
     </button>
   );
@@ -35,8 +35,8 @@ export function CharOnlyCard({ charKey, pinyin, gloss, onOpen }: CharCardProps) 
       aria-label={`${charKey} ${pinyin}`}
       onClick={() => onOpen(charKey)}
     >
-      <div className="char">{charKey}</div>
       <div className="pinyin">{pinyin}</div>
+      <div className="char">{charKey}</div>
       <div className="gloss">{gloss}</div>
     </button>
   );
