@@ -101,9 +101,15 @@ export function App() {
   // Auto-import via ?import=<url> on first load. Same-origin only; the user
   // confirms before anything writes. Useful for one-tap "save these N words"
   // links instead of a file-picker dance on mobile.
+  //
+  // Waits for auth to resolve before firing — otherwise importSaved would run
+  // with userId=null and only touch localStorage, even for signed-in users
+  // (the upload then happens later via the useSaved sync effect, which is
+  // confusing if the user is staring at the alert).
   const autoImportRanRef = useRef(false);
   useEffect(() => {
     if (autoImportRanRef.current) return;
+    if (auth.loading) return;
     autoImportRanRef.current = true;
     const params = new URLSearchParams(window.location.search);
     const importUrl = params.get("import");
@@ -153,13 +159,16 @@ export function App() {
         window.history.replaceState({}, "", url.toString());
       }
     })();
-  }, [importSaved]);
+  }, [auth.loading, importSaved]);
 
   // Auto-clear via ?clear=1. Symmetric to ?import=. Always confirms first;
   // wipes localStorage + (if signed in) every user_saves row for the user.
+  // Same auth-loading gate as ?import= — without it the DB rows survive and
+  // re-sync on the next render, making clear look like it didn't take.
   const autoClearRanRef = useRef(false);
   useEffect(() => {
     if (autoClearRanRef.current) return;
+    if (auth.loading) return;
     autoClearRanRef.current = true;
     const params = new URLSearchParams(window.location.search);
     if (params.get("clear") !== "1") return;
@@ -176,7 +185,7 @@ export function App() {
       url.searchParams.delete("clear");
       window.history.replaceState({}, "", url.toString());
     })();
-  }, [clearAll]);
+  }, [auth.loading, clearAll]);
 
   const handleEnter = () => {
     if (searchResults.length > 0) {
@@ -271,7 +280,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v22</div>
+      <div className="page-id">chinese v23</div>
     </>
   );
 }
