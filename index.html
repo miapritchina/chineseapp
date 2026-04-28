@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <!-- Vite content-hashes assets per build, but Safari aggressively caches
+         this index.html. When it does, the cached HTML points at an old
+         asset hash → 404 → blank page. no-cache forces a re-fetch. -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>中文 · Chinese</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
     <link rel="preconnect" href="https://oigbbgtzzqiceetasayy.supabase.co" />
