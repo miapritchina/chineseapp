@@ -299,6 +299,31 @@ body {
 }
 .saved-section { margin-bottom: 4px; }
 
+.sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0 10px;
+}
+.sort-pill {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.sort-pill:hover { color: var(--text); border-color: var(--text); }
+.sort-pill.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
 .shelf-header-secondary {
   margin-top: 18px;
   border-top: 1px solid var(--border);
