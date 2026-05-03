@@ -978,9 +978,14 @@ body {
   right: 8px;
   font-size: 10px;
   color: var(--muted);
-  opacity: 0.5;
-  pointer-events: none;
+  opacity: 0.6;
 }
+.page-id-link {
+  color: inherit;
+  text-decoration: none;
+  pointer-events: auto;
+}
+.page-id-link:hover { color: var(--accent); }
 
 @media (max-width: 480px) {
   .saved-grid {

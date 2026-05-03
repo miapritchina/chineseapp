@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <title>Network · 中文</title>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+    <style>
+      :root {
+        --bg: #faf8f4;
+        --surface: #ffffff;
+        --surface-2: #f0ece4;
+        --text: #1a1a1a;
+        --muted: #7a7466;
+        --border: #d9d3c4;
+        --accent: #b12a2a;
+        --word: #b12a2a;
+        --char: #4a7c59;
+        --edge: #c8c0ad;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16140f;
+          --surface: #1f1c14;
+          --surface-2: #272319;
+          --text: #f5f1e6;
+          --muted: #a39d8a;
+          --border: #3a3527;
+          --accent: #e07070;
+          --word: #e07070;
+          --char: #6dba84;
+          --edge: #4a4334;
+        }
+      }
+      html, body {
+        margin: 0; padding: 0;
+        background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        overscroll-behavior: none;
+      }
+      #cy { position: fixed; inset: 0; touch-action: none; }
+      .topbar {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+        display: flex; align-items: center; gap: 14px;
+        padding: 10px 14px;
+        background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+        pointer-events: none;
+      }
+      .topbar > * { pointer-events: auto; }
+      .topbar a {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 14px;
+        padding: 4px 8px;
+        border-radius: 6px;
+      }
+      .topbar a:hover { background: var(--surface-2); }
+      .topbar h1 {
+        font-size: 16px; font-weight: 500; margin: 0;
+        color: var(--text); letter-spacing: 0.5px;
+      }
+      .toolbar {
+        margin-left: auto;
+        display: flex; gap: 6px; flex-wrap: wrap;
+      }
+      .pill {
+        background: transparent; border: 1px solid var(--border);
+        color: var(--muted); font: inherit; font-size: 11px;
+        letter-spacing: 0.4px;
+        padding: 4px 10px; border-radius: 999px;
+        cursor: pointer; text-transform: uppercase;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pill:hover { color: var(--text); border-color: var(--text); }
+      .pill.is-active {
+        color: var(--accent); border-color: var(--accent); background: var(--surface-2);
+      }
+      .legend {
+        position: fixed; bottom: 14px; left: 14px;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 10px; padding: 8px 12px;
+        font-size: 11px; color: var(--muted);
+        display: flex; gap: 12px;
+      }
+      .legend-dot {
+        display: inline-block; width: 10px; height: 10px;
+        border-radius: 50%; vertical-align: middle; margin-right: 4px;
+      }
+      .empty {
+        position: fixed; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        flex-direction: column; gap: 8px; padding: 40px;
+        text-align: center; color: var(--muted);
+      }
+      .empty a { color: var(--accent); }
+      .tooltip {
+        position: fixed;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 8px; padding: 6px 10px;
+        font-size: 13px; color: var(--text);
+        pointer-events: none; z-index: 20;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        max-width: 240px; line-height: 1.3;
+        opacity: 0; transition: opacity 0.1s;
+      }
+      .tooltip.show { opacity: 1; }
+      .tooltip .pinyin { color: var(--muted); margin-left: 4px; }
+      .tooltip .gloss { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+      .page-id {
+        position: fixed; bottom: 6px; right: 10px;
+        font-size: 10px; color: var(--muted); opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <a href="../">← 中文</a>
+      <h1>Network</h1>
+      <div class="toolbar" id="toolbar">
+        <button class="pill is-active" data-layout="cose">Force</button>
+        <button class="pill" data-layout="concentric">Rings</button>
+        <button class="pill" data-layout="grid">Grid</button>
+        <button class="pill" data-mode="words-chars" id="modeWC">Words+Chars</button>
+        <button class="pill" data-mode="words-only">Words only</button>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <div class="legend" id="legend">
+      <span><span class="legend-dot" style="background: var(--word)"></span>Word</span>
+      <span><span class="legend-dot" style="background: var(--char)"></span>Character</span>
+    </div>
+    <div class="tooltip" id="tip"></div>
+    <div class="page-id">network v1</div>
+
+    <script>
+      // Reads the same v2 localStorage shape the React app writes.
+      function loadSaved() {
+        try {
+          const raw = localStorage.getItem('chinese.saved');
+          if (!raw) return [];
+          const p = JSON.parse(raw);
+          if (p && p.version === 2 && Array.isArray(p.items)) {
+            return p.items.map(([w]) => w).filter(w => typeof w === 'string');
+          }
+          if (Array.isArray(p)) return p.filter(w => typeof w === 'string');
+        } catch (_) { /* ignore */ }
+        return [];
+      }
+
+      function loadStatus(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return new Set();
+          const p = JSON.parse(raw);
+          if (p && p.version === 2 && Array.isArray(p.items)) {
+            return new Set(p.items.map(([w]) => w));
+          }
+        } catch (_) { /* ignore */ }
+        return new Set();
+      }
+
+      async function loadCharsData() {
+        try {
+          const r = await fetch('../data-chars.json', { cache: 'no-cache' });
+          if (!r.ok) return {};
+          const j = await r.json();
+          return j.chars || {};
+        } catch (_) { return {}; }
+      }
+
+      const tip = document.getElementById('tip');
+      function showTip(html, x, y) {
+        tip.innerHTML = html;
+        tip.style.left = (x + 12) + 'px';
+        tip.style.top  = (y + 12) + 'px';
+        tip.classList.add('show');
+      }
+      function hideTip() { tip.classList.remove('show'); }
+
+      let cy = null;
+      let mode = 'words-chars';
+
+      function buildElements(words, charsData) {
+        const elements = [];
+        const charSet = new Set();
+        const learned = loadStatus('chinese.learned');
+        const wrote = loadStatus('chinese.wrote');
+
+        for (const w of words) {
+          const tier = wrote.has(w) ? 'wrote' : learned.has(w) ? 'learned' : 'saved';
+          elements.push({
+            data: {
+              id: 'w:' + w, label: w, kind: 'word', word: w,
+              tier, len: [...w].length,
+            },
+          });
+          if (mode === 'words-chars') {
+            for (const c of w) {
+              if (!charSet.has(c)) {
+                charSet.add(c);
+                elements.push({
+                  data: {
+                    id: 'c:' + c, label: c, kind: 'char', char: c,
+                    pinyin: charsData[c]?.pinyin || '',
+                  },
+                });
+              }
+              elements.push({
+                data: { id: `e:${w}-${c}`, source: 'w:' + w, target: 'c:' + c, kind: 'wc' },
+              });
+            }
+          } else {
+            // words-only: edges between words sharing a character.
+            // Built after this loop.
+          }
+        }
+
+        if (mode === 'words-only') {
+          for (let i = 0; i < words.length; i++) {
+            const a = [...words[i]];
+            for (let j = i + 1; j < words.length; j++) {
+              const b = words[j];
+              const shared = a.filter((c) => b.includes(c));
+              if (shared.length === 0) continue;
+              elements.push({
+                data: {
+                  id: `e:${words[i]}-${words[j]}`,
+                  source: 'w:' + words[i],
+                  target: 'w:' + words[j],
+                  weight: shared.length,
+                  shared: shared.join(''),
+                  kind: 'ww',
+                },
+              });
+            }
+          }
+        }
+        return elements;
+      }
+
+      function tierColor(tier) {
+        if (tier === 'wrote') return '#7a3aa8';
+        if (tier === 'learned') return '#2e7d32';
+        return getComputedStyle(document.documentElement).getPropertyValue('--word').trim();
+      }
+
+      async function render() {
+        const words = loadSaved();
+        if (words.length === 0) {
+          document.body.innerHTML =
+            '<div class="empty">' +
+            '<div>No saved words yet.</div>' +
+            '<div>Open the <a href="../">main app</a>, save a few, then come back.</div>' +
+            '</div>';
+          return;
+        }
+        const charsData = await loadCharsData();
+        const elements = buildElements(words, charsData);
+
+        cy = cytoscape({
+          container: document.getElementById('cy'),
+          elements,
+          minZoom: 0.2, maxZoom: 4,
+          wheelSensitivity: 0.4,
+          style: [
+            { selector: 'node[kind="word"]', style: {
+              'label': 'data(label)',
+              'background-color': (ele) => tierColor(ele.data('tier')),
+              'color': '#fff',
+              'text-valign': 'center', 'text-halign': 'center',
+              'font-family': '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',
+              'font-size': '18px', 'font-weight': '500',
+              'width': 'mapData(len, 1, 6, 50, 110)',
+              'height': 'mapData(len, 1, 6, 50, 110)',
+              'border-width': 0,
+              'shape': 'round-rectangle',
+              'padding': '8px',
+              'text-wrap': 'wrap', 'text-max-width': '90px',
+            }},
+            { selector: 'node[kind="char"]', style: {
+              'label': 'data(label)',
+              'background-color': 'var(--char)',
+              'color': '#fff',
+              'text-valign': 'center', 'text-halign': 'center',
+              'font-family': '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',
+              'font-size': '14px',
+              'width': 32, 'height': 32,
+              'shape': 'ellipse',
+            }},
+            { selector: 'edge[kind="wc"]', style: {
+              'width': 1.5,
+              'line-color': 'var(--edge)',
+              'curve-style': 'straight',
+              'opacity': 0.55,
+            }},
+            { selector: 'edge[kind="ww"]', style: {
+              'width': 'mapData(weight, 1, 4, 1.5, 6)',
+              'line-color': 'var(--edge)',
+              'curve-style': 'bezier',
+              'opacity': 0.5,
+              'label': 'data(shared)',
+              'font-size': '12px',
+              'color': 'var(--muted)',
+              'text-rotation': 'autorotate',
+              'text-background-color': 'var(--bg)',
+              'text-background-opacity': 1,
+              'text-background-padding': '2px',
+            }},
+            { selector: 'node:selected', style: {
+              'border-width': 3, 'border-color': 'var(--accent)',
+            }},
+            { selector: '.faded', style: { 'opacity': 0.15 } },
+            { selector: '.highlight', style: { 'opacity': 1 } },
+          ],
+          layout: layoutFor('cose'),
+        });
+
+        cy.on('tap', 'node[kind="word"]', (e) => {
+          const w = e.target.data('word');
+          window.location.href = `../#/w/${encodeURIComponent(w)}`;
+        });
+        cy.on('tap', 'node[kind="char"]', (e) => {
+          // Highlight: dim everything except this node and its neighborhood.
+          const node = e.target;
+          cy.elements().addClass('faded');
+          node.closedNeighborhood().removeClass('faded').addClass('highlight');
+          // Tap again on background to clear.
+          setTimeout(() => {
+            cy.one('tap', (ev) => {
+              if (ev.target === cy) cy.elements().removeClass('faded highlight');
+            });
+          }, 0);
+        });
+        cy.on('mouseover tapstart', 'node', (e) => {
+          const d = e.target.data();
+          const renderedPos = e.target.renderedPosition();
+          if (d.kind === 'word') {
+            const cd = [...d.word].map(c => `<b>${c}</b>${charsData[c] ? ` <span class="pinyin">${charsData[c].pinyin}</span>` : ''}`).join(' · ');
+            const gloss = [...d.word].map(c => charsData[c]?.definitions?.[0]).filter(Boolean).join('; ');
+            showTip(cd + (gloss ? `<span class="gloss">${gloss}</span>` : ''), renderedPos.x, renderedPos.y);
+          } else if (d.kind === 'char') {
+            const cd = charsData[d.char];
+            const gloss = cd?.definitions?.slice(0, 3).join('; ') || '';
+            showTip(`<b>${d.char}</b><span class="pinyin">${cd?.pinyin || ''}</span>${gloss ? `<span class="gloss">${gloss}</span>` : ''}`, renderedPos.x, renderedPos.y);
+          }
+        });
+        cy.on('mouseout tapend', 'node', hideTip);
+        cy.on('viewport', hideTip);
+      }
+
+      function layoutFor(name) {
+        if (name === 'cose') {
+          return { name: 'cose', animate: true, padding: 40,
+                   idealEdgeLength: 90, nodeOverlap: 20,
+                   gravity: 0.3, numIter: 1500, randomize: true };
+        }
+        if (name === 'concentric') {
+          return { name: 'concentric', animate: true, padding: 40,
+                   minNodeSpacing: 30,
+                   concentric: (n) => n.data('kind') === 'word' ? 2 : 1,
+                   levelWidth: () => 1 };
+        }
+        if (name === 'grid') {
+          return { name: 'grid', animate: true, padding: 30 };
+        }
+        return { name: 'cose' };
+      }
+
+      const toolbar = document.getElementById('toolbar');
+      toolbar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.pill');
+        if (!btn || !cy) return;
+        if (btn.dataset.layout) {
+          [...toolbar.querySelectorAll('[data-layout]')].forEach(b => b.classList.toggle('is-active', b === btn));
+          cy.layout(layoutFor(btn.dataset.layout)).run();
+        } else if (btn.dataset.mode) {
+          [...toolbar.querySelectorAll('[data-mode]')].forEach(b => b.classList.toggle('is-active', b === btn));
+          mode = btn.dataset.mode;
+          render();
+        }
+      });
+
+      render();
+    </script>
+  </body>
+</html>

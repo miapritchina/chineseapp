@@ -300,7 +300,9 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v47</div>
+      <div className="page-id">
+        chinese v48 · <a href="./network/" className="page-id-link">network →</a>
+      </div>
     </>
   );
 }
