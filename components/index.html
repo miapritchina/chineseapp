@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <title>Components · 中文</title>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+    <style>
+      :root {
+        --bg: #faf8f4;
+        --surface: #ffffff;
+        --surface-2: #f0ece4;
+        --text: #1a1a1a;
+        --muted: #7a7466;
+        --border: #d9d3c4;
+        --accent: #b12a2a;
+
+        --word: #b12a2a;
+        --word-learned: #2e7d32;
+        --word-wrote: #7a3aa8;
+        --char: #4a7c59;
+        --char-saved: #b12a2a;
+        --edge: #c8c0ad;
+
+        /* Role palette — mirrors the tree modal */
+        --role-iconic: #2563eb;
+        --role-meaning: #16a34a;
+        --role-sound: #dc2626;
+        --role-simplified: #9333ea;
+        --role-deleted: #6b7280;
+        --role-unknown: #9ca3af;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16140f;
+          --surface: #1f1c14;
+          --surface-2: #272319;
+          --text: #f5f1e6;
+          --muted: #a39d8a;
+          --border: #3a3527;
+          --accent: #e07070;
+
+          --word: #e07070;
+          --word-learned: #6dba84;
+          --word-wrote: #b07ad8;
+          --char: #6dba84;
+          --char-saved: #e07070;
+          --edge: #4a4334;
+
+          --role-iconic: #60a5fa;
+          --role-meaning: #4ade80;
+          --role-sound: #f87171;
+          --role-simplified: #c084fc;
+          --role-deleted: #9ca3af;
+          --role-unknown: #9ca3af;
+        }
+      }
+      html, body {
+        margin: 0; padding: 0;
+        background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        overscroll-behavior: none;
+      }
+      #cy { position: fixed; inset: 0; touch-action: none; }
+      .topbar {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+        display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+        padding: 10px 14px;
+        background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+        pointer-events: none;
+      }
+      .topbar > * { pointer-events: auto; }
+      .topbar a {
+        color: var(--accent); text-decoration: none; font-size: 14px;
+        padding: 4px 8px; border-radius: 6px;
+      }
+      .topbar a:hover { background: var(--surface-2); }
+      .topbar h1 {
+        font-size: 16px; font-weight: 500; margin: 0;
+        color: var(--text); letter-spacing: 0.5px;
+      }
+      .toolbar { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+      .pill {
+        background: transparent; border: 1px solid var(--border);
+        color: var(--muted); font: inherit; font-size: 11px;
+        letter-spacing: 0.4px; padding: 4px 10px; border-radius: 999px;
+        cursor: pointer; text-transform: uppercase;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pill:hover { color: var(--text); border-color: var(--text); }
+      .pill.is-active { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
+      .search {
+        font: inherit; font-size: 14px;
+        background: var(--surface); color: var(--text);
+        border: 1px solid var(--border); border-radius: 999px;
+        padding: 5px 12px; width: 130px;
+        outline: none;
+      }
+      .search:focus { border-color: var(--accent); }
+      .legend {
+        position: fixed; bottom: 14px; left: 14px;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 10px; padding: 8px 12px;
+        font-size: 11px; color: var(--muted);
+        display: flex; gap: 14px; flex-wrap: wrap; max-width: calc(100vw - 28px);
+      }
+      .legend-dot {
+        display: inline-block; width: 10px; height: 10px;
+        border-radius: 50%; vertical-align: middle; margin-right: 4px;
+      }
+      .legend-square {
+        display: inline-block; width: 10px; height: 10px;
+        border-radius: 2px; vertical-align: middle; margin-right: 4px;
+      }
+      .empty {
+        position: fixed; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        flex-direction: column; gap: 8px; padding: 40px;
+        text-align: center; color: var(--muted);
+      }
+      .empty a { color: var(--accent); }
+      .tooltip {
+        position: fixed;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 8px; padding: 6px 10px;
+        font-size: 13px; color: var(--text);
+        pointer-events: none; z-index: 20;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        max-width: 240px; line-height: 1.3;
+        opacity: 0; transition: opacity 0.1s;
+      }
+      .tooltip.show { opacity: 1; }
+      .tooltip .pinyin { color: var(--muted); margin-left: 4px; }
+      .tooltip .gloss { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+      .page-id {
+        position: fixed; bottom: 6px; right: 10px;
+        font-size: 10px; color: var(--muted); opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <a href="../">← 中文</a>
+      <h1>Components</h1>
+      <div class="toolbar" id="toolbar">
+        <input class="search" id="search" type="search" placeholder="char or pinyin" autocomplete="off" />
+        <button class="pill is-active" data-layout="cose">Force</button>
+        <button class="pill" data-layout="concentric">Rings</button>
+        <button class="pill" data-layout="grid">Grid</button>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <div class="legend">
+      <span><span class="legend-square" style="background: var(--word)"></span>Word</span>
+      <span><span class="legend-square" style="background: var(--word-learned)"></span>Learned</span>
+      <span><span class="legend-square" style="background: var(--word-wrote)"></span>Wrote</span>
+      <span><span class="legend-dot" style="background: var(--char)"></span>Char</span>
+      <span><span class="legend-dot" style="background: var(--role-iconic)"></span>Iconic</span>
+      <span><span class="legend-dot" style="background: var(--role-meaning)"></span>Meaning</span>
+      <span><span class="legend-dot" style="background: var(--role-sound)"></span>Sound</span>
+    </div>
+    <div class="tooltip" id="tip"></div>
+    <div class="page-id">components v1</div>
+
+    <script type="module">
+      import { buildGraph } from "./graph-data.mjs";
+
+      function loadSavedV2(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return new Set();
+          const p = JSON.parse(raw);
+          if (p && p.version === 2 && Array.isArray(p.items)) {
+            return new Set(p.items.map(([w]) => w).filter((w) => typeof w === "string"));
+          }
+          if (Array.isArray(p)) return new Set(p.filter((w) => typeof w === "string"));
+        } catch (_) { /* ignore */ }
+        return new Set();
+      }
+
+      async function loadCharsData() {
+        try {
+          const r = await fetch("../data-chars.json", { cache: "no-cache" });
+          if (!r.ok) return {};
+          const j = await r.json();
+          return j.chars || {};
+        } catch (_) { return {}; }
+      }
+
+      const tip = document.getElementById("tip");
+      function showTip(html, x, y) {
+        tip.innerHTML = html;
+        tip.style.left = (x + 12) + "px";
+        tip.style.top  = (y + 12) + "px";
+        tip.classList.add("show");
+      }
+      function hideTip() { tip.classList.remove("show"); }
+
+      function layoutFor(name) {
+        if (name === "concentric") {
+          return {
+            name: "concentric", animate: true, padding: 40, minNodeSpacing: 28,
+            concentric: (n) => n.data("kind") === "word" ? 3 : n.data("kind") === "char" ? 2 : 1,
+            levelWidth: () => 1,
+          };
+        }
+        if (name === "grid") return { name: "grid", animate: true, padding: 30 };
+        return {
+          name: "cose", animate: true, padding: 40,
+          idealEdgeLength: 90, nodeOverlap: 16,
+          gravity: 0.3, numIter: 1500, randomize: true,
+        };
+      }
+
+      function tierColorVar(tier) {
+        if (tier === "learned") return "var(--word-learned)";
+        if (tier === "wrote") return "var(--word-wrote)";
+        return "var(--word)";
+      }
+
+      const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+      let cy = null;
+      let charsData = {};
+
+      async function render() {
+        const savedSet = loadSavedV2("chinese.saved");
+        if (savedSet.size === 0) {
+          document.body.innerHTML =
+            '<div class="empty">' +
+              '<div>No saved words yet.</div>' +
+              '<div>Open the <a href="../">main app</a>, save a few, then come back.</div>' +
+            "</div>";
+          return;
+        }
+        const learnedSet = loadSavedV2("chinese.learned");
+        const wroteSet = loadSavedV2("chinese.wrote");
+        charsData = await loadCharsData();
+
+        const { nodes, edges } = buildGraph({
+          savedWords: [...savedSet],
+          learnedSet, wroteSet,
+          chars: charsData,
+        });
+
+        cy = cytoscape({
+          container: document.getElementById("cy"),
+          elements: [...nodes, ...edges],
+          minZoom: 0.2, maxZoom: 4, wheelSensitivity: 0.4,
+          style: [
+            { selector: 'node[kind="word"]', style: {
+              "label": "data(label)",
+              "background-color": (e) => tierColorVar(e.data("tier")),
+              "color": "#fff",
+              "text-valign": "center", "text-halign": "center",
+              "font-family": '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',
+              "font-size": "18px", "font-weight": "500",
+              "width": "mapData(len, 1, 6, 56, 110)",
+              "height": "mapData(len, 1, 6, 56, 110)",
+              "shape": "round-rectangle", "padding": "8px",
+              "text-wrap": "wrap", "text-max-width": "90px",
+              "border-width": 0,
+            }},
+            { selector: 'node[kind="char"]', style: {
+              "label": "data(label)",
+              "background-color": (e) =>
+                e.data("savedAsChar") ? tierColorVar(e.data("tier")) : cssVar("--char"),
+              "color": "#fff",
+              "text-valign": "center", "text-halign": "center",
+              "font-family": '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',
+              "font-size": "16px", "font-weight": "500",
+              "width": 42, "height": 42,
+              "shape": "round-hexagon",
+            }},
+            { selector: 'node[kind="component"]', style: {
+              "label": "data(label)",
+              "background-color": (e) => `var(--role-${e.data("role") || "unknown"})`,
+              "color": "#fff",
+              "text-valign": "center", "text-halign": "center",
+              "font-family": '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',
+              "font-size": "13px",
+              "width": 28, "height": 28,
+              "shape": "ellipse",
+            }},
+            { selector: "edge", style: {
+              "width": 1.5,
+              "line-color": cssVar("--edge"),
+              "curve-style": "bezier",
+              "opacity": 0.55,
+            }},
+            { selector: '.faded', style: { "opacity": 0.12 } },
+            { selector: '.highlight', style: { "opacity": 1 } },
+            { selector: '.match', style: {
+              "border-width": 3,
+              "border-color": cssVar("--accent"),
+            }},
+          ],
+          layout: layoutFor("cose"),
+        });
+
+        // Tap any node → highlight closed neighborhood; tap blank to clear.
+        cy.on("tap", "node", (e) => {
+          const node = e.target;
+          cy.elements().addClass("faded").removeClass("highlight");
+          node.closedNeighborhood().removeClass("faded").addClass("highlight");
+          // For words specifically, also offer a deep-link via dblclick.
+        });
+        cy.on("tap", (e) => {
+          if (e.target === cy) {
+            cy.elements().removeClass("faded highlight match");
+          }
+        });
+        // Double-tap a word → open in main app.
+        cy.on("dbltap", 'node[kind="word"]', (e) => {
+          const w = e.target.data("label");
+          window.location.href = `../#/w/${encodeURIComponent(w)}`;
+        });
+        cy.on("dbltap", 'node[kind="char"]', (e) => {
+          const c = e.target.data("label");
+          window.location.href = `../#/c/${encodeURIComponent(c)}`;
+        });
+
+        cy.on("mouseover tapstart", "node", (e) => {
+          const d = e.target.data();
+          const pos = e.target.renderedPosition();
+          if (d.kind === "word") {
+            const cs = [...d.label]
+              .map((c) => `<b>${c}</b>${charsData[c]?.pinyin ? ` <span class="pinyin">${charsData[c].pinyin}</span>` : ""}`)
+              .join(" · ");
+            const gloss = [...d.label].map((c) => charsData[c]?.definitions?.[0]).filter(Boolean).join("; ");
+            showTip(cs + (gloss ? `<span class="gloss">${gloss}</span>` : "") + '<span class="gloss">double-tap to open</span>', pos.x, pos.y);
+          } else if (d.kind === "char") {
+            const cd = charsData[d.label];
+            const gloss = cd?.definitions?.slice(0, 2).join("; ") || "";
+            showTip(`<b>${d.label}</b><span class="pinyin">${cd?.pinyin || ""}</span>${gloss ? `<span class="gloss">${gloss}</span>` : ""}<span class="gloss">double-tap to open</span>`, pos.x, pos.y);
+          } else {
+            const cd = charsData[d.label];
+            const gloss = cd?.definitions?.[0] || "";
+            const role = d.role ? ` · <span class="pinyin">${d.role}</span>` : "";
+            showTip(`<b>${d.label}</b>${cd?.pinyin ? ` <span class="pinyin">${cd.pinyin}</span>` : ""}${role}${gloss ? `<span class="gloss">${gloss}</span>` : ""}`, pos.x, pos.y);
+          }
+        });
+        cy.on("mouseout tapend", "node", hideTip);
+        cy.on("viewport", hideTip);
+      }
+
+      // Toolbar
+      const toolbar = document.getElementById("toolbar");
+      toolbar.addEventListener("click", (e) => {
+        const btn = e.target.closest(".pill");
+        if (!btn || !cy) return;
+        if (btn.dataset.layout) {
+          [...toolbar.querySelectorAll("[data-layout]")].forEach((b) =>
+            b.classList.toggle("is-active", b === btn),
+          );
+          cy.layout(layoutFor(btn.dataset.layout)).run();
+        }
+      });
+
+      // Search → highlight matches (label === query, or pinyin starts with query)
+      const search = document.getElementById("search");
+      search.addEventListener("input", () => {
+        if (!cy) return;
+        const q = search.value.trim();
+        cy.elements().removeClass("match faded highlight");
+        if (!q) return;
+        const norm = (s) =>
+          (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+        const qn = norm(q);
+        const matches = cy.nodes().filter((n) => {
+          const label = n.data("label");
+          if (label === q) return true;
+          if (q.length === 1 && label.includes(q)) return true;
+          const py = charsData[label]?.pinyin;
+          if (py && norm(py).startsWith(qn)) return true;
+          return false;
+        });
+        if (matches.length === 0) return;
+        cy.elements().addClass("faded");
+        matches.addClass("match");
+        const hood = matches.closedNeighborhood();
+        matches.add(hood).removeClass("faded").addClass("highlight");
+      });
+
+      render();
+    </script>
+  </body>
+</html>

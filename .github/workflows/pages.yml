@@ -36,13 +36,15 @@ jobs:
 
       - name: Prepare site
         run: |
-          mkdir -p _site/palette _site/network
+          mkdir -p _site/palette _site/network _site/components
           cp -r dist/.                _site/
           cp palette/palette.html     _site/palette/index.html
           cp palette/palette.html     _site/palette/palette.html
           cp palette/mixbox.js        _site/palette/mixbox.js
           cp palette/reference.html   _site/palette/reference.html
           cp network/index.html       _site/network/index.html
+          cp components/index.html    _site/components/index.html
+          cp components/graph-data.mjs _site/components/graph-data.mjs
           echo "Build OK - $(date)" > _site/build-info.txt
 
       - uses: actions/configure-pages@v4
