@@ -21,6 +21,7 @@ const CHARACTERLESS = "◎";
 interface Props {
   tree: TreeNode;
   chars: Record<string, Char>;
+  saved: Set<string>;
   onNodeClick: (char: string) => void;
 }
 
@@ -47,13 +48,14 @@ function estimateCardHeight(node: TreeNode, charsData: Record<string, Char>): nu
   const c = charsData[node.char];
   const isCharacterless = node.char === CHARACTERLESS;
 
-  // Gloss text — same source the NodeCard uses.
+  // Gloss text — same source the NodeCard uses (joined defs for chars).
   const glossText = node.isWord
     ? node.gloss || ""
     : node.gloss ||
       (isCharacterless && node.compHint
         ? node.compHint
-        : node.compDef || c?.definitions?.[0] || "");
+        : node.compDef ||
+          (c?.definitions?.length ? c.definitions.join("; ") : ""));
 
   // Etymology text — same source the NodeCard uses.
   const noteText = node.isWord
@@ -79,7 +81,18 @@ function estimateCardHeight(node: TreeNode, charsData: Record<string, Char>): nu
   return Math.max(CARD_MIN_H, CARD_BASE_H + glossH + noteH + 12 /* pad */);
 }
 
-export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
+export function DecompositionTree({ tree, chars, saved, onNodeClick }: Props) {
+  // Per-char usage count: how many of the user's saved multi-char words
+  // contain this char (excluding the char saved as itself). Recomputed on
+  // each render — `saved` is a Set so this is O(saved.size · word.length).
+  const usageOf = (char: string): number => {
+    let n = 0;
+    for (const k of saved) {
+      if (k === char) continue;
+      if (k.length > 1 && k.includes(char)) n++;
+    }
+    return n;
+  };
   const svgRef = useRef<SVGSVGElement>(null);
   const innerRef = useRef<SVGGElement>(null);
   const [placements, setPlacements] = useState<Placement[]>([]);
@@ -249,6 +262,7 @@ export function DecompositionTree({ tree, chars, onNodeClick }: Props) {
                     charData={chars[p.node.char]}
                     strokeData={stroke.get(p.node.char)}
                     cardW={CARD_W}
+                    usageCount={p.node.isWord ? 0 : usageOf(p.node.char)}
                   />
                 </foreignObject>
               </g>

@@ -209,6 +209,8 @@ export function App() {
 
   const openCharPopup = (char: string) => setPopupChar(char);
 
+  const openCharAsTree = (char: string) => push({ kind: "char", key: char });
+
   const top = stack[stack.length - 1];
   const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
 
@@ -287,6 +289,7 @@ export function App() {
           onToggleSave={toggle}
           onClose={() => setPopupChar(null)}
           onJumpToWord={(w) => void openWord(w)}
+          onOpenAsTree={openCharAsTree}
           findWord={dict.findWord}
         />
       )}
@@ -297,7 +300,7 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">chinese v46</div>
+      <div className="page-id">chinese v47</div>
     </>
   );
 }

@@ -8,10 +8,11 @@ interface Props {
   onToggleSave: (key: string) => void;
   onClose: () => void;
   onJumpToWord: (word: string) => void;
+  onOpenAsTree: (char: string) => void;
   findWord: (key: string) => Word | null;
 }
 
-export function CharPopup({ char, charData, saved, onToggleSave, onClose, onJumpToWord, findWord }: Props) {
+export function CharPopup({ char, charData, saved, onToggleSave, onClose, onJumpToWord, onOpenAsTree, findWord }: Props) {
   const writerRef = useRef<HTMLDivElement>(null);
   const writerInstanceRef = useRef<any>(null);
 
@@ -113,23 +114,37 @@ export function CharPopup({ char, charData, saved, onToggleSave, onClose, onJump
         )}
         {charData?.notes && <div className="popup-etym">{charData.notes}</div>}
 
+        <button
+          className="popup-open-tree"
+          type="button"
+          onClick={() => {
+            onClose();
+            onOpenAsTree(char);
+          }}
+        >
+          Show decomposition →
+        </button>
+
         {matches.length > 0 && (
           <div className="popup-saved">
             <div className="popup-saved-title">In your saved words</div>
-            <div className="popup-saved-chips">
+            <div className="popup-saved-list">
               {matches.map((w) => {
                 const word = findWord(w);
+                const gloss = word?.definitions?.[0] ?? "";
                 return (
                   <button
                     key={w}
-                    className="chip"
+                    className="chip-row"
                     type="button"
                     onClick={() => {
                       onClose();
                       onJumpToWord(w);
                     }}
                   >
-                    {word ? `${w} · ${word.pinyin}` : w}
+                    <span className="chip-row-hanzi">{w}</span>
+                    {word?.pinyin && <span className="chip-row-pinyin">{word.pinyin}</span>}
+                    {gloss && <span className="chip-row-gloss">{gloss}</span>}
                   </button>
                 );
               })}
