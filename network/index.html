@@ -131,7 +131,7 @@
       <span><span class="legend-dot" style="background: var(--char)"></span>Character</span>
     </div>
     <div class="tooltip" id="tip"></div>
-    <div class="page-id">network v1</div>
+    <div class="page-id">network v2</div>
 
     <script>
       // Reads the same v2 localStorage shape the React app writes.
@@ -184,6 +184,7 @@
       function buildElements(words, charsData) {
         const elements = [];
         const charSet = new Set();
+        const wordSet = new Set(words);
         const learned = loadStatus('chinese.learned');
         const wrote = loadStatus('chinese.wrote');
 
@@ -195,8 +196,17 @@
               tier, len: [...w].length,
             },
           });
-          if (mode === 'words-chars') {
+          if (mode === 'words-chars' && [...w].length > 1) {
+            // Single-char words ARE their character — a duplicate "char" node
+            // would just be the same glyph attached to itself.
             for (const c of w) {
+              if (wordSet.has(c)) {
+                // Char is itself a saved word — route the edge word→word.
+                elements.push({
+                  data: { id: `e:${w}-${c}`, source: 'w:' + c, target: 'w:' + w, kind: 'ww' },
+                });
+                continue;
+              }
               if (!charSet.has(c)) {
                 charSet.add(c);
                 elements.push({
@@ -210,10 +220,8 @@
                 data: { id: `e:${w}-${c}`, source: 'w:' + w, target: 'c:' + c, kind: 'wc' },
               });
             }
-          } else {
-            // words-only: edges between words sharing a character.
-            // Built after this loop.
           }
+          // words-only mode builds edges in a second pass below.
         }
 
         if (mode === 'words-only') {

@@ -155,13 +155,13 @@
       <span><span class="legend-square" style="background: var(--word)"></span>Word</span>
       <span><span class="legend-square" style="background: var(--word-learned)"></span>Learned</span>
       <span><span class="legend-square" style="background: var(--word-wrote)"></span>Wrote</span>
-      <span><span class="legend-dot" style="background: var(--char)"></span>Char</span>
+      <span><span class="legend-dot" style="background: var(--char)"></span>Char (in word)</span>
       <span><span class="legend-dot" style="background: var(--role-iconic)"></span>Iconic</span>
       <span><span class="legend-dot" style="background: var(--role-meaning)"></span>Meaning</span>
       <span><span class="legend-dot" style="background: var(--role-sound)"></span>Sound</span>
     </div>
     <div class="tooltip" id="tip"></div>
-    <div class="page-id">components v1</div>
+    <div class="page-id">components v2</div>
 
     <script type="module">
       import { buildGraph } from "./graph-data.mjs";
@@ -264,8 +264,7 @@
             }},
             { selector: 'node[kind="char"]', style: {
               "label": "data(label)",
-              "background-color": (e) =>
-                e.data("savedAsChar") ? tierColorVar(e.data("tier")) : cssVar("--char"),
+              "background-color": cssVar("--char"),
               "color": "#fff",
               "text-valign": "center", "text-halign": "center",
               "font-family": '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',

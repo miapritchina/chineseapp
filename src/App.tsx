@@ -301,7 +301,7 @@ export function App() {
       )}
 
       <div className="page-id">
-        chinese v49 ·{" "}
+        chinese v50 ·{" "}
         <a href="./network/" className="page-id-link">network →</a>{" "}
         <a href="./components/" className="page-id-link">components →</a>
       </div>
