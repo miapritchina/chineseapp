@@ -103,7 +103,7 @@ export function TreeModal({
       </div>
       <div className="modal-body">
         {tree ? (
-          <DecompositionTree tree={tree} chars={chars} onNodeClick={onNodeClick} />
+          <DecompositionTree tree={tree} chars={chars} saved={saved} onNodeClick={onNodeClick} />
         ) : (
           <p style={{ padding: 24 }}>Unknown {entry.kind}: {entry.key}</p>
         )}

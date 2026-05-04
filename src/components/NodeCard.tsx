@@ -7,9 +7,13 @@ interface Props {
   charData: Char | undefined;
   strokeData: StrokeData | null;
   cardW: number;
+  // # of saved entries (length > 1) containing this char, excluding the char
+  // itself. Renders a top-right counter so you can see at a glance how
+  // recurring a component is across your saved words.
+  usageCount: number;
 }
 
-export function NodeCard({ node, charData, strokeData, cardW }: Props) {
+export function NodeCard({ node, charData, strokeData, cardW, usageCount }: Props) {
   const role = node.role || "unknown";
   const isCharacterless = node.char === "◎";
 
@@ -17,18 +21,21 @@ export function NodeCard({ node, charData, strokeData, cardW }: Props) {
   // prefer pinyin from the tree node (word root) → from char data.
   const py = isCharacterless ? "" : node.pinyin || charData?.pinyin || "";
 
-  // Gloss preference: explicit node gloss → component definition → char's
-  // first dictionary def. For characterless components, the comp definition
-  // is just "characterless component" — prefer the parent's hint instead.
-  const gloss =
-    node.gloss ||
-    (isCharacterless && node.compHint
-      ? node.compHint
-      : node.compDef || charData?.definitions?.[0] || "");
+  // Gloss preference: explicit node gloss → component definition →
+  // ALL char dictionary defs (semicolon-joined). For characterless components,
+  // the comp definition is just "characterless component" — prefer the
+  // parent's hint instead.
+  const gloss = node.isWord
+    ? node.gloss || ""
+    : node.gloss ||
+      (isCharacterless && node.compHint
+        ? node.compHint
+        : node.compDef ||
+          (charData?.definitions?.length ? charData.definitions.join("; ") : ""));
 
-  // Etymology shown on every card by default (line-clamped via CSS at small
-  // zoom; full at zoom > 1.7×). For characterless components we don't have a
-  // separate notes field — the hint already covers it via gloss above.
+  // Etymology shown on every card by default. For characterless components
+  // we don't have a separate notes field — the hint already covers it via
+  // gloss above.
   const etymText = node.isWord
     ? ""
     : isCharacterless
@@ -40,6 +47,20 @@ export function NodeCard({ node, charData, strokeData, cardW }: Props) {
 
   return (
     <div className={`node-card role-${role}${node.isWord ? " is-word" : ""}`}>
+      {!node.isWord && role && (
+        <div className={`card-role-badge role-${role}`}>{ROLE_LABEL[role] || "Component"}</div>
+      )}
+
+      {!node.isWord && usageCount > 0 && (
+        <div
+          className="card-usage"
+          title={`In ${usageCount} of your saved word${usageCount === 1 ? "" : "s"}`}
+        >
+          <span className="card-usage-icon">★</span>
+          <span className="card-usage-count">{usageCount}</span>
+        </div>
+      )}
+
       {py && <div className="card-pinyin">{py}</div>}
 
       {node.isWord ? (
@@ -57,10 +78,6 @@ export function NodeCard({ node, charData, strokeData, cardW }: Props) {
             </div>
           )}
         </div>
-      )}
-
-      {!node.isWord && role && (
-        <div className={`card-role role-${role}`}>{ROLE_LABEL[role] || "Component"}</div>
       )}
 
       {gloss && <div className="card-gloss">{gloss}</div>}
