@@ -47,17 +47,24 @@ export function NodeCard({ node, charData, strokeData, cardW, usageCount }: Prop
 
   return (
     <div className={`node-card role-${role}${node.isWord ? " is-word" : ""}`}>
-      {!node.isWord && role && (
-        <div className={`card-role-badge role-${role}`}>{ROLE_LABEL[role] || "Component"}</div>
-      )}
-
-      {!node.isWord && usageCount > 0 && (
-        <div
-          className="card-usage"
-          title={`In ${usageCount} of your saved word${usageCount === 1 ? "" : "s"}`}
-        >
-          <span className="card-usage-icon">★</span>
-          <span className="card-usage-count">{usageCount}</span>
+      {!node.isWord && (role || usageCount > 0) && (
+        <div className="card-top-row">
+          {role ? (
+            <span className={`card-role-badge role-${role}`}>
+              {ROLE_LABEL[role] || "Component"}
+            </span>
+          ) : (
+            <span />
+          )}
+          {usageCount > 0 && (
+            <span
+              className="card-usage"
+              title={`In ${usageCount} of your saved word${usageCount === 1 ? "" : "s"}`}
+            >
+              <span className="card-usage-icon">★</span>
+              <span className="card-usage-count">{usageCount}</span>
+            </span>
+          )}
         </div>
       )}
 

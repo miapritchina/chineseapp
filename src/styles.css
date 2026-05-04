@@ -655,13 +655,12 @@ body {
 
 /* Each tree node is a card — large, easy-to-read glyph dominates */
 .node-card {
-  position: relative;
   width: 100%;
   height: 100%;
   background: var(--bg);
   border: 2px solid var(--border);
   border-radius: 16px;
-  padding: 10px 12px 12px;
+  padding: 8px 12px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -721,33 +720,31 @@ body {
   min-height: 110px;
 }
 
-/* Small role badge in the top-left corner. Replaces the old centered label. */
+/* In-flow header row at the top of every non-word card: role label on the
+   left, saved-usage counter on the right. Avoids absolute positioning,
+   which interacts badly with foreignObject + nested CSS on iOS Safari
+   (cards appear blank). */
+.card-top-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -2px 0 -4px;
+  line-height: 1;
+}
 .card-role-badge {
-  position: absolute;
-  top: 6px;
-  left: 8px;
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 600;
-  line-height: 1;
-  opacity: 0.7;
-  pointer-events: none;
+  opacity: 0.75;
 }
-
-/* Saved-words usage counter, top-right. Tells you how often this character
-   shows up in the rest of your saved list. */
 .card-usage {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 2px;
   font-size: 11px;
   color: var(--muted);
-  line-height: 1;
-  pointer-events: none;
 }
 .card-usage-icon { color: #d97706; font-size: 10px; }
 @media (prefers-color-scheme: dark) {

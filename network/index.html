@@ -131,7 +131,7 @@
       <span><span class="legend-dot" style="background: var(--char)"></span>Character</span>
     </div>
     <div class="tooltip" id="tip"></div>
-    <div class="page-id">network v3</div>
+    <div class="page-id">network v4</div>
 
     <script>
       // Reads the same v2 localStorage shape the React app writes.
@@ -158,6 +158,30 @@
           }
         } catch (_) { /* ignore */ }
         return new Set();
+      }
+
+      // Whole-word translations are NOT in data-chars.json (which only carries
+      // per-character info). Fetch from the same Supabase project the main
+      // app uses; cache hits are reused on subsequent long-presses.
+      const SUPABASE_URL = 'https://oigbbgtzzqiceetasayy.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_YTd6bXMqUddNj4aFf1YRwA_T320qu3c';
+      const wordDefCache = new Map();
+      async function fetchWordDef(word) {
+        if (wordDefCache.has(word)) return wordDefCache.get(word);
+        try {
+          const r = await fetch(
+            `${SUPABASE_URL}/rest/v1/words?word=eq.${encodeURIComponent(word)}&select=pinyin,definitions`,
+            { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
+          );
+          if (!r.ok) { wordDefCache.set(word, null); return null; }
+          const rows = await r.json();
+          const row = rows[0] || null;
+          wordDefCache.set(word, row);
+          return row;
+        } catch (_) {
+          wordDefCache.set(word, null);
+          return null;
+        }
       }
 
       async function loadCharsData() {
@@ -332,9 +356,6 @@
           cy.elements().addClass('faded').removeClass('highlight');
           node.closedNeighborhood().removeClass('faded').addClass('highlight');
         });
-        cy.on('tap', (e) => {
-          if (e.target === cy) cy.elements().removeClass('faded highlight');
-        });
         cy.on('dbltap', 'node[kind="word"]', (e) => {
           const w = e.target.data('word');
           window.location.href = `../#/w/${encodeURIComponent(w)}`;
@@ -343,21 +364,81 @@
           const c = e.target.data('char');
           window.location.href = `../#/c/${encodeURIComponent(c)}`;
         });
+        // When the long-press tooltip is showing, we don't want a tapend
+        // (finger lift) to dismiss it — the user just summoned it.
+        let tipSticky = false;
+
+        function renderWordTip(word, pos, wholeRow) {
+          const charBreakdown = [...word]
+            .map((c) => `<b>${c}</b>${charsData[c] ? ` <span class="pinyin">${charsData[c].pinyin}</span>` : ''}`)
+            .join(' · ');
+          const charGloss = [...word]
+            .map((c) => charsData[c]?.definitions?.[0])
+            .filter(Boolean)
+            .join('; ');
+          const charBlock =
+            charBreakdown +
+            (charGloss ? `<span class="gloss">${charGloss}</span>` : '');
+          showTip(
+            (wholeRow || '') + charBlock + '<span class="gloss">long-press for whole word · double-tap to open</span>',
+            pos.x, pos.y,
+          );
+        }
+
         cy.on('mouseover tapstart', 'node', (e) => {
+          if (tipSticky) return; // don't clobber the sticky long-press view
           const d = e.target.data();
-          const renderedPos = e.target.renderedPosition();
+          const pos = e.target.renderedPosition();
           if (d.kind === 'word') {
-            const cd = [...d.word].map(c => `<b>${c}</b>${charsData[c] ? ` <span class="pinyin">${charsData[c].pinyin}</span>` : ''}`).join(' · ');
-            const gloss = [...d.word].map(c => charsData[c]?.definitions?.[0]).filter(Boolean).join('; ');
-            showTip(cd + (gloss ? `<span class="gloss">${gloss}</span>` : '') + '<span class="gloss">double-tap to open</span>', renderedPos.x, renderedPos.y);
+            renderWordTip(d.word, pos, '');
           } else if (d.kind === 'char') {
             const cd = charsData[d.char];
             const gloss = cd?.definitions?.slice(0, 3).join('; ') || '';
-            showTip(`<b>${d.char}</b><span class="pinyin">${cd?.pinyin || ''}</span>${gloss ? `<span class="gloss">${gloss}</span>` : ''}<span class="gloss">double-tap to open</span>`, renderedPos.x, renderedPos.y);
+            showTip(`<b>${d.char}</b><span class="pinyin">${cd?.pinyin || ''}</span>${gloss ? `<span class="gloss">${gloss}</span>` : ''}<span class="gloss">double-tap to open</span>`, pos.x, pos.y);
           }
         });
-        cy.on('mouseout tapend', 'node', hideTip);
-        cy.on('viewport', hideTip);
+        // Long-press a word → fetch and prepend the whole-word translation.
+        // Sticky: stays visible after the finger lifts; a tap on blank
+        // background dismisses it. Char nodes don't need this — their full
+        // def is already in the standard tooltip.
+        cy.on('taphold', 'node[kind="word"]', async (e) => {
+          const node = e.target;
+          const word = node.data('word');
+          const pos = node.renderedPosition();
+          tipSticky = true;
+          if (window.navigator?.vibrate) window.navigator.vibrate(15);
+          renderWordTip(word, pos, `<b>${word}</b> <span class="pinyin">…fetching…</span><br>`);
+          const row = await fetchWordDef(word);
+          if (!tipSticky) return; // user already dismissed
+          if (!row) {
+            renderWordTip(word, pos, `<b>${word}</b> <span class="pinyin">no dictionary entry</span><br>`);
+            return;
+          }
+          const py = row.pinyin || '';
+          const defs = Array.isArray(row.definitions) ? row.definitions.join('; ') : '';
+          const wholeRow =
+            `<b>${word}</b>${py ? ` <span class="pinyin">${py}</span>` : ''}` +
+            (defs ? `<span class="gloss" style="color: var(--text); margin-bottom: 6px;">${defs}</span>` : '') +
+            '<hr style="border:none;border-top:1px solid var(--border);margin: 6px 0;">';
+          renderWordTip(word, pos, wholeRow);
+        });
+        cy.on('mouseout tapend', 'node', () => {
+          if (!tipSticky) hideTip();
+        });
+        cy.on('tap', (e) => {
+          // Background tap: clear neighborhood highlight + sticky tooltip.
+          if (e.target === cy) {
+            cy.elements().removeClass('faded highlight');
+            if (tipSticky) {
+              tipSticky = false;
+              hideTip();
+            }
+          }
+        });
+        cy.on('viewport', () => {
+          tipSticky = false;
+          hideTip();
+        });
       }
 
       function layoutFor(name) {
