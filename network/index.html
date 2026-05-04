@@ -131,7 +131,7 @@
       <span><span class="legend-dot" style="background: var(--char)"></span>Character</span>
     </div>
     <div class="tooltip" id="tip"></div>
-    <div class="page-id">network v2</div>
+    <div class="page-id">network v3</div>
 
     <script>
       // Reads the same v2 localStorage shape the React app writes.
@@ -324,21 +324,24 @@
           layout: layoutFor('cose'),
         });
 
-        cy.on('tap', 'node[kind="word"]', (e) => {
+        // Tap any node → highlight closed neighborhood, dim the rest.
+        // Tap blank space to clear. No navigation on tap; double-tap a word
+        // or char to open it in the main app.
+        cy.on('tap', 'node', (e) => {
+          const node = e.target;
+          cy.elements().addClass('faded').removeClass('highlight');
+          node.closedNeighborhood().removeClass('faded').addClass('highlight');
+        });
+        cy.on('tap', (e) => {
+          if (e.target === cy) cy.elements().removeClass('faded highlight');
+        });
+        cy.on('dbltap', 'node[kind="word"]', (e) => {
           const w = e.target.data('word');
           window.location.href = `../#/w/${encodeURIComponent(w)}`;
         });
-        cy.on('tap', 'node[kind="char"]', (e) => {
-          // Highlight: dim everything except this node and its neighborhood.
-          const node = e.target;
-          cy.elements().addClass('faded');
-          node.closedNeighborhood().removeClass('faded').addClass('highlight');
-          // Tap again on background to clear.
-          setTimeout(() => {
-            cy.one('tap', (ev) => {
-              if (ev.target === cy) cy.elements().removeClass('faded highlight');
-            });
-          }, 0);
+        cy.on('dbltap', 'node[kind="char"]', (e) => {
+          const c = e.target.data('char');
+          window.location.href = `../#/c/${encodeURIComponent(c)}`;
         });
         cy.on('mouseover tapstart', 'node', (e) => {
           const d = e.target.data();
@@ -346,11 +349,11 @@
           if (d.kind === 'word') {
             const cd = [...d.word].map(c => `<b>${c}</b>${charsData[c] ? ` <span class="pinyin">${charsData[c].pinyin}</span>` : ''}`).join(' · ');
             const gloss = [...d.word].map(c => charsData[c]?.definitions?.[0]).filter(Boolean).join('; ');
-            showTip(cd + (gloss ? `<span class="gloss">${gloss}</span>` : ''), renderedPos.x, renderedPos.y);
+            showTip(cd + (gloss ? `<span class="gloss">${gloss}</span>` : '') + '<span class="gloss">double-tap to open</span>', renderedPos.x, renderedPos.y);
           } else if (d.kind === 'char') {
             const cd = charsData[d.char];
             const gloss = cd?.definitions?.slice(0, 3).join('; ') || '';
-            showTip(`<b>${d.char}</b><span class="pinyin">${cd?.pinyin || ''}</span>${gloss ? `<span class="gloss">${gloss}</span>` : ''}`, renderedPos.x, renderedPos.y);
+            showTip(`<b>${d.char}</b><span class="pinyin">${cd?.pinyin || ''}</span>${gloss ? `<span class="gloss">${gloss}</span>` : ''}<span class="gloss">double-tap to open</span>`, renderedPos.x, renderedPos.y);
           }
         });
         cy.on('mouseout tapend', 'node', hideTip);
