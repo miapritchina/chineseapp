@@ -32,7 +32,6 @@ export function App() {
     review,
     getStatus,
     setStatus,
-    exportSaved,
     importSaved,
     clearAll,
   } = useSaved({ userId: auth.user?.id ?? null });
@@ -259,8 +258,6 @@ export function App() {
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
             onOpenChar={openCharPopup}
-            onExport={exportSaved}
-            onImport={importSaved}
           />
         </main>
       )}
@@ -300,7 +297,7 @@ export function App() {
       )}
 
       <div className="page-id">
-        chinese v52 ·{" "}
+        chinese v53 ·{" "}
         <a href="./network/" className="page-id-link">network →</a>{" "}
         <a href="./components/" className="page-id-link">components →</a>
       </div>

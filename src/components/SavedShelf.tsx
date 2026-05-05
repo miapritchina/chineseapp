@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Char, Word } from "../lib/types";
 import type { SavedEntry } from "../hooks/useSaved";
 import { Card, CharOnlyCard } from "./Card";
@@ -13,8 +13,6 @@ interface Props {
   chars: Record<string, Char>;
   onOpenWord: (word: string) => void;
   onOpenChar: (char: string) => void;
-  onExport: () => void;
-  onImport: (items: string[]) => Promise<{ added: number; total: number }>;
 }
 
 type SortMode = "recent" | "pinyin" | "strokes" | "hsk" | "common";
@@ -37,23 +35,6 @@ function loadSortMode(): SortMode {
     /* ignore */
   }
   return "recent";
-}
-
-// Accepts the export shape {app, saved: [...]} OR a bare array of strings.
-function parseExport(text: string): string[] | null {
-  try {
-    const json: unknown = JSON.parse(text);
-    if (Array.isArray(json)) {
-      return json.filter((x): x is string => typeof x === "string");
-    }
-    if (json && typeof json === "object" && Array.isArray((json as { saved?: unknown }).saved)) {
-      const arr = (json as { saved: unknown[] }).saved;
-      return arr.filter((x): x is string => typeof x === "string");
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 function renderCard(
@@ -102,10 +83,7 @@ export function SavedShelf({
   chars,
   onOpenWord,
   onOpenChar,
-  onExport,
-  onImport,
 }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const isEmpty = savedList.length === 0;
 
   const [sortMode, setSortMode] = useState<SortMode>(loadSortMode);
@@ -220,33 +198,12 @@ export function SavedShelf({
   const sortedReview = sortList(reviewList);
   const sortedLearned = sortList(learnedList);
   const sortedWrote = sortList(wroteList);
+  const sortedAll = sortList(savedList);
 
-  const triggerImport = () => fileRef.current?.click();
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow re-picking the same file
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const items = parseExport(text);
-      if (items === null) {
-        alert("That doesn't look like a saved-words export file.");
-        return;
-      }
-      if (items.length === 0) {
-        alert("File contains no saved words.");
-        return;
-      }
-      const { added, total } = await onImport(items);
-      const skipped = total - added;
-      const skippedNote = skipped > 0 ? ` (${skipped} already saved)` : "";
-      alert(`Imported ${added} word${added === 1 ? "" : "s"}${skippedNote}.`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      alert(`Import failed: ${message}`);
-    }
-  };
+  // Recent sort: keep things grouped by status section. Any other sort:
+  // section split is meaningless (you'd be ordering across boundaries
+  // anyway), so collapse into one flat grid.
+  const sectioned = sortMode === "recent";
 
   return (
     <section className="saved-section">
@@ -257,35 +214,7 @@ export function SavedShelf({
             <span className="shelf-count">· {savedOnlyList.length}</span>
           )}
         </div>
-        <div className="shelf-actions">
-          {!isEmpty && (
-            <button
-              className="shelf-action"
-              type="button"
-              title="Download your saved words as a JSON file"
-              onClick={onExport}
-            >
-              Export ⤓
-            </button>
-          )}
-          <button
-            className="shelf-action"
-            type="button"
-            title="Import a saved-words JSON file"
-            onClick={triggerImport}
-          >
-            Import ⤒
-          </button>
-        </div>
       </div>
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="application/json,.json"
-        hidden
-        onChange={handleFile}
-      />
 
       {!isEmpty && (
         <div className="sort-bar" role="tablist" aria-label="Sort saved words">
@@ -311,57 +240,65 @@ export function SavedShelf({
             Search above to find a word, then tap ☆ to save it here.
           </div>
         </div>
-      ) : savedOnlyList.length === 0 ? (
-        <div className="saved-empty">
-          <div className="saved-empty-hint">
-            Every saved word has a higher status. Save a new word to fill this section.
-          </div>
+      ) : !sectioned ? (
+        <div className="saved-grid">
+          {sortedAll.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
         </div>
       ) : (
-        <div className="saved-grid">
-          {sortedSavedOnly.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
-        </div>
-      )}
-
-      {reviewList.length > 0 && (
         <>
-          <div className="shelf-header shelf-header-secondary">
-            <div className="shelf-title">
-              Review
-              <span className="shelf-count">· {reviewList.length}</span>
+          {savedOnlyList.length > 0 ? (
+            <div className="saved-grid">
+              {sortedSavedOnly.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
             </div>
-          </div>
-          <div className="saved-grid">
-            {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
-          </div>
-        </>
-      )}
+          ) : (
+            <div className="saved-empty">
+              <div className="saved-empty-hint">
+                Every saved word has a higher status. Save a new word to fill this section.
+              </div>
+            </div>
+          )}
 
-      {learnedList.length > 0 && (
-        <>
-          <div className="shelf-header shelf-header-secondary">
-            <div className="shelf-title">
-              Learned
-              <span className="shelf-count">· {learnedList.length}</span>
-            </div>
-          </div>
-          <div className="saved-grid">
-            {sortedLearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
-          </div>
-        </>
-      )}
+          {reviewList.length > 0 && (
+            <>
+              <div className="shelf-header shelf-header-secondary">
+                <div className="shelf-title">
+                  Need to learn
+                  <span className="shelf-count">· {reviewList.length}</span>
+                </div>
+              </div>
+              <div className="saved-grid">
+                {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+              </div>
+            </>
+          )}
 
-      {wroteList.length > 0 && (
-        <>
-          <div className="shelf-header shelf-header-secondary">
-            <div className="shelf-title">
-              Wrote
-              <span className="shelf-count">· {wroteList.length}</span>
-            </div>
-          </div>
-          <div className="saved-grid">
-            {sortedWrote.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
-          </div>
+          {learnedList.length > 0 && (
+            <>
+              <div className="shelf-header shelf-header-secondary">
+                <div className="shelf-title">
+                  Learned
+                  <span className="shelf-count">· {learnedList.length}</span>
+                </div>
+              </div>
+              <div className="saved-grid">
+                {sortedLearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+              </div>
+            </>
+          )}
+
+          {wroteList.length > 0 && (
+            <>
+              <div className="shelf-header shelf-header-secondary">
+                <div className="shelf-title">
+                  Wrote
+                  <span className="shelf-count">· {wroteList.length}</span>
+                </div>
+              </div>
+              <div className="saved-grid">
+                {sortedWrote.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+              </div>
+            </>
+          )}
         </>
       )}
     </section>
