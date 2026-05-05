@@ -8,6 +8,7 @@ interface Props {
   savedList: SavedEntry[];
   learned: Set<string>;
   wrote: Set<string>;
+  review: Set<string>;
   findWord: (key: string) => Word | null;
   chars: Record<string, Char>;
   onOpenWord: (word: string) => void;
@@ -96,6 +97,7 @@ export function SavedShelf({
   savedList,
   learned,
   wrote,
+  review,
   findWord,
   chars,
   onOpenWord,
@@ -198,20 +200,24 @@ export function SavedShelf({
     return arr;
   }
 
-  // Three buckets, by highest tier achieved:
-  //   wrote            ✒ Wrote
-  //   learned !wrote   🎓 Learned
-  //   !learned         ★ Saved
+  // Four mutually-exclusive status buckets. Order matches the dropdown:
+  //   review (❗)   — needs more work
+  //   wrote (✒)    — can write
+  //   learned (🎓) — memorized
+  //   saved (★)    — base / nothing else
+  const reviewList: SavedEntry[] = [];
   const wroteList: SavedEntry[] = [];
   const learnedList: SavedEntry[] = [];
-  const unlearnedList: SavedEntry[] = [];
+  const savedOnlyList: SavedEntry[] = [];
   for (const e of savedList) {
     if (wrote.has(e.word)) wroteList.push(e);
     else if (learned.has(e.word)) learnedList.push(e);
-    else unlearnedList.push(e);
+    else if (review.has(e.word)) reviewList.push(e);
+    else savedOnlyList.push(e);
   }
 
-  const sortedUnlearned = sortList(unlearnedList);
+  const sortedSavedOnly = sortList(savedOnlyList);
+  const sortedReview = sortList(reviewList);
   const sortedLearned = sortList(learnedList);
   const sortedWrote = sortList(wroteList);
 
@@ -247,8 +253,8 @@ export function SavedShelf({
       <div className="shelf-header">
         <div className="shelf-title">
           Saved
-          {unlearnedList.length > 0 && (
-            <span className="shelf-count">· {unlearnedList.length}</span>
+          {savedOnlyList.length > 0 && (
+            <span className="shelf-count">· {savedOnlyList.length}</span>
           )}
         </div>
         <div className="shelf-actions">
@@ -302,19 +308,33 @@ export function SavedShelf({
         <div className="saved-empty">
           <div>No saved words yet.</div>
           <div className="saved-empty-hint">
-            Search above to find a word, then tap ☆ on its character to save it here.
+            Search above to find a word, then tap ☆ to save it here.
           </div>
         </div>
-      ) : unlearnedList.length === 0 ? (
+      ) : savedOnlyList.length === 0 ? (
         <div className="saved-empty">
           <div className="saved-empty-hint">
-            Everything you've saved is marked learned. Tap ☆ on a new word to save it.
+            Every saved word has a higher status. Save a new word to fill this section.
           </div>
         </div>
       ) : (
         <div className="saved-grid">
-          {sortedUnlearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+          {sortedSavedOnly.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
         </div>
+      )}
+
+      {reviewList.length > 0 && (
+        <>
+          <div className="shelf-header shelf-header-secondary">
+            <div className="shelf-title">
+              Review
+              <span className="shelf-count">· {reviewList.length}</span>
+            </div>
+          </div>
+          <div className="saved-grid">
+            {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+          </div>
+        </>
       )}
 
       {learnedList.length > 0 && (

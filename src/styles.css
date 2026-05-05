@@ -489,6 +489,89 @@ body {
   min-width: 62px;
   justify-content: flex-end;
 }
+
+/* Status button + dropdown — single control replacing the old star / cap /
+   brush trio. Used in the tree-modal header, CharPopup, and Cards. */
+.status-wrapper { position: relative; display: inline-flex; }
+.status-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 6px;
+  border-radius: 8px;
+  line-height: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.status-btn:hover, .status-btn:focus-visible,
+.status-btn.is-open { background: var(--surface-2); outline: none; }
+.status-btn.status-saved   { color: #d97706; }
+.status-btn.status-learned { color: #2e7d32; }
+.status-btn.status-wrote   { color: #7a3aa8; }
+.status-btn.status-review  { color: #c2410c; }
+@media (prefers-color-scheme: dark) {
+  .status-btn.status-saved   { color: #f59e0b; }
+  .status-btn.status-learned { color: #6dba84; }
+  .status-btn.status-wrote   { color: #b07ad8; }
+  .status-btn.status-review  { color: #fb923c; }
+}
+.status-icon-saved   { color: inherit; }
+.status-icon-learned { color: inherit; }
+.status-icon-wrote   { color: inherit; }
+.status-icon-review  { color: inherit; }
+.status-icon-empty   { color: var(--muted); }
+
+.status-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 80;
+  min-width: 160px;
+  background: var(--surface, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.status-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.status-menu-item:hover, .status-menu-item:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.status-menu-icon { display: inline-flex; line-height: 0; }
+.status-menu-item.status-saved   .status-menu-icon { color: #d97706; }
+.status-menu-item.status-learned .status-menu-icon { color: #2e7d32; }
+.status-menu-item.status-wrote   .status-menu-icon { color: #7a3aa8; }
+.status-menu-item.status-review  .status-menu-icon { color: #c2410c; }
+.status-menu-item.status-remove  { color: var(--muted); }
+.status-menu-item.is-current {
+  background: var(--surface-2);
+  font-weight: 500;
+}
+@media (prefers-color-scheme: dark) {
+  .status-menu-item.status-saved   .status-menu-icon { color: #f59e0b; }
+  .status-menu-item.status-learned .status-menu-icon { color: #6dba84; }
+  .status-menu-item.status-wrote   .status-menu-icon { color: #b07ad8; }
+  .status-menu-item.status-review  .status-menu-icon { color: #fb923c; }
+}
+
 .header-star,
 .header-grad,
 .header-brush {
@@ -827,23 +910,10 @@ body {
   border-radius: 8px;
 }
 .popup-close:hover { background: var(--surface-2); color: var(--text); }
-.popup-star {
+.popup-status {
   position: absolute;
   top: 8px;
   right: 10px;
-  background: none;
-  border: none;
-  font-size: 26px;
-  line-height: 1;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 8px;
-}
-.popup-star:hover { background: var(--surface-2); color: var(--text); }
-.popup-star.active { color: #d97706; }
-@media (prefers-color-scheme: dark) {
-  .popup-star.active { color: #f59e0b; }
 }
 .popup-pinyin {
   font-size: 18px;

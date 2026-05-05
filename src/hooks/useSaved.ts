@@ -4,14 +4,16 @@ import { supabase } from "../lib/supabase";
 const SAVED_KEY = "chinese.saved";
 const LEARNED_KEY = "chinese.learned";
 const WROTE_KEY = "chinese.wrote";
+const REVIEW_KEY = "chinese.review";
+
+export type Status = "saved" | "learned" | "wrote" | "review";
 
 export interface SavedEntry {
   word: string;
-  savedAt: number; // epoch ms
+  savedAt: number;
 }
 
 // localStorage v2 shape: { version: 2, items: [[word, ts], ...] }.
-// v1 shape (legacy, savedKey only): plain string[].
 function loadLocalMap(key: string): Map<string, number> {
   try {
     const raw = localStorage.getItem(key);
@@ -53,12 +55,14 @@ interface UseSavedOpts {
   userId: string | null;
 }
 
-// Three-tier saved/learned/wrote progression. Each tier implies the previous:
-//   ★ saved       (user_saves row exists)
-//   🎓 learned    (learned_at NOT NULL) ⇒ also saved
-//   ✒  wrote      (wrote_at NOT NULL)   ⇒ also learned ⇒ also saved
+// Four mutually-exclusive statuses for any saved word:
+//   ★  saved    (the base — set by saved_at; no other tier set)
+//   🎓 learned  (learned_at IS NOT NULL)
+//   ✒  wrote    (wrote_at IS NOT NULL)
+//   ❗ review   (review_at IS NOT NULL — "needs another look")
 //
-// All three live in localStorage (offline resilience + survives sign-out)
+// At most one of {learned_at, wrote_at, review_at} is non-null at a time.
+// All four live in localStorage (offline resilience + survives sign-out)
 // AND mirror to user_saves columns when signed in.
 export function useSaved({ userId }: UseSavedOpts) {
   const [items, setItems] = useState<Map<string, number>>(() => loadLocalMap(SAVED_KEY));
@@ -68,6 +72,9 @@ export function useSaved({ userId }: UseSavedOpts) {
   const [wroteItems, setWroteItems] = useState<Map<string, number>>(() =>
     loadLocalMap(WROTE_KEY),
   );
+  const [reviewItems, setReviewItems] = useState<Map<string, number>>(() =>
+    loadLocalMap(REVIEW_KEY),
+  );
   const [syncing, setSyncing] = useState(false);
   const lastSyncedUserRef = useRef<string | null>(null);
 
@@ -75,12 +82,25 @@ export function useSaved({ userId }: UseSavedOpts) {
   const saved = useMemo(() => new Set(items.keys()), [items]);
   const learned = useMemo(() => new Set(learnedItems.keys()), [learnedItems]);
   const wrote = useMemo(() => new Set(wroteItems.keys()), [wroteItems]);
+  const review = useMemo(() => new Set(reviewItems.keys()), [reviewItems]);
   const savedList = useMemo<SavedEntry[]>(
     () =>
       [...items.entries()]
         .sort(([, a], [, b]) => b - a)
         .map(([word, savedAt]) => ({ word, savedAt })),
     [items],
+  );
+
+  // Resolve a word's current status.
+  const getStatus = useCallback(
+    (key: string): Status | null => {
+      if (!items.has(key)) return null;
+      if (wroteItems.has(key)) return "wrote";
+      if (learnedItems.has(key)) return "learned";
+      if (reviewItems.has(key)) return "review";
+      return "saved";
+    },
+    [items, wroteItems, learnedItems, reviewItems],
   );
 
   // Initial sync when a user signs in (or switches accounts).
@@ -95,31 +115,29 @@ export function useSaved({ userId }: UseSavedOpts) {
     let cancelled = false;
     setSyncing(true);
     (async () => {
-      // Try the full shape first. If migration 0005 (wrote_at) hasn't applied
-      // for some reason, fall back to the v25 shape so the page still
-      // populates instead of going empty on a 400.
       type FullRow = {
         word: string;
         saved_at: string;
         learned_at: string | null;
         wrote_at: string | null;
+        review_at: string | null;
       };
-      type LegacyRow = Omit<FullRow, "wrote_at">;
+      type LegacyRow = Omit<FullRow, "review_at">;
       let rows: FullRow[] = [];
       {
         const { data, error } = await supabase
           .from("user_saves")
-          .select("word, saved_at, learned_at, wrote_at")
+          .select("word, saved_at, learned_at, wrote_at, review_at")
           .eq("user_id", userId);
         if (cancelled) return;
         if (error) {
           console.warn(
-            "user_saves wide select failed, falling back without wrote_at:",
+            "user_saves wide select failed, falling back without review_at:",
             error,
           );
           const fallback = await supabase
             .from("user_saves")
-            .select("word, saved_at, learned_at")
+            .select("word, saved_at, learned_at, wrote_at")
             .eq("user_id", userId);
           if (cancelled) return;
           if (fallback.error) {
@@ -127,7 +145,7 @@ export function useSaved({ userId }: UseSavedOpts) {
             setSyncing(false);
             return;
           }
-          rows = (fallback.data as LegacyRow[]).map((r) => ({ ...r, wrote_at: null }));
+          rows = (fallback.data as LegacyRow[]).map((r) => ({ ...r, review_at: null }));
         } else {
           rows = (data || []) as FullRow[];
         }
@@ -136,15 +154,18 @@ export function useSaved({ userId }: UseSavedOpts) {
       const remoteSaved = new Map<string, number>();
       const remoteLearned = new Map<string, number>();
       const remoteWrote = new Map<string, number>();
+      const remoteReview = new Map<string, number>();
       for (const r of rows) {
         remoteSaved.set(r.word, new Date(r.saved_at).getTime());
-        if (r.learned_at) remoteLearned.set(r.word, new Date(r.learned_at).getTime());
         if (r.wrote_at) remoteWrote.set(r.word, new Date(r.wrote_at).getTime());
+        else if (r.learned_at) remoteLearned.set(r.word, new Date(r.learned_at).getTime());
+        else if (r.review_at) remoteReview.set(r.word, new Date(r.review_at).getTime());
       }
 
       let localSavedBefore: Map<string, number> = new Map();
       let localLearnedBefore: Map<string, number> = new Map();
       let localWroteBefore: Map<string, number> = new Map();
+      let localReviewBefore: Map<string, number> = new Map();
 
       setItems((prev) => {
         localSavedBefore = prev;
@@ -167,17 +188,26 @@ export function useSaved({ userId }: UseSavedOpts) {
         persistLocalMap(WROTE_KEY, merged);
         return merged;
       });
+      setReviewItems((prev) => {
+        localReviewBefore = prev;
+        const merged = new Map(prev);
+        for (const [word, ts] of remoteReview) merged.set(word, ts);
+        persistLocalMap(REVIEW_KEY, merged);
+        return merged;
+      });
 
       const allLocalKeys = new Set<string>([
         ...localSavedBefore.keys(),
         ...localLearnedBefore.keys(),
         ...localWroteBefore.keys(),
+        ...localReviewBefore.keys(),
       ]);
       const toUpload = [...allLocalKeys].filter(
         (w) =>
           !remoteSaved.has(w) ||
           (localLearnedBefore.has(w) && !remoteLearned.has(w)) ||
-          (localWroteBefore.has(w) && !remoteWrote.has(w)),
+          (localWroteBefore.has(w) && !remoteWrote.has(w)) ||
+          (localReviewBefore.has(w) && !remoteReview.has(w)),
       );
       if (toUpload.length > 0) {
         const now = new Date().toISOString();
@@ -186,6 +216,7 @@ export function useSaved({ userId }: UseSavedOpts) {
           word: w,
           ...(localLearnedBefore.has(w) ? { learned_at: now } : {}),
           ...(localWroteBefore.has(w) ? { wrote_at: now } : {}),
+          ...(localReviewBefore.has(w) ? { review_at: now } : {}),
         }));
         const { error: upErr } = await supabase
           .from("user_saves")
@@ -200,168 +231,141 @@ export function useSaved({ userId }: UseSavedOpts) {
     };
   }, [userId]);
 
-  // Toggle saved (star). When turning OFF, also clears learned + wrote since
-  // both depend on saved.
-  const toggle = useCallback(
-    (key: string) => {
-      let willBeSaved = false;
-      setItems((prev) => {
-        const next = new Map(prev);
-        if (next.has(key)) {
-          next.delete(key);
-          willBeSaved = false;
-        } else {
-          next.set(key, Date.now());
-          willBeSaved = true;
-        }
-        persistLocalMap(SAVED_KEY, next);
-        return next;
-      });
+  // Single setter for the new mutually-exclusive status model.
+  // Pass null to remove the word entirely.
+  const setStatus = useCallback(
+    (key: string, next: Status | null) => {
+      const now = Date.now();
 
-      if (!willBeSaved) {
-        // cascade clear
+      if (next === null) {
+        setItems((prev) => {
+          if (!prev.has(key)) return prev;
+          const m = new Map(prev);
+          m.delete(key);
+          persistLocalMap(SAVED_KEY, m);
+          return m;
+        });
         setLearnedItems((prev) => {
           if (!prev.has(key)) return prev;
-          const next = new Map(prev);
-          next.delete(key);
-          persistLocalMap(LEARNED_KEY, next);
-          return next;
+          const m = new Map(prev);
+          m.delete(key);
+          persistLocalMap(LEARNED_KEY, m);
+          return m;
         });
         setWroteItems((prev) => {
           if (!prev.has(key)) return prev;
-          const next = new Map(prev);
-          next.delete(key);
-          persistLocalMap(WROTE_KEY, next);
-          return next;
+          const m = new Map(prev);
+          m.delete(key);
+          persistLocalMap(WROTE_KEY, m);
+          return m;
         });
-      }
-
-      if (userId) {
-        if (willBeSaved) {
-          supabase
-            .from("user_saves")
-            .upsert({ user_id: userId, word: key }, { onConflict: "user_id,word" })
-            .then(({ error }) => {
-              if (error) console.error("insert user_saves failed:", error);
-            });
-        } else {
+        setReviewItems((prev) => {
+          if (!prev.has(key)) return prev;
+          const m = new Map(prev);
+          m.delete(key);
+          persistLocalMap(REVIEW_KEY, m);
+          return m;
+        });
+        if (userId) {
           supabase
             .from("user_saves")
             .delete()
             .eq("user_id", userId)
             .eq("word", key)
-            .then(({ error }) => {
-              if (error) console.error("delete user_saves failed:", error);
-            });
+            .then(({ error }) => error && console.error("delete user_saves failed:", error));
         }
+        return;
       }
-    },
-    [userId],
-  );
 
-  // Toggle learned (cap). Implies saved — auto-saves if not already. When
-  // turning OFF, also clears wrote (wrote implies learned).
-  const toggleLearned = useCallback(
-    (key: string) => {
-      let willBeLearned = false;
-
+      // Ensure the word is in the saved map.
       setItems((prev) => {
         if (prev.has(key)) return prev;
-        const next = new Map(prev);
-        next.set(key, Date.now());
-        persistLocalMap(SAVED_KEY, next);
-        return next;
+        const m = new Map(prev);
+        m.set(key, now);
+        persistLocalMap(SAVED_KEY, m);
+        return m;
       });
 
-      setLearnedItems((prev) => {
-        const next = new Map(prev);
-        if (next.has(key)) {
-          next.delete(key);
-          willBeLearned = false;
-        } else {
-          next.set(key, Date.now());
-          willBeLearned = true;
-        }
-        persistLocalMap(LEARNED_KEY, next);
-        return next;
-      });
-
-      if (!willBeLearned) {
-        // cascade clear: turning off learned also clears wrote
-        setWroteItems((prev) => {
-          if (!prev.has(key)) return prev;
-          const next = new Map(prev);
-          next.delete(key);
-          persistLocalMap(WROTE_KEY, next);
-          return next;
+      // Mutually-exclusive higher tiers.
+      const set = (
+        match: Status,
+        prevMap: Map<string, number>,
+        setter: typeof setItems,
+        storageKey: string,
+      ) => {
+        const want = next === match;
+        const has = prevMap.has(key);
+        if (want === has) return;
+        setter((prev) => {
+          const m = new Map(prev);
+          if (want) m.set(key, now);
+          else m.delete(key);
+          persistLocalMap(storageKey, m);
+          return m;
         });
-      }
-
-      if (userId) {
-        const now = new Date().toISOString();
-        const row = willBeLearned
-          ? { user_id: userId, word: key, learned_at: now }
-          : { user_id: userId, word: key, learned_at: null, wrote_at: null };
-        supabase
-          .from("user_saves")
-          .upsert(row, { onConflict: "user_id,word" })
-          .then(({ error }) => {
-            if (error) console.error("toggleLearned upsert failed:", error);
-          });
-      }
-    },
-    [userId],
-  );
-
-  // Toggle wrote (brush). Implies learned + saved — auto-saves and auto-caps
-  // if not already. Turning OFF clears only wrote (cap and star stay).
-  const toggleWrote = useCallback(
-    (key: string) => {
-      let willBeWrote = false;
-      const now = Date.now();
-
-      setItems((prev) => {
-        if (prev.has(key)) return prev;
-        const next = new Map(prev);
-        next.set(key, now);
-        persistLocalMap(SAVED_KEY, next);
-        return next;
-      });
-      setLearnedItems((prev) => {
-        if (prev.has(key)) return prev;
-        const next = new Map(prev);
-        next.set(key, now);
-        persistLocalMap(LEARNED_KEY, next);
-        return next;
-      });
-
-      setWroteItems((prev) => {
-        const next = new Map(prev);
-        if (next.has(key)) {
-          next.delete(key);
-          willBeWrote = false;
-        } else {
-          next.set(key, now);
-          willBeWrote = true;
-        }
-        persistLocalMap(WROTE_KEY, next);
-        return next;
-      });
+      };
+      set("learned", learnedItems, setLearnedItems, LEARNED_KEY);
+      set("wrote", wroteItems, setWroteItems, WROTE_KEY);
+      set("review", reviewItems, setReviewItems, REVIEW_KEY);
 
       if (userId) {
         const iso = new Date(now).toISOString();
-        const row = willBeWrote
-          ? { user_id: userId, word: key, learned_at: iso, wrote_at: iso }
-          : { user_id: userId, word: key, wrote_at: null };
+        const row: Record<string, string | null> = {
+          user_id: userId,
+          word: key,
+          learned_at: next === "learned" ? iso : null,
+          wrote_at: next === "wrote" ? iso : null,
+          review_at: next === "review" ? iso : null,
+        };
         supabase
           .from("user_saves")
           .upsert(row, { onConflict: "user_id,word" })
           .then(({ error }) => {
-            if (error) console.error("toggleWrote upsert failed:", error);
+            if (error) {
+              // If review_at column hasn't been added yet, retry without it
+              // so the user's local state still mirrors as best it can.
+              if (
+                /column .*review_at/i.test(error.message || "") ||
+                /could not find the .* column/i.test(error.message || "")
+              ) {
+                const { review_at: _ignored, ...rest } = row;
+                void supabase
+                  .from("user_saves")
+                  .upsert(rest, { onConflict: "user_id,word" })
+                  .then(({ error: err2 }) => {
+                    if (err2) console.error("setStatus upsert (fallback) failed:", err2);
+                  });
+              } else {
+                console.error("setStatus upsert failed:", error);
+              }
+            }
           });
       }
     },
-    [userId],
+    [userId, learnedItems, wroteItems, reviewItems],
+  );
+
+  // Backwards-compat thin wrappers — older call-sites use these. Kept so the
+  // refactor doesn't have to touch every component at once. Toggling now
+  // means: if not in that tier → set the matching status; if in it → drop
+  // back to "saved" (or remove entirely for the star toggle).
+  const toggle = useCallback(
+    (key: string) => {
+      setStatus(key, items.has(key) ? null : "saved");
+    },
+    [setStatus, items],
+  );
+  const toggleLearned = useCallback(
+    (key: string) => {
+      setStatus(key, learnedItems.has(key) ? "saved" : "learned");
+    },
+    [setStatus, learnedItems],
+  );
+  const toggleWrote = useCallback(
+    (key: string) => {
+      setStatus(key, wroteItems.has(key) ? "saved" : "wrote");
+    },
+    [setStatus, wroteItems],
   );
 
   const importSaved = useCallback(
@@ -408,6 +412,10 @@ export function useSaved({ userId }: UseSavedOpts) {
       persistLocalMap(WROTE_KEY, new Map());
       return new Map();
     });
+    setReviewItems(() => {
+      persistLocalMap(REVIEW_KEY, new Map());
+      return new Map();
+    });
     if (userId) {
       const { error } = await supabase
         .from("user_saves")
@@ -429,8 +437,7 @@ export function useSaved({ userId }: UseSavedOpts) {
       items: savedList.map((s) => ({
         word: s.word,
         savedAt: s.savedAt,
-        learned: learnedItems.has(s.word),
-        wrote: wroteItems.has(s.word),
+        status: getStatus(s.word),
       })),
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -442,13 +449,16 @@ export function useSaved({ userId }: UseSavedOpts) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }, [savedList, learnedItems, wroteItems]);
+  }, [savedList, getStatus]);
 
   return {
     saved,
     savedList,
     learned,
     wrote,
+    review,
+    getStatus,
+    setStatus,
     toggle,
     toggleLearned,
     toggleWrote,

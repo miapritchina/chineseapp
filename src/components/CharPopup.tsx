@@ -1,18 +1,21 @@
 import { useEffect, useRef } from "react";
 import type { Char, Word } from "../lib/types";
+import { StatusButton } from "./StatusButton";
+import type { Status } from "../hooks/useSaved";
 
 interface Props {
   char: string;
   charData: Char | undefined;
   saved: Set<string>;
-  onToggleSave: (key: string) => void;
+  getStatus: (key: string) => Status | null;
+  setStatus: (key: string, next: Status | null) => void;
   onClose: () => void;
   onJumpToWord: (word: string) => void;
   onOpenAsTree: (char: string) => void;
   findWord: (key: string) => Word | null;
 }
 
-export function CharPopup({ char, charData, saved, onToggleSave, onClose, onJumpToWord, onOpenAsTree, findWord }: Props) {
+export function CharPopup({ char, charData, saved, getStatus, setStatus, onClose, onJumpToWord, onOpenAsTree, findWord }: Props) {
   const writerRef = useRef<HTMLDivElement>(null);
   const writerInstanceRef = useRef<any>(null);
 
@@ -66,7 +69,6 @@ export function CharPopup({ char, charData, saved, onToggleSave, onClose, onJump
 
   const replay = () => writerInstanceRef.current?.animateCharacter();
 
-  const isSaved = saved.has(char);
   const matches = [...saved].filter((w) => w !== char && w.includes(char));
 
   return (
@@ -76,15 +78,12 @@ export function CharPopup({ char, charData, saved, onToggleSave, onClose, onJump
         <button className="popup-close" type="button" aria-label="Close" onClick={onClose}>
           ×
         </button>
-        <button
-          className={`popup-star${isSaved ? " active" : ""}`}
-          type="button"
-          aria-pressed={isSaved}
-          aria-label={isSaved ? "Remove from saved" : "Save"}
-          onClick={() => onToggleSave(char)}
-        >
-          {isSaved ? "★" : "☆"}
-        </button>
+        <div className="popup-status">
+          <StatusButton
+            status={getStatus(char)}
+            onChange={(next) => setStatus(char, next)}
+          />
+        </div>
 
         {charData?.pinyin && <div className="popup-pinyin">{charData.pinyin}</div>}
 
