@@ -202,6 +202,31 @@ body {
   max-width: 880px;
   margin: 0 auto;
 }
+.search-mode-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.search-mode-tab {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-transform: uppercase;
+  -webkit-tap-highlight-color: transparent;
+}
+.search-mode-tab:hover { color: var(--text); border-color: var(--text); }
+.search-mode-tab.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
 .search-field { position: relative; display: block; }
 .search-bar input {
   width: 100%;

@@ -8,7 +8,8 @@ import { useModalStack, parseHash } from "./hooks/useModalStack";
 import { useAuth } from "./hooks/useAuth";
 import { wakeUp } from "./lib/supabase";
 
-import { SearchBar } from "./components/SearchBar";
+import { SearchBar, type SearchMode } from "./components/SearchBar";
+import { searchByComponent } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
@@ -38,6 +39,7 @@ export function App() {
   const { stack, push, pop } = useModalStack();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<SearchMode>("all");
   const [searchResults, setSearchResults] = useState<Word[]>([]);
   const [searching, setSearching] = useState(false);
   const [popupChar, setPopupChar] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export function App() {
     };
   }, [query]);
 
-  // Run search when the debounced query changes.
+  // Run search when the debounced query (or mode) changes.
   useEffect(() => {
     let cancelled = false;
     if (!debouncedQuery.trim()) {
@@ -75,6 +77,29 @@ export function App() {
       return;
     }
     setSearching(true);
+
+    // "By component" mode walks the saved set's component closure locally
+    // (no Supabase call) and hydrates only the matching rows.
+    if (searchMode === "byComponent") {
+      const matches = searchByComponent(
+        debouncedQuery,
+        savedList.map((s) => s.word),
+        charsData.chars,
+      );
+      (async () => {
+        if (matches.length > 0) await dict.ensureCached(matches);
+        if (cancelled) return;
+        const hydrated = matches
+          .map((w) => dict.findWord(w))
+          .filter((w): w is Word => !!w);
+        setSearchResults(hydrated);
+        setSearching(false);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
     (async () => {
       const rows = await dict.search(debouncedQuery);
       if (cancelled) return;
@@ -84,7 +109,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, dict.search]);
+  }, [debouncedQuery, searchMode, savedList, charsData.chars, dict.search, dict.ensureCached, dict.findWord]);
 
   // Pre-hydrate saved words so the Saved shelf renders without per-card flicker.
   useEffect(() => {
@@ -235,7 +260,13 @@ export function App() {
         />
       )}
 
-      <SearchBar value={query} onChange={setQuery} onEnter={handleEnter} />
+      <SearchBar
+        value={query}
+        onChange={setQuery}
+        onEnter={handleEnter}
+        mode={searchMode}
+        onModeChange={setSearchMode}
+      />
 
       {debouncedQuery.trim() ? (
         searching && searchResults.length === 0 ? (
@@ -297,7 +328,7 @@ export function App() {
       )}
 
       <div className="page-id">
-        chinese v53 ·{" "}
+        chinese v54 ·{" "}
         <a href="./network/" className="page-id-link">network →</a>{" "}
         <a href="./components/" className="page-id-link">components →</a>
       </div>
