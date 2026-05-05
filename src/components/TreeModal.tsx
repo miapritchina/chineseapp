@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import type { Char, ModalEntry, Word } from "../lib/types";
 import { buildCharTree, buildWordTree } from "../lib/tree";
 import { DecompositionTree } from "./DecompositionTree";
+import { StatusButton } from "./StatusButton";
+import type { Status } from "../hooks/useSaved";
 
 interface Props {
   entry: ModalEntry;
@@ -9,11 +11,8 @@ interface Props {
   chars: Record<string, Char>;
   stackLen: number;
   saved: Set<string>;
-  learned: Set<string>;
-  wrote: Set<string>;
-  onToggleSave: (key: string) => void;
-  onToggleLearned: (key: string) => void;
-  onToggleWrote: (key: string) => void;
+  getStatus: (key: string) => Status | null;
+  setStatus: (key: string, next: Status | null) => void;
   onPop: () => void;
   onNodeClick: (char: string) => void;
 }
@@ -24,11 +23,8 @@ export function TreeModal({
   chars,
   stackLen,
   saved,
-  learned,
-  wrote,
-  onToggleSave,
-  onToggleLearned,
-  onToggleWrote,
+  getStatus,
+  setStatus,
   onPop,
   onNodeClick,
 }: Props) {
@@ -44,9 +40,6 @@ export function TreeModal({
   const titlePinyin =
     entry.kind === "word" ? word?.pinyin ?? "" : chars[entry.key]?.pinyin ?? "";
   const hsk = entry.kind === "word" ? word?.hsk ?? null : null;
-  const isSaved = saved.has(entry.key);
-  const isLearned = learned.has(entry.key);
-  const isWrote = wrote.has(entry.key);
 
   return (
     <div className="modal-root open" aria-hidden="false">
@@ -60,45 +53,11 @@ export function TreeModal({
           {hsk != null && <span className="title-hsk">HSK {hsk}</span>}
         </h2>
         <div className="header-actions">
-          {/* Brush — "I learned to write this." Implies cap + star. */}
-          <button
-            className={`header-brush${isWrote ? " active" : ""}`}
-            type="button"
-            aria-pressed={isWrote}
-            aria-label={isWrote ? "Mark as not yet wrote" : "Mark as learned to write"}
-            title={isWrote ? "Wrote · tap to unmark" : "Mark as learned to write"}
-            onClick={() => onToggleWrote(entry.key)}
-          >
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-              {/* Calligraphy brush — slanted handle + ferrule + tapered tip. */}
-              <path d="M16.6 2.4 L21.6 7.4 L9.6 19.4 L4.6 14.4 Z" />
-              <path d="M3 21 L8 16 L8.2 19.8 Z" opacity="0.85" />
-            </svg>
-          </button>
-          <button
-            className={`header-grad${isLearned ? " active" : ""}`}
-            type="button"
-            aria-pressed={isLearned}
-            aria-label={isLearned ? "Mark as not learned" : "Mark as learned"}
-            title={isLearned ? "Learned · tap to unmark" : "Mark as learned"}
-            onClick={() => onToggleLearned(entry.key)}
-          >
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-              <path d="M12 3 L23 9 L12 15 L1 9 Z" />
-              <path d="M5 11.4 L5 16 C5 16.9 8.2 18.2 12 18.2 C15.8 18.2 19 16.9 19 16 L19 11.4 L12 14.6 Z" />
-              <path d="M21.6 9.4 L21.6 13.5 C21.6 14 22 14.4 22.4 14.4 C22.8 14.4 23.2 14 23.2 13.5 L23.2 9.4 Z" />
-            </svg>
-          </button>
-          <button
-            className={`header-star${isSaved ? " active" : ""}`}
-            type="button"
-            aria-pressed={isSaved}
-            aria-label={isSaved ? "Remove from saved" : "Save"}
-            title={isSaved ? "Saved · tap to remove" : "Save to my words"}
-            onClick={() => onToggleSave(entry.key)}
-          >
-            {isSaved ? "★" : "☆"}
-          </button>
+          <StatusButton
+            status={getStatus(entry.key)}
+            variant="iconLg"
+            onChange={(next) => setStatus(entry.key, next)}
+          />
         </div>
       </div>
       <div className="modal-body">

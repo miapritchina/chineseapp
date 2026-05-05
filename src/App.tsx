@@ -29,9 +29,9 @@ export function App() {
     savedList,
     learned,
     wrote,
-    toggle,
-    toggleLearned,
-    toggleWrote,
+    review,
+    getStatus,
+    setStatus,
     exportSaved,
     importSaved,
     clearAll,
@@ -254,6 +254,7 @@ export function App() {
             savedList={savedList}
             learned={learned}
             wrote={wrote}
+            review={review}
             findWord={dict.findWord}
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
@@ -271,11 +272,8 @@ export function App() {
           chars={charsData.chars}
           stackLen={stack.length}
           saved={saved}
-          learned={learned}
-          wrote={wrote}
-          onToggleSave={toggle}
-          onToggleLearned={toggleLearned}
-          onToggleWrote={toggleWrote}
+          getStatus={getStatus}
+          setStatus={setStatus}
           onPop={pop}
           onNodeClick={openCharPopup}
         />
@@ -286,7 +284,8 @@ export function App() {
           char={popupChar}
           charData={charsData.chars[popupChar]}
           saved={saved}
-          onToggleSave={toggle}
+          getStatus={getStatus}
+          setStatus={setStatus}
           onClose={() => setPopupChar(null)}
           onJumpToWord={(w) => void openWord(w)}
           onOpenAsTree={openCharAsTree}
@@ -301,7 +300,7 @@ export function App() {
       )}
 
       <div className="page-id">
-        chinese v51 ·{" "}
+        chinese v52 ·{" "}
         <a href="./network/" className="page-id-link">network →</a>{" "}
         <a href="./components/" className="page-id-link">components →</a>
       </div>
