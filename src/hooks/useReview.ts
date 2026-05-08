@@ -50,6 +50,10 @@ interface UseReviewOpts {
   // data-chars.json content; needed for the cascade walk down to
   // constituent chars and components.
   chars: Record<string, Char>;
+  // Subset of single-character saved items that are known phonetic
+  // components (from public/phonetic-components.json). Members get an
+  // extra componentSound card on top of the standard recognition one.
+  phoneticComponentKeys?: Set<string>;
 }
 
 function loadLocalCards(): Map<string, ReviewCard> {
@@ -86,7 +90,12 @@ function persistLocalCards(cards: Map<string, ReviewCard>) {
 const FIRST_FACET: Facet = "recognition";
 const FIRST_KIND: ItemKind = "word";
 
-export function useReview({ userId, scheduledKeys, chars }: UseReviewOpts) {
+export function useReview({
+  userId,
+  scheduledKeys,
+  chars,
+  phoneticComponentKeys,
+}: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
   const lastSyncedUserRef = useRef<string | null>(null);
@@ -128,8 +137,22 @@ export function useReview({ userId, scheduledKeys, chars }: UseReviewOpts) {
         }
       }
     }
+    // componentSound: any saved single-char item that's listed in the
+    // productive phonetic-components data file. Only seeds if data has
+    // loaded; if not, this just doesn't seed (no harm).
+    if (phoneticComponentKeys && phoneticComponentKeys.size > 0) {
+      for (const key of scheduledKeys) {
+        if ([...key].length !== 1) continue;
+        if (!phoneticComponentKeys.has(key)) continue;
+        out.set(rowId(key, "component", "componentSound"), {
+          itemKey: key,
+          itemKind: "component",
+          facet: "componentSound",
+        });
+      }
+    }
     return out;
-  }, [scheduledKeys, chars]);
+  }, [scheduledKeys, chars, phoneticComponentKeys]);
 
   // Reconcile: ensure every expected card exists; drop any auto-seeded
   // facet card whose key is no longer expected. Cascaded char recognition
@@ -158,12 +181,13 @@ export function useReview({ userId, scheduledKeys, chars }: UseReviewOpts) {
           changed = true;
         }
       }
-      // Drop word/recognition + char/phoneticTap rows that aren't expected
-      // anymore. char/recognition is left alone (cascade-managed).
+      // Drop auto-seeded facet rows that aren't expected anymore.
+      // Cascade-seeded char/recognition cards are independent and survive.
       for (const [id, row] of next) {
         const isAutoFacet =
           (row.itemKind === "word" && row.facet === "recognition") ||
-          (row.itemKind === "char" && row.facet === "phoneticTap");
+          (row.itemKind === "char" && row.facet === "phoneticTap") ||
+          (row.itemKind === "component" && row.facet === "componentSound");
         if (isAutoFacet && !expectedCards.has(id)) {
           next.delete(id);
           changed = true;

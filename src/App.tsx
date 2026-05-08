@@ -19,7 +19,9 @@ import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
 import { ComponentTable } from "./components/ComponentTable";
+import { PhoneticsPage } from "./components/PhoneticsPage";
 import { useReview } from "./hooks/useReview";
+import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 
 import type { Word } from "./lib/types";
 
@@ -51,16 +53,26 @@ export function App() {
   const [showReview, setShowReview] = useState(
     typeof window !== "undefined" && window.location.hash === "#/review",
   );
+  const [showPhonetics, setShowPhonetics] = useState(
+    typeof window !== "undefined" && window.location.hash === "#/phonetics",
+  );
 
   // Every saved word is queued for review — the user's stated goal is to
   // learn all of them, and the four statuses are about progression
   // (★ → 📕 → 🎓 → ✒), not about what's scheduled.
   const scheduledKeys = saved;
 
+  const phonetics = usePhoneticComponents();
+  const phoneticComponentKeys = useMemo(
+    () => new Set(phonetics.components.map((c) => c.char)),
+    [phonetics.components],
+  );
+
   const { dueCards, grade, attributeFailure } = useReview({
     userId: auth.user?.id ?? null,
     scheduledKeys,
     chars: charsData.chars,
+    phoneticComponentKeys,
   });
 
   // Wake the Supabase project early to mask cold-start latency.
@@ -68,21 +80,24 @@ export function App() {
     wakeUp();
   }, []);
 
-  // Track the review page via the URL hash so back/forward work and the
-  // user can deep-link to /Ai-/#/review from the hamburger.
+  // Track full-screen pages via URL hash. Same pattern as the modal stack
+  // (in useModalStack); kept inline here because these pages are
+  // top-level, not nested.
   useEffect(() => {
-    const onHash = () => setShowReview(window.location.hash === "#/review");
+    const onHash = () => {
+      setShowReview(window.location.hash === "#/review");
+      setShowPhonetics(window.location.hash === "#/phonetics");
+    };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  const openReview = () => {
-    window.location.hash = "#/review";
-  };
-  const closeReview = () => {
-    if (window.location.hash === "#/review") {
-      history.back();
-    } else {
-      setShowReview(false);
+  const closeHashPage = (target: string) => {
+    if (window.location.hash === target) history.back();
+    else {
+      // Synchronously clear the local flag so we don't paint a frame of
+      // the page after the user closes it before hashchange fires.
+      if (target === "#/review") setShowReview(false);
+      if (target === "#/phonetics") setShowPhonetics(false);
     }
   };
 
@@ -277,9 +292,10 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v58"
+          version="chinese v59"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
+          phoneticsHref="#/phonetics"
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -298,9 +314,21 @@ export function App() {
           findWord={dict.findWord}
           ensureCached={dict.ensureCached}
           chars={charsData.chars}
-          onGrade={(key, rating) => grade(key, rating)}
+          phoneticComponents={phonetics.components}
+          phoneticComponentsByChar={phonetics.byChar}
+          onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
-          onClose={closeReview}
+          onClose={() => closeHashPage("#/review")}
+        />
+      )}
+
+      {showPhonetics && (
+        <PhoneticsPage
+          components={phonetics.components}
+          ready={phonetics.ready}
+          getStatus={getStatus}
+          setStatus={setStatus}
+          onClose={() => closeHashPage("#/phonetics")}
         />
       )}
 

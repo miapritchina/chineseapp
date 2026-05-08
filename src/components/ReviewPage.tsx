@@ -4,6 +4,8 @@ import type { ReviewCard } from "../hooks/useReview";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { PhoneticTapCard } from "./PhoneticTapCard";
+import { ComponentSoundCard } from "./ComponentSoundCard";
+import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 
 interface Props {
   dueCards: ReviewCard[];
@@ -18,6 +20,8 @@ interface Props {
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
   chars?: Record<string, Char>;
+  phoneticComponents?: PhoneticComponent[];
+  phoneticComponentsByChar?: Map<string, PhoneticComponent>;
 }
 
 // Recognition drill: show the hanzi, tap to reveal pinyin + first defs,
@@ -35,6 +39,8 @@ export function ReviewPage({
   onAttributeFailure,
   onClose,
   chars,
+  phoneticComponents,
+  phoneticComponentsByChar,
 }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [index, setIndex] = useState(0);
@@ -112,6 +118,39 @@ export function ReviewPage({
     setAttribTarget(null);
     advance();
   };
+
+  // Component-sound drill: "what sound does this give?" with multi-choice.
+  if (current.facet === "componentSound") {
+    const entry = phoneticComponentsByChar?.get(current.itemKey);
+    if (!entry || !phoneticComponents) {
+      // Data isn't loaded yet — skip the card so the queue moves on.
+      advance();
+      return null;
+    }
+    return (
+      <div className="review-root">
+        <div className="review-header">
+          <button className="back-btn" type="button" onClick={onClose}>
+            ← Done
+          </button>
+          <span className="review-kind-tag">Sound · pick</span>
+          <span className="review-progress">
+            {index + 1} / {total}
+          </span>
+        </div>
+        <div className="review-body">
+          <ComponentSoundCard
+            entry={entry}
+            pool={phoneticComponents}
+            onGrade={(rating) => {
+              onGrade(current.itemKey, rating, current.itemKind, current.facet);
+              advance();
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Phonetic-tap drill: route to its own component. Auto-grades after the
   // user picks; this page just hands the result on to onGrade.

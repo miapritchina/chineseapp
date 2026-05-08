@@ -5,12 +5,18 @@ interface Props {
   // null means the link is shown but disabled (placeholder for future pages).
   reviewHref?: string | null;
   reviewBadge?: number;
+  phoneticsHref?: string | null;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
 // app version. Outside-click and Escape both dismiss. Pattern lifted from
 // the StatusButton popover.
-export function HamburgerMenu({ version, reviewHref = null, reviewBadge = 0 }: Props) {
+export function HamburgerMenu({
+  version,
+  reviewHref = null,
+  reviewBadge = 0,
+  phoneticsHref = null,
+}: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -79,6 +85,16 @@ export function HamburgerMenu({ version, reviewHref = null, reviewBadge = 0 }: P
               <span>Review</span>
               <span className="hamburger-soon">soon</span>
             </span>
+          )}
+          {phoneticsHref && (
+            <a
+              role="menuitem"
+              className="hamburger-item"
+              href={phoneticsHref}
+              onClick={() => setOpen(false)}
+            >
+              <span>Phonetics</span>
+            </a>
           )}
           <a role="menuitem" className="hamburger-item" href="./network/">
             <span>Network</span>
