@@ -16,6 +16,7 @@ import { TreeModal } from "./components/TreeModal";
 import { CharPopup } from "./components/CharPopup";
 import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
+import { HamburgerMenu } from "./components/HamburgerMenu";
 
 import type { Word } from "./lib/types";
 
@@ -241,7 +242,7 @@ export function App() {
   return (
     <>
       <header className="topbar">
-        <span className="home-link" />
+        <HamburgerMenu version="chinese v55" />
         <h1>中文</h1>
         <div className="topbar-end">
           <AuthButton
@@ -327,11 +328,6 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">
-        chinese v54 ·{" "}
-        <a href="./network/" className="page-id-link">network →</a>{" "}
-        <a href="./components/" className="page-id-link">components →</a>
-      </div>
     </>
   );
 }

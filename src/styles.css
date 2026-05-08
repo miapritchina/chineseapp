@@ -58,15 +58,91 @@ body {
   background: var(--bg);
 }
 .topbar h1 { font-size: 17px; font-weight: 500; margin: 0; letter-spacing: 1px; }
-.home-link {
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 14px;
-  padding: 6px 10px;
-  min-width: 60px;
-}
-.home-link:hover { color: var(--text); }
 .spacer { min-width: 60px; }
+
+/* Hamburger menu — top-bar left slot. Pattern mirrors .status-* in
+   StatusButton: a small trigger button + a popover anchored below it,
+   dismissed on outside-click / Escape. */
+.hamburger-wrapper { position: relative; min-width: 60px; }
+.hamburger-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 6px 8px;
+  border-radius: 8px;
+  line-height: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hamburger-btn:hover, .hamburger-btn:focus-visible,
+.hamburger-btn.is-open { color: var(--text); background: var(--surface-2); outline: none; }
+.hamburger-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 80;
+  min-width: 200px;
+  background: var(--surface, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hamburger-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hamburger-item:hover, .hamburger-item:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.hamburger-item.is-disabled {
+  color: var(--muted);
+  cursor: default;
+}
+.hamburger-item.is-disabled:hover { background: transparent; }
+.hamburger-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+}
+.hamburger-soon {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.hamburger-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}
+.hamburger-version {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 6px 12px 4px;
+  letter-spacing: 0.4px;
+}
 
 .topbar-end {
   display: flex;
@@ -1063,21 +1139,6 @@ body {
   font-size: 14px;
   text-align: center;
 }
-
-.page-id {
-  position: fixed;
-  bottom: 4px;
-  right: 8px;
-  font-size: 10px;
-  color: var(--muted);
-  opacity: 0.6;
-}
-.page-id-link {
-  color: inherit;
-  text-decoration: none;
-  pointer-events: auto;
-}
-.page-id-link:hover { color: var(--accent); }
 
 @media (max-width: 480px) {
   .saved-grid {
