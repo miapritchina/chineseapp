@@ -8,13 +8,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node scripts/test-components.mjs && node scripts/test-component-search.mjs"
+    "test": "node scripts/test-components.mjs && node scripts/test-component-search.mjs && node scripts/test-fsrs.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",
     "d3": "^7.9.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "ts-fsrs": "^5.3.2"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",

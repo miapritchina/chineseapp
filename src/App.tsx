@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
 import { useDictionary } from "./hooks/useDictionary";
@@ -17,6 +17,8 @@ import { CharPopup } from "./components/CharPopup";
 import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
+import { ReviewPage } from "./components/ReviewPage";
+import { useReview } from "./hooks/useReview";
 
 import type { Word } from "./lib/types";
 
@@ -45,11 +47,48 @@ export function App() {
   const [searching, setSearching] = useState(false);
   const [popupChar, setPopupChar] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showReview, setShowReview] = useState(
+    typeof window !== "undefined" && window.location.hash === "#/review",
+  );
+
+  // Items eligible for SRS scheduling: status needToLearn or learned.
+  // (saved is unscheduled — base tier; wrote keeps the recognition card
+  // alive but adds a production facet in a later PR.)
+  const scheduledKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const k of saved) {
+      if (review.has(k) || learned.has(k) || wrote.has(k)) s.add(k);
+    }
+    return s;
+  }, [saved, review, learned, wrote]);
+
+  const { dueCards, grade } = useReview({
+    userId: auth.user?.id ?? null,
+    scheduledKeys,
+  });
 
   // Wake the Supabase project early to mask cold-start latency.
   useEffect(() => {
     wakeUp();
   }, []);
+
+  // Track the review page via the URL hash so back/forward work and the
+  // user can deep-link to /Ai-/#/review from the hamburger.
+  useEffect(() => {
+    const onHash = () => setShowReview(window.location.hash === "#/review");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const openReview = () => {
+    window.location.hash = "#/review";
+  };
+  const closeReview = () => {
+    if (window.location.hash === "#/review") {
+      history.back();
+    } else {
+      setShowReview(false);
+    }
+  };
 
   // Close the sign-in modal as soon as a session lands (auth flows from
   // a different tab still propagate via onAuthStateChange).
@@ -242,7 +281,11 @@ export function App() {
   return (
     <>
       <header className="topbar">
-        <HamburgerMenu version="chinese v55" />
+        <HamburgerMenu
+          version="chinese v56"
+          reviewHref="#/review"
+          reviewBadge={dueCards.length}
+        />
         <h1>中文</h1>
         <div className="topbar-end">
           <AuthButton
@@ -253,6 +296,16 @@ export function App() {
           />
         </div>
       </header>
+
+      {showReview && (
+        <ReviewPage
+          dueCards={dueCards}
+          findWord={dict.findWord}
+          ensureCached={dict.ensureCached}
+          onGrade={(key, rating) => grade(key, rating)}
+          onClose={closeReview}
+        />
+      )}
 
       {showSignIn && (
         <SignInModal
