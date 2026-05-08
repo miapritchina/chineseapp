@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
 import { useDictionary } from "./hooks/useDictionary";
@@ -8,13 +8,17 @@ import { useModalStack, parseHash } from "./hooks/useModalStack";
 import { useAuth } from "./hooks/useAuth";
 import { wakeUp } from "./lib/supabase";
 
-import { SearchBar } from "./components/SearchBar";
+import { SearchBar, type SearchMode } from "./components/SearchBar";
+import { searchByComponent } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
 import { CharPopup } from "./components/CharPopup";
 import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
+import { HamburgerMenu } from "./components/HamburgerMenu";
+import { ReviewPage } from "./components/ReviewPage";
+import { useReview } from "./hooks/useReview";
 
 import type { Word } from "./lib/types";
 
@@ -32,22 +36,59 @@ export function App() {
     review,
     getStatus,
     setStatus,
-    exportSaved,
     importSaved,
     clearAll,
   } = useSaved({ userId: auth.user?.id ?? null });
   const { stack, push, pop } = useModalStack();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<SearchMode>("all");
   const [searchResults, setSearchResults] = useState<Word[]>([]);
   const [searching, setSearching] = useState(false);
   const [popupChar, setPopupChar] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showReview, setShowReview] = useState(
+    typeof window !== "undefined" && window.location.hash === "#/review",
+  );
+
+  // Items eligible for SRS scheduling: status needToLearn or learned.
+  // (saved is unscheduled — base tier; wrote keeps the recognition card
+  // alive but adds a production facet in a later PR.)
+  const scheduledKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const k of saved) {
+      if (review.has(k) || learned.has(k) || wrote.has(k)) s.add(k);
+    }
+    return s;
+  }, [saved, review, learned, wrote]);
+
+  const { dueCards, grade } = useReview({
+    userId: auth.user?.id ?? null,
+    scheduledKeys,
+  });
 
   // Wake the Supabase project early to mask cold-start latency.
   useEffect(() => {
     wakeUp();
   }, []);
+
+  // Track the review page via the URL hash so back/forward work and the
+  // user can deep-link to /Ai-/#/review from the hamburger.
+  useEffect(() => {
+    const onHash = () => setShowReview(window.location.hash === "#/review");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const openReview = () => {
+    window.location.hash = "#/review";
+  };
+  const closeReview = () => {
+    if (window.location.hash === "#/review") {
+      history.back();
+    } else {
+      setShowReview(false);
+    }
+  };
 
   // Close the sign-in modal as soon as a session lands (auth flows from
   // a different tab still propagate via onAuthStateChange).
@@ -67,7 +108,7 @@ export function App() {
     };
   }, [query]);
 
-  // Run search when the debounced query changes.
+  // Run search when the debounced query (or mode) changes.
   useEffect(() => {
     let cancelled = false;
     if (!debouncedQuery.trim()) {
@@ -76,6 +117,29 @@ export function App() {
       return;
     }
     setSearching(true);
+
+    // "By component" mode walks the saved set's component closure locally
+    // (no Supabase call) and hydrates only the matching rows.
+    if (searchMode === "byComponent") {
+      const matches = searchByComponent(
+        debouncedQuery,
+        savedList.map((s) => s.word),
+        charsData.chars,
+      );
+      (async () => {
+        if (matches.length > 0) await dict.ensureCached(matches);
+        if (cancelled) return;
+        const hydrated = matches
+          .map((w) => dict.findWord(w))
+          .filter((w): w is Word => !!w);
+        setSearchResults(hydrated);
+        setSearching(false);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
     (async () => {
       const rows = await dict.search(debouncedQuery);
       if (cancelled) return;
@@ -85,7 +149,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, dict.search]);
+  }, [debouncedQuery, searchMode, savedList, charsData.chars, dict.search, dict.ensureCached, dict.findWord]);
 
   // Pre-hydrate saved words so the Saved shelf renders without per-card flicker.
   useEffect(() => {
@@ -217,7 +281,11 @@ export function App() {
   return (
     <>
       <header className="topbar">
-        <span className="home-link" />
+        <HamburgerMenu
+          version="chinese v56"
+          reviewHref="#/review"
+          reviewBadge={dueCards.length}
+        />
         <h1>中文</h1>
         <div className="topbar-end">
           <AuthButton
@@ -229,6 +297,16 @@ export function App() {
         </div>
       </header>
 
+      {showReview && (
+        <ReviewPage
+          dueCards={dueCards}
+          findWord={dict.findWord}
+          ensureCached={dict.ensureCached}
+          onGrade={(key, rating) => grade(key, rating)}
+          onClose={closeReview}
+        />
+      )}
+
       {showSignIn && (
         <SignInModal
           onClose={() => setShowSignIn(false)}
@@ -236,7 +314,13 @@ export function App() {
         />
       )}
 
-      <SearchBar value={query} onChange={setQuery} onEnter={handleEnter} />
+      <SearchBar
+        value={query}
+        onChange={setQuery}
+        onEnter={handleEnter}
+        mode={searchMode}
+        onModeChange={setSearchMode}
+      />
 
       {debouncedQuery.trim() ? (
         searching && searchResults.length === 0 ? (
@@ -259,8 +343,6 @@ export function App() {
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
             onOpenChar={openCharPopup}
-            onExport={exportSaved}
-            onImport={importSaved}
           />
         </main>
       )}
@@ -299,11 +381,6 @@ export function App() {
         </div>
       )}
 
-      <div className="page-id">
-        chinese v52 ·{" "}
-        <a href="./network/" className="page-id-link">network →</a>{" "}
-        <a href="./components/" className="page-id-link">components →</a>
-      </div>
     </>
   );
 }

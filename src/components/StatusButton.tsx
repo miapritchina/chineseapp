@@ -5,7 +5,7 @@ const STATUS_LABEL: Record<Status, string> = {
   saved: "Saved",
   learned: "Learned",
   wrote: "Wrote",
-  review: "Review",
+  review: "Need to learn",
 };
 
 const STATUS_ORDER: Status[] = ["saved", "learned", "wrote", "review"];
