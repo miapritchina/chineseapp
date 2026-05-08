@@ -5,6 +5,8 @@ import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { PhoneticTapCard } from "./PhoneticTapCard";
 import { ComponentSoundCard } from "./ComponentSoundCard";
+import { DisambiguationCard } from "./DisambiguationCard";
+import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 
 interface Props {
@@ -45,6 +47,9 @@ export function ReviewPage({
   const [revealed, setRevealed] = useState(false);
   const [index, setIndex] = useState(0);
   const [attribTarget, setAttribTarget] = useState<string | null>(null);
+  // Per-session record of which keys have already had their leech
+  // disambiguation card shown — once is enough.
+  const [disambigSeen, setDisambigSeen] = useState<Set<string>>(() => new Set());
 
   const total = dueCards.length;
   const current = dueCards[index];
@@ -145,6 +150,48 @@ export function ReviewPage({
             onGrade={(rating) => {
               onGrade(current.itemKey, rating, current.itemKind, current.facet);
               advance();
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Leech-cluster disambiguation. If the surfacing card has lapsed past
+  // the leech threshold AND is in a known confusion cluster AND we
+  // haven't shown the disambig view yet this session, render it before
+  // the regular drill. Once the user taps Continue, fall through to the
+  // normal facet routing below.
+  const focusKey = current.itemKey;
+  const isSingleChar = [...focusKey].length === 1;
+  const cluster = isSingleChar ? clusterFor(focusKey) : null;
+  if (
+    cluster &&
+    (current.card.lapses ?? 0) >= LEECH_LAPSES &&
+    !disambigSeen.has(focusKey)
+  ) {
+    return (
+      <div className="review-root">
+        <div className="review-header">
+          <button className="back-btn" type="button" onClick={onClose}>
+            ← Done
+          </button>
+          <span className="review-kind-tag">Confusable</span>
+          <span className="review-progress">
+            {index + 1} / {total}
+          </span>
+        </div>
+        <div className="review-body">
+          <DisambiguationCard
+            focus={focusKey}
+            neighbors={cluster.filter((c) => c !== focusKey)}
+            chars={chars ?? {}}
+            onContinue={() => {
+              setDisambigSeen((prev) => {
+                const next = new Set(prev);
+                next.add(focusKey);
+                return next;
+              });
             }}
           />
         </div>

@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node scripts/test-components.mjs && node scripts/test-component-search.mjs && node scripts/test-fsrs.mjs && node scripts/test-review-seeding.mjs && node scripts/test-phonetic-components.mjs"
+    "test": "node scripts/test-components.mjs && node scripts/test-component-search.mjs && node scripts/test-fsrs.mjs && node scripts/test-review-seeding.mjs && node scripts/test-phonetic-components.mjs && node scripts/test-confusion-clusters.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",

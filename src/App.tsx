@@ -292,7 +292,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v59"
+          version="chinese v60"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
