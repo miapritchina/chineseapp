@@ -1,11 +1,17 @@
 # Repo Development Guide
 
-Two web apps deployed together via GitHub Pages:
+Four web apps deployed together via GitHub Pages:
 
-- **Chinese** (root) — React + TypeScript + Vite app at `/`, the index. Character
-  learning with decomposition tree, stroke animations, etymology, saved words.
+- **Chinese** (root) — React + TypeScript + Vite app at `/`. Character learning
+  with role-tagged decomposition tree, stroke animations, etymology, saved
+  words, four-status SRS, and three drill types.
 - **Palette** (`palette/`) — Watercolor painting app, single-file static HTML at
-  `/palette/`. Untouched by the Chinese rewrite.
+  `/palette/`. Untouched by the Chinese app.
+- **Network** (`network/`) — Cytoscape.js word-graph of the user's saved set
+  at `/network/`. Static HTML, reads localStorage directly. Easily deletable.
+- **Components** (`components/`) — Cytoscape.js vocabulary-structure graph at
+  `/components/` (words → chars → component sub-pieces, all from the user's
+  saved set). Static HTML, easily deletable.
 
 ## File structure
 
@@ -13,26 +19,71 @@ Two web apps deployed together via GitHub Pages:
 /
 ├── index.html                       Vite root entry, drives <App />
 ├── src/
-│   ├── main.tsx
-│   ├── App.tsx
+│   ├── main.tsx                     ErrorBoundary + on-page diag overlay
+│   ├── App.tsx                      orchestrates everything
 │   ├── styles.css
-│   ├── components/                  SearchBar, HomeGrid, SavedShelf, ResultsList,
-│   │                                TreeModal, DecompositionTree, NodeCard,
-│   │                                CharPopup, Card
-│   ├── hooks/                       useDictionary, useChars, useSaved,
-│   │                                useStrokeData, useModalStack
-│   └── lib/                         types, pinyin, search, tree
+│   ├── components/
+│   │   ├── SearchBar                two modes: Dictionary / By component
+│   │   ├── ResultsList              search results
+│   │   ├── SavedShelf               home grid w/ status sections + sort pills
+│   │   ├── ComponentTable           empty-state for By-component search
+│   │   ├── Card / NodeCard          shared word + tree-node cards
+│   │   ├── TreeModal                decomposition tree modal
+│   │   ├── DecompositionTree        d3-hierarchy + d3-zoom + foreignObject cards
+│   │   ├── CharPopup                tap-a-component popup
+│   │   ├── HamburgerMenu            top-bar drawer (Review / Phonetics / Network …)
+│   │   ├── StatusButton             4-tier status dropdown shared by every place
+│   │   ├── ReviewPage               full-screen SRS surface, routes by facet
+│   │   ├── PhoneticTapCard          drill: tap the sound component
+│   │   ├── ComponentSoundCard       drill: pick the pinyin a component gives
+│   │   ├── DisambiguationCard       leech-cluster side-by-side compare
+│   │   ├── PhoneticsPage            list + save the top-250 productive components
+│   │   ├── AuthButton + SignInModal magic-link auth
+│   ├── hooks/
+│   │   ├── useDictionary            Supabase RPC + cache for word lookups
+│   │   ├── useChars                 fetches public/data-chars.json
+│   │   ├── useSaved                 4-status localStorage + Supabase mirror
+│   │   ├── useReview                ts-fsrs scheduler at word/char/component level
+│   │   ├── usePhoneticComponents    fetches public/phonetic-components.json
+│   │   ├── useStrokeData            per-session HanziWriter cache
+│   │   ├── useModalStack            history.pushState integration for tree modals
+│   │   └── useAuth                  supabase.auth wrapper
+│   └── lib/
+│       ├── types.ts                 Word, Char, Component, Role, Status…
+│       ├── pinyin.ts                tone-stripping
+│       ├── search.ts                client-side ranking (legacy)
+│       ├── tree.ts                  buildCharTree, strokeRoleForIndex
+│       ├── componentSearch.mjs+.d.ts recursive-closure search + freq map
+│       ├── confusionClusters.mjs+.d.ts hand-curated leech clusters
+│       ├── fsrs.ts                  ts-fsrs wrapper + cascade math
+│       └── supabase.ts              client + wakeUp ping
 ├── public/
-│   ├── data.json                    full word list (deleted in Phase 2 → Supabase)
-│   ├── data-chars.json              char etymology map (stays static)
+│   ├── data-chars.json              ~10k chars + components + etymology
+│   ├── phonetic-components.json     top-250 productive sound components
 │   └── favicon.svg
-├── palette/                         (unchanged: HTML/CSS/JS watercolor app)
+├── palette/                         (untouched: HTML/CSS/JS watercolor app)
+├── network/index.html               (static word-graph page)
+├── components/                      (static vocab-structure graph page)
+│   ├── index.html
+│   └── graph-data.mjs
 ├── scripts/
-│   └── extract-chinese.mjs          chinese-lexicon → public/data*.json
-├── package.json                     react + react-dom + d3, no router
+│   ├── extract-chinese.mjs          chinese-lexicon → public/data*.json
+│   ├── extract-phonetic-components.mjs ranks sound components, dumps JSON
+│   ├── seed-supabase.mjs            bulk-loads ~91k words via service role
+│   └── test-*.mjs                   six headless test files (npm test)
+├── supabase/
+│   └── migrations/
+│       ├── 0001_dictionary.sql
+│       ├── 0002_user_saves.sql
+│       ├── 0003_user_saves_learned.sql
+│       ├── 0004_search_words_rich.sql
+│       ├── 0005_user_saves_wrote.sql
+│       ├── 0006_user_saves_review.sql      "Need to learn" tier (review_at)
+│       └── 0007_fsrs_state.sql              SRS scheduler state
+├── package.json                     react, d3, ts-fsrs, supabase-js
 ├── vite.config.ts
 ├── tsconfig.json
-└── .github/workflows/pages.yml      builds Vite, copies palette/, deploys
+└── .github/workflows/pages.yml      builds Vite, copies palette/, network/, components/
 ```
 
 ## `palette/` — watercolor app
@@ -84,70 +135,193 @@ Development tips:
 
 ## Chinese app — root
 
-React + TypeScript single-page app, built with Vite. Loads `hanzi-writer` via
-jsDelivr CDN (declared in `index.html`); stroke SVG data is auto-fetched by
-hanzi-writer from `hanzi-writer-data` on CDN.
+React + TypeScript single-page app, built with Vite. `hanzi-writer` is loaded
+via jsDelivr CDN (declared in `index.html`); stroke SVG data is auto-fetched
+by hanzi-writer from `hanzi-writer-data` on CDN.
 
-Data pipeline:
+### Data pipeline
+
 - **Words** live in Supabase (`oigbbgtzzqiceetasayy.supabase.co`), table
-  `words`. The home grid pages by `rank ASC NULLS LAST`; search runs through
-  the `search_words(text)` RPC for tiered server-side ranking. Schema +
-  indexes in `supabase/migrations/0001_dictionary.sql`. Bulk-load via
+  `words`. Search runs through the `search_words(text)` RPC for tiered
+  server-side ranking. Schema + indexes in
+  `supabase/migrations/0001_dictionary.sql`. Bulk-load via
   `node scripts/seed-supabase.mjs` (needs `SUPABASE_SERVICE_ROLE_KEY` env
   var). See `supabase/README.md`.
 - **Chars** ship as a static file, `public/data-chars.json` (~10k entries,
-  548 KB gzip) — small enough that bouncing them through the DB just adds
-  latency. Generated by `node scripts/extract-chinese.mjs`.
+  548 KB gzip). Generated by `node scripts/extract-chinese.mjs`.
+- **Phonetic components** ship as `public/phonetic-components.json` (~30 KB,
+  top-250 productive sound components ranked by how many other chars use
+  them). Generated by `node scripts/extract-phonetic-components.mjs`.
+- **User-private state** (saved words, status, FSRS scheduler) lives in
+  Supabase tables `user_saves` and `user_fsrs_state`, with localStorage
+  mirrors for offline / sign-out resilience. RLS policies restrict to
+  `auth.uid() = user_id`.
 
-Data shapes:
+### Data shapes
+
 - `words` row: `{ word, pinyin, searchable_pinyin, definitions: jsonb, hsk,
-  rank, trad?, definitions_text (generated) }`. The React side (`useDictionary`)
-  hydrates each row into `Word` with `simp = word` and `chars = [...word]`.
-- `data-chars.json`: `{ chars: { [char]: { pinyin, definitions, originalMeaning,
-  notes, components: [{char, type, fragment, …}], hasEtymology } } }`.
+  rank, trad?, definitions_text }`. Hydrated client-side into `Word` with
+  `simp = word` and `chars = [...word]`.
+- `data-chars.json`: `{ chars: { [char]: { pinyin, definitions,
+  originalMeaning, notes, components: [{char, type, fragment, …}],
+  hasEtymology } } }`. Component `type` ∈
+  `iconic | meaning | sound | simplified | deleted | unknown` — drives the
+  role-color CSS variables (`--role-*`) and the phoneticTap drill (correct
+  answer = the component with `type === "sound"`).
+- `phonetic-components.json`: `{ generated, components: [{ char, pinyin
+  (tone-free), pinyinTones, count, family: [chars…] }] }`.
+- `user_saves`: `(user_id, word)` PK + nullable `learned_at`, `wrote_at`,
+  `review_at` timestamps. At most one of those three is set per row. The
+  fourth-tier label is "Need to learn" in the UI but the column stays
+  `review_at` for back-compat.
+- `user_fsrs_state`: `(user_id, item_key, item_kind, facet)` PK +
+  serialized ts-fsrs `Card` JSONB + denormalized `due_at`, `last_review_at`.
+  `item_kind` ∈ `word | char | component`; `facet` ∈ `recognition |
+  phoneticTap | componentSound | familyTransfer | production` (only the
+  first three actually seed today).
 
-Component `type` is one of `iconic | meaning | sound | simplified | deleted |
-unknown` — drives the role-color CSS variables (`--role-*`).
+### Status model (4 mutually-exclusive tiers)
 
-Runtime architecture (`src/`):
-- `App.tsx` orchestrates everything (search debounce, modal stack, popup).
-- `useDictionary` fetches `data.json`, hydrates, builds `Map<word, entry>`.
-- `useChars` fetches `data-chars.json`.
-- `useSaved` owns the saved-words `Set<string>`, persisted to `localStorage`
-  under key `chinese.saved`. Includes Export-to-JSON for backup.
-- `useModalStack` integrates with `history.pushState` so the browser Back
-  button pops modal layers.
-- `useStrokeData` is a per-session cache around `HanziWriter.loadCharacterData`.
-- `DecompositionTree` mounts d3-hierarchy + d3-zoom on an SVG ref; node cards
-  are React components rendered into `<foreignObject>` slots positioned by
-  d3 layout. Pinch / scroll zoom past 1.7× expands cards (via dynamic
-  `foreignObject height`) to reveal etymology text.
-- `CharPopup` opens on tree-node tap: stroke animation, full definitions,
-  star toggle, chips of saved words containing this character.
+| Icon | Status | Column | Drills active |
+|---|---|---|---|
+| ★ | Saved | (saved_at) | recognition |
+| ❗ | Need to learn | review_at | recognition |
+| 🎓 | Learned | learned_at | recognition |
+| ✒ | Wrote | wrote_at | recognition (production drill not built yet) |
 
-### Adding new words
+Picking any tier ensures the row is saved. Picking "remove" deletes it.
+Picking a different tier flips the bits — only one of `{learned_at,
+wrote_at, review_at}` is non-null at a time.
 
-The seed is now the entire chinese-lexicon (~91k words filtered: CJK only,
+### SRS — review surface
+
+`useReview` hook owns the scheduler:
+
+- Wraps `ts-fsrs` (open-spaced-repetition/ts-fsrs, MIT). FSRS-6 default
+  scheduler at retention 0.9. `src/lib/fsrs.ts` is the thin wrapper:
+  `seedCard`, `gradeCard`, `applyCascadeCredit`, `serialize/deserialize`,
+  `isDue`.
+- **All saved words** get a recognition card (saving == queue for learning,
+  per the user's stated "learn all my words" goal — statuses are about
+  progression, not about whether something is scheduled).
+- **Cascade**: a Good/Easy on a word also walks its recursive
+  `componentClosure` and applies a damped Good (50% interpolated stability,
+  capped at 7-day due if the child has never been reviewed alone) to every
+  char inside. Again does NOT cascade — the user can attribute the
+  failure to a specific child via the "what threw you?" affordance.
+- **Drill facets** (each its own card per (item, facet) row):
+  - `recognition` (look → meaning + pinyin reveal-style; Again / Good / Easy)
+  - `phoneticTap` (tap the sound component; auto-grade Good or Again).
+    Seeded for any char with at least one `type === "sound"` component.
+  - `componentSound` (multi-choice "what sound does this give?";
+    auto-graded). Seeded for any saved single-char item that's in
+    `phonetic-components.json`.
+- **Confusable cluster disambig**: when a card's `card.lapses ≥ 6` AND its
+  key is in `confusionClusters.CONFUSION_CLUSTERS`, the review page
+  paints a side-by-side `DisambiguationCard` once per session before
+  letting the user grade.
+
+`ReviewPage` routes by facet — there's a per-facet branch (Disambiguation
+→ ComponentSound → PhoneticTap → recognition default).
+
+### Pages reachable from the hamburger menu
+
+- **Review** (`#/review`) — SRS queue. Hamburger badge shows "N due".
+- **Phonetics** (`#/phonetics`) — list of top-250 productive sound
+  components, each with pinyin + family + a StatusButton.
+- **Network** (`/Ai-/network/`) — static Cytoscape graph; `?focus=<key>`
+  centers + highlights a saved word/char on load (used by CharPopup's
+  "Show in network →" button).
+- **Components** (`/Ai-/components/`) — static Cytoscape vocabulary-
+  structure graph (words → chars → components, all bounded by saved set).
+
+### Search has two modes
+
+- **Dictionary** — Supabase `search_words` RPC (tiered: exact hanzi → prefix
+  → substring → pinyin → English-gloss).
+- **My words by component** — local-only walk of every saved word's
+  recursive `componentClosure`; AND-filter across multiple Han chars in
+  the query. Empty input renders `ComponentTable`, a chip grid of every
+  component appearing in the saved set ranked by occurrence count.
+
+### Runtime architecture (`src/`)
+
+- `App.tsx` orchestrates: search debounce, modal stack, popup, review
+  page route, phonetics page route.
+- `useDictionary` calls Supabase RPC + caches `Word` rows.
+- `useChars` fetches `data-chars.json` once.
+- `useSaved` owns the four status maps (saved/learned/wrote/review) +
+  syncs to `user_saves`. Exposes `getStatus`, `setStatus`, four set
+  views, `importSaved`, `clearAll`.
+- `useReview` owns FSRS scheduling; mirrors `user_fsrs_state`. Exposes
+  `dueCards`, `grade(itemKey, rating, kind?, facet?)`,
+  `attributeFailure(childKey)`.
+- `useModalStack` integrates with `history.pushState` for the tree-modal
+  back-button stack. Top-level pages (Review, Phonetics) use plain
+  `#/foo` hash routing in App.tsx instead.
+- `useStrokeData` is a per-session cache around
+  `HanziWriter.loadCharacterData`.
+- `DecompositionTree` mounts d3-hierarchy + d3-zoom on an SVG ref; node
+  cards are React components rendered into `<foreignObject>` slots
+  positioned by d3 layout. Card heights estimated per-content; layout
+  reflows accordingly.
+- `CharPopup` opens on tree-node tap: stroke animation, full
+  definitions, StatusButton, "Show in network →" link, list of saved
+  words containing this character.
+
+### Tests
+
+`npm test` chains six headless Node test files under `scripts/`:
+
+- `test-components.mjs` — graph-data builder for `/components/` page
+- `test-component-search.mjs` — recursive component-closure search +
+  frequency map
+- `test-fsrs.mjs` — ts-fsrs lifecycle + cascade math
+- `test-review-seeding.mjs` — `expectedCards` rule (which (item, kind,
+  facet) tuples should have cards)
+- `test-phonetic-components.mjs` — verifies the build artifact's shape +
+  componentSound seed predicate
+- `test-confusion-clusters.mjs` — cluster lookup helpers
+
+### Adding new words to the dictionary
+
+The seed is the entire chinese-lexicon (~91k words filtered: CJK only,
 length ≤ 8, not a proper noun, not just a cross-reference). To regenerate
 after a chinese-lexicon update:
 1. `npm install` (picks up new chinese-lexicon version).
-2. `node scripts/extract-chinese.mjs`.
-3. Commit `public/data.json` and `public/data-chars.json`.
+2. `node scripts/extract-chinese.mjs` — writes `public/data-chars.json`.
+3. `node scripts/extract-phonetic-components.mjs` — writes
+   `public/phonetic-components.json`.
+4. Commit those files.
+5. Re-run seed-supabase to reload the `words` table:
+   `SUPABASE_SERVICE_ROLE_KEY=… node scripts/seed-supabase.mjs`.
 
 ## GitHub Pages deployment
 
 - Workflow: `.github/workflows/pages.yml`.
 - Runs `npm ci && npm run build`, copies `dist/` to `_site/`, then copies
-  `palette/*` into `_site/palette/`.
-- Chinese app served at `/`, palette at `/palette/`.
-- **Environment protection rules** on the `github-pages` environment must allow
-  the current default branch. If deployment shows success but the site doesn't
-  update, check Actions → deploy job for "environment protection rules"
-  rejection.
+  `palette/`, `network/`, and `components/` into the corresponding
+  subdirectories.
+- Chinese app served at `/`, palette at `/palette/`, network at
+  `/network/`, components at `/components/`.
+- **Environment protection rules** on the `github-pages` environment must
+  allow the current default branch. If deployment shows success but the
+  site doesn't update, check Actions → deploy job for "environment
+  protection rules" rejection.
+- After a Supabase migration lands (e.g. `0007_fsrs_state.sql`), re-run the
+  Setup Supabase workflow with the user's PAT so the new schema applies.
+  The app degrades gracefully when the new column/table is missing — sync
+  errors are silently downgraded.
 
 ## Development tips
 
 - `npm run dev` for a Vite dev server with HMR.
 - `npm run build` produces `dist/`; `npm run preview` serves it locally.
-- Bump the `chinese vX` version string near the bottom of `App.tsx` when
-  pushing, so you can verify the right build is live.
+- `npm test` runs all six headless test files (~57 cases).
+- Bump the `chinese vN` version label in the `<HamburgerMenu />` props
+  inside `App.tsx` on every push so you can verify the right build is
+  live from your phone (the version is shown at the bottom of the
+  hamburger menu).
+- iOS Safari has long-standing quirks with `position: absolute` inside
+  `<foreignObject>`. If a card renders blank with only its connector
+  lines visible, that's the bug — switch to in-flow flexbox layout.
