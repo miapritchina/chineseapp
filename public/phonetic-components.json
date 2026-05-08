@@ -1,0 +1,3748 @@
+{
+  "generated": "2026-05-08T22:25:01.693Z",
+  "source": "data-chars.json",
+  "total": 250,
+  "components": [
+    {
+      "char": "非",
+      "pinyin": "fei",
+      "pinyinTones": "fēi",
+      "count": 17,
+      "family": [
+        "啡",
+        "排",
+        "罪",
+        "辈",
+        "悲",
+        "菲",
+        "扉",
+        "徘",
+        "绯",
+        "诽",
+        "腓",
+        "斐",
+        "蜚",
+        "翡",
+        "俳",
+        "鲱",
+        "裴"
+      ]
+    },
+    {
+      "char": "令",
+      "pinyin": "ling",
+      "pinyinTones": "lìng; líng; lǐng",
+      "count": 16,
+      "family": [
+        "命",
+        "冷",
+        "怜",
+        "邻",
+        "龄",
+        "领",
+        "零",
+        "铃",
+        "聆",
+        "拎",
+        "玲",
+        "伶",
+        "羚",
+        "岭",
+        "翎",
+        "苓"
+      ]
+    },
+    {
+      "char": "各",
+      "pinyin": "ge",
+      "pinyinTones": "gè",
+      "count": 16,
+      "family": [
+        "路",
+        "客",
+        "格",
+        "咯",
+        "阁",
+        "络",
+        "酪",
+        "胳",
+        "略",
+        "洛",
+        "骆",
+        "骼",
+        "烙",
+        "恪",
+        "铬",
+        "貉"
+      ]
+    },
+    {
+      "char": "者",
+      "pinyin": "zhe",
+      "pinyinTones": "zhě",
+      "count": 16,
+      "family": [
+        "都",
+        "着",
+        "书",
+        "猪",
+        "赌",
+        "著",
+        "绪",
+        "煮",
+        "堵",
+        "屠",
+        "暑",
+        "睹",
+        "诸",
+        "奢",
+        "渚",
+        "褚"
+      ]
+    },
+    {
+      "char": "丁",
+      "pinyin": "ding",
+      "pinyinTones": "dīng",
+      "count": 15,
+      "family": [
+        "打",
+        "成",
+        "盯",
+        "灯",
+        "顶",
+        "厅",
+        "订",
+        "宁",
+        "钉",
+        "叮",
+        "亭",
+        "汀",
+        "酊",
+        "町",
+        "仃"
+      ]
+    },
+    {
+      "char": "莫",
+      "pinyin": "mo",
+      "pinyinTones": "mò",
+      "count": 15,
+      "family": [
+        "模",
+        "摸",
+        "漠",
+        "幕",
+        "寞",
+        "墓",
+        "慕",
+        "膜",
+        "募",
+        "蟆",
+        "暮",
+        "馍",
+        "摹",
+        "谟",
+        "蓦"
+      ]
+    },
+    {
+      "char": "且",
+      "pinyin": "qie",
+      "pinyinTones": "qiě",
+      "count": 14,
+      "family": [
+        "助",
+        "姐",
+        "查",
+        "阻",
+        "组",
+        "租",
+        "诅",
+        "沮",
+        "祖",
+        "粗",
+        "狙",
+        "咀",
+        "疽",
+        "蛆"
+      ]
+    },
+    {
+      "char": "包",
+      "pinyin": "bao",
+      "pinyinTones": "bāo",
+      "count": 14,
+      "family": [
+        "抱",
+        "跑",
+        "泡",
+        "胞",
+        "饱",
+        "炮",
+        "鲍",
+        "咆",
+        "疱",
+        "孢",
+        "刨",
+        "雹",
+        "龅",
+        "庖"
+      ]
+    },
+    {
+      "char": "尚",
+      "pinyin": "shang",
+      "pinyinTones": "shàng",
+      "count": 14,
+      "family": [
+        "常",
+        "躺",
+        "尝",
+        "趟",
+        "掌",
+        "赏",
+        "党",
+        "敞",
+        "淌",
+        "倘",
+        "裳",
+        "徜",
+        "棠",
+        "䠀"
+      ]
+    },
+    {
+      "char": "羊",
+      "pinyin": "yang",
+      "pinyinTones": "yáng",
+      "count": 14,
+      "family": [
+        "样",
+        "养",
+        "鲜",
+        "详",
+        "洋",
+        "氧",
+        "痒",
+        "翔",
+        "烊",
+        "祥",
+        "恙",
+        "徉",
+        "佯",
+        "羕"
+      ]
+    },
+    {
+      "char": "肖",
+      "pinyin": "xiao",
+      "pinyinTones": "xiào; xiāo",
+      "count": 14,
+      "family": [
+        "消",
+        "稍",
+        "销",
+        "逍",
+        "悄",
+        "削",
+        "宵",
+        "哨",
+        "屑",
+        "捎",
+        "硝",
+        "鞘",
+        "梢",
+        "峭"
+      ]
+    },
+    {
+      "char": "圭",
+      "pinyin": "gui",
+      "pinyinTones": "guī",
+      "count": 13,
+      "family": [
+        "哇",
+        "挂",
+        "街",
+        "鞋",
+        "佳",
+        "卦",
+        "蛙",
+        "鲑",
+        "奎",
+        "桂",
+        "闺",
+        "硅",
+        "洼"
+      ]
+    },
+    {
+      "char": "工",
+      "pinyin": "gong",
+      "pinyinTones": "gōng",
+      "count": 13,
+      "family": [
+        "功",
+        "红",
+        "攻",
+        "空",
+        "项",
+        "贡",
+        "缸",
+        "虹",
+        "江",
+        "肛",
+        "汞",
+        "巩",
+        "豇"
+      ]
+    },
+    {
+      "char": "艮",
+      "pinyin": "gen",
+      "pinyinTones": "gěn; gèn",
+      "count": 13,
+      "family": [
+        "很",
+        "跟",
+        "根",
+        "眼",
+        "恨",
+        "银",
+        "痕",
+        "限",
+        "狠",
+        "恳",
+        "龈",
+        "垠",
+        "垦"
+      ]
+    },
+    {
+      "char": "青",
+      "pinyin": "qing",
+      "pinyinTones": "qīng",
+      "count": 13,
+      "family": [
+        "请",
+        "情",
+        "清",
+        "猜",
+        "睛",
+        "静",
+        "精",
+        "靓",
+        "晴",
+        "蜻",
+        "菁",
+        "氰",
+        "鲭"
+      ]
+    },
+    {
+      "char": "俞",
+      "pinyin": "yu",
+      "pinyinTones": "yú; shù",
+      "count": 12,
+      "family": [
+        "偷",
+        "输",
+        "愉",
+        "愈",
+        "瑜",
+        "喻",
+        "谕",
+        "逾",
+        "觎",
+        "榆",
+        "揄",
+        "渝"
+      ]
+    },
+    {
+      "char": "分",
+      "pinyin": "fen",
+      "pinyinTones": "fēn; fèn",
+      "count": 12,
+      "family": [
+        "份",
+        "扮",
+        "粉",
+        "氛",
+        "芬",
+        "吩",
+        "盼",
+        "盆",
+        "纷",
+        "酚",
+        "忿",
+        "汾"
+      ]
+    },
+    {
+      "char": "占",
+      "pinyin": "zhan",
+      "pinyinTones": "zhàn; zhān",
+      "count": 12,
+      "family": [
+        "点",
+        "站",
+        "店",
+        "战",
+        "钻",
+        "贴",
+        "粘",
+        "沾",
+        "玷",
+        "毡",
+        "砧",
+        "鲇"
+      ]
+    },
+    {
+      "char": "古",
+      "pinyin": "gu",
+      "pinyinTones": "gǔ",
+      "count": 12,
+      "family": [
+        "故",
+        "姑",
+        "苦",
+        "居",
+        "估",
+        "辜",
+        "胡",
+        "固",
+        "骷",
+        "咕",
+        "钴",
+        "沽"
+      ]
+    },
+    {
+      "char": "合",
+      "pinyin": "he",
+      "pinyinTones": "hé; gě",
+      "count": 12,
+      "family": [
+        "给",
+        "哈",
+        "答",
+        "拾",
+        "盒",
+        "鸽",
+        "恰",
+        "蛤",
+        "颌",
+        "龛",
+        "荅",
+        "閤"
+      ]
+    },
+    {
+      "char": "方",
+      "pinyin": "fang",
+      "pinyinTones": "fāng",
+      "count": 12,
+      "family": [
+        "放",
+        "房",
+        "旁",
+        "防",
+        "仿",
+        "访",
+        "妨",
+        "肪",
+        "芳",
+        "坊",
+        "彷",
+        "纺"
+      ]
+    },
+    {
+      "char": "白",
+      "pinyin": "bai",
+      "pinyinTones": "bái",
+      "count": 12,
+      "family": [
+        "拍",
+        "怕",
+        "百",
+        "迫",
+        "伯",
+        "柏",
+        "泊",
+        "魄",
+        "铂",
+        "粕",
+        "舶",
+        "帛"
+      ]
+    },
+    {
+      "char": "交",
+      "pinyin": "jiao",
+      "pinyinTones": "jiāo",
+      "count": 11,
+      "family": [
+        "校",
+        "较",
+        "咬",
+        "效",
+        "狡",
+        "跤",
+        "郊",
+        "绞",
+        "饺",
+        "佼",
+        "蛟"
+      ]
+    },
+    {
+      "char": "佥",
+      "pinyin": "qian",
+      "pinyinTones": "qiān",
+      "count": 11,
+      "family": [
+        "险",
+        "脸",
+        "检",
+        "签",
+        "验",
+        "剑",
+        "捡",
+        "敛",
+        "睑",
+        "俭",
+        "硷"
+      ]
+    },
+    {
+      "char": "公",
+      "pinyin": "gong",
+      "pinyinTones": "gōng",
+      "count": 11,
+      "family": [
+        "容",
+        "船",
+        "松",
+        "讼",
+        "翁",
+        "铅",
+        "颂",
+        "瓮",
+        "蚣",
+        "衮",
+        "鈆"
+      ]
+    },
+    {
+      "char": "可",
+      "pinyin": "ke",
+      "pinyinTones": "kě; kè",
+      "count": 11,
+      "family": [
+        "何",
+        "奇",
+        "哥",
+        "哥",
+        "阿",
+        "河",
+        "呵",
+        "柯",
+        "苛",
+        "坷",
+        "诃"
+      ]
+    },
+    {
+      "char": "台",
+      "pinyin": "tai",
+      "pinyinTones": "tái",
+      "count": 11,
+      "family": [
+        "始",
+        "治",
+        "抬",
+        "胎",
+        "苔",
+        "跆",
+        "怡",
+        "殆",
+        "怠",
+        "笞",
+        "贻"
+      ]
+    },
+    {
+      "char": "尧",
+      "pinyin": "yao",
+      "pinyinTones": "yáo",
+      "count": 11,
+      "family": [
+        "烧",
+        "绕",
+        "晓",
+        "翘",
+        "饶",
+        "浇",
+        "挠",
+        "侥",
+        "跷",
+        "桡",
+        "骁"
+      ]
+    },
+    {
+      "char": "巴",
+      "pinyin": "ba",
+      "pinyinTones": "bā",
+      "count": 11,
+      "family": [
+        "吧",
+        "把",
+        "爸",
+        "爬",
+        "肥",
+        "芭",
+        "疤",
+        "靶",
+        "笆",
+        "耙",
+        "琶"
+      ]
+    },
+    {
+      "char": "干",
+      "pinyin": "gan",
+      "pinyinTones": "gàn; gān",
+      "count": 11,
+      "family": [
+        "赶",
+        "奸",
+        "杆",
+        "岸",
+        "汗",
+        "肝",
+        "刊",
+        "鼾",
+        "旱",
+        "竿",
+        "轩"
+      ]
+    },
+    {
+      "char": "曷",
+      "pinyin": "he",
+      "pinyinTones": "hé",
+      "count": 11,
+      "family": [
+        "喝",
+        "渴",
+        "揭",
+        "歇",
+        "竭",
+        "葛",
+        "褐",
+        "蝎",
+        "羯",
+        "遏",
+        "谒"
+      ]
+    },
+    {
+      "char": "甬",
+      "pinyin": "yong",
+      "pinyinTones": "yǒng; tǒng",
+      "count": 11,
+      "family": [
+        "通",
+        "痛",
+        "勇",
+        "捅",
+        "桶",
+        "涌",
+        "恿",
+        "诵",
+        "俑",
+        "蛹",
+        "踊"
+      ]
+    },
+    {
+      "char": "由",
+      "pinyin": "you",
+      "pinyinTones": "yóu",
+      "count": 11,
+      "family": [
+        "油",
+        "抽",
+        "邮",
+        "迪",
+        "宙",
+        "袖",
+        "轴",
+        "铀",
+        "柚",
+        "釉",
+        "鼬"
+      ]
+    },
+    {
+      "char": "亥",
+      "pinyin": "hai",
+      "pinyinTones": "hài",
+      "count": 10,
+      "family": [
+        "该",
+        "孩",
+        "刻",
+        "核",
+        "咳",
+        "骸",
+        "骇",
+        "劾",
+        "阂",
+        "氦"
+      ]
+    },
+    {
+      "char": "京",
+      "pinyin": "jing",
+      "pinyinTones": "jīng",
+      "count": 10,
+      "family": [
+        "亮",
+        "谅",
+        "惊",
+        "景",
+        "凉",
+        "鲸",
+        "琼",
+        "掠",
+        "晾",
+        "椋"
+      ]
+    },
+    {
+      "char": "余",
+      "pinyin": "yu",
+      "pinyinTones": "yú",
+      "count": 10,
+      "family": [
+        "除",
+        "茶",
+        "涂",
+        "途",
+        "舍",
+        "叙",
+        "斜",
+        "蜍",
+        "徐",
+        "荼"
+      ]
+    },
+    {
+      "char": "其",
+      "pinyin": "qi",
+      "pinyinTones": "qí",
+      "count": 10,
+      "family": [
+        "斯",
+        "期",
+        "基",
+        "欺",
+        "淇",
+        "琪",
+        "棋",
+        "麒",
+        "箕",
+        "祺"
+      ]
+    },
+    {
+      "char": "加",
+      "pinyin": "jia",
+      "pinyinTones": "jiā",
+      "count": 10,
+      "family": [
+        "咖",
+        "架",
+        "贺",
+        "驾",
+        "茄",
+        "嘉",
+        "伽",
+        "枷",
+        "迦",
+        "痂"
+      ]
+    },
+    {
+      "char": "朱",
+      "pinyin": "zhu",
+      "pinyinTones": "zhū",
+      "count": 10,
+      "family": [
+        "叔",
+        "殊",
+        "蛛",
+        "珠",
+        "茱",
+        "侏",
+        "株",
+        "洙",
+        "诛",
+        "铢"
+      ]
+    },
+    {
+      "char": "比",
+      "pinyin": "bi",
+      "pinyinTones": "bǐ; bì; bī",
+      "count": 10,
+      "family": [
+        "屁",
+        "毕",
+        "批",
+        "毙",
+        "庇",
+        "吡",
+        "纰",
+        "砒",
+        "琵",
+        "毗"
+      ]
+    },
+    {
+      "char": "甫",
+      "pinyin": "fu",
+      "pinyinTones": "fǔ",
+      "count": 10,
+      "family": [
+        "捕",
+        "铺",
+        "辅",
+        "浦",
+        "脯",
+        "哺",
+        "匍",
+        "圃",
+        "埔",
+        "尃"
+      ]
+    },
+    {
+      "char": "皮",
+      "pinyin": "pi",
+      "pinyinTones": "pí",
+      "count": 10,
+      "family": [
+        "被",
+        "破",
+        "彼",
+        "波",
+        "玻",
+        "颇",
+        "疲",
+        "坡",
+        "跛",
+        "铍"
+      ]
+    },
+    {
+      "char": "良",
+      "pinyin": "liang",
+      "pinyinTones": "liáng",
+      "count": 10,
+      "family": [
+        "娘",
+        "浪",
+        "狼",
+        "郎",
+        "朗",
+        "粮",
+        "酿",
+        "锒",
+        "踉",
+        "琅"
+      ]
+    },
+    {
+      "char": "辟",
+      "pinyin": "pi",
+      "pinyinTones": "pì; bì",
+      "count": 10,
+      "family": [
+        "避",
+        "臂",
+        "壁",
+        "癖",
+        "劈",
+        "僻",
+        "霹",
+        "譬",
+        "噼",
+        "璧"
+      ]
+    },
+    {
+      "char": "仓",
+      "pinyin": "cang",
+      "pinyinTones": "cāng",
+      "count": 9,
+      "family": [
+        "枪",
+        "抢",
+        "创",
+        "苍",
+        "呛",
+        "疮",
+        "沧",
+        "跄",
+        "怆"
+      ]
+    },
+    {
+      "char": "区",
+      "pinyin": "qu",
+      "pinyinTones": "qū; oū",
+      "count": 9,
+      "family": [
+        "欧",
+        "呕",
+        "驱",
+        "殴",
+        "躯",
+        "鸥",
+        "抠",
+        "枢",
+        "岖"
+      ]
+    },
+    {
+      "char": "卒",
+      "pinyin": "zu",
+      "pinyinTones": "zú; cù",
+      "count": 9,
+      "family": [
+        "醉",
+        "碎",
+        "粹",
+        "翠",
+        "萃",
+        "悴",
+        "猝",
+        "瘁",
+        "啐"
+      ]
+    },
+    {
+      "char": "吉",
+      "pinyin": "ji",
+      "pinyinTones": "jí",
+      "count": 9,
+      "family": [
+        "结",
+        "洁",
+        "桔",
+        "拮",
+        "诘",
+        "髻",
+        "黠",
+        "秸",
+        "颉"
+      ]
+    },
+    {
+      "char": "少",
+      "pinyin": "shao",
+      "pinyinTones": "shǎo; shào",
+      "count": 9,
+      "family": [
+        "秒",
+        "吵",
+        "炒",
+        "省",
+        "妙",
+        "沙",
+        "纱",
+        "钞",
+        "抄"
+      ]
+    },
+    {
+      "char": "屯",
+      "pinyin": "tun",
+      "pinyinTones": "tún; zhūn",
+      "count": 9,
+      "family": [
+        "顿",
+        "纯",
+        "春",
+        "炖",
+        "钝",
+        "吨",
+        "盹",
+        "沌",
+        "饨"
+      ]
+    },
+    {
+      "char": "每",
+      "pinyin": "mei",
+      "pinyinTones": "měi",
+      "count": 9,
+      "family": [
+        "海",
+        "悔",
+        "霉",
+        "敏",
+        "梅",
+        "莓",
+        "酶",
+        "诲",
+        "晦"
+      ]
+    },
+    {
+      "char": "票",
+      "pinyin": "piao",
+      "pinyinTones": "piào",
+      "count": 9,
+      "family": [
+        "漂",
+        "镖",
+        "飘",
+        "剽",
+        "嫖",
+        "瓢",
+        "瞟",
+        "膘",
+        "缥"
+      ]
+    },
+    {
+      "char": "娄",
+      "pinyin": "lou",
+      "pinyinTones": "lóu",
+      "count": 9,
+      "family": [
+        "楼",
+        "数",
+        "喽",
+        "髅",
+        "搂",
+        "缕",
+        "篓",
+        "屡",
+        "褛"
+      ]
+    },
+    {
+      "char": "里",
+      "pinyin": "li",
+      "pinyinTones": "lǐ",
+      "count": 9,
+      "family": [
+        "理",
+        "埋",
+        "哩",
+        "狸",
+        "厘",
+        "俚",
+        "鲤",
+        "锂",
+        "貍"
+      ]
+    },
+    {
+      "char": "隹",
+      "pinyin": "zhui",
+      "pinyinTones": "zhuī",
+      "count": 9,
+      "family": [
+        "谁",
+        "唯",
+        "堆",
+        "推",
+        "维",
+        "稚",
+        "椎",
+        "帷",
+        "锥"
+      ]
+    },
+    {
+      "char": "高",
+      "pinyin": "gao",
+      "pinyinTones": "gāo",
+      "count": 9,
+      "family": [
+        "搞",
+        "毫",
+        "豪",
+        "敲",
+        "稿",
+        "膏",
+        "犒",
+        "镐",
+        "暠"
+      ]
+    },
+    {
+      "char": "龙",
+      "pinyin": "long",
+      "pinyinTones": "lóng",
+      "count": 9,
+      "family": [
+        "宠",
+        "咙",
+        "笼",
+        "聋",
+        "拢",
+        "胧",
+        "垄",
+        "珑",
+        "陇"
+      ]
+    },
+    {
+      "char": "亡",
+      "pinyin": "wang",
+      "pinyinTones": "wáng",
+      "count": 8,
+      "family": [
+        "望",
+        "忙",
+        "忘",
+        "氓",
+        "妄",
+        "芒",
+        "肓",
+        "罔"
+      ]
+    },
+    {
+      "char": "今",
+      "pinyin": "jin",
+      "pinyinTones": "jīn",
+      "count": 8,
+      "family": [
+        "金",
+        "念",
+        "琴",
+        "含",
+        "贪",
+        "吟",
+        "矜",
+        "岑"
+      ]
+    },
+    {
+      "char": "半",
+      "pinyin": "ban",
+      "pinyinTones": "bàn",
+      "count": 8,
+      "family": [
+        "叛",
+        "胖",
+        "伴",
+        "判",
+        "衅",
+        "绊",
+        "拌",
+        "泮"
+      ]
+    },
+    {
+      "char": "告",
+      "pinyin": "gao",
+      "pinyinTones": "gào",
+      "count": 8,
+      "family": [
+        "靠",
+        "酷",
+        "造",
+        "窖",
+        "浩",
+        "锆",
+        "皓",
+        "鹄"
+      ]
+    },
+    {
+      "char": "周",
+      "pinyin": "zhou",
+      "pinyinTones": "zhōu",
+      "count": 8,
+      "family": [
+        "调",
+        "雕",
+        "绸",
+        "碉",
+        "凋",
+        "稠",
+        "惆",
+        "啁"
+      ]
+    },
+    {
+      "char": "奇",
+      "pinyin": "qi",
+      "pinyinTones": "qí; jī",
+      "count": 8,
+      "family": [
+        "寄",
+        "骑",
+        "椅",
+        "崎",
+        "倚",
+        "琦",
+        "犄",
+        "绮"
+      ]
+    },
+    {
+      "char": "寺",
+      "pinyin": "si",
+      "pinyinTones": "sì",
+      "count": 8,
+      "family": [
+        "特",
+        "待",
+        "持",
+        "诗",
+        "侍",
+        "峙",
+        "痔",
+        "恃"
+      ]
+    },
+    {
+      "char": "己",
+      "pinyin": "ji",
+      "pinyinTones": "jǐ",
+      "count": 8,
+      "family": [
+        "起",
+        "记",
+        "改",
+        "配",
+        "纪",
+        "忌",
+        "岂",
+        "杞"
+      ]
+    },
+    {
+      "char": "我",
+      "pinyin": "wo",
+      "pinyinTones": "wǒ",
+      "count": 8,
+      "family": [
+        "哦",
+        "义",
+        "饿",
+        "俄",
+        "鹅",
+        "蛾",
+        "娥",
+        "峨"
+      ]
+    },
+    {
+      "char": "支",
+      "pinyin": "zhi",
+      "pinyinTones": "zhī",
+      "count": 8,
+      "family": [
+        "技",
+        "鼓",
+        "翅",
+        "歧",
+        "肢",
+        "枝",
+        "吱",
+        "岐"
+      ]
+    },
+    {
+      "char": "欠",
+      "pinyin": "qian",
+      "pinyinTones": "qiàn",
+      "count": 8,
+      "family": [
+        "吹",
+        "砍",
+        "饮",
+        "款",
+        "软",
+        "坎",
+        "钦",
+        "炊"
+      ]
+    },
+    {
+      "char": "中",
+      "pinyin": "zhong",
+      "pinyinTones": "zhōng; zhòng",
+      "count": 7,
+      "family": [
+        "种",
+        "钟",
+        "冲",
+        "忠",
+        "肿",
+        "忡",
+        "盅"
+      ]
+    },
+    {
+      "char": "主",
+      "pinyin": "zhu",
+      "pinyinTones": "zhǔ",
+      "count": 7,
+      "family": [
+        "住",
+        "注",
+        "驻",
+        "柱",
+        "蛀",
+        "拄",
+        "炷"
+      ]
+    },
+    {
+      "char": "乍",
+      "pinyin": "zha",
+      "pinyinTones": "zhà",
+      "count": 7,
+      "family": [
+        "作",
+        "昨",
+        "炸",
+        "咋",
+        "诈",
+        "窄",
+        "蚱"
+      ]
+    },
+    {
+      "char": "也",
+      "pinyin": "ye",
+      "pinyinTones": "yě",
+      "count": 7,
+      "family": [
+        "他",
+        "她",
+        "地",
+        "施",
+        "池",
+        "驰",
+        "弛"
+      ]
+    },
+    {
+      "char": "亢",
+      "pinyin": "kang",
+      "pinyinTones": "kàng",
+      "count": 7,
+      "family": [
+        "航",
+        "抗",
+        "肮",
+        "坑",
+        "吭",
+        "沆",
+        "炕"
+      ]
+    },
+    {
+      "char": "兆",
+      "pinyin": "zhao",
+      "pinyinTones": "zhào",
+      "count": 7,
+      "family": [
+        "跳",
+        "逃",
+        "挑",
+        "桃",
+        "窕",
+        "眺",
+        "姚"
+      ]
+    },
+    {
+      "char": "共",
+      "pinyin": "gong",
+      "pinyinTones": "gòng",
+      "count": 7,
+      "family": [
+        "供",
+        "恭",
+        "哄",
+        "巷",
+        "粪",
+        "烘",
+        "拱"
+      ]
+    },
+    {
+      "char": "军",
+      "pinyin": "jun",
+      "pinyinTones": "jūn",
+      "count": 7,
+      "family": [
+        "晕",
+        "挥",
+        "浑",
+        "辉",
+        "荤",
+        "诨",
+        "晖"
+      ]
+    },
+    {
+      "char": "几",
+      "pinyin": "ji",
+      "pinyinTones": "jǐ; jī",
+      "count": 7,
+      "family": [
+        "机",
+        "肌",
+        "饥",
+        "矶",
+        "玑",
+        "叽",
+        "讥"
+      ]
+    },
+    {
+      "char": "卜",
+      "pinyin": "bo",
+      "pinyinTones": "bo; bǔ",
+      "count": 7,
+      "family": [
+        "补",
+        "仆",
+        "扑",
+        "朴",
+        "赴",
+        "讣",
+        "攴"
+      ]
+    },
+    {
+      "char": "及",
+      "pinyin": "ji",
+      "pinyinTones": "jí",
+      "count": 7,
+      "family": [
+        "极",
+        "圾",
+        "吸",
+        "级",
+        "岌",
+        "汲",
+        "笈"
+      ]
+    },
+    {
+      "char": "反",
+      "pinyin": "fan",
+      "pinyinTones": "fǎn",
+      "count": 7,
+      "family": [
+        "板",
+        "饭",
+        "版",
+        "贩",
+        "扳",
+        "阪",
+        "坂"
+      ]
+    },
+    {
+      "char": "只",
+      "pinyin": "zhi",
+      "pinyinTones": "zhǐ; zhī",
+      "count": 7,
+      "family": [
+        "识",
+        "织",
+        "职",
+        "积",
+        "帜",
+        "咫",
+        "炽"
+      ]
+    },
+    {
+      "char": "召",
+      "pinyin": "zhao",
+      "pinyinTones": "zhào; shào",
+      "count": 7,
+      "family": [
+        "超",
+        "绍",
+        "招",
+        "沼",
+        "昭",
+        "貂",
+        "迢"
+      ]
+    },
+    {
+      "char": "同",
+      "pinyin": "tong",
+      "pinyinTones": "tóng; tòng",
+      "count": 7,
+      "family": [
+        "洞",
+        "筒",
+        "铜",
+        "酮",
+        "桐",
+        "胴",
+        "恫"
+      ]
+    },
+    {
+      "char": "咅",
+      "pinyin": "pou",
+      "pinyinTones": "pǒu",
+      "count": 7,
+      "family": [
+        "部",
+        "陪",
+        "赔",
+        "培",
+        "剖",
+        "菩",
+        "焙"
+      ]
+    },
+    {
+      "char": "夋",
+      "pinyin": "qun",
+      "pinyinTones": "qūn",
+      "count": 7,
+      "family": [
+        "俊",
+        "梭",
+        "峻",
+        "唆",
+        "骏",
+        "竣",
+        "浚"
+      ]
+    },
+    {
+      "char": "央",
+      "pinyin": "yang",
+      "pinyinTones": "yāng",
+      "count": 7,
+      "family": [
+        "英",
+        "映",
+        "盎",
+        "殃",
+        "鸯",
+        "秧",
+        "鞅"
+      ]
+    },
+    {
+      "char": "它",
+      "pinyin": "ta",
+      "pinyinTones": "tā",
+      "count": 7,
+      "family": [
+        "蛇",
+        "驼",
+        "舵",
+        "鸵",
+        "铊",
+        "砣",
+        "坨"
+      ]
+    },
+    {
+      "char": "安",
+      "pinyin": "an",
+      "pinyinTones": "ān; an",
+      "count": 7,
+      "family": [
+        "案",
+        "按",
+        "胺",
+        "氨",
+        "鞍",
+        "桉",
+        "铵"
+      ]
+    },
+    {
+      "char": "宗",
+      "pinyin": "zong",
+      "pinyinTones": "zōng",
+      "count": 7,
+      "family": [
+        "踪",
+        "崇",
+        "棕",
+        "综",
+        "鬃",
+        "粽",
+        "淙"
+      ]
+    },
+    {
+      "char": "宾",
+      "pinyin": "bin",
+      "pinyinTones": "bīn",
+      "count": 7,
+      "family": [
+        "槟",
+        "殡",
+        "滨",
+        "鬓",
+        "缤",
+        "摈",
+        "嫔"
+      ]
+    },
+    {
+      "char": "寿",
+      "pinyin": "shou",
+      "pinyinTones": "shòu",
+      "count": 7,
+      "family": [
+        "祷",
+        "筹",
+        "铸",
+        "畴",
+        "涛",
+        "踌",
+        "焘"
+      ]
+    },
+    {
+      "char": "尞",
+      "pinyin": "liao",
+      "pinyinTones": "liáo",
+      "count": 7,
+      "family": [
+        "僚",
+        "潦",
+        "瞭",
+        "撩",
+        "缭",
+        "镣",
+        "燎"
+      ]
+    },
+    {
+      "char": "尤",
+      "pinyin": "you",
+      "pinyinTones": "yóu",
+      "count": 7,
+      "family": [
+        "就",
+        "扰",
+        "优",
+        "犹",
+        "忧",
+        "鱿",
+        "疣"
+      ]
+    },
+    {
+      "char": "弟",
+      "pinyin": "di",
+      "pinyinTones": "dì; tì",
+      "count": 7,
+      "family": [
+        "第",
+        "梯",
+        "递",
+        "剃",
+        "涕",
+        "鹈",
+        "娣"
+      ]
+    },
+    {
+      "char": "旦",
+      "pinyin": "dan",
+      "pinyinTones": "dàn",
+      "count": 7,
+      "family": [
+        "但",
+        "担",
+        "量",
+        "坦",
+        "胆",
+        "袒",
+        "靼"
+      ]
+    },
+    {
+      "char": "止",
+      "pinyin": "zhi",
+      "pinyinTones": "zhǐ",
+      "count": 7,
+      "family": [
+        "址",
+        "扯",
+        "齿",
+        "耻",
+        "趾",
+        "寺",
+        "祉"
+      ]
+    },
+    {
+      "char": "正",
+      "pinyin": "zheng",
+      "pinyinTones": "zhèng; zhēng",
+      "count": 7,
+      "family": [
+        "定",
+        "证",
+        "整",
+        "政",
+        "症",
+        "征",
+        "怔"
+      ]
+    },
+    {
+      "char": "氐",
+      "pinyin": "di",
+      "pinyinTones": "dǐ; dī",
+      "count": 7,
+      "family": [
+        "底",
+        "低",
+        "抵",
+        "诋",
+        "邸",
+        "砥",
+        "祗"
+      ]
+    },
+    {
+      "char": "牙",
+      "pinyin": "ya",
+      "pinyinTones": "yá",
+      "count": 7,
+      "family": [
+        "与",
+        "呀",
+        "讶",
+        "雅",
+        "鸦",
+        "芽",
+        "蚜"
+      ]
+    },
+    {
+      "char": "生",
+      "pinyin": "sheng",
+      "pinyinTones": "shēng",
+      "count": 7,
+      "family": [
+        "性",
+        "星",
+        "胜",
+        "牲",
+        "姓",
+        "甥",
+        "笙"
+      ]
+    },
+    {
+      "char": "甲",
+      "pinyin": "jia",
+      "pinyinTones": "jiǎ",
+      "count": 7,
+      "family": [
+        "押",
+        "鸭",
+        "闸",
+        "钾",
+        "岬",
+        "胛",
+        "呷"
+      ]
+    },
+    {
+      "char": "畐",
+      "pinyin": "fu",
+      "pinyinTones": "fú",
+      "count": 7,
+      "family": [
+        "副",
+        "逼",
+        "福",
+        "富",
+        "蝠",
+        "辐",
+        "匐"
+      ]
+    },
+    {
+      "char": "真",
+      "pinyin": "zhen",
+      "pinyinTones": "zhēn",
+      "count": 7,
+      "family": [
+        "镇",
+        "填",
+        "慎",
+        "颠",
+        "缜",
+        "嗔",
+        "瞋"
+      ]
+    },
+    {
+      "char": "耑",
+      "pinyin": "zhuan",
+      "pinyinTones": "zhuān; duān",
+      "count": 7,
+      "family": [
+        "瑞",
+        "端",
+        "喘",
+        "踹",
+        "揣",
+        "湍",
+        "惴"
+      ]
+    },
+    {
+      "char": "胡",
+      "pinyin": "hu",
+      "pinyinTones": "hú",
+      "count": 7,
+      "family": [
+        "湖",
+        "糊",
+        "蝴",
+        "瑚",
+        "葫",
+        "鹕",
+        "醐"
+      ]
+    },
+    {
+      "char": "贝",
+      "pinyin": "bei",
+      "pinyinTones": "bèi",
+      "count": 7,
+      "family": [
+        "败",
+        "贼",
+        "呗",
+        "赘",
+        "坝",
+        "狈",
+        "钡"
+      ]
+    },
+    {
+      "char": "门",
+      "pinyin": "men",
+      "pinyinTones": "mén",
+      "count": 7,
+      "family": [
+        "们",
+        "问",
+        "闻",
+        "闷",
+        "扪",
+        "闵",
+        "闰"
+      ]
+    },
+    {
+      "char": "麻",
+      "pinyin": "ma",
+      "pinyinTones": "má",
+      "count": 7,
+      "family": [
+        "嘛",
+        "魔",
+        "磨",
+        "摩",
+        "靡",
+        "糜",
+        "麽"
+      ]
+    },
+    {
+      "char": "争",
+      "pinyin": "zheng",
+      "pinyinTones": "zhēng",
+      "count": 6,
+      "family": [
+        "静",
+        "净",
+        "睁",
+        "筝",
+        "狰",
+        "铮"
+      ]
+    },
+    {
+      "char": "云",
+      "pinyin": "yun",
+      "pinyinTones": "yún",
+      "count": 6,
+      "family": [
+        "运",
+        "魂",
+        "坛",
+        "酝",
+        "耘",
+        "芸"
+      ]
+    },
+    {
+      "char": "井",
+      "pinyin": "jing",
+      "pinyinTones": "jǐng",
+      "count": 6,
+      "family": [
+        "进",
+        "讲",
+        "形",
+        "刑",
+        "青",
+        "耕"
+      ]
+    },
+    {
+      "char": "兑",
+      "pinyin": "dui",
+      "pinyinTones": "duì",
+      "count": 6,
+      "family": [
+        "说",
+        "脱",
+        "税",
+        "阅",
+        "悦",
+        "锐"
+      ]
+    },
+    {
+      "char": "出",
+      "pinyin": "chu",
+      "pinyinTones": "chū",
+      "count": 6,
+      "family": [
+        "础",
+        "屈",
+        "拙",
+        "咄",
+        "绌",
+        "黜"
+      ]
+    },
+    {
+      "char": "单",
+      "pinyin": "dan",
+      "pinyinTones": "dān; shàn",
+      "count": 6,
+      "family": [
+        "弹",
+        "阐",
+        "惮",
+        "蝉",
+        "掸",
+        "婵"
+      ]
+    },
+    {
+      "char": "叟",
+      "pinyin": "sou",
+      "pinyinTones": "sǒu",
+      "count": 6,
+      "family": [
+        "搜",
+        "艘",
+        "瘦",
+        "嫂",
+        "嗖",
+        "飕"
+      ]
+    },
+    {
+      "char": "句",
+      "pinyin": "ju",
+      "pinyinTones": "jù; gōu",
+      "count": 6,
+      "family": [
+        "够",
+        "狗",
+        "局",
+        "拘",
+        "驹",
+        "苟"
+      ]
+    },
+    {
+      "char": "吾",
+      "pinyin": "wu",
+      "pinyinTones": "wú",
+      "count": 6,
+      "family": [
+        "唔",
+        "语",
+        "悟",
+        "晤",
+        "梧",
+        "衙"
+      ]
+    },
+    {
+      "char": "咸",
+      "pinyin": "xian",
+      "pinyinTones": "xián",
+      "count": 6,
+      "family": [
+        "感",
+        "喊",
+        "减",
+        "碱",
+        "缄",
+        "箴"
+      ]
+    },
+    {
+      "char": "土",
+      "pinyin": "tu",
+      "pinyinTones": "tǔ",
+      "count": 6,
+      "family": [
+        "吐",
+        "肚",
+        "杜",
+        "墅",
+        "牡",
+        "坤"
+      ]
+    },
+    {
+      "char": "奄",
+      "pinyin": "yan",
+      "pinyinTones": "yǎn; yān",
+      "count": 6,
+      "family": [
+        "掩",
+        "淹",
+        "俺",
+        "阉",
+        "鹌",
+        "唵"
+      ]
+    },
+    {
+      "char": "宛",
+      "pinyin": "wan",
+      "pinyinTones": "wǎn",
+      "count": 6,
+      "family": [
+        "碗",
+        "腕",
+        "豌",
+        "婉",
+        "惋",
+        "畹"
+      ]
+    },
+    {
+      "char": "山",
+      "pinyin": "shan",
+      "pinyinTones": "shān",
+      "count": 6,
+      "family": [
+        "仙",
+        "讪",
+        "灿",
+        "炭",
+        "疝",
+        "汕"
+      ]
+    },
+    {
+      "char": "巨",
+      "pinyin": "ju",
+      "pinyinTones": "jù",
+      "count": 6,
+      "family": [
+        "拒",
+        "矩",
+        "距",
+        "柜",
+        "炬",
+        "苣"
+      ]
+    },
+    {
+      "char": "帝",
+      "pinyin": "di",
+      "pinyinTones": "dì",
+      "count": 6,
+      "family": [
+        "蒂",
+        "谛",
+        "蹄",
+        "啼",
+        "缔",
+        "啻"
+      ]
+    },
+    {
+      "char": "平",
+      "pinyin": "ping",
+      "pinyinTones": "píng",
+      "count": 6,
+      "family": [
+        "评",
+        "苹",
+        "砰",
+        "坪",
+        "抨",
+        "怦"
+      ]
+    },
+    {
+      "char": "廷",
+      "pinyin": "ting",
+      "pinyinTones": "tíng",
+      "count": 6,
+      "family": [
+        "挺",
+        "庭",
+        "艇",
+        "霆",
+        "蜓",
+        "铤"
+      ]
+    },
+    {
+      "char": "弗",
+      "pinyin": "fu",
+      "pinyinTones": "fú",
+      "count": 6,
+      "family": [
+        "费",
+        "佛",
+        "沸",
+        "氟",
+        "狒",
+        "拂"
+      ]
+    },
+    {
+      "char": "戋",
+      "pinyin": "jian",
+      "pinyinTones": "jiān",
+      "count": 6,
+      "family": [
+        "线",
+        "浅",
+        "践",
+        "饯",
+        "栈",
+        "笺"
+      ]
+    },
+    {
+      "char": "户",
+      "pinyin": "hu",
+      "pinyinTones": "hù",
+      "count": 6,
+      "family": [
+        "护",
+        "雇",
+        "妒",
+        "驴",
+        "芦",
+        "扈"
+      ]
+    },
+    {
+      "char": "扁",
+      "pinyin": "bian",
+      "pinyinTones": "biǎn; piān",
+      "count": 6,
+      "family": [
+        "遍",
+        "骗",
+        "编",
+        "偏",
+        "蝙",
+        "翩"
+      ]
+    },
+    {
+      "char": "敝",
+      "pinyin": "bi",
+      "pinyinTones": "bì",
+      "count": 6,
+      "family": [
+        "币",
+        "憋",
+        "蔽",
+        "撇",
+        "瞥",
+        "鳖"
+      ]
+    },
+    {
+      "char": "既",
+      "pinyin": "ji",
+      "pinyinTones": "jì",
+      "count": 6,
+      "family": [
+        "概",
+        "慨",
+        "厩",
+        "溉",
+        "暨",
+        "嘅"
+      ]
+    },
+    {
+      "char": "旬",
+      "pinyin": "xun",
+      "pinyinTones": "xún",
+      "count": 6,
+      "family": [
+        "询",
+        "殉",
+        "绚",
+        "峋",
+        "徇",
+        "荀"
+      ]
+    },
+    {
+      "char": "易",
+      "pinyin": "yi",
+      "pinyinTones": "yì",
+      "count": 6,
+      "family": [
+        "踢",
+        "赐",
+        "惕",
+        "剔",
+        "蜴",
+        "锡"
+      ]
+    },
+    {
+      "char": "昔",
+      "pinyin": "xi",
+      "pinyinTones": "xī",
+      "count": 6,
+      "family": [
+        "错",
+        "借",
+        "措",
+        "蜡",
+        "猎",
+        "鹊"
+      ]
+    },
+    {
+      "char": "昜",
+      "pinyin": "yang",
+      "pinyinTones": "yáng",
+      "count": 6,
+      "family": [
+        "场",
+        "汤",
+        "肠",
+        "扬",
+        "畅",
+        "疡"
+      ]
+    },
+    {
+      "char": "是",
+      "pinyin": "shi",
+      "pinyinTones": "shì",
+      "count": 6,
+      "family": [
+        "题",
+        "提",
+        "匙",
+        "堤",
+        "缇",
+        "醍"
+      ]
+    },
+    {
+      "char": "曼",
+      "pinyin": "man",
+      "pinyinTones": "màn",
+      "count": 6,
+      "family": [
+        "慢",
+        "漫",
+        "鳗",
+        "馒",
+        "谩",
+        "幔"
+      ]
+    },
+    {
+      "char": "曾",
+      "pinyin": "ceng",
+      "pinyinTones": "céng; zēng",
+      "count": 6,
+      "family": [
+        "增",
+        "赠",
+        "憎",
+        "蹭",
+        "僧",
+        "甑"
+      ]
+    },
+    {
+      "char": "林",
+      "pinyin": "lin",
+      "pinyinTones": "lín",
+      "count": 6,
+      "family": [
+        "禁",
+        "淋",
+        "婪",
+        "琳",
+        "彬",
+        "霖"
+      ]
+    },
+    {
+      "char": "果",
+      "pinyin": "guo",
+      "pinyinTones": "guǒ",
+      "count": 6,
+      "family": [
+        "课",
+        "棵",
+        "裸",
+        "踝",
+        "夥",
+        "窠"
+      ]
+    },
+    {
+      "char": "次",
+      "pinyin": "ci",
+      "pinyinTones": "cì",
+      "count": 6,
+      "family": [
+        "资",
+        "姿",
+        "咨",
+        "茨",
+        "瓷",
+        "恣"
+      ]
+    },
+    {
+      "char": "番",
+      "pinyin": "fan",
+      "pinyinTones": "fān; pān",
+      "count": 6,
+      "family": [
+        "翻",
+        "播",
+        "蟠",
+        "幡",
+        "蕃",
+        "潘"
+      ]
+    },
+    {
+      "char": "皇",
+      "pinyin": "huang",
+      "pinyinTones": "huáng",
+      "count": 6,
+      "family": [
+        "凰",
+        "煌",
+        "惶",
+        "徨",
+        "蝗",
+        "遑"
+      ]
+    },
+    {
+      "char": "监",
+      "pinyin": "jian",
+      "pinyinTones": "jiān; jiàn",
+      "count": 6,
+      "family": [
+        "蓝",
+        "尴",
+        "篮",
+        "滥",
+        "槛",
+        "褴"
+      ]
+    },
+    {
+      "char": "秋",
+      "pinyin": "qiu",
+      "pinyinTones": "qiū",
+      "count": 6,
+      "family": [
+        "愁",
+        "揪",
+        "瞅",
+        "锹",
+        "楸",
+        "啾"
+      ]
+    },
+    {
+      "char": "罗",
+      "pinyin": "luo",
+      "pinyinTones": "luó",
+      "count": 6,
+      "family": [
+        "萝",
+        "啰",
+        "逻",
+        "锣",
+        "箩",
+        "猡"
+      ]
+    },
+    {
+      "char": "舌",
+      "pinyin": "she",
+      "pinyinTones": "shé",
+      "count": 6,
+      "family": [
+        "话",
+        "活",
+        "适",
+        "括",
+        "刮",
+        "恬"
+      ]
+    },
+    {
+      "char": "辰",
+      "pinyin": "chen",
+      "pinyinTones": "chén",
+      "count": 6,
+      "family": [
+        "晨",
+        "震",
+        "唇",
+        "振",
+        "娠",
+        "赈"
+      ]
+    },
+    {
+      "char": "需",
+      "pinyin": "xu",
+      "pinyinTones": "xū",
+      "count": 6,
+      "family": [
+        "懦",
+        "儒",
+        "蠕",
+        "糯",
+        "孺",
+        "嚅"
+      ]
+    },
+    {
+      "char": "韦",
+      "pinyin": "wei",
+      "pinyinTones": "wéi",
+      "count": 6,
+      "family": [
+        "伟",
+        "围",
+        "违",
+        "纬",
+        "苇",
+        "讳"
+      ]
+    },
+    {
+      "char": "章",
+      "pinyin": "zhang",
+      "pinyinTones": "zhāng",
+      "count": 6,
+      "family": [
+        "障",
+        "蟑",
+        "彰",
+        "瘴",
+        "樟",
+        "璋"
+      ]
+    },
+    {
+      "char": "马",
+      "pinyin": "ma",
+      "pinyinTones": "mǎ",
+      "count": 6,
+      "family": [
+        "吗",
+        "妈",
+        "码",
+        "玛",
+        "蚂",
+        "犸"
+      ]
+    },
+    {
+      "char": "丑",
+      "pinyin": "chou",
+      "pinyinTones": "chǒu",
+      "count": 5,
+      "family": [
+        "妞",
+        "扭",
+        "钮",
+        "纽",
+        "忸"
+      ]
+    },
+    {
+      "char": "九",
+      "pinyin": "jiu",
+      "pinyinTones": "jiǔ",
+      "count": 5,
+      "family": [
+        "究",
+        "仇",
+        "轨",
+        "旭",
+        "鸠"
+      ]
+    },
+    {
+      "char": "予",
+      "pinyin": "yu",
+      "pinyinTones": "yǔ; yú",
+      "count": 5,
+      "family": [
+        "舒",
+        "序",
+        "野",
+        "预",
+        "豫"
+      ]
+    },
+    {
+      "char": "于",
+      "pinyin": "yu",
+      "pinyinTones": "yú",
+      "count": 5,
+      "family": [
+        "宇",
+        "吁",
+        "迂",
+        "芋",
+        "盂"
+      ]
+    },
+    {
+      "char": "亚",
+      "pinyin": "ya",
+      "pinyinTones": "yà",
+      "count": 5,
+      "family": [
+        "恶",
+        "哑",
+        "氩",
+        "垩",
+        "娅"
+      ]
+    },
+    {
+      "char": "亦",
+      "pinyin": "yi",
+      "pinyinTones": "yì",
+      "count": 5,
+      "family": [
+        "恋",
+        "夜",
+        "迹",
+        "奕",
+        "弈"
+      ]
+    },
+    {
+      "char": "介",
+      "pinyin": "jie",
+      "pinyinTones": "jiè",
+      "count": 5,
+      "family": [
+        "界",
+        "价",
+        "尬",
+        "阶",
+        "芥"
+      ]
+    },
+    {
+      "char": "仑",
+      "pinyin": "lun",
+      "pinyinTones": "lún",
+      "count": 5,
+      "family": [
+        "论",
+        "轮",
+        "伦",
+        "沦",
+        "抡"
+      ]
+    },
+    {
+      "char": "会",
+      "pinyin": "hui",
+      "pinyinTones": "huì; kuài",
+      "count": 5,
+      "family": [
+        "绘",
+        "刽",
+        "烩",
+        "荟",
+        "桧"
+      ]
+    },
+    {
+      "char": "元",
+      "pinyin": "yuan",
+      "pinyinTones": "yuán",
+      "count": 5,
+      "family": [
+        "玩",
+        "完",
+        "远",
+        "园",
+        "顽"
+      ]
+    },
+    {
+      "char": "免",
+      "pinyin": "mian",
+      "pinyinTones": "miǎn; wèn",
+      "count": 5,
+      "family": [
+        "晚",
+        "挽",
+        "勉",
+        "娩",
+        "冕"
+      ]
+    },
+    {
+      "char": "内",
+      "pinyin": "nei",
+      "pinyinTones": "nèi",
+      "count": 5,
+      "family": [
+        "呐",
+        "纳",
+        "芮",
+        "钠",
+        "讷"
+      ]
+    },
+    {
+      "char": "冘",
+      "pinyin": "yin",
+      "pinyinTones": "yín",
+      "count": 5,
+      "family": [
+        "枕",
+        "耽",
+        "眈",
+        "沈",
+        "忱"
+      ]
+    },
+    {
+      "char": "凡",
+      "pinyin": "fan",
+      "pinyinTones": "fán",
+      "count": 5,
+      "family": [
+        "般",
+        "风",
+        "凤",
+        "帆",
+        "梵"
+      ]
+    },
+    {
+      "char": "刍",
+      "pinyin": "chu",
+      "pinyinTones": "chú",
+      "count": 5,
+      "family": [
+        "急",
+        "皱",
+        "趋",
+        "雏",
+        "诌"
+      ]
+    },
+    {
+      "char": "列",
+      "pinyin": "lie",
+      "pinyinTones": "liè",
+      "count": 5,
+      "family": [
+        "烈",
+        "例",
+        "裂",
+        "咧",
+        "冽"
+      ]
+    },
+    {
+      "char": "利",
+      "pinyin": "li",
+      "pinyinTones": "lì",
+      "count": 5,
+      "family": [
+        "梨",
+        "莉",
+        "蜊",
+        "痢",
+        "俐"
+      ]
+    },
+    {
+      "char": "勺",
+      "pinyin": "shao",
+      "pinyinTones": "sháo",
+      "count": 5,
+      "family": [
+        "的",
+        "约",
+        "豹",
+        "灼",
+        "酌"
+      ]
+    },
+    {
+      "char": "化",
+      "pinyin": "hua",
+      "pinyinTones": "huà; huā",
+      "count": 5,
+      "family": [
+        "花",
+        "货",
+        "华",
+        "靴",
+        "讹"
+      ]
+    },
+    {
+      "char": "十",
+      "pinyin": "shi",
+      "pinyinTones": "shí",
+      "count": 5,
+      "family": [
+        "计",
+        "协",
+        "针",
+        "汁",
+        "叶"
+      ]
+    },
+    {
+      "char": "卓",
+      "pinyin": "zhuo",
+      "pinyinTones": "zhuó",
+      "count": 5,
+      "family": [
+        "掉",
+        "桌",
+        "绰",
+        "悼",
+        "淖"
+      ]
+    },
+    {
+      "char": "去",
+      "pinyin": "qu",
+      "pinyinTones": "qù",
+      "count": 5,
+      "family": [
+        "却",
+        "法",
+        "劫",
+        "怯",
+        "砝"
+      ]
+    },
+    {
+      "char": "叚",
+      "pinyin": "jia",
+      "pinyinTones": "jiǎ",
+      "count": 5,
+      "family": [
+        "假",
+        "瑕",
+        "暇",
+        "遐",
+        "霞"
+      ]
+    },
+    {
+      "char": "员",
+      "pinyin": "yuan",
+      "pinyinTones": "yuán",
+      "count": 5,
+      "family": [
+        "损",
+        "圆",
+        "勋",
+        "陨",
+        "殒"
+      ]
+    },
+    {
+      "char": "喿",
+      "pinyin": "sao",
+      "pinyinTones": "sào",
+      "count": 5,
+      "family": [
+        "操",
+        "澡",
+        "躁",
+        "燥",
+        "臊"
+      ]
+    },
+    {
+      "char": "坐",
+      "pinyin": "zuo",
+      "pinyinTones": "zuò",
+      "count": 5,
+      "family": [
+        "座",
+        "挫",
+        "锉",
+        "矬",
+        "唑"
+      ]
+    },
+    {
+      "char": "夫",
+      "pinyin": "fu",
+      "pinyinTones": "fū; fú",
+      "count": 5,
+      "family": [
+        "规",
+        "肤",
+        "扶",
+        "麸",
+        "芙"
+      ]
+    },
+    {
+      "char": "夭",
+      "pinyin": "yao",
+      "pinyinTones": "yāo",
+      "count": 5,
+      "family": [
+        "笑",
+        "跃",
+        "妖",
+        "沃",
+        "袄"
+      ]
+    },
+    {
+      "char": "失",
+      "pinyin": "shi",
+      "pinyinTones": "shī",
+      "count": 5,
+      "family": [
+        "铁",
+        "秩",
+        "迭",
+        "轶",
+        "鉄"
+      ]
+    },
+    {
+      "char": "奂",
+      "pinyin": "huan",
+      "pinyinTones": "huàn",
+      "count": 5,
+      "family": [
+        "换",
+        "唤",
+        "痪",
+        "焕",
+        "涣"
+      ]
+    },
+    {
+      "char": "委",
+      "pinyin": "wei",
+      "pinyinTones": "wěi; wēi",
+      "count": 5,
+      "family": [
+        "矮",
+        "萎",
+        "魏",
+        "痿",
+        "倭"
+      ]
+    },
+    {
+      "char": "子",
+      "pinyin": "zi",
+      "pinyinTones": "zǐ; zi",
+      "count": 5,
+      "family": [
+        "字",
+        "疑",
+        "仔",
+        "李",
+        "孜"
+      ]
+    },
+    {
+      "char": "尃",
+      "pinyin": "fu",
+      "pinyinTones": "fū",
+      "count": 5,
+      "family": [
+        "博",
+        "膊",
+        "搏",
+        "缚",
+        "溥"
+      ]
+    },
+    {
+      "char": "尼",
+      "pinyin": "ni",
+      "pinyinTones": "ní",
+      "count": 5,
+      "family": [
+        "呢",
+        "妮",
+        "泥",
+        "昵",
+        "怩"
+      ]
+    },
+    {
+      "char": "岂",
+      "pinyin": "qi",
+      "pinyinTones": "qǐ; kǎi",
+      "count": 5,
+      "family": [
+        "凯",
+        "觊",
+        "铠",
+        "恺",
+        "皑"
+      ]
+    },
+    {
+      "char": "川",
+      "pinyin": "chuan",
+      "pinyinTones": "chuān",
+      "count": 5,
+      "family": [
+        "训",
+        "顺",
+        "荒",
+        "驯",
+        "钏"
+      ]
+    },
+    {
+      "char": "并",
+      "pinyin": "bing",
+      "pinyinTones": "bìng",
+      "count": 5,
+      "family": [
+        "瓶",
+        "饼",
+        "拼",
+        "屏",
+        "迸"
+      ]
+    },
+    {
+      "char": "延",
+      "pinyin": "yan",
+      "pinyinTones": "yán",
+      "count": 5,
+      "family": [
+        "蛋",
+        "诞",
+        "涎",
+        "蜒",
+        "筵"
+      ]
+    },
+    {
+      "char": "录",
+      "pinyin": "lu",
+      "pinyinTones": "lù",
+      "count": 5,
+      "family": [
+        "绿",
+        "剥",
+        "碌",
+        "氯",
+        "禄"
+      ]
+    },
+    {
+      "char": "才",
+      "pinyin": "cai",
+      "pinyinTones": "cái",
+      "count": 5,
+      "family": [
+        "在",
+        "存",
+        "财",
+        "材",
+        "豺"
+      ]
+    },
+    {
+      "char": "折",
+      "pinyin": "zhe",
+      "pinyinTones": "zhé; zhē; shé",
+      "count": 5,
+      "family": [
+        "誓",
+        "哲",
+        "逝",
+        "蜇",
+        "浙"
+      ]
+    },
+    {
+      "char": "敖",
+      "pinyin": "ao",
+      "pinyinTones": "áo; aó",
+      "count": 5,
+      "family": [
+        "傲",
+        "熬",
+        "嗷",
+        "螯",
+        "鳌"
+      ]
+    },
+    {
+      "char": "文",
+      "pinyin": "wen",
+      "pinyinTones": "wén",
+      "count": 5,
+      "family": [
+        "纹",
+        "坟",
+        "蚊",
+        "紊",
+        "雯"
+      ]
+    },
+    {
+      "char": "斤",
+      "pinyin": "jin",
+      "pinyinTones": "jīn",
+      "count": 5,
+      "family": [
+        "近",
+        "祈",
+        "欣",
+        "芹",
+        "靳"
+      ]
+    },
+    {
+      "char": "斩",
+      "pinyin": "zhan",
+      "pinyinTones": "zhǎn",
+      "count": 5,
+      "family": [
+        "暂",
+        "渐",
+        "崭",
+        "惭",
+        "堑"
+      ]
+    },
+    {
+      "char": "束",
+      "pinyin": "shu",
+      "pinyinTones": "shù",
+      "count": 5,
+      "family": [
+        "辣",
+        "速",
+        "悚",
+        "剌",
+        "敕"
+      ]
+    },
+    {
+      "char": "柬",
+      "pinyin": "jian",
+      "pinyinTones": "jiǎn",
+      "count": 5,
+      "family": [
+        "练",
+        "炼",
+        "拣",
+        "阑",
+        "谏"
+      ]
+    },
+    {
+      "char": "此",
+      "pinyin": "ci",
+      "pinyinTones": "cǐ",
+      "count": 5,
+      "family": [
+        "紫",
+        "柴",
+        "疵",
+        "雌",
+        "觜"
+      ]
+    },
+    {
+      "char": "炎",
+      "pinyin": "yan",
+      "pinyinTones": "yán",
+      "count": 5,
+      "family": [
+        "谈",
+        "毯",
+        "淡",
+        "痰",
+        "氮"
+      ]
+    },
+    {
+      "char": "焦",
+      "pinyin": "jiao",
+      "pinyinTones": "jiāo",
+      "count": 5,
+      "family": [
+        "瞧",
+        "蕉",
+        "礁",
+        "憔",
+        "醮"
+      ]
+    },
+    {
+      "char": "王",
+      "pinyin": "wang",
+      "pinyinTones": "wáng; wàng",
+      "count": 5,
+      "family": [
+        "往",
+        "狂",
+        "枉",
+        "旺",
+        "汪"
+      ]
+    },
+    {
+      "char": "瓜",
+      "pinyin": "gua",
+      "pinyinTones": "guā",
+      "count": 5,
+      "family": [
+        "抓",
+        "孤",
+        "狐",
+        "弧",
+        "呱"
+      ]
+    },
+    {
+      "char": "申",
+      "pinyin": "shen",
+      "pinyinTones": "shēn",
+      "count": 5,
+      "family": [
+        "神",
+        "审",
+        "绅",
+        "呻",
+        "砷"
+      ]
+    },
+    {
+      "char": "登",
+      "pinyin": "deng",
+      "pinyinTones": "dēng",
+      "count": 5,
+      "family": [
+        "澄",
+        "橙",
+        "瞪",
+        "凳",
+        "蹬"
+      ]
+    },
+    {
+      "char": "盍",
+      "pinyin": "he",
+      "pinyinTones": "hé",
+      "count": 5,
+      "family": [
+        "盖",
+        "嗑",
+        "磕",
+        "瞌",
+        "阖"
+      ]
+    },
+    {
+      "char": "禺",
+      "pinyin": "ou",
+      "pinyinTones": "ǒu; yú; yù",
+      "count": 5,
+      "family": [
+        "遇",
+        "寓",
+        "愚",
+        "偶",
+        "隅"
+      ]
+    },
+    {
+      "char": "立",
+      "pinyin": "li",
+      "pinyinTones": "lì",
+      "count": 5,
+      "family": [
+        "拉",
+        "垃",
+        "泣",
+        "粒",
+        "笠"
+      ]
+    },
+    {
+      "char": "童",
+      "pinyin": "tong",
+      "pinyinTones": "tóng",
+      "count": 5,
+      "family": [
+        "撞",
+        "幢",
+        "瞳",
+        "憧",
+        "潼"
+      ]
+    },
+    {
+      "char": "至",
+      "pinyin": "zhi",
+      "pinyinTones": "zhì",
+      "count": 5,
+      "family": [
+        "室",
+        "致",
+        "侄",
+        "窒",
+        "蛭"
+      ]
+    },
+    {
+      "char": "苗",
+      "pinyin": "miao",
+      "pinyinTones": "miáo",
+      "count": 5,
+      "family": [
+        "猫",
+        "描",
+        "瞄",
+        "喵",
+        "锚"
+      ]
+    },
+    {
+      "char": "西",
+      "pinyin": "xi",
+      "pinyinTones": "xī",
+      "count": 5,
+      "family": [
+        "牺",
+        "晒",
+        "洒",
+        "茜",
+        "栖"
+      ]
+    },
+    {
+      "char": "豆",
+      "pinyin": "dou",
+      "pinyinTones": "dòu",
+      "count": 5,
+      "family": [
+        "短",
+        "登",
+        "逗",
+        "痘",
+        "尌"
+      ]
+    },
+    {
+      "char": "赖",
+      "pinyin": "lai",
+      "pinyinTones": "lài",
+      "count": 5,
+      "family": [
+        "懒",
+        "濑",
+        "獭",
+        "癞",
+        "籁"
+      ]
+    },
+    {
+      "char": "长",
+      "pinyin": "zhang",
+      "pinyinTones": "zhǎng; cháng",
+      "count": 5,
+      "family": [
+        "张",
+        "帐",
+        "账",
+        "胀",
+        "怅"
+      ]
+    },
+    {
+      "char": "雚",
+      "pinyin": "guan",
+      "pinyinTones": "guàn; huán",
+      "count": 5,
+      "family": [
+        "罐",
+        "灌",
+        "颧",
+        "獾",
+        "鹳"
+      ]
+    },
+    {
+      "char": "齐",
+      "pinyin": "qi",
+      "pinyinTones": "qí",
+      "count": 5,
+      "family": [
+        "剂",
+        "挤",
+        "济",
+        "脐",
+        "跻"
+      ]
+    },
+    {
+      "char": "不",
+      "pinyin": "bu",
+      "pinyinTones": "bù",
+      "count": 4,
+      "family": [
+        "杯",
+        "怀",
+        "环",
+        "钚"
+      ]
+    },
+    {
+      "char": "丙",
+      "pinyin": "bing",
+      "pinyinTones": "bǐng",
+      "count": 4,
+      "family": [
+        "更",
+        "病",
+        "柄",
+        "炳"
+      ]
+    },
+    {
+      "char": "丩",
+      "pinyin": "jiu",
+      "pinyinTones": "jiū",
+      "count": 4,
+      "family": [
+        "叫",
+        "句",
+        "收",
+        "纠"
+      ]
+    },
+    {
+      "char": "丰",
+      "pinyin": "feng",
+      "pinyinTones": "fēng",
+      "count": 4,
+      "family": [
+        "封",
+        "邦",
+        "奉",
+        "蚌"
+      ]
+    },
+    {
+      "char": "乔",
+      "pinyin": "qiao",
+      "pinyinTones": "qiáo",
+      "count": 4,
+      "family": [
+        "桥",
+        "矫",
+        "娇",
+        "侨"
+      ]
+    },
+    {
+      "char": "乞",
+      "pinyin": "qi",
+      "pinyinTones": "qǐ",
+      "count": 4,
+      "family": [
+        "吃",
+        "迄",
+        "疙",
+        "屹"
+      ]
+    },
+    {
+      "char": "从",
+      "pinyin": "cong",
+      "pinyinTones": "cóng",
+      "count": 4,
+      "family": [
+        "纵",
+        "丛",
+        "怂",
+        "耸"
+      ]
+    },
+    {
+      "char": "付",
+      "pinyin": "fu",
+      "pinyinTones": "fù",
+      "count": 4,
+      "family": [
+        "府",
+        "附",
+        "符",
+        "咐"
+      ]
+    },
+    {
+      "char": "代",
+      "pinyin": "dai",
+      "pinyinTones": "dài",
+      "count": 4,
+      "family": [
+        "袋",
+        "贷",
+        "黛",
+        "岱"
+      ]
+    },
+    {
+      "char": "先",
+      "pinyin": "xian",
+      "pinyinTones": "xiān",
+      "count": 4,
+      "family": [
+        "选",
+        "洗",
+        "宪",
+        "酰"
+      ]
+    },
+    {
+      "char": "全",
+      "pinyin": "quan",
+      "pinyinTones": "quán",
+      "count": 4,
+      "family": [
+        "拴",
+        "诠",
+        "栓",
+        "荃"
+      ]
+    },
+    {
+      "char": "兼",
+      "pinyin": "jian",
+      "pinyinTones": "jiān",
+      "count": 4,
+      "family": [
+        "歉",
+        "赚",
+        "嫌",
+        "谦"
+      ]
+    },
+    {
+      "char": "冈",
+      "pinyin": "gang",
+      "pinyinTones": "gāng",
+      "count": 4,
+      "family": [
+        "刚",
+        "钢",
+        "岗",
+        "纲"
+      ]
+    },
+    {
+      "char": "农",
+      "pinyin": "nong",
+      "pinyinTones": "nóng",
+      "count": 4,
+      "family": [
+        "浓",
+        "侬",
+        "脓",
+        "哝"
+      ]
+    },
+    {
+      "char": "则",
+      "pinyin": "ze",
+      "pinyinTones": "zé",
+      "count": 4,
+      "family": [
+        "测",
+        "厕",
+        "侧",
+        "恻"
+      ]
+    },
+    {
+      "char": "劳",
+      "pinyin": "lao",
+      "pinyinTones": "láo",
+      "count": 4,
+      "family": [
+        "唠",
+        "捞",
+        "痨",
+        "涝"
+      ]
+    },
+    {
+      "char": "勿",
+      "pinyin": "wu",
+      "pinyinTones": "wù",
+      "count": 4,
+      "family": [
+        "物",
+        "吻",
+        "忽",
+        "刎"
+      ]
+    },
+    {
+      "char": "匋",
+      "pinyin": "tao",
+      "pinyinTones": "táo",
+      "count": 4,
+      "family": [
+        "淘",
+        "萄",
+        "掏",
+        "啕"
+      ]
+    },
+    {
+      "char": "千",
+      "pinyin": "qian",
+      "pinyinTones": "qiān",
+      "count": 4,
+      "family": [
+        "忏",
+        "纤",
+        "迁",
+        "仟"
+      ]
+    },
+    {
+      "char": "卑",
+      "pinyin": "bei",
+      "pinyinTones": "bēi",
+      "count": 4,
+      "family": [
+        "啤",
+        "牌",
+        "脾",
+        "碑"
+      ]
+    },
+    {
+      "char": "卖",
+      "pinyin": "mai",
+      "pinyinTones": "mài",
+      "count": 4,
+      "family": [
+        "续",
+        "读",
+        "渎",
+        "牍"
+      ]
+    },
+    {
+      "char": "卯",
+      "pinyin": "mao",
+      "pinyinTones": "mǎo",
+      "count": 4,
+      "family": [
+        "留",
+        "聊",
+        "贸",
+        "柳"
+      ]
+    },
+    {
+      "char": "叔",
+      "pinyin": "shu",
+      "pinyinTones": "shū",
+      "count": 4,
+      "family": [
+        "寂",
+        "督",
+        "椒",
+        "淑"
+      ]
+    },
+    {
+      "char": "取",
+      "pinyin": "qu",
+      "pinyinTones": "qǔ",
+      "count": 4,
+      "family": [
+        "最",
+        "趣",
+        "聚",
+        "冣"
+      ]
+    },
+    {
+      "char": "司",
+      "pinyin": "si",
+      "pinyinTones": "sī",
+      "count": 4,
+      "family": [
+        "词",
+        "伺",
+        "饲",
+        "祠"
+      ]
+    },
+    {
+      "char": "君",
+      "pinyin": "jun",
+      "pinyinTones": "jūn",
+      "count": 4,
+      "family": [
+        "群",
+        "裙",
+        "郡",
+        "窘"
+      ]
+    },
+    {
+      "char": "吴",
+      "pinyin": "wu",
+      "pinyinTones": "wú",
+      "count": 4,
+      "family": [
+        "误",
+        "娱",
+        "蜈",
+        "虞"
+      ]
+    },
+    {
+      "char": "唐",
+      "pinyin": "tang",
+      "pinyinTones": "táng",
+      "count": 4,
+      "family": [
+        "糖",
+        "塘",
+        "搪",
+        "溏"
+      ]
+    },
+    {
+      "char": "因",
+      "pinyin": "yin",
+      "pinyinTones": "yīn",
+      "count": 4,
+      "family": [
+        "恩",
+        "烟",
+        "咽",
+        "茵"
+      ]
+    },
+    {
+      "char": "垂",
+      "pinyin": "chui",
+      "pinyinTones": "chuí",
+      "count": 4,
+      "family": [
+        "睡",
+        "锤",
+        "唾",
+        "捶"
+      ]
+    },
+    {
+      "char": "夗",
+      "pinyin": "yuan",
+      "pinyinTones": "yuàn",
+      "count": 4,
+      "family": [
+        "怨",
+        "苑",
+        "宛",
+        "鸳"
+      ]
+    }
+  ]
+}

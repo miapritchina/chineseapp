@@ -9,7 +9,7 @@ import { useAuth } from "./hooks/useAuth";
 import { wakeUp } from "./lib/supabase";
 
 import { SearchBar, type SearchMode } from "./components/SearchBar";
-import { searchByComponent } from "./lib/componentSearch";
+import { searchByComponent, componentFrequencies } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
@@ -18,7 +18,10 @@ import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
+import { ComponentTable } from "./components/ComponentTable";
+import { PhoneticsPage } from "./components/PhoneticsPage";
 import { useReview } from "./hooks/useReview";
+import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 
 import type { Word } from "./lib/types";
 
@@ -50,21 +53,26 @@ export function App() {
   const [showReview, setShowReview] = useState(
     typeof window !== "undefined" && window.location.hash === "#/review",
   );
+  const [showPhonetics, setShowPhonetics] = useState(
+    typeof window !== "undefined" && window.location.hash === "#/phonetics",
+  );
 
-  // Items eligible for SRS scheduling: status needToLearn or learned.
-  // (saved is unscheduled — base tier; wrote keeps the recognition card
-  // alive but adds a production facet in a later PR.)
-  const scheduledKeys = useMemo(() => {
-    const s = new Set<string>();
-    for (const k of saved) {
-      if (review.has(k) || learned.has(k) || wrote.has(k)) s.add(k);
-    }
-    return s;
-  }, [saved, review, learned, wrote]);
+  // Every saved word is queued for review — the user's stated goal is to
+  // learn all of them, and the four statuses are about progression
+  // (★ → 📕 → 🎓 → ✒), not about what's scheduled.
+  const scheduledKeys = saved;
 
-  const { dueCards, grade } = useReview({
+  const phonetics = usePhoneticComponents();
+  const phoneticComponentKeys = useMemo(
+    () => new Set(phonetics.components.map((c) => c.char)),
+    [phonetics.components],
+  );
+
+  const { dueCards, grade, attributeFailure } = useReview({
     userId: auth.user?.id ?? null,
     scheduledKeys,
+    chars: charsData.chars,
+    phoneticComponentKeys,
   });
 
   // Wake the Supabase project early to mask cold-start latency.
@@ -72,21 +80,24 @@ export function App() {
     wakeUp();
   }, []);
 
-  // Track the review page via the URL hash so back/forward work and the
-  // user can deep-link to /Ai-/#/review from the hamburger.
+  // Track full-screen pages via URL hash. Same pattern as the modal stack
+  // (in useModalStack); kept inline here because these pages are
+  // top-level, not nested.
   useEffect(() => {
-    const onHash = () => setShowReview(window.location.hash === "#/review");
+    const onHash = () => {
+      setShowReview(window.location.hash === "#/review");
+      setShowPhonetics(window.location.hash === "#/phonetics");
+    };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  const openReview = () => {
-    window.location.hash = "#/review";
-  };
-  const closeReview = () => {
-    if (window.location.hash === "#/review") {
-      history.back();
-    } else {
-      setShowReview(false);
+  const closeHashPage = (target: string) => {
+    if (window.location.hash === target) history.back();
+    else {
+      // Synchronously clear the local flag so we don't paint a frame of
+      // the page after the user closes it before hashchange fires.
+      if (target === "#/review") setShowReview(false);
+      if (target === "#/phonetics") setShowPhonetics(false);
     }
   };
 
@@ -273,7 +284,6 @@ export function App() {
 
   const openCharPopup = (char: string) => setPopupChar(char);
 
-  const openCharAsTree = (char: string) => push({ kind: "char", key: char });
 
   const top = stack[stack.length - 1];
   const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
@@ -282,9 +292,10 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v56"
+          version="chinese v60"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
+          phoneticsHref="#/phonetics"
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -302,8 +313,22 @@ export function App() {
           dueCards={dueCards}
           findWord={dict.findWord}
           ensureCached={dict.ensureCached}
-          onGrade={(key, rating) => grade(key, rating)}
-          onClose={closeReview}
+          chars={charsData.chars}
+          phoneticComponents={phonetics.components}
+          phoneticComponentsByChar={phonetics.byChar}
+          onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
+          onAttributeFailure={(childKey) => attributeFailure(childKey)}
+          onClose={() => closeHashPage("#/review")}
+        />
+      )}
+
+      {showPhonetics && (
+        <PhoneticsPage
+          components={phonetics.components}
+          ready={phonetics.ready}
+          getStatus={getStatus}
+          setStatus={setStatus}
+          onClose={() => closeHashPage("#/phonetics")}
         />
       )}
 
@@ -332,6 +357,12 @@ export function App() {
             onOpen={(w) => void openWord(w)}
           />
         )
+      ) : searchMode === "byComponent" && saved.size > 0 ? (
+        <ComponentTable
+          savedWords={savedList.map((s) => s.word)}
+          chars={charsData.chars}
+          onPick={(c) => setQuery(c)}
+        />
       ) : (
         <main className="home" aria-label="Home">
           <SavedShelf
@@ -370,7 +401,6 @@ export function App() {
           setStatus={setStatus}
           onClose={() => setPopupChar(null)}
           onJumpToWord={(w) => void openWord(w)}
-          onOpenAsTree={openCharAsTree}
           findWord={dict.findWord}
         />
       )}

@@ -14,3 +14,8 @@ export function searchByComponent(
   savedWords: string[],
   chars: Record<string, Char>,
 ): string[];
+
+export function componentFrequencies(
+  savedWords: string[],
+  chars: Record<string, Char>,
+): Map<string, number>;

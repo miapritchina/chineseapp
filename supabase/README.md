@@ -51,8 +51,10 @@ The workflow uses the Supabase Management API
 (`https://api.supabase.com/v1/...`) with your PAT as a Bearer token to:
 
 1. Verify the PAT has access to the project.
-2. `POST /projects/<ref>/database/query` with the contents of
-   `migrations/0001_dictionary.sql` — applies the schema in one round-trip.
+2. `POST /projects/<ref>/database/query` with the contents of every file
+   in `migrations/` (in numeric order) — applies the schema in one
+   round-trip per file. All migrations are idempotent (`IF NOT EXISTS`,
+   `DROP POLICY IF EXISTS` + recreate, etc.) so re-running is safe.
 3. `GET /projects/<ref>/api-keys` — fetches the `service_role` key (used
    only inside the runner, masked in logs, never stored anywhere).
 4. Run `node scripts/seed-supabase.mjs` with that key — batched upserts,
@@ -62,6 +64,31 @@ The workflow uses the Supabase Management API
 Nothing about your project leaves the GitHub Actions runner. The PAT exists
 only as the workflow's input value (auto-masked in logs, never written to
 disk, gone the moment the run finishes).
+
+## Schema overview
+
+| Migration | Adds |
+|---|---|
+| `0001_dictionary.sql` | `words` table + indexes + `search_words(text)` RPC |
+| `0002_user_saves.sql` | `user_saves(user_id, word, saved_at)` + RLS |
+| `0003_user_saves_learned.sql` | `learned_at` column |
+| `0004_search_words_rich.sql` | widens `search_words` return shape |
+| `0005_user_saves_wrote.sql` | `wrote_at` column |
+| `0006_user_saves_review.sql` | `review_at` column ("Need to learn" tier) |
+| `0007_fsrs_state.sql` | `user_fsrs_state(user_id, item_key, item_kind, facet, card jsonb, due_at, last_review_at)` for the SRS scheduler |
+
+`user_saves` enforces "at most one of `{learned_at, wrote_at, review_at}`
+non-null at a time" by client convention (no DB constraint) — that's how
+the four-status model is encoded.
+
+`user_fsrs_state` stores one ts-fsrs Card per `(item, facet)` tuple.
+`item_kind` is `word | char | component`; `facet` is `recognition |
+phoneticTap | componentSound | familyTransfer | production`. Adding a
+new facet doesn't need a migration.
+
+After applying a new migration, the front-end keeps working — sync
+queries that reference a missing column are wrapped in try/fallback
+paths that downgrade to the older shape silently.
 
 ## Local-developer path (alternate)
 

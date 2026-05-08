@@ -11,11 +11,10 @@ interface Props {
   setStatus: (key: string, next: Status | null) => void;
   onClose: () => void;
   onJumpToWord: (word: string) => void;
-  onOpenAsTree: (char: string) => void;
   findWord: (key: string) => Word | null;
 }
 
-export function CharPopup({ char, charData, saved, getStatus, setStatus, onClose, onJumpToWord, onOpenAsTree, findWord }: Props) {
+export function CharPopup({ char, charData, saved, getStatus, setStatus, onClose, onJumpToWord, findWord }: Props) {
   const writerRef = useRef<HTMLDivElement>(null);
   const writerInstanceRef = useRef<any>(null);
 
@@ -113,16 +112,14 @@ export function CharPopup({ char, charData, saved, getStatus, setStatus, onClose
         )}
         {charData?.notes && <div className="popup-etym">{charData.notes}</div>}
 
-        <button
+        <a
           className="popup-open-tree"
-          type="button"
-          onClick={() => {
-            onClose();
-            onOpenAsTree(char);
-          }}
+          role="button"
+          href={`./network/?focus=${encodeURIComponent(char)}`}
+          onClick={onClose}
         >
-          Show decomposition →
-        </button>
+          Show in network →
+        </a>
 
         {matches.length > 0 && (
           <div className="popup-saved">
