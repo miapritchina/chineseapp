@@ -32,6 +32,26 @@ export function componentClosure(word, chars) {
 }
 
 /**
+ * Frequency map of every Han character that shows up in the recursive
+ * component closure of any of `savedWords`. Counts how many distinct saved
+ * words each component occurs in (NOT total occurrences across closures).
+ * Used to populate the suggestion grid in by-component search mode.
+ * @param {string[]} savedWords
+ * @param {Record<string, {components?: Array<{char: string}>}>} chars
+ * @returns {Map<string, number>}
+ */
+export function componentFrequencies(savedWords, chars) {
+  const counts = new Map();
+  for (const w of savedWords) {
+    const closure = componentClosure(w, chars);
+    for (const c of closure) {
+      counts.set(c, (counts.get(c) || 0) + 1);
+    }
+  }
+  return counts;
+}
+
+/**
  * Return saved words whose component closure contains EVERY Chinese
  * character in `query`. Empty / non-Han query → empty result. Saved-list
  * order is preserved.

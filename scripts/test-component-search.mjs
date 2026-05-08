@@ -4,6 +4,7 @@
 import {
   componentClosure,
   searchByComponent,
+  componentFrequencies,
 } from "../src/lib/componentSearch.mjs";
 import assert from "node:assert/strict";
 
@@ -115,6 +116,24 @@ test("char appears as itself (no decomposition) still matches", () => {
   // 年 has no components but IS itself a char in 新年
   const r = searchByComponent("年", ["新年", "学习"], fixtureChars);
   assert.deepEqual(r, ["新年"]);
+});
+
+test("componentFrequencies counts distinct saved words per closure entry", () => {
+  // 新年: closure = {新, 年, 立, 木, 斤}
+  // 学习: closure = {学, 习, 子}
+  // 好:   closure = {好, 女, 子}
+  const f = componentFrequencies(["新年", "学习", "好"], fixtureChars);
+  // 子 appears in 学习 + 好 = 2
+  assert.equal(f.get("子"), 2);
+  // 立 appears in 新年 only = 1
+  assert.equal(f.get("立"), 1);
+  // 习 appears in 学习 only = 1
+  assert.equal(f.get("习"), 1);
+});
+
+test("componentFrequencies on empty saved set is empty", () => {
+  const f = componentFrequencies([], fixtureChars);
+  assert.equal(f.size, 0);
 });
 
 let failures = 0;

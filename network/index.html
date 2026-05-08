@@ -131,7 +131,7 @@
       <span><span class="legend-dot" style="background: var(--char)"></span>Character</span>
     </div>
     <div class="tooltip" id="tip"></div>
-    <div class="page-id">network v4</div>
+    <div class="page-id">network v5</div>
 
     <script>
       // Reads the same v2 localStorage shape the React app writes.
@@ -422,6 +422,25 @@
             '<hr style="border:none;border-top:1px solid var(--border);margin: 6px 0;">';
           renderWordTip(word, pos, wholeRow);
         });
+        // Deep-link focus support. Caller passes ?focus=<key> (URL-encoded
+        // hanzi) — once the initial layout settles, highlight + center the
+        // matching node. Used by CharPopup's "Show in network" button.
+        const focusTarget = new URLSearchParams(location.search).get('focus');
+        if (focusTarget) {
+          cy.one('layoutstop', () => {
+            const wn = cy.getElementById('w:' + focusTarget);
+            const cn = cy.getElementById('c:' + focusTarget);
+            const node = wn.length ? wn : cn.length ? cn : null;
+            if (!node) return;
+            cy.elements().addClass('faded').removeClass('highlight');
+            node.closedNeighborhood().removeClass('faded').addClass('highlight');
+            cy.animate(
+              { center: { eles: node }, zoom: Math.max(cy.zoom(), 1.2) },
+              { duration: 400 },
+            );
+          });
+        }
+
         cy.on('mouseout tapend', 'node', () => {
           if (!tipSticky) hideTip();
         });

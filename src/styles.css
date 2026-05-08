@@ -258,6 +258,127 @@ body {
 .review-empty-title { font-size: 18px; color: var(--text); margin-bottom: 6px; }
 .review-empty-hint  { font-size: 14px; max-width: 30em; }
 
+.review-kind-tag {
+  margin: 0 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+/* "What threw you?" attribution banner. Replaces the grade buttons for
+   ~3 seconds after Again on a multi-char word. */
+.review-attrib {
+  border-top: 1px solid var(--border);
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+}
+.review-attrib-title {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.review-attrib-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.review-attrib-pick {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  font-size: 24px;
+  padding: 8px 16px;
+  cursor: pointer;
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+.review-attrib-pick:hover, .review-attrib-pick:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.review-attrib-skip {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.review-attrib-skip:hover { color: var(--text); }
+
+/* Component table: shown in the home view when by-component search is
+   active but the query is empty. A grid of every Han char appearing in
+   the recursive closure of the user's saved words, ranked by how many of
+   those words it occurs in. Tap a chip to fill it into the search box. */
+.component-table-header {
+  padding: 0 18px;
+  margin-bottom: 6px;
+}
+.component-table-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--muted);
+}
+.component-table-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.component-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+  padding: 4px 12px 60px;
+}
+.component-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 6px 6px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.component-chip:hover, .component-chip:focus-visible {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  outline: none;
+}
+.component-chip-char {
+  font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  font-size: 26px;
+  line-height: 1;
+}
+.component-chip-pinyin {
+  font-size: 11px;
+  color: var(--muted);
+}
+.component-chip-count {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 0 4px;
+}
+
 .topbar-end {
   display: flex;
   align-items: center;

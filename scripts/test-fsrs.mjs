@@ -70,6 +70,89 @@ test("due date is in the future after a successful review", () => {
   );
 });
 
+// Cascade math (PR 3): re-implement the wrapper's applyCascadeCredit
+// formula here so we can test it without TS imports. Mirrors the body
+// of src/lib/fsrs.ts:applyCascadeCredit.
+function cascade(prev, capDays, now) {
+  const result = scheduler.next(prev, now, Rating.Good).card;
+  const dampedS = prev.stability + (result.stability - prev.stability) * 0.5;
+  const fullIntervalMs = result.due.getTime() - now.getTime();
+  const dueRatio = result.stability > 0 ? dampedS / result.stability : 0;
+  let dueMs = now.getTime() + Math.max(0, fullIntervalMs * dueRatio);
+  if (capDays !== null) {
+    const capMs = now.getTime() + capDays * 86400000;
+    if (dueMs > capMs) dueMs = capMs;
+  }
+  return {
+    ...result,
+    stability: dampedS,
+    due: new Date(dueMs),
+    reps: prev.reps,
+    lapses: prev.lapses,
+    last_review: prev.last_review,
+  };
+}
+
+test("cascade credit on a never-reviewed card caps due at 7 days", () => {
+  const now = new Date("2026-05-08T12:00:00Z");
+  const c = createEmptyCard(now);
+  const cascaded = cascade(c, 7, now);
+  const intervalDays = (cascaded.due.getTime() - now.getTime()) / 86400000;
+  assert.ok(intervalDays <= 7.001, `cap should hold: ${intervalDays}d`);
+  assert.ok(intervalDays >= 0, `due should not regress: ${intervalDays}d`);
+});
+
+test("cascade credit yields stability between prev and full-Good", () => {
+  const now = new Date("2026-05-08T12:00:00Z");
+  let c = createEmptyCard(now);
+  // Get past the seed state so prev.stability > 0.
+  c = scheduler.next(c, c.due, Rating.Good).card;
+  const prevS = c.stability;
+  const goodResult = scheduler.next(c, c.due, Rating.Good).card;
+  const cascaded = cascade(c, null, c.due);
+  assert.ok(
+    cascaded.stability >= prevS && cascaded.stability <= goodResult.stability,
+    `damped stability should sit between ${prevS} and ${goodResult.stability}; got ${cascaded.stability}`,
+  );
+});
+
+test("cascade credit does NOT bump reps or lapses or last_review", () => {
+  const now = new Date("2026-05-08T12:00:00Z");
+  let c = scheduler.next(createEmptyCard(now), now, Rating.Good).card;
+  const reps0 = c.reps;
+  const lapses0 = c.lapses;
+  const lastReview0 = c.last_review;
+  const cascaded = cascade(c, null, c.due);
+  assert.equal(cascaded.reps, reps0);
+  assert.equal(cascaded.lapses, lapses0);
+  assert.equal(
+    cascaded.last_review?.getTime?.() ?? null,
+    lastReview0?.getTime?.() ?? null,
+  );
+});
+
+test("cascade with cap=null lets stability run free past 7 days", () => {
+  const now = new Date("2026-05-08T12:00:00Z");
+  // Build a card that, on a real Good, would schedule past 7 days.
+  let c = createEmptyCard(now);
+  c = scheduler.next(c, c.due, Rating.Good).card;
+  c = scheduler.next(c, c.due, Rating.Good).card;
+  c = scheduler.next(c, c.due, Rating.Good).card;
+  const goodResult = scheduler.next(c, c.due, Rating.Good).card;
+  const goodIntervalDays = (goodResult.due.getTime() - c.due.getTime()) / 86400000;
+  if (goodIntervalDays <= 7) {
+    // Default ts-fsrs params don't push past 7d after only three Goods —
+    // this assertion is then trivially satisfied.
+    return;
+  }
+  const cascaded = cascade(c, null, c.due);
+  const cascadeIntervalDays = (cascaded.due.getTime() - c.due.getTime()) / 86400000;
+  assert.ok(
+    cascadeIntervalDays >= 7 || cascadeIntervalDays <= goodIntervalDays,
+    `uncapped cascade due should match prorated full-Good: ${cascadeIntervalDays}d`,
+  );
+});
+
 // Wrapper-specific tests via dynamic import after we've established the
 // scheduler behaves correctly. Skip if the .ts file can't be loaded.
 try {

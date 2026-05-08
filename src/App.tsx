@@ -9,7 +9,7 @@ import { useAuth } from "./hooks/useAuth";
 import { wakeUp } from "./lib/supabase";
 
 import { SearchBar, type SearchMode } from "./components/SearchBar";
-import { searchByComponent } from "./lib/componentSearch";
+import { searchByComponent, componentFrequencies } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
@@ -18,6 +18,7 @@ import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
+import { ComponentTable } from "./components/ComponentTable";
 import { useReview } from "./hooks/useReview";
 
 import type { Word } from "./lib/types";
@@ -51,20 +52,15 @@ export function App() {
     typeof window !== "undefined" && window.location.hash === "#/review",
   );
 
-  // Items eligible for SRS scheduling: status needToLearn or learned.
-  // (saved is unscheduled — base tier; wrote keeps the recognition card
-  // alive but adds a production facet in a later PR.)
-  const scheduledKeys = useMemo(() => {
-    const s = new Set<string>();
-    for (const k of saved) {
-      if (review.has(k) || learned.has(k) || wrote.has(k)) s.add(k);
-    }
-    return s;
-  }, [saved, review, learned, wrote]);
+  // Every saved word is queued for review — the user's stated goal is to
+  // learn all of them, and the four statuses are about progression
+  // (★ → 📕 → 🎓 → ✒), not about what's scheduled.
+  const scheduledKeys = saved;
 
-  const { dueCards, grade } = useReview({
+  const { dueCards, grade, attributeFailure } = useReview({
     userId: auth.user?.id ?? null,
     scheduledKeys,
+    chars: charsData.chars,
   });
 
   // Wake the Supabase project early to mask cold-start latency.
@@ -273,7 +269,6 @@ export function App() {
 
   const openCharPopup = (char: string) => setPopupChar(char);
 
-  const openCharAsTree = (char: string) => push({ kind: "char", key: char });
 
   const top = stack[stack.length - 1];
   const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
@@ -282,7 +277,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v56"
+          version="chinese v57"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
         />
@@ -302,7 +297,9 @@ export function App() {
           dueCards={dueCards}
           findWord={dict.findWord}
           ensureCached={dict.ensureCached}
+          chars={charsData.chars}
           onGrade={(key, rating) => grade(key, rating)}
+          onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={closeReview}
         />
       )}
@@ -332,6 +329,12 @@ export function App() {
             onOpen={(w) => void openWord(w)}
           />
         )
+      ) : searchMode === "byComponent" && saved.size > 0 ? (
+        <ComponentTable
+          savedWords={savedList.map((s) => s.word)}
+          chars={charsData.chars}
+          onPick={(c) => setQuery(c)}
+        />
       ) : (
         <main className="home" aria-label="Home">
           <SavedShelf
@@ -370,7 +373,6 @@ export function App() {
           setStatus={setStatus}
           onClose={() => setPopupChar(null)}
           onJumpToWord={(w) => void openWord(w)}
-          onOpenAsTree={openCharAsTree}
           findWord={dict.findWord}
         />
       )}

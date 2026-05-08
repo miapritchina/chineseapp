@@ -80,6 +80,41 @@ export function gradeCard(
   return serialize(result.card);
 }
 
+// Cascade credit from a parent word's Good/Easy review onto a constituent
+// char or component card. Computes what a "Good" grade would do, then:
+//   1. Damps the resulting stability halfway back toward the prior stability
+//      (so cascade credit is worth ~half of a real review).
+//   2. Pulls the due date back proportionally.
+//   3. Optionally caps the new due date so a never-directly-reviewed item
+//      can't graduate past `capDays`. The plan calls for a 7-day cap on
+//      first cascade credit.
+//   4. Leaves `reps`, `lapses`, and `last_review` untouched — this is not
+//      a direct review and shouldn't pretend to be one.
+export function applyCascadeCredit(
+  prev: SerializedCard,
+  capDays: number | null,
+  now: Date = new Date(),
+): SerializedCard {
+  const result = gradeCard(prev, "Good", now);
+  const dampedS = prev.stability + (result.stability - prev.stability) * 0.5;
+  const fullDueMs = new Date(result.due).getTime();
+  const fullIntervalMs = fullDueMs - now.getTime();
+  const dueRatio = result.stability > 0 ? dampedS / result.stability : 0;
+  let dueMs = now.getTime() + Math.max(0, fullIntervalMs * dueRatio);
+  if (capDays !== null) {
+    const capMs = now.getTime() + capDays * 86400000;
+    if (dueMs > capMs) dueMs = capMs;
+  }
+  return {
+    ...result,
+    stability: dampedS,
+    due: new Date(dueMs).toISOString(),
+    reps: prev.reps,
+    lapses: prev.lapses,
+    last_review: prev.last_review,
+  };
+}
+
 export function isDue(card: SerializedCard, now: Date = new Date()): boolean {
   return new Date(card.due).getTime() <= now.getTime();
 }
