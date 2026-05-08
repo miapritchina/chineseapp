@@ -102,23 +102,51 @@ export function useReview({ userId, scheduledKeys, chars }: UseReviewOpts) {
     last_review_at: row.lastReviewAt ? new Date(row.lastReviewAt).toISOString() : null,
   });
 
-  // Reconcile: every saved word should have a recognition card. Items that
-  // drop out of scheduledKeys lose their word card (char/component cards
-  // are independent and survive — they may still belong to other saved
-  // words via the cascade).
+  // What facets to seed for a given saved set. Word recognition is
+  // unconditional. PhoneticTap is seeded for any character (saved as a word
+  // OR appearing inside a saved word) that has at least one direct
+  // component with role "sound" — that's the drill's correct answer.
+  const expectedCards = useMemo(() => {
+    const out = new Map<string, { itemKey: string; itemKind: ItemKind; facet: Facet }>();
+    for (const key of scheduledKeys) {
+      out.set(rowId(key, "word", "recognition"), {
+        itemKey: key,
+        itemKind: "word",
+        facet: "recognition",
+      });
+    }
+    for (const key of scheduledKeys) {
+      for (const c of key) {
+        const cd = chars[c];
+        if (!cd?.components) continue;
+        if (cd.components.some((x) => x?.type === "sound" && x.char)) {
+          out.set(rowId(c, "char", "phoneticTap"), {
+            itemKey: c,
+            itemKind: "char",
+            facet: "phoneticTap",
+          });
+        }
+      }
+    }
+    return out;
+  }, [scheduledKeys, chars]);
+
+  // Reconcile: ensure every expected card exists; drop any auto-seeded
+  // facet card whose key is no longer expected. Cascaded char recognition
+  // cards (kind=char, facet=recognition) are independent and survive —
+  // they may still belong to other saved words via the cascade.
   useEffect(() => {
     setCards((prev) => {
       let changed = false;
       const next = new Map(prev);
       const newSeeds: ReviewCard[] = [];
-      for (const key of scheduledKeys) {
-        const id = rowId(key, FIRST_KIND, FIRST_FACET);
+      for (const [id, target] of expectedCards) {
         if (!next.has(id)) {
           const seeded = seedCard();
           const row: ReviewCard = {
-            itemKey: key,
-            itemKind: FIRST_KIND,
-            facet: FIRST_FACET,
+            itemKey: target.itemKey,
+            itemKind: target.itemKind,
+            facet: target.facet,
             card: seeded,
             dueAt: new Date(seeded.due).getTime(),
             lastReviewAt: null,
@@ -130,12 +158,13 @@ export function useReview({ userId, scheduledKeys, chars }: UseReviewOpts) {
           changed = true;
         }
       }
+      // Drop word/recognition + char/phoneticTap rows that aren't expected
+      // anymore. char/recognition is left alone (cascade-managed).
       for (const [id, row] of next) {
-        if (
-          row.itemKind === FIRST_KIND &&
-          row.facet === FIRST_FACET &&
-          !scheduledKeys.has(row.itemKey)
-        ) {
+        const isAutoFacet =
+          (row.itemKind === "word" && row.facet === "recognition") ||
+          (row.itemKind === "char" && row.facet === "phoneticTap");
+        if (isAutoFacet && !expectedCards.has(id)) {
           next.delete(id);
           changed = true;
         }
@@ -154,10 +183,8 @@ export function useReview({ userId, scheduledKeys, chars }: UseReviewOpts) {
       }
       return next;
     });
-    // toRemoteRow closes over userId; we only want to react to scheduledKeys
-    // and userId.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduledKeys, userId]);
+  }, [expectedCards, userId]);
 
   // Initial sync when a user signs in.
   useEffect(() => {

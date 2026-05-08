@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import type { Word, Char } from "../lib/types";
 import type { ReviewCard } from "../hooks/useReview";
+import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
+import { PhoneticTapCard } from "./PhoneticTapCard";
 
 interface Props {
   dueCards: ReviewCard[];
   findWord: (key: string) => Word | null;
   ensureCached: (keys: string[]) => Promise<void>;
-  onGrade: (itemKey: string, rating: RatingName) => void;
+  onGrade: (
+    itemKey: string,
+    rating: RatingName,
+    kind?: ItemKind,
+    facet?: Facet,
+  ) => void;
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
   chars?: Record<string, Char>;
@@ -85,10 +92,11 @@ export function ReviewPage({
   };
 
   const grade = (rating: RatingName) => {
-    onGrade(current.itemKey, rating);
+    onGrade(current.itemKey, rating, current.itemKind, current.facet);
     if (
       rating === "Again" &&
       current.itemKind === "word" &&
+      current.facet === "recognition" &&
       [...current.itemKey].length > 1 &&
       onAttributeFailure
     ) {
@@ -104,6 +112,35 @@ export function ReviewPage({
     setAttribTarget(null);
     advance();
   };
+
+  // Phonetic-tap drill: route to its own component. Auto-grades after the
+  // user picks; this page just hands the result on to onGrade.
+  if (current.facet === "phoneticTap") {
+    return (
+      <div className="review-root">
+        <div className="review-header">
+          <button className="back-btn" type="button" onClick={onClose}>
+            ← Done
+          </button>
+          <span className="review-kind-tag">Sound · tap</span>
+          <span className="review-progress">
+            {index + 1} / {total}
+          </span>
+        </div>
+        <div className="review-body">
+          <PhoneticTapCard
+            char={current.itemKey}
+            charData={charData}
+            onGrade={(rating) => {
+              onGrade(current.itemKey, rating, current.itemKind, current.facet);
+              advance();
+            }}
+            onSkip={advance}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="review-root">

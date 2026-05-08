@@ -379,6 +379,94 @@ body {
   padding: 0 4px;
 }
 
+/* Phonetic-tap drill — appears in the Review page when the current card's
+   facet is "phoneticTap". One-tap interaction; auto-grades on pick. */
+.phonetic-tap {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px 24px;
+  text-align: center;
+}
+.phonetic-tap-prompt {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.phonetic-tap-glyph {
+  font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  font-size: 96px;
+  line-height: 1;
+  font-weight: 500;
+}
+.phonetic-tap-pinyin {
+  font-size: 18px;
+  color: var(--muted);
+  margin-top: -8px;
+}
+.phonetic-tap-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.phonetic-tap-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 18px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.phonetic-tap-pick:hover, .phonetic-tap-pick:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.phonetic-tap-pick[disabled] { cursor: default; }
+.phonetic-tap-pick.is-correct {
+  border-color: #2e7d32;
+  background: rgba(46, 125, 50, 0.12);
+}
+.phonetic-tap-pick.is-wrong {
+  border-color: #b91c1c;
+  background: rgba(185, 28, 28, 0.12);
+}
+.phonetic-tap-pick.is-reveal {
+  border-color: #2e7d32;
+  border-style: dashed;
+}
+.phonetic-tap-pick-char {
+  font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  font-size: 30px;
+  line-height: 1;
+}
+.phonetic-tap-pick-pinyin { font-size: 12px; color: var(--muted); }
+.phonetic-tap-feedback {
+  font-size: 14px;
+  margin-top: 4px;
+}
+.phonetic-tap-feedback.is-correct { color: #2e7d32; }
+.phonetic-tap-feedback.is-wrong   { color: #b91c1c; }
+@media (prefers-color-scheme: dark) {
+  .phonetic-tap-pick.is-correct { border-color: #6dba84; background: rgba(109, 186, 132, 0.15); }
+  .phonetic-tap-pick.is-wrong   { border-color: #f87171; background: rgba(248, 113, 113, 0.15); }
+  .phonetic-tap-feedback.is-correct { color: #6dba84; }
+  .phonetic-tap-feedback.is-wrong   { color: #f87171; }
+}
+
 .topbar-end {
   display: flex;
   align-items: center;
