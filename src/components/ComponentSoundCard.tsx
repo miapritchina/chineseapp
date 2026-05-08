@@ -79,17 +79,14 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
   const isCorrect = picked !== null && picked === entry.pinyin;
   const isWrong = picked !== null && picked !== entry.pinyin;
 
-  // Speak the component on reveal. No timer — user taps to advance.
+  // Speak the component AFTER the user has picked — playing it before
+  // would just be the answer in audio form. No timer: user taps to
+  // advance.
   useEffect(() => {
     if (picked === null) return;
     speak(entry.char);
   }, [picked, entry.char]);
-
-  // Speak the component on mount; cancel anything pending on unmount.
-  useEffect(() => {
-    speak(entry.char);
-    return () => stopSpeech();
-  }, [entry.char]);
+  useEffect(() => () => stopSpeech(), []);
 
   const advanceWithGrade = () => {
     if (picked === null) return;
@@ -97,16 +94,25 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
   };
 
   return (
-    <div className="phonetic-tap">
+    <div
+      className={`phonetic-tap${picked !== null ? " is-tappable" : ""}`}
+      onClick={picked !== null ? advanceWithGrade : undefined}
+    >
+     <div className="phonetic-tap-inner">
       <div className="phonetic-tap-prompt">What sound does this give?</div>
       <button
         type="button"
         className="phonetic-tap-glyph-btn"
         aria-label={`Play ${entry.char}`}
-        onClick={() => speak(entry.char)}
+        onClick={(e) => {
+          e.stopPropagation();
+          speak(entry.char);
+        }}
       >
         <span className="phonetic-tap-glyph">{entry.char}</span>
-        <span className="phonetic-tap-speaker" aria-hidden="true">🔊</span>
+        {picked !== null && (
+          <span className="phonetic-tap-speaker" aria-hidden="true">🔊</span>
+        )}
       </button>
       <div className="phonetic-tap-row">
         {choices.map((c) => {
@@ -122,7 +128,10 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
               type="button"
               className={cls.join(" ")}
               disabled={picked !== null}
-              onClick={() => setPicked(c.match)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPicked(c.match);
+              }}
             >
               <span className="phonetic-tap-pick-pinyin component-sound-pinyin">
                 {c.display}
@@ -139,14 +148,9 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
         </div>
       )}
       {picked !== null && (
-        <button
-          type="button"
-          className="drill-continue"
-          onClick={advanceWithGrade}
-        >
-          Tap to continue →
-        </button>
+        <div className="drill-tap-hint">Tap anywhere to continue →</div>
       )}
+     </div>
     </div>
   );
 }
