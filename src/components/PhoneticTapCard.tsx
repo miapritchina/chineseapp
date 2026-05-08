@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
+import { speak, stopSpeech } from "../lib/speech";
 
 interface Props {
   char: string;
@@ -26,35 +27,53 @@ interface Props {
 export function PhoneticTapCard({ char, charData, onGrade }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
 
-  const components = useMemo(
+  const baseComponents = useMemo(
     () => (charData.components || []).filter((c) => c.char && c.char !== "◎"),
     [charData],
   );
   const correct = useMemo(
-    () => components.find((c) => c.type === "sound") ?? null,
-    [components],
+    () => baseComponents.find((c) => c.type === "sound") ?? null,
+    [baseComponents],
   );
+
+  // Shuffle the chip order ONCE on mount. Natural data order in
+  // data-chars.json puts the phonetic on the right for most phono-
+  // semantic compounds, so without this the user just learns "tap the
+  // rightmost." Re-shuffles next time the drill mounts (i.e. on the
+  // card's next surfacing). Stable per mount so the chips don't shift
+  // mid-tap.
+  const [components] = useState(() => {
+    const arr = baseComponents.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = arr[i];
+      arr[i] = arr[j];
+      arr[j] = t;
+    }
+    return arr;
+  });
 
   const correctChar = correct?.char ?? null;
   const isCorrect = picked !== null && picked === correctChar;
   const isWrong = picked !== null && picked !== correctChar;
 
-  // Auto-grade once per pick. The timer key is `picked`; we capture
-  // onGrade in a ref so changes to its identity (parent re-renders) don't
-  // restart the timer.
-  const onGradeRef = useRef(onGrade);
-  useEffect(() => {
-    onGradeRef.current = onGrade;
-  }, [onGrade]);
+  // Speak the correct sound component on reveal. No timer — the user
+  // taps to continue (per their preference) rather than auto-advancing.
   useEffect(() => {
     if (picked === null) return;
-    const willBeCorrect = picked === correctChar;
-    const t = window.setTimeout(
-      () => onGradeRef.current(willBeCorrect ? "Good" : "Again"),
-      willBeCorrect ? 700 : 1500,
-    );
-    return () => window.clearTimeout(t);
+    if (correctChar) speak(correctChar);
   }, [picked, correctChar]);
+
+  // Speak the parent character on mount.
+  useEffect(() => {
+    speak(char);
+    return () => stopSpeech();
+  }, [char]);
+
+  const advanceWithGrade = () => {
+    if (picked === null) return;
+    onGrade(picked === correctChar ? "Good" : "Again");
+  };
 
   if (!correctChar) {
     // Shouldn't happen — caller guarantees the data is present. Render
@@ -70,7 +89,15 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
   return (
     <div className="phonetic-tap">
       <div className="phonetic-tap-prompt">Tap the part that gives the sound.</div>
-      <div className="phonetic-tap-glyph">{char}</div>
+      <button
+        type="button"
+        className="phonetic-tap-glyph-btn"
+        aria-label={`Play ${char}`}
+        onClick={() => speak(char)}
+      >
+        <span className="phonetic-tap-glyph">{char}</span>
+        <span className="phonetic-tap-speaker" aria-hidden="true">🔊</span>
+      </button>
       {charData.pinyin && (
         <div className="phonetic-tap-pinyin">{charData.pinyin}</div>
       )}
@@ -104,6 +131,15 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
             ? "Right — sound component."
             : `Sound was ${correctChar}${correct?.pinyin ? ` (${correct.pinyin})` : ""}.`}
         </div>
+      )}
+      {picked !== null && (
+        <button
+          type="button"
+          className="drill-continue"
+          onClick={advanceWithGrade}
+        >
+          Tap to continue →
+        </button>
       )}
     </div>
   );

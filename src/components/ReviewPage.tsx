@@ -7,6 +7,7 @@ import { PhoneticTapCard } from "./PhoneticTapCard";
 import { ComponentSoundCard } from "./ComponentSoundCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
+import { speak } from "../lib/speech";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 
 interface Props {
@@ -309,10 +310,18 @@ export function ReviewPage({
           role="button"
           tabIndex={0}
           aria-label={revealed ? "Card revealed" : "Tap to reveal answer"}
-          onClick={() => setRevealed(true)}
+          onClick={() => {
+            if (!revealed) {
+              setRevealed(true);
+              speak(current.itemKey);
+            } else {
+              speak(current.itemKey);
+            }
+          }}
           onKeyDown={(e) => {
             if (e.key === " " || e.key === "Enter") {
               e.preventDefault();
+              if (!revealed) speak(current.itemKey);
               setRevealed(true);
             }
           }}
@@ -325,6 +334,7 @@ export function ReviewPage({
               <div className="review-gloss">
                 {gloss || "(no dictionary entry)"}
               </div>
+              <div className="review-tap-replay">🔊 tap to replay</div>
             </>
           )}
         </div>
