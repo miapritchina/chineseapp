@@ -427,6 +427,26 @@ body {
   color: var(--muted);
   letter-spacing: 0.5px;
 }
+
+.drill-continue {
+  margin-top: 12px;
+  align-self: stretch;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px 18px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: 0.4px;
+}
+.drill-continue:hover, .drill-continue:focus-visible {
+  filter: brightness(1.05);
+  outline: none;
+}
 .phonetic-tap-pinyin {
   font-size: 18px;
   color: var(--muted);

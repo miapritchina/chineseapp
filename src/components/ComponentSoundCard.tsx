@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { RatingName } from "../lib/fsrs";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import { firstReading, speak, stopSpeech } from "../lib/speech";
@@ -79,29 +79,22 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
   const isCorrect = picked !== null && picked === entry.pinyin;
   const isWrong = picked !== null && picked !== entry.pinyin;
 
-  // Auto-grade once per pick. onGrade lives in a ref so its identity
-  // changes from parent re-renders don't restart the timer (which used
-  // to fire onGrade for the wrong card after a queue shift).
-  const onGradeRef = useRef(onGrade);
-  useEffect(() => {
-    onGradeRef.current = onGrade;
-  }, [onGrade]);
+  // Speak the component on reveal. No timer — user taps to advance.
   useEffect(() => {
     if (picked === null) return;
-    const willBeCorrect = picked === entry.pinyin;
     speak(entry.char);
-    const t = window.setTimeout(
-      () => onGradeRef.current(willBeCorrect ? "Good" : "Again"),
-      willBeCorrect ? 800 : 1600,
-    );
-    return () => window.clearTimeout(t);
-  }, [picked, entry.pinyin, entry.char]);
+  }, [picked, entry.char]);
 
   // Speak the component on mount; cancel anything pending on unmount.
   useEffect(() => {
     speak(entry.char);
     return () => stopSpeech();
   }, [entry.char]);
+
+  const advanceWithGrade = () => {
+    if (picked === null) return;
+    onGrade(picked === entry.pinyin ? "Good" : "Again");
+  };
 
   return (
     <div className="phonetic-tap">
@@ -144,6 +137,15 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
             ? `Right — ${entry.char} = ${firstReading(entry.pinyinTones) || entry.pinyin}.`
             : `${entry.char} = ${firstReading(entry.pinyinTones) || entry.pinyin}.`}
         </div>
+      )}
+      {picked !== null && (
+        <button
+          type="button"
+          className="drill-continue"
+          onClick={advanceWithGrade}
+        >
+          Tap to continue →
+        </button>
       )}
     </div>
   );
