@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
+import { speak, stopSpeech } from "../lib/speech";
 
 interface Props {
   char: string;
@@ -49,12 +50,21 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
   useEffect(() => {
     if (picked === null) return;
     const willBeCorrect = picked === correctChar;
+    // Speak the correct sound component as part of the reveal so the
+    // user hears the right answer regardless of whether they picked it.
+    if (correctChar) speak(correctChar);
     const t = window.setTimeout(
       () => onGradeRef.current(willBeCorrect ? "Good" : "Again"),
-      willBeCorrect ? 700 : 1500,
+      willBeCorrect ? 800 : 1600,
     );
     return () => window.clearTimeout(t);
   }, [picked, correctChar]);
+
+  // Speak the parent character on mount.
+  useEffect(() => {
+    speak(char);
+    return () => stopSpeech();
+  }, [char]);
 
   if (!correctChar) {
     // Shouldn't happen — caller guarantees the data is present. Render
@@ -70,7 +80,15 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
   return (
     <div className="phonetic-tap">
       <div className="phonetic-tap-prompt">Tap the part that gives the sound.</div>
-      <div className="phonetic-tap-glyph">{char}</div>
+      <button
+        type="button"
+        className="phonetic-tap-glyph-btn"
+        aria-label={`Play ${char}`}
+        onClick={() => speak(char)}
+      >
+        <span className="phonetic-tap-glyph">{char}</span>
+        <span className="phonetic-tap-speaker" aria-hidden="true">🔊</span>
+      </button>
       {charData.pinyin && (
         <div className="phonetic-tap-pinyin">{charData.pinyin}</div>
       )}

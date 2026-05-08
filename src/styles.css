@@ -404,6 +404,29 @@ body {
   line-height: 1;
   font-weight: 500;
 }
+.phonetic-tap-glyph-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.phonetic-tap-speaker {
+  font-size: 18px;
+  opacity: 0.55;
+  margin-bottom: 12px;
+}
+.phonetic-tap-glyph-btn:hover .phonetic-tap-speaker { opacity: 0.9; }
+.review-tap-replay {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
 .phonetic-tap-pinyin {
   font-size: 18px;
   color: var(--muted);
