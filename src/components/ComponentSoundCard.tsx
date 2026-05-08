@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RatingName } from "../lib/fsrs";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 
@@ -63,14 +63,22 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
   const isCorrect = picked !== null && picked === entry.pinyin;
   const isWrong = picked !== null && picked !== entry.pinyin;
 
+  // Auto-grade once per pick. onGrade lives in a ref so its identity
+  // changes from parent re-renders don't restart the timer (which used
+  // to fire onGrade for the wrong card after a queue shift).
+  const onGradeRef = useRef(onGrade);
+  useEffect(() => {
+    onGradeRef.current = onGrade;
+  }, [onGrade]);
   useEffect(() => {
     if (picked === null) return;
+    const willBeCorrect = picked === entry.pinyin;
     const t = window.setTimeout(
-      () => onGrade(isCorrect ? "Good" : "Again"),
-      isCorrect ? 700 : 1500,
+      () => onGradeRef.current(willBeCorrect ? "Good" : "Again"),
+      willBeCorrect ? 700 : 1500,
     );
     return () => window.clearTimeout(t);
-  }, [picked, isCorrect, onGrade]);
+  }, [picked, entry.pinyin]);
 
   return (
     <div className="phonetic-tap">
