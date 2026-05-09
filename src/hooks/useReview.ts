@@ -12,7 +12,42 @@ import type { Char } from "../lib/types";
 import { componentClosure } from "../lib/componentSearch";
 
 const FSRS_KEY = "chinese.fsrs.v1";
+const INTRODUCED_KEY = "chinese.fsrs.introducedToday";
 const CASCADE_CAP_DAYS = 7;
+// Daily cap on how many *new* (never-directly-reviewed) cards can surface
+// in a single calendar day. Resets at midnight (UTC). Brief recommends
+// 5–15 for sustainable language learning; user picked 25.
+export const DAILY_NEW_CAP = 25;
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+interface IntroducedTodayPayload {
+  date: string;
+  ids: string[];
+}
+function loadIntroducedToday(): Set<string> {
+  try {
+    const raw = localStorage.getItem(INTRODUCED_KEY);
+    if (!raw) return new Set();
+    const p = JSON.parse(raw) as IntroducedTodayPayload;
+    if (p?.date === todayKey() && Array.isArray(p.ids)) return new Set(p.ids);
+  } catch {
+    /* ignore */
+  }
+  return new Set();
+}
+function persistIntroducedToday(ids: Set<string>) {
+  try {
+    localStorage.setItem(
+      INTRODUCED_KEY,
+      JSON.stringify({ date: todayKey(), ids: [...ids] }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
 
 export type ItemKind = "word" | "char" | "component";
 export type Facet =
@@ -111,6 +146,9 @@ export function useReview({
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
   const lastSyncedUserRef = useRef<string | null>(null);
+  const [introducedToday, setIntroducedToday] = useState<Set<string>>(() =>
+    loadIntroducedToday(),
+  );
 
   // Build payload for one Supabase upsert row.
   const toRemoteRow = (row: ReviewCard) => ({
@@ -353,10 +391,13 @@ export function useReview({
   }, [userId]);
 
   // Due cards. Char + component cards before word cards (the brief: review
-  // sub-items in isolation occasionally), then oldest-due first.
+  // sub-items in isolation occasionally), then oldest-due first. Daily
+  // cap of DAILY_NEW_CAP new (never-direct-reviewed) cards is applied
+  // here so the queue size doesn't explode when the user has many
+  // freshly-saved words.
   const dueCards = useMemo<ReviewCard[]>(() => {
     const now = new Date();
-    return [...cards.values()]
+    const ordered = [...cards.values()]
       .filter((row) => isDue(row.card, now))
       .sort((a, b) => {
         const ka = a.itemKind === "word" ? 1 : 0;
@@ -364,7 +405,22 @@ export function useReview({
         if (ka !== kb) return ka - kb;
         return a.dueAt - b.dueAt;
       });
-  }, [cards]);
+    // Already-introduced new cards count toward today's cap. Anything
+    // beyond the cap drops off; older / non-new cards stay.
+    let newSlotsLeft = Math.max(0, DAILY_NEW_CAP - introducedToday.size);
+    const out: ReviewCard[] = [];
+    for (const row of ordered) {
+      const id = rowId(row.itemKey, row.itemKind, row.facet);
+      const isNew = (row.directReviews ?? 0) === 0 && (row.card.reps ?? 0) === 0;
+      const alreadyIntroduced = introducedToday.has(id);
+      if (isNew && !alreadyIntroduced) {
+        if (newSlotsLeft <= 0) continue;
+        newSlotsLeft--;
+      }
+      out.push(row);
+    }
+    return out;
+  }, [cards, introducedToday]);
 
   // Helper to upsert a batch of changed rows to Supabase.
   const remoteUpsert = (rows: ReviewCard[]) => {
@@ -405,6 +461,20 @@ export function useReview({
       };
       next.set(parentId, newParent);
       changed.push(newParent);
+
+      // Daily-cap bookkeeping: this is a "new card introduction" if the
+      // card had never been graded before this call.
+      const wasNew =
+        (parentRow.directReviews ?? 0) === 0 && (parentRow.card.reps ?? 0) === 0;
+      if (wasNew) {
+        setIntroducedToday((prev) => {
+          if (prev.has(parentId)) return prev;
+          const n = new Set(prev);
+          n.add(parentId);
+          persistIntroducedToday(n);
+          return n;
+        });
+      }
 
       // 2. Cascade to component closure (only for word kinds + Good/Easy).
       const cascade =

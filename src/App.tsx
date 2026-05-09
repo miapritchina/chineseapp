@@ -69,13 +69,14 @@ export function App() {
     [phonetics.components],
   );
 
-  const { dueCards, grade, attributeFailure } = useReview({
+  const reviewState = useReview({
     userId: auth.user?.id ?? null,
     scheduledKeys,
     chars: charsData.chars,
     phoneticComponentKeys,
     phoneticComponentsByChar: phonetics.byChar,
   });
+  const { dueCards, grade, attributeFailure } = reviewState;
 
   // Wake the Supabase project early to mask cold-start latency.
   useEffect(() => {
@@ -301,7 +302,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v68"
+          version="chinese v69"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -332,6 +333,7 @@ export function App() {
       {showReview && reviewLaunched && (
         <ReviewPage
           dueCards={dueCards}
+          cards={reviewState.cards}
           findWord={dict.findWord}
           ensureCached={dict.ensureCached}
           chars={charsData.chars}
