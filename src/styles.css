@@ -885,6 +885,82 @@ body {
   letter-spacing: 0.4px;
 }
 
+/* "💡 Make it stick" — self-generated mnemonic field on CharPopup.
+   Default text comes from the role tree; user can tap to edit, taps
+   away to save. Edited state persists in localStorage. */
+.mnemonic-block {
+  width: 100%;
+  margin: 12px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mnemonic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.4px;
+}
+.mnemonic-title { display: inline-flex; align-items: center; gap: 6px; }
+.mnemonic-saved-tag {
+  background: var(--surface-2);
+  color: var(--accent);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.mnemonic-reset {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.mnemonic-reset:hover { color: var(--text); }
+.mnemonic-display {
+  background: var(--surface, var(--bg));
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text);
+  cursor: text;
+  -webkit-tap-highlight-color: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.mnemonic-display.is-default { color: var(--muted); }
+.mnemonic-display.is-edited { border-style: solid; border-color: var(--accent); }
+.mnemonic-display:hover, .mnemonic-display:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.mnemonic-textarea {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text);
+  resize: vertical;
+  min-height: 60px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .topbar-end {
   display: flex;
   align-items: center;
