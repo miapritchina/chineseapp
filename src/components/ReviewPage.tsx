@@ -619,12 +619,8 @@ function DrillFrame({ tag, onClose, progressIndex, total, onSkip, children }: Dr
         </span>
       </div>
       <div className="review-body">{children}</div>
-      <div className="review-actions">
-        <button
-          type="button"
-          className="review-btn"
-          onClick={onSkip}
-        >
+      <div className="drill-skip-row">
+        <button type="button" className="drill-skip" onClick={onSkip}>
           Skip
         </button>
       </div>

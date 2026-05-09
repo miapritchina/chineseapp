@@ -130,6 +130,11 @@ export function CombinedRecognitionCard({
                   type="button"
                   className={`review-btn ${RATING_CLS[r]}${meaningGrade === r ? " is-picked" : ""}`}
                   onClick={(e) => {
+                    // Once both grades are picked, ANY click should
+                    // advance the queue — let propagation bubble up to
+                    // the outer surface. Otherwise eat the click and
+                    // record the grade.
+                    if (allGraded) return;
                     e.stopPropagation();
                     setMeaningGrade(r);
                   }}
@@ -150,6 +155,7 @@ export function CombinedRecognitionCard({
                   type="button"
                   className={`review-btn ${RATING_CLS[r]}${soundGrade === r ? " is-picked" : ""}`}
                   onClick={(e) => {
+                    if (allGraded) return;
                     e.stopPropagation();
                     setSoundGrade(r);
                   }}

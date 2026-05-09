@@ -836,9 +836,37 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
-.combined-skip {
-  margin-top: 12px;
-  align-self: stretch;
+/* Drill Skip — small, muted, pushed to the bottom of the card stack
+   (per-user request). Used by CombinedRecognitionCard, PhoneticTap,
+   ComponentSound, FamilyTransfer, and Production cards. */
+.combined-skip,
+.drill-skip {
+  margin-top: 24px;
+  align-self: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.combined-skip:hover,
+.combined-skip:focus-visible,
+.drill-skip:hover,
+.drill-skip:focus-visible {
+  color: var(--text);
+  background: var(--surface-2);
+  outline: none;
+}
+.drill-skip-row {
+  display: flex;
+  justify-content: center;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
 }
 
 /* Tiny StatusButton overlay in the corner of each Card / CharOnlyCard.
