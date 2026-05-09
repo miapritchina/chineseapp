@@ -301,7 +301,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v67"
+          version="chinese v68"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -339,6 +339,8 @@ export function App() {
           phoneticComponentsByChar={phonetics.byChar}
           enabledFacets={new Set(reviewLaunched.enabledFacets)}
           randomOrder={reviewLaunched.randomOrder}
+          includeSubchars={reviewLaunched.includeSubchars}
+          savedKeys={saved}
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={() => closeHashPage("#/review")}
