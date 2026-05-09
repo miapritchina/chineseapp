@@ -87,13 +87,20 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
   }
 
   return (
-    <div className="phonetic-tap">
+    <div
+      className={`phonetic-tap${picked !== null ? " is-tappable" : ""}`}
+      onClick={picked !== null ? advanceWithGrade : undefined}
+    >
+     <div className="phonetic-tap-inner">
       <div className="phonetic-tap-prompt">Tap the part that gives the sound.</div>
       <button
         type="button"
         className="phonetic-tap-glyph-btn"
         aria-label={`Play ${char}`}
-        onClick={() => speak(char)}
+        onClick={(e) => {
+          e.stopPropagation();
+          speak(char);
+        }}
       >
         <span className="phonetic-tap-glyph">{char}</span>
         <span className="phonetic-tap-speaker" aria-hidden="true">🔊</span>
@@ -115,7 +122,10 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
               type="button"
               className={cls.join(" ")}
               disabled={picked !== null}
-              onClick={() => setPicked(c.char)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPicked(c.char);
+              }}
             >
               <span className="phonetic-tap-pick-char">{c.char}</span>
               {(isPicked || (isWrong && isThisCorrect)) && c.pinyin && (
@@ -125,22 +135,18 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
           );
         })}
       </div>
-      {picked !== null && (
-        <div className={`phonetic-tap-feedback${isCorrect ? " is-correct" : " is-wrong"}`}>
-          {isCorrect
-            ? "Right — sound component."
-            : `Sound was ${correctChar}${correct?.pinyin ? ` (${correct.pinyin})` : ""}.`}
+      {/* Wrong-answer feedback only — the chip's green border is enough on
+          its own when the user got it right (the redundant "Right —"
+          line was distracting). */}
+      {isWrong && correct && (
+        <div className="phonetic-tap-feedback is-wrong">
+          Sound: {correctChar}{correct.pinyin ? ` · ${correct.pinyin}` : ""}
         </div>
       )}
       {picked !== null && (
-        <button
-          type="button"
-          className="drill-continue"
-          onClick={advanceWithGrade}
-        >
-          Tap to continue →
-        </button>
+        <div className="drill-tap-hint">Tap anywhere to continue →</div>
       )}
+     </div>
     </div>
   );
 }

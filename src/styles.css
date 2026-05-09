@@ -381,16 +381,27 @@ body {
 
 /* Phonetic-tap drill — appears in the Review page when the current card's
    facet is "phoneticTap". One-tap interaction; auto-grades on pick. */
+/* Outer tap surface — fills the .review-body so a tap on whitespace
+   anywhere in the body advances the queue (post-pick). */
 .phonetic-tap {
+  flex: 1;
+  align-self: stretch;
   width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px 24px;
+  text-align: center;
+}
+.phonetic-tap.is-tappable { cursor: pointer; }
+/* Inner content column. Capped at 440px; centered. */
+.phonetic-tap-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 8px 16px 24px;
-  text-align: center;
+  width: 100%;
+  max-width: 440px;
 }
 .phonetic-tap-prompt {
   font-size: 13px;
@@ -428,24 +439,18 @@ body {
   letter-spacing: 0.5px;
 }
 
-.drill-continue {
-  margin-top: 12px;
-  align-self: stretch;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 14px 18px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+.drill-tap-hint {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--accent);
   letter-spacing: 0.4px;
+  font-weight: 500;
+  pointer-events: none;
+  animation: drill-tap-hint-pulse 1.6s ease-in-out infinite;
 }
-.drill-continue:hover, .drill-continue:focus-visible {
-  filter: brightness(1.05);
-  outline: none;
+@keyframes drill-tap-hint-pulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
 }
 .phonetic-tap-pinyin {
   font-size: 18px;
