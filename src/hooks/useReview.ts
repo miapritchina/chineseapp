@@ -56,6 +56,12 @@ interface UseReviewOpts {
   // components (from public/phonetic-components.json). Members get an
   // extra componentSound card on top of the standard recognition one.
   phoneticComponentKeys?: Set<string>;
+  // Full phonetic-components map keyed by char. Used by the
+  // familyTransfer seeding rule (need to walk family[]).
+  phoneticComponentsByChar?: Map<
+    string,
+    { char: string; pinyin: string; family: string[] }
+  >;
 }
 
 function loadLocalCards(): Map<string, ReviewCard> {
@@ -100,6 +106,7 @@ export function useReview({
   scheduledKeys,
   chars,
   phoneticComponentKeys,
+  phoneticComponentsByChar,
 }: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
@@ -161,8 +168,36 @@ export function useReview({
         });
       }
     }
+    // familyTransfer: for each saved phonetic component, take up to two
+    // family members the user hasn't saved yet and seed transfer cards
+    // on them. Surfaces "you know 青, what's 情?" prompts. Cap is to
+    // avoid drowning the queue when the user has saved many components.
+    if (
+      phoneticComponentsByChar &&
+      phoneticComponentKeys &&
+      phoneticComponentKeys.size > 0
+    ) {
+      const FAMILY_PER_COMPONENT = 2;
+      for (const key of scheduledKeys) {
+        if ([...key].length !== 1) continue;
+        const comp = phoneticComponentsByChar.get(key);
+        if (!comp || !comp.family || comp.family.length === 0) continue;
+        let added = 0;
+        for (const fam of comp.family) {
+          if (added >= FAMILY_PER_COMPONENT) break;
+          if (!fam || fam === comp.char) continue;
+          if (scheduledKeys.has(fam)) continue; // user already has it
+          out.set(rowId(fam, "char", "familyTransfer"), {
+            itemKey: fam,
+            itemKind: "char",
+            facet: "familyTransfer",
+          });
+          added++;
+        }
+      }
+    }
     return out;
-  }, [scheduledKeys, chars, phoneticComponentKeys]);
+  }, [scheduledKeys, chars, phoneticComponentKeys, phoneticComponentsByChar]);
 
   // Reconcile: ensure every expected card exists; drop any auto-seeded
   // facet card whose key is no longer expected. Cascaded char recognition
@@ -213,7 +248,8 @@ export function useReview({
           (row.itemKind === "word" &&
             (row.facet === "meaningRecognition" ||
               row.facet === "soundRecognition")) ||
-          (row.itemKind === "char" && row.facet === "phoneticTap") ||
+          (row.itemKind === "char" &&
+            (row.facet === "phoneticTap" || row.facet === "familyTransfer")) ||
           (row.itemKind === "component" && row.facet === "componentSound");
         if (isAutoFacet && !expectedCards.has(id)) {
           next.delete(id);

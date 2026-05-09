@@ -7,13 +7,24 @@ import assert from "node:assert/strict";
 
 // Re-implements the body of the `expectedCards` useMemo in
 // src/hooks/useReview.ts. Keep this in sync if the seeding rules change.
-function expectedCards(savedWords, chars) {
+function expectedCards(
+  savedWords,
+  chars,
+  phoneticComponentKeys = null,
+  phoneticComponentsByChar = null,
+) {
   const out = new Map();
+  const saved = new Set(savedWords);
   for (const key of savedWords) {
-    out.set(`word|recognition|${key}`, {
+    out.set(`word|meaningRecognition|${key}`, {
       itemKey: key,
       itemKind: "word",
-      facet: "recognition",
+      facet: "meaningRecognition",
+    });
+    out.set(`word|soundRecognition|${key}`, {
+      itemKey: key,
+      itemKind: "word",
+      facet: "soundRecognition",
     });
   }
   for (const key of savedWords) {
@@ -26,6 +37,37 @@ function expectedCards(savedWords, chars) {
           itemKind: "char",
           facet: "phoneticTap",
         });
+      }
+    }
+  }
+  if (phoneticComponentKeys) {
+    for (const key of savedWords) {
+      if ([...key].length !== 1) continue;
+      if (!phoneticComponentKeys.has(key)) continue;
+      out.set(`component|componentSound|${key}`, {
+        itemKey: key,
+        itemKind: "component",
+        facet: "componentSound",
+      });
+    }
+  }
+  if (phoneticComponentsByChar && phoneticComponentKeys) {
+    const FAMILY_PER_COMPONENT = 2;
+    for (const key of savedWords) {
+      if ([...key].length !== 1) continue;
+      const comp = phoneticComponentsByChar.get(key);
+      if (!comp || !comp.family || comp.family.length === 0) continue;
+      let added = 0;
+      for (const fam of comp.family) {
+        if (added >= FAMILY_PER_COMPONENT) break;
+        if (!fam || fam === comp.char) continue;
+        if (saved.has(fam)) continue;
+        out.set(`char|familyTransfer|${fam}`, {
+          itemKey: fam,
+          itemKind: "char",
+          facet: "familyTransfer",
+        });
+        added++;
       }
     }
   }
@@ -48,9 +90,10 @@ test("empty saved set produces no cards", () => {
   assert.equal(m.size, 0);
 });
 
-test("single saved word seeds a recognition card", () => {
+test("single saved word seeds meaning + sound recognition cards", () => {
   const m = expectedCards(["请"], fixtureChars);
-  assert.ok(m.has("word|recognition|请"));
+  assert.ok(m.has("word|meaningRecognition|请"));
+  assert.ok(m.has("word|soundRecognition|请"));
 });
 
 test("char with a sound component also gets a phoneticTap card", () => {
@@ -60,7 +103,7 @@ test("char with a sound component also gets a phoneticTap card", () => {
 
 test("char without a sound component does NOT get a phoneticTap card", () => {
   const m = expectedCards(["好"], fixtureChars);
-  assert.ok(m.has("word|recognition|好"));
+  assert.ok(m.has("word|meaningRecognition|好"));
   assert.equal(m.has("char|phoneticTap|好"), false);
   // 女 + 子 are meaning components; no sound at all on 好.
   assert.equal(m.has("char|phoneticTap|女"), false);
@@ -69,7 +112,7 @@ test("char without a sound component does NOT get a phoneticTap card", () => {
 
 test("multi-char word seeds phoneticTap on each char with a sound component", () => {
   const m = expectedCards(["你好"], fixtureChars);
-  assert.ok(m.has("word|recognition|你好"));
+  assert.ok(m.has("word|meaningRecognition|你好"));
   // 你 has sound=尔 → phoneticTap on 你
   assert.ok(m.has("char|phoneticTap|你"));
   // 好 has no sound component → no phoneticTap
@@ -83,8 +126,8 @@ test("two saved words sharing a char dedupe to one phoneticTap card", () => {
     "假": { components: [{ char: "亻", type: "meaning" }] },
   });
   assert.ok(m.has("char|phoneticTap|请"));
-  // Map size = 2 word-recognition + 1 phoneticTap
-  assert.equal(m.size, 3);
+  // Map size = 4 recognition rows (2 words × 2 facets) + 1 phoneticTap
+  assert.equal(m.size, 5);
 });
 
 test("char with empty components array does not crash and gets no phoneticTap", () => {
@@ -94,8 +137,60 @@ test("char with empty components array does not crash and gets no phoneticTap", 
 
 test("char missing from data-chars.json is silently skipped", () => {
   const m = expectedCards(["?"], fixtureChars);
-  assert.ok(m.has("word|recognition|?"));
-  assert.equal(m.size, 1);
+  assert.ok(m.has("word|meaningRecognition|?"));
+  // 1 word × 2 recognition facets = 2 rows.
+  assert.equal(m.size, 2);
+});
+
+test("componentSound seeds for saved single-char items in the phonetic list", () => {
+  const m = expectedCards(["青"], fixtureChars, new Set(["青"]));
+  assert.ok(m.has("component|componentSound|青"));
+});
+
+test("componentSound does NOT seed for chars not in the phonetic list", () => {
+  const m = expectedCards(["年"], fixtureChars, new Set(["青"]));
+  assert.equal(m.has("component|componentSound|年"), false);
+});
+
+test("familyTransfer seeds up to 2 unsaved family members per saved component", () => {
+  const phoneticByChar = new Map([
+    ["青", { char: "青", pinyin: "qing", family: ["请", "情", "晴", "清"] }],
+  ]);
+  const m = expectedCards(
+    ["青"],
+    fixtureChars,
+    new Set(["青"]),
+    phoneticByChar,
+  );
+  // Cap is 2 per component, picks first members from family[]
+  assert.ok(m.has("char|familyTransfer|请"));
+  assert.ok(m.has("char|familyTransfer|情"));
+  // Beyond cap → no card seeded
+  assert.equal(m.has("char|familyTransfer|晴"), false);
+});
+
+test("familyTransfer skips members the user has already saved", () => {
+  const phoneticByChar = new Map([
+    ["青", { char: "青", pinyin: "qing", family: ["请", "情", "晴"] }],
+  ]);
+  const m = expectedCards(
+    ["青", "请"], // 请 already saved
+    fixtureChars,
+    new Set(["青"]),
+    phoneticByChar,
+  );
+  // 请 is saved → skip; 情 + 晴 are next two unsaved members
+  assert.equal(m.has("char|familyTransfer|请"), false);
+  assert.ok(m.has("char|familyTransfer|情"));
+  assert.ok(m.has("char|familyTransfer|晴"));
+});
+
+test("familyTransfer does nothing without phoneticComponents data", () => {
+  const m = expectedCards(["青"], fixtureChars, new Set(["青"]));
+  // No familyTransfer cards because phoneticComponentsByChar is null.
+  for (const k of m.keys()) {
+    assert.equal(k.startsWith("char|familyTransfer|"), false, k);
+  }
 });
 
 let failures = 0;

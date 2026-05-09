@@ -4,6 +4,9 @@ import type { Facet } from "../hooks/useReview";
 export interface ReviewSettings {
   enabledFacets: Facet[];
   randomOrder: boolean;
+  // Off by default: hide cascade-seeded char cards (sub-characters of
+  // saved words that the user never explicitly saved) from the queue.
+  includeSubchars: boolean;
 }
 
 const SETTINGS_KEY = "chinese.reviewSettings";
@@ -29,17 +32,33 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
     label: "Sound of a component",
     hint: "Multi-choice pinyin for productive phonetic components.",
   },
+  {
+    facet: "familyTransfer",
+    label: "Family transfer",
+    hint: '"You know 青 = qīng — what about 情?" Tests the youbian-dubian skill on un-saved family members.',
+  },
+];
+
+// Default-on facets — drilling a word's saved set without surfacing
+// every cascaded sub-character. familyTransfer is opt-in because its
+// target chars haven't been explicitly saved.
+const DEFAULT_FACETS: Facet[] = [
+  "meaningRecognition",
+  "soundRecognition",
+  "phoneticTap",
+  "componentSound",
 ];
 
 export function loadSettings(): ReviewSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as ReviewSettings;
+      const parsed = JSON.parse(raw) as Partial<ReviewSettings>;
       if (Array.isArray(parsed.enabledFacets)) {
         return {
-          enabledFacets: parsed.enabledFacets,
+          enabledFacets: parsed.enabledFacets as Facet[],
           randomOrder: !!parsed.randomOrder,
+          includeSubchars: !!parsed.includeSubchars,
         };
       }
     }
@@ -47,8 +66,9 @@ export function loadSettings(): ReviewSettings {
     /* ignore */
   }
   return {
-    enabledFacets: ALL_FACET_OPTIONS.map((o) => o.facet),
+    enabledFacets: DEFAULT_FACETS,
     randomOrder: false,
+    includeSubchars: false,
   };
 }
 
@@ -79,11 +99,18 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
   const [randomOrder, setRandomOrder] = useState<boolean>(
     () => loadSettings().randomOrder,
   );
+  const [includeSubchars, setIncludeSubchars] = useState<boolean>(
+    () => loadSettings().includeSubchars,
+  );
 
   // Persist on every toggle so the values survive a navigation away.
   useEffect(() => {
-    saveSettings({ enabledFacets: [...enabled], randomOrder });
-  }, [enabled, randomOrder]);
+    saveSettings({
+      enabledFacets: [...enabled],
+      randomOrder,
+      includeSubchars,
+    });
+  }, [enabled, randomOrder, includeSubchars]);
 
   const toggleFacet = (f: Facet) => {
     setEnabled((prev) => {
@@ -100,7 +127,7 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
   );
 
   const start = () => {
-    onStart({ enabledFacets: [...enabled], randomOrder });
+    onStart({ enabledFacets: [...enabled], randomOrder, includeSubchars });
   };
 
   return (
@@ -153,6 +180,29 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
             <span className="launch-option-hint">
               Off: char/component cards before words, oldest-due first.
               On: random order across all enabled drill types.
+            </span>
+          </button>
+        </div>
+        <div className="launch-section">
+          <div className="launch-section-title">Scope</div>
+          <button
+            type="button"
+            className={`launch-option${includeSubchars ? " is-on" : ""}`}
+            onClick={() => setIncludeSubchars((v) => !v)}
+            aria-pressed={includeSubchars}
+          >
+            <span className="launch-option-row">
+              <span className="launch-option-check">
+                {includeSubchars ? "●" : "○"}
+              </span>
+              <span className="launch-option-label">
+                Include cascaded sub-characters
+              </span>
+            </span>
+            <span className="launch-option-hint">
+              Off (default): only the words you saved + drills on their
+              direct components surface. On: cascaded sub-character
+              recognition cards (e.g. 豕 from saving 家) join the queue too.
             </span>
           </button>
         </div>

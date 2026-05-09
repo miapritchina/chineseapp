@@ -5,6 +5,7 @@ import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { PhoneticTapCard } from "./PhoneticTapCard";
 import { ComponentSoundCard } from "./ComponentSoundCard";
+import { FamilyTransferCard } from "./FamilyTransferCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import { speak } from "../lib/speech";
@@ -29,6 +30,14 @@ interface Props {
   // ordering is the default (sub-items before words, oldest-due first).
   enabledFacets?: Set<Facet>;
   randomOrder?: boolean;
+  // When false (default), cascaded sub-character recognition cards
+  // (kind=char, facet=meaningRecognition / soundRecognition) are
+  // filtered out of the queue. Drills on chars (phoneticTap) are not
+  // affected; those are still scoped by enabledFacets.
+  includeSubchars?: boolean;
+  // Set of saved keys, so we can tell a "user explicitly saved this
+  // char" card apart from a "cascade-seeded sub-character" one.
+  savedKeys?: Set<string>;
 }
 
 // Stable id for a card across the (kind, facet, key) tuple. Used to mark
@@ -54,6 +63,8 @@ export function ReviewPage({
   phoneticComponentsByChar,
   enabledFacets,
   randomOrder,
+  includeSubchars,
+  savedKeys,
 }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [attribTarget, setAttribTarget] = useState<string | null>(null);
@@ -73,6 +84,19 @@ export function ReviewPage({
       if (
         !(c.facet === "recognition" && enabledFacets.has("meaningRecognition"))
       ) {
+        return false;
+      }
+    }
+    // Cascade-seeded sub-character cards (kind=char with a recognition
+    // facet, NOT in the user's saved set) are off by default — the user
+    // can opt in via the launch screen.
+    if (!includeSubchars) {
+      const isCascadeRecognition =
+        c.itemKind === "char" &&
+        (c.facet === "meaningRecognition" ||
+          c.facet === "soundRecognition" ||
+          c.facet === "recognition");
+      if (isCascadeRecognition && !(savedKeys && savedKeys.has(c.itemKey))) {
         return false;
       }
     }
@@ -258,6 +282,62 @@ export function ReviewPage({
           />
         </div>
       </div>
+    );
+  }
+
+  // Family-transfer drill: "you know 青, what about 情?" Picks the
+  // component for the prompt by walking phoneticComponentsByChar to find
+  // any saved component whose family includes this card's itemKey.
+  if (current.facet === "familyTransfer") {
+    const cd = chars?.[current.itemKey];
+    if (!phoneticComponents || !phoneticComponentsByChar || !cd) {
+      return (
+        <DrillFrame
+          tag="Family"
+          onClose={onClose}
+          progressIndex={progressIndex}
+          total={total}
+          onSkip={handleSkipCurrent}
+        >
+          <div className="review-empty-hint">Loading family data…</div>
+        </DrillFrame>
+      );
+    }
+    const componentEntry =
+      phoneticComponents.find((p) => p.family.includes(current.itemKey)) ??
+      null;
+    if (!componentEntry) {
+      return (
+        <DrillFrame
+          tag="Family"
+          onClose={onClose}
+          progressIndex={progressIndex}
+          total={total}
+          onSkip={handleSkipCurrent}
+        >
+          <div className="review-empty-hint">
+            No phonetic component found for {current.itemKey}. Tap Skip.
+          </div>
+        </DrillFrame>
+      );
+    }
+    return (
+      <DrillFrame
+        tag="Family"
+        onClose={onClose}
+        progressIndex={progressIndex}
+        total={total}
+        onSkip={handleSkipCurrent}
+      >
+        <FamilyTransferCard
+          key={rid(current)}
+          familyMember={current.itemKey}
+          charData={cd}
+          componentEntry={componentEntry}
+          pool={phoneticComponents}
+          onGrade={handlePhoneticTapGrade}
+        />
+      </DrillFrame>
     );
   }
 
