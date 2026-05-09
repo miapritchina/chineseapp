@@ -37,11 +37,17 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
     label: "Family transfer",
     hint: '"You know 青 = qīng — what about 情?" Tests the youbian-dubian skill on un-saved family members.',
   },
+  {
+    facet: "production",
+    label: "Write",
+    hint: "Trace the character that matches a meaning + sound prompt. Auto-graded by stroke mistakes via Hanzi Writer. Surfaces only for saved chars at ✒ Wrote tier.",
+  },
 ];
 
 // Default-on facets — drilling a word's saved set without surfacing
-// every cascaded sub-character. familyTransfer is opt-in because its
-// target chars haven't been explicitly saved.
+// every cascaded sub-character. familyTransfer + production are opt-in
+// (familyTransfer targets un-saved chars; production is a heavier
+// trace drill scoped to ✒ Wrote tier items).
 const DEFAULT_FACETS: Facet[] = [
   "meaningRecognition",
   "soundRecognition",
