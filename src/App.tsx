@@ -308,7 +308,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v71"
+          version="chinese v72"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -400,6 +400,8 @@ export function App() {
             matches={searchResults}
             saved={saved}
             onOpen={(w) => void openWord(w)}
+            getStatus={getStatus}
+            setStatus={setStatus}
           />
         )
       ) : searchMode === "byComponent" && saved.size > 0 ? (
@@ -419,6 +421,8 @@ export function App() {
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
             onOpenChar={openCharPopup}
+            getStatus={getStatus}
+            setStatus={setStatus}
           />
         </main>
       )}

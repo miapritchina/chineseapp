@@ -841,6 +841,26 @@ body {
   align-self: stretch;
 }
 
+/* Tiny StatusButton overlay in the corner of each Card / CharOnlyCard.
+   Click stops propagation so the underlying card's onOpen doesn't fire.
+   .card needs to be position:relative for the absolute child to land. */
+.card { position: relative; }
+.card-status-corner {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+}
+.card-status-corner .status-btn { padding: 4px; }
+.card-status-corner .status-menu { right: 0; }
+
+.r-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+.r-status .status-menu { right: 0; }
+
 .topbar-end {
   display: flex;
   align-items: center;
