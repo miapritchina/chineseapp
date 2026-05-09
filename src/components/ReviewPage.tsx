@@ -13,6 +13,11 @@ import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 
 interface Props {
   dueCards: ReviewCard[];
+  // Full card map. Used to force-surface cluster members on leech via
+  // the active-interleaving rule: a card whose itemKey is in
+  // promotedCluster gets pulled into the queue even if its dueAt is
+  // still in the future.
+  cards?: Map<string, ReviewCard>;
   findWord: (key: string) => Word | null;
   ensureCached: (keys: string[]) => Promise<void>;
   onGrade: (
@@ -30,13 +35,7 @@ interface Props {
   // ordering is the default (sub-items before words, oldest-due first).
   enabledFacets?: Set<Facet>;
   randomOrder?: boolean;
-  // When false (default), cascaded sub-character recognition cards
-  // (kind=char, facet=meaningRecognition / soundRecognition) are
-  // filtered out of the queue. Drills on chars (phoneticTap) are not
-  // affected; those are still scoped by enabledFacets.
   includeSubchars?: boolean;
-  // Set of saved keys, so we can tell a "user explicitly saved this
-  // char" card apart from a "cascade-seeded sub-character" one.
   savedKeys?: Set<string>;
 }
 
@@ -53,6 +52,7 @@ function rid(c: ReviewCard) {
 // session state — disambig-shown set, manual-skip set — is local.
 export function ReviewPage({
   dueCards,
+  cards,
   findWord,
   ensureCached,
   onGrade,
@@ -73,6 +73,12 @@ export function ReviewPage({
   const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
   // Disambig already shown this session (one-shot per key).
   const [disambigSeen, setDisambigSeen] = useState<Set<string>>(() => new Set());
+  // Cluster members forced into the queue this session by an active
+  // leech interleave. The brief calls for cluster members to surface
+  // back-to-back when one of them lapses past LEECH_LAPSES.
+  const [promotedCluster, setPromotedCluster] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   // Visible queue = dueCards minus this-session skips, filtered by the
   // launch settings.
@@ -103,11 +109,37 @@ export function ReviewPage({
     return true;
   });
 
+  // Active interleave: pull cluster members into the visible queue even
+  // if they're not currently due. They surface alongside (right after)
+  // the leech card so the user contrasts them in one session.
+  const promotedRows: ReviewCard[] = [];
+  if (cards && promotedCluster.size > 0) {
+    const seen = new Set(filtered.map(rid));
+    for (const row of cards.values()) {
+      if (!promotedCluster.has(row.itemKey)) continue;
+      if (seen.has(rid(row))) continue;
+      // Only word-level recognition cards make sense for cluster
+      // contrast — phoneticTap etc. are about a single-char skill, not
+      // the disambig point.
+      if (
+        row.facet !== "meaningRecognition" &&
+        row.facet !== "soundRecognition" &&
+        row.facet !== "recognition"
+      ) {
+        continue;
+      }
+      promotedRows.push(row);
+      seen.add(rid(row));
+    }
+  }
+  // Promoted cards prepend the queue (right after the current leech card).
+  const combined = [...promotedRows, ...filtered];
+
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
   // surfacing mid-session) slot in at the end.
   const positionRef = useRef<Map<string, number>>(new Map());
-  for (const c of filtered) {
+  for (const c of combined) {
     const id = rid(c);
     if (!positionRef.current.has(id)) {
       positionRef.current.set(
@@ -116,7 +148,7 @@ export function ReviewPage({
       );
     }
   }
-  const queue = filtered
+  const queue = combined
     .slice()
     .sort(
       (a, b) =>
@@ -275,6 +307,14 @@ export function ReviewPage({
                 if (prev.has(k)) return prev;
                 const n = new Set(prev);
                 n.add(k);
+                return n;
+              });
+              // Active interleave: promote every other cluster member
+              // into the visible queue so the user sees them
+              // back-to-back this session.
+              setPromotedCluster((prev) => {
+                const n = new Set(prev);
+                for (const m of cluster) if (m !== k) n.add(m);
                 return n;
               });
             }}
