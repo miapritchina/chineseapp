@@ -20,6 +20,7 @@ import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
 import { ComponentTable } from "./components/ComponentTable";
 import { PhoneticsPage } from "./components/PhoneticsPage";
+import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 
@@ -87,6 +88,9 @@ export function App() {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
       setShowPhonetics(window.location.hash === "#/phonetics");
+      // Reset the launched-flag so re-opening Review goes back to the
+      // launch screen first.
+      if (window.location.hash !== "#/review") setReviewLaunched(null);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -100,6 +104,10 @@ export function App() {
       if (target === "#/phonetics") setShowPhonetics(false);
     }
   };
+
+  // Launch screen state. null = haven't started yet; ReviewSettings = in
+  // a review session with these settings.
+  const [reviewLaunched, setReviewLaunched] = useState<ReviewSettings | null>(null);
 
   // Close the sign-in modal as soon as a session lands (auth flows from
   // a different tab still propagate via onAuthStateChange).
@@ -292,7 +300,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v65"
+          version="chinese v66"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -308,7 +316,19 @@ export function App() {
         </div>
       </header>
 
-      {showReview && (
+      {showReview && !reviewLaunched && (
+        <ReviewLaunch
+          totalDue={dueCards.length}
+          facetCounts={dueCards.reduce<Record<string, number>>((acc, c) => {
+            const f = c.facet === "recognition" ? "meaningRecognition" : c.facet;
+            acc[f] = (acc[f] || 0) + 1;
+            return acc;
+          }, {})}
+          onStart={(s) => setReviewLaunched(s)}
+          onClose={() => closeHashPage("#/review")}
+        />
+      )}
+      {showReview && reviewLaunched && (
         <ReviewPage
           dueCards={dueCards}
           findWord={dict.findWord}
@@ -316,6 +336,8 @@ export function App() {
           chars={charsData.chars}
           phoneticComponents={phonetics.components}
           phoneticComponentsByChar={phonetics.byChar}
+          enabledFacets={new Set(reviewLaunched.enabledFacets)}
+          randomOrder={reviewLaunched.randomOrder}
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={() => closeHashPage("#/review")}
