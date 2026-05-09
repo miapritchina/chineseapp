@@ -1,7 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Char, Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
 import type { Status } from "../hooks/useSaved";
+import {
+  buildStarterMnemonic,
+  clearMnemonic,
+  loadMnemonic,
+  saveMnemonic,
+} from "../lib/mnemonics";
 
 interface Props {
   char: string;
@@ -17,6 +23,43 @@ interface Props {
 export function CharPopup({ char, charData, saved, getStatus, setStatus, onClose, onJumpToWord, findWord }: Props) {
   const writerRef = useRef<HTMLDivElement>(null);
   const writerInstanceRef = useRef<any>(null);
+
+  // "💡 Make it stick" — self-generated mnemonic encoding (Kuo & Hooper).
+  // Pre-populated from the role tree on first open; user can edit or
+  // accept. Edited state is persisted in localStorage.
+  const starter = buildStarterMnemonic(char, charData);
+  const [mnemonic, setMnemonic] = useState<string>(() => {
+    const stored = loadMnemonic(char);
+    return stored?.text ?? starter;
+  });
+  const [editedFlag, setEditedFlag] = useState<boolean>(() => {
+    return !!loadMnemonic(char)?.edited;
+  });
+  const [mnemonicEditing, setMnemonicEditing] = useState(false);
+  // Reload when the popup switches to a different char (component
+  // instance is reused).
+  useEffect(() => {
+    const stored = loadMnemonic(char);
+    setMnemonic(stored?.text ?? buildStarterMnemonic(char, charData));
+    setEditedFlag(!!stored?.edited);
+    setMnemonicEditing(false);
+  }, [char, charData]);
+
+  const persistMnemonic = (text: string) => {
+    if (text === starter && !editedFlag) {
+      // Untouched default — don't bloat storage.
+      clearMnemonic(char);
+      return;
+    }
+    saveMnemonic(char, text);
+    setEditedFlag(true);
+  };
+  const resetToDefault = () => {
+    clearMnemonic(char);
+    setMnemonic(starter);
+    setEditedFlag(false);
+    setMnemonicEditing(false);
+  };
 
   // Mount hanzi-writer once per char.
   useEffect(() => {
@@ -111,6 +154,52 @@ export function CharPopup({ char, charData, saved, getStatus, setStatus, onClose
           <div className="popup-orig">Originally: {charData.originalMeaning}</div>
         )}
         {charData?.notes && <div className="popup-etym">{charData.notes}</div>}
+
+        <div className="mnemonic-block">
+          <div className="mnemonic-header">
+            <span className="mnemonic-title">
+              💡 Make it stick {editedFlag && <span className="mnemonic-saved-tag">your version</span>}
+            </span>
+            {editedFlag && (
+              <button
+                type="button"
+                className="mnemonic-reset"
+                onClick={resetToDefault}
+                title="Reset to the auto-suggested mnemonic from the components"
+              >
+                reset
+              </button>
+            )}
+          </div>
+          {mnemonicEditing ? (
+            <textarea
+              className="mnemonic-textarea"
+              value={mnemonic}
+              autoFocus
+              onChange={(e) => setMnemonic(e.target.value)}
+              onBlur={() => {
+                persistMnemonic(mnemonic);
+                setMnemonicEditing(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setMnemonicEditing(false);
+                }
+              }}
+              rows={3}
+              placeholder="Write a story, image, or hook that makes this character memorable…"
+            />
+          ) : (
+            <button
+              type="button"
+              className={`mnemonic-display${editedFlag ? " is-edited" : " is-default"}`}
+              onClick={() => setMnemonicEditing(true)}
+              title="Tap to edit"
+            >
+              {mnemonic || starter}
+            </button>
+          )}
+        </div>
 
         <a
           className="popup-open-tree"
