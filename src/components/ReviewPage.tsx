@@ -3,12 +3,12 @@ import type { Word, Char } from "../lib/types";
 import type { ReviewCard } from "../hooks/useReview";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
+import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
 import { PhoneticTapCard } from "./PhoneticTapCard";
 import { ComponentSoundCard } from "./ComponentSoundCard";
 import { FamilyTransferCard } from "./FamilyTransferCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
-import { speak } from "../lib/speech";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 
 interface Props {
@@ -109,12 +109,46 @@ export function ReviewPage({
     return true;
   });
 
+  // Recognition-pair dedup: meaningRecognition and soundRecognition for
+  // the same item are graded together in the combined card, so the
+  // queue should only surface ONE entry per (itemKind, itemKey) for
+  // these facets. Prefer meaningRecognition when both are due.
+  const isRecogFacet = (f: Facet) =>
+    f === "meaningRecognition" || f === "soundRecognition" || f === "recognition";
+  const seenRecogKey = new Set<string>();
+  const dedupedFiltered: ReviewCard[] = [];
+  // Two-pass: first keep meaningRecognition if present, then keep sound
+  // for keys not yet covered, then everything else.
+  for (const c of filtered) {
+    if (isRecogFacet(c.facet)) {
+      const k = `${c.itemKind}|${c.itemKey}`;
+      if (seenRecogKey.has(k)) continue;
+      // Skip soundRecognition if the meaningRecognition for the same
+      // key is still ahead of us in the queue (since we want meaning to
+      // be the canonical surface).
+      if (c.facet === "soundRecognition") {
+        const meaningExists = filtered.some(
+          (other) =>
+            other !== c &&
+            other.itemKind === c.itemKind &&
+            other.itemKey === c.itemKey &&
+            (other.facet === "meaningRecognition" || other.facet === "recognition"),
+        );
+        if (meaningExists) continue;
+      }
+      seenRecogKey.add(k);
+      dedupedFiltered.push(c);
+      continue;
+    }
+    dedupedFiltered.push(c);
+  }
+
   // Active interleave: pull cluster members into the visible queue even
   // if they're not currently due. They surface alongside (right after)
   // the leech card so the user contrasts them in one session.
   const promotedRows: ReviewCard[] = [];
   if (cards && promotedCluster.size > 0) {
-    const seen = new Set(filtered.map(rid));
+    const seen = new Set(dedupedFiltered.map(rid));
     for (const row of cards.values()) {
       if (!promotedCluster.has(row.itemKey)) continue;
       if (seen.has(rid(row))) continue;
@@ -133,7 +167,7 @@ export function ReviewPage({
     }
   }
   // Promoted cards prepend the queue (right after the current leech card).
-  const combined = [...promotedRows, ...filtered];
+  const combined = [...promotedRows, ...dedupedFiltered];
 
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
@@ -207,26 +241,8 @@ export function ReviewPage({
 
   // Stable per-render handler for the recognition reveal-card grade
   // buttons. Captures the current card's identity at click time, so a
-  // mid-pick queue shift can't fire onGrade for the wrong key.
-  const handleRecognitionGrade = useCallback(
-    (rating: RatingName) => {
-      if (!current) return;
-      const cur = current; // pin
-      onGrade(cur.itemKey, rating, cur.itemKind, cur.facet);
-      if (
-        rating === "Again" &&
-        cur.itemKind === "word" &&
-        cur.facet === "recognition" &&
-        [...cur.itemKey].length > 1 &&
-        onAttributeFailure
-      ) {
-        setAttribTarget(cur.itemKey);
-        return;
-      }
-      onGradedAdvance();
-    },
-    [current, onGrade, onAttributeFailure, onGradedAdvance],
-  );
+  // (handleRecognitionGrade lived here pre-v71; replaced by the inline
+  // CombinedRecognitionCard's dual-row grading in the default branch.)
 
   const handleAttribute = useCallback(
     (childKey: string) => {
@@ -451,158 +467,89 @@ export function ReviewPage({
     );
   }
 
-  // Default = recognition reveal-style. Two facets share this surface:
-  //   meaningRecognition → "What does it mean?", emphasizes the gloss
-  //   soundRecognition   → "How is it pronounced?", emphasizes pinyin + audio
-  // Each is its own FSRS row so stability + retention are tracked
-  // separately. Legacy "recognition" rows are migrated to
-  // meaningRecognition at load time.
-  const isSoundCard = current.facet === "soundRecognition";
-  const tag =
-    current.facet === "soundRecognition"
-      ? "Sound"
-      : current.facet === "meaningRecognition" || current.facet === "recognition"
-        ? "Meaning"
-        : current.itemKind === "word"
-          ? "Word"
-          : "Character";
-  const promptText = isSoundCard
-    ? "How is it pronounced?"
-    : "What does it mean?";
+  // Default = combined recognition card (v71). Both meaning + sound
+  // facets surface together; user grades each separately, then taps
+  // anywhere to advance. The other facet's card (if also in dueCards)
+  // is dropped from the queue when this one is graded — useReview's
+  // dueCards memo re-derives both rows out of due in one go.
+  const meaningId = `${current.itemKind}|meaningRecognition|${current.itemKey}`;
+  const soundId = `${current.itemKind}|soundRecognition|${current.itemKey}`;
+  const hasMeaningCard =
+    !!cards?.has(meaningId) ||
+    current.facet === "meaningRecognition" ||
+    current.facet === "recognition";
+  const hasSoundCard =
+    !!cards?.has(soundId) || current.facet === "soundRecognition";
+
+  const handleCombinedGrade = (
+    rating: RatingName,
+    facet: "meaningRecognition" | "soundRecognition",
+  ) => {
+    onGrade(current.itemKey, rating, current.itemKind, facet);
+    if (
+      rating === "Again" &&
+      current.itemKind === "word" &&
+      [...current.itemKey].length > 1 &&
+      onAttributeFailure
+    ) {
+      // Mirror v57's "what threw you?" affordance for word Again grades.
+      setAttribTarget(current.itemKey);
+      return;
+    }
+  };
+
   return (
     <div className="review-root">
       <div className="review-header">
         <button className="back-btn" type="button" onClick={onClose}>
           ← Done
         </button>
-        <span className="review-kind-tag">{tag}</span>
+        <span className="review-kind-tag">
+          {current.itemKind === "word" ? "Word" : "Character"}
+        </span>
         <span className="review-progress">
           {progressIndex} / {total}
         </span>
       </div>
       <div className="review-body">
-        <div
-          className={`review-card${isSoundCard ? " is-sound" : ""}`}
-          role="button"
-          tabIndex={0}
-          aria-label={revealed ? "Card revealed" : "Tap to reveal answer"}
-          onClick={() => {
-            if (!revealed) {
-              setRevealed(true);
-              speak(current.itemKey);
-            } else {
-              speak(current.itemKey);
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === " " || e.key === "Enter") {
-              e.preventDefault();
-              if (!revealed) speak(current.itemKey);
-              setRevealed(true);
-            }
-          }}
-        >
-          {!revealed && (
-            <div className="review-prompt-hint">{promptText}</div>
-          )}
-          <div className="review-hanzi">{current.itemKey}</div>
-          {!revealed && <div className="review-tap-hint">Tap to reveal</div>}
-          {revealed && (
-            <>
-              {isSoundCard ? (
-                <>
-                  <div className="review-pinyin review-pinyin-lg">{pinyin}</div>
-                  <div className="review-gloss review-gloss-sm">
-                    {gloss || "(no dictionary entry)"}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="review-gloss">
-                    {gloss || "(no dictionary entry)"}
-                  </div>
-                  <div className="review-pinyin">{pinyin}</div>
-                </>
-              )}
-              <div className="review-tap-replay">🔊 tap to replay</div>
-            </>
-          )}
-        </div>
-      </div>
-      {attribTarget ? (
-        <div className="review-attrib">
-          <div className="review-attrib-title">What threw you?</div>
-          <div className="review-attrib-row">
-            {[...attribTarget].map((c) => (
+        {attribTarget ? (
+          <div className="review-attrib">
+            <div className="review-attrib-title">What threw you?</div>
+            <div className="review-attrib-row">
+              {[...attribTarget].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className="review-attrib-pick"
+                  onClick={() => handleAttribute(c)}
+                >
+                  {c}
+                </button>
+              ))}
               <button
-                key={c}
                 type="button"
-                className="review-attrib-pick"
-                onClick={() => handleAttribute(c)}
+                className="review-attrib-skip"
+                onClick={onGradedAdvance}
               >
-                {c}
+                Skip
               </button>
-            ))}
-            <button
-              type="button"
-              className="review-attrib-skip"
-              onClick={onGradedAdvance}
-            >
-              Skip
-            </button>
+            </div>
           </div>
-        </div>
-      ) : revealed ? (
-        <div className="review-actions">
-          <button
-            type="button"
-            className="review-btn review-btn-again"
-            onClick={() => handleRecognitionGrade("Again")}
-          >
-            Again
-          </button>
-          <button
-            type="button"
-            className="review-btn review-btn-good"
-            onClick={() => handleRecognitionGrade("Good")}
-          >
-            Good
-          </button>
-          <button
-            type="button"
-            className="review-btn review-btn-easy"
-            onClick={() => handleRecognitionGrade("Easy")}
-          >
-            Easy
-          </button>
-          <button
-            type="button"
-            className="review-btn review-btn-skip"
-            onClick={handleSkipCurrent}
-            title="Skip this card for the rest of this session"
-          >
-            Skip
-          </button>
-        </div>
-      ) : (
-        <div className="review-actions">
-          <button
-            type="button"
-            className="review-btn review-btn-reveal"
-            onClick={() => setRevealed(true)}
-          >
-            Reveal
-          </button>
-          <button
-            type="button"
-            className="review-btn review-btn-skip"
-            onClick={handleSkipCurrent}
-            title="Skip this card for the rest of this session"
-          >
-            Skip
-          </button>
-        </div>
-      )}
+        ) : (
+          <CombinedRecognitionCard
+            key={current.itemKey}
+            itemKey={current.itemKey}
+            itemKind={current.itemKind}
+            word={word}
+            charData={charData}
+            hasMeaningCard={hasMeaningCard}
+            hasSoundCard={hasSoundCard}
+            onGradeMeaning={(r) => handleCombinedGrade(r, "meaningRecognition")}
+            onGradeSound={(r) => handleCombinedGrade(r, "soundRecognition")}
+            onSkip={handleSkipCurrent}
+          />
+        )}
+      </div>
     </div>
   );
 }
