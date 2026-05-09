@@ -16,7 +16,9 @@ const CASCADE_CAP_DAYS = 7;
 
 export type ItemKind = "word" | "char" | "component";
 export type Facet =
-  | "recognition"
+  | "recognition"          // legacy (pre-v66); migrated to meaningRecognition on load
+  | "meaningRecognition"
+  | "soundRecognition"
   | "phoneticTap"
   | "componentSound"
   | "familyTransfer"
@@ -85,10 +87,13 @@ function persistLocalCards(cards: Map<string, ReviewCard>) {
   }
 }
 
-// First PR scope: only ('word', 'recognition'). Other kinds + facets
-// are introduced in later PRs.
-const FIRST_FACET: Facet = "recognition";
+// Facet split (v66): recognition → meaningRecognition + soundRecognition.
+// Each saved word seeds both. Legacy "recognition" rows (from before the
+// split) are renamed in-memory at load time so their FSRS state isn't
+// lost; they continue training the meaning facet.
 const FIRST_KIND: ItemKind = "word";
+const MEANING_FACET: Facet = "meaningRecognition" as Facet;
+const SOUND_FACET: Facet = "soundRecognition" as Facet;
 
 export function useReview({
   userId,
@@ -118,10 +123,15 @@ export function useReview({
   const expectedCards = useMemo(() => {
     const out = new Map<string, { itemKey: string; itemKind: ItemKind; facet: Facet }>();
     for (const key of scheduledKeys) {
-      out.set(rowId(key, "word", "recognition"), {
+      out.set(rowId(key, "word", "meaningRecognition"), {
         itemKey: key,
         itemKind: "word",
-        facet: "recognition",
+        facet: "meaningRecognition",
+      });
+      out.set(rowId(key, "word", "soundRecognition"), {
+        itemKey: key,
+        itemKind: "word",
+        facet: "soundRecognition",
       });
     }
     for (const key of scheduledKeys) {
@@ -162,6 +172,21 @@ export function useReview({
     setCards((prev) => {
       let changed = false;
       const next = new Map(prev);
+      // Legacy migration: pre-v66 rows used facet "recognition" for the
+      // single combined card. Rename them to "meaningRecognition" so the
+      // user's existing FSRS state isn't lost.
+      for (const [id, row] of next) {
+        if (row.facet === "recognition") {
+          const newRow: ReviewCard = { ...row, facet: "meaningRecognition" };
+          const newId = rowId(newRow.itemKey, newRow.itemKind, newRow.facet);
+          next.delete(id);
+          if (!next.has(newId)) {
+            next.set(newId, newRow);
+            changed = true;
+          }
+        }
+      }
+
       const newSeeds: ReviewCard[] = [];
       for (const [id, target] of expectedCards) {
         if (!next.has(id)) {
@@ -185,7 +210,9 @@ export function useReview({
       // Cascade-seeded char/recognition cards are independent and survive.
       for (const [id, row] of next) {
         const isAutoFacet =
-          (row.itemKind === "word" && row.facet === "recognition") ||
+          (row.itemKind === "word" &&
+            (row.facet === "meaningRecognition" ||
+              row.facet === "soundRecognition")) ||
           (row.itemKind === "char" && row.facet === "phoneticTap") ||
           (row.itemKind === "component" && row.facet === "componentSound");
         if (isAutoFacet && !expectedCards.has(id)) {
@@ -237,10 +264,16 @@ export function useReview({
       }
       const remote = new Map<string, ReviewCard>();
       for (const r of data || []) {
+        // Migrate legacy "recognition" rows from the DB into the new
+        // "meaningRecognition" facet on the way in (one-time, in-memory).
+        const facet =
+          r.facet === "recognition"
+            ? ("meaningRecognition" as Facet)
+            : (r.facet as Facet);
         const row: ReviewCard = {
           itemKey: r.item_key,
           itemKind: r.item_kind as ItemKind,
-          facet: r.facet as Facet,
+          facet,
           card: r.card as SerializedCard,
           dueAt: new Date(r.due_at).getTime(),
           lastReviewAt: r.last_review_at ? new Date(r.last_review_at).getTime() : null,
@@ -316,7 +349,7 @@ export function useReview({
   // plan). On Again, no cascade — the user can attribute the failure to
   // a specific child via attributeFailure().
   const grade = useCallback(
-    (itemKey: string, rating: RatingName, kind: ItemKind = FIRST_KIND, facet: Facet = FIRST_FACET) => {
+    (itemKey: string, rating: RatingName, kind: ItemKind = FIRST_KIND, facet: Facet = MEANING_FACET) => {
       const now = new Date();
       const parentId = rowId(itemKey, kind, facet);
       const parentRow = cards.get(parentId);
@@ -349,14 +382,14 @@ export function useReview({
           // schedule we treat them uniformly until PR 4 introduces the
           // facet split.
           const childKind: ItemKind = "char";
-          const childId = rowId(childKey, childKind, FIRST_FACET);
+          const childId = rowId(childKey, childKind, MEANING_FACET);
           let childRow = next.get(childId);
           if (!childRow) {
             const seeded = seedCard(now);
             childRow = {
               itemKey: childKey,
               itemKind: childKind,
-              facet: FIRST_FACET,
+              facet: MEANING_FACET,
               card: seeded,
               dueAt: new Date(seeded.due).getTime(),
               lastReviewAt: null,
@@ -394,14 +427,14 @@ export function useReview({
     (childKey: string) => {
       const now = new Date();
       const childKind: ItemKind = "char";
-      const childId = rowId(childKey, childKind, FIRST_FACET);
+      const childId = rowId(childKey, childKind, MEANING_FACET);
       let childRow = cards.get(childId);
       if (!childRow) {
         const seeded = seedCard(now);
         childRow = {
           itemKey: childKey,
           itemKind: childKind,
-          facet: FIRST_FACET,
+          facet: MEANING_FACET,
           card: seeded,
           dueAt: new Date(seeded.due).getTime(),
           lastReviewAt: null,

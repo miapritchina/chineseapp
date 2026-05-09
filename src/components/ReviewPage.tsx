@@ -25,6 +25,10 @@ interface Props {
   chars?: Record<string, Char>;
   phoneticComponents?: PhoneticComponent[];
   phoneticComponentsByChar?: Map<string, PhoneticComponent>;
+  // From the launch screen. If absent, all facets are enabled and
+  // ordering is the default (sub-items before words, oldest-due first).
+  enabledFacets?: Set<Facet>;
+  randomOrder?: boolean;
 }
 
 // Stable id for a card across the (kind, facet, key) tuple. Used to mark
@@ -48,6 +52,8 @@ export function ReviewPage({
   chars,
   phoneticComponents,
   phoneticComponentsByChar,
+  enabledFacets,
+  randomOrder,
 }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [attribTarget, setAttribTarget] = useState<string | null>(null);
@@ -57,8 +63,42 @@ export function ReviewPage({
   // Disambig already shown this session (one-shot per key).
   const [disambigSeen, setDisambigSeen] = useState<Set<string>>(() => new Set());
 
-  // Visible queue = dueCards minus this-session skips.
-  const queue = dueCards.filter((c) => !skipped.has(rid(c)));
+  // Visible queue = dueCards minus this-session skips, filtered by the
+  // launch settings.
+  const filtered = dueCards.filter((c) => {
+    if (skipped.has(rid(c))) return false;
+    if (enabledFacets && !enabledFacets.has(c.facet)) {
+      // Legacy "recognition" rows count as meaningRecognition for
+      // filtering purposes too.
+      if (
+        !(c.facet === "recognition" && enabledFacets.has("meaningRecognition"))
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Per-card session position. Assigned once on first sighting so the
+  // queue head doesn't jump on every re-render. New cards (cascade
+  // surfacing mid-session) slot in at the end.
+  const positionRef = useRef<Map<string, number>>(new Map());
+  for (const c of filtered) {
+    const id = rid(c);
+    if (!positionRef.current.has(id)) {
+      positionRef.current.set(
+        id,
+        randomOrder ? Math.random() : positionRef.current.size,
+      );
+    }
+  }
+  const queue = filtered
+    .slice()
+    .sort(
+      (a, b) =>
+        (positionRef.current.get(rid(a)) ?? 0) -
+        (positionRef.current.get(rid(b)) ?? 0),
+    );
   const current = queue[0];
 
   // Session progress display: capture the queue size on first render.
@@ -214,6 +254,7 @@ export function ReviewPage({
                 return n;
               });
             }}
+            onSkip={handleSkipCurrent}
           />
         </div>
       </div>
@@ -290,23 +331,38 @@ export function ReviewPage({
     );
   }
 
-  // Default = recognition reveal-style.
+  // Default = recognition reveal-style. Two facets share this surface:
+  //   meaningRecognition → "What does it mean?", emphasizes the gloss
+  //   soundRecognition   → "How is it pronounced?", emphasizes pinyin + audio
+  // Each is its own FSRS row so stability + retention are tracked
+  // separately. Legacy "recognition" rows are migrated to
+  // meaningRecognition at load time.
+  const isSoundCard = current.facet === "soundRecognition";
+  const tag =
+    current.facet === "soundRecognition"
+      ? "Sound"
+      : current.facet === "meaningRecognition" || current.facet === "recognition"
+        ? "Meaning"
+        : current.itemKind === "word"
+          ? "Word"
+          : "Character";
+  const promptText = isSoundCard
+    ? "How is it pronounced?"
+    : "What does it mean?";
   return (
     <div className="review-root">
       <div className="review-header">
         <button className="back-btn" type="button" onClick={onClose}>
           ← Done
         </button>
-        <span className="review-kind-tag">
-          {current.itemKind === "word" ? "Word" : "Character"}
-        </span>
+        <span className="review-kind-tag">{tag}</span>
         <span className="review-progress">
           {progressIndex} / {total}
         </span>
       </div>
       <div className="review-body">
         <div
-          className="review-card"
+          className={`review-card${isSoundCard ? " is-sound" : ""}`}
           role="button"
           tabIndex={0}
           aria-label={revealed ? "Card revealed" : "Tap to reveal answer"}
@@ -326,14 +382,28 @@ export function ReviewPage({
             }
           }}
         >
+          {!revealed && (
+            <div className="review-prompt-hint">{promptText}</div>
+          )}
           <div className="review-hanzi">{current.itemKey}</div>
           {!revealed && <div className="review-tap-hint">Tap to reveal</div>}
           {revealed && (
             <>
-              <div className="review-pinyin">{pinyin}</div>
-              <div className="review-gloss">
-                {gloss || "(no dictionary entry)"}
-              </div>
+              {isSoundCard ? (
+                <>
+                  <div className="review-pinyin review-pinyin-lg">{pinyin}</div>
+                  <div className="review-gloss review-gloss-sm">
+                    {gloss || "(no dictionary entry)"}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="review-gloss">
+                    {gloss || "(no dictionary entry)"}
+                  </div>
+                  <div className="review-pinyin">{pinyin}</div>
+                </>
+              )}
               <div className="review-tap-replay">🔊 tap to replay</div>
             </>
           )}
@@ -385,6 +455,14 @@ export function ReviewPage({
           >
             Easy
           </button>
+          <button
+            type="button"
+            className="review-btn review-btn-skip"
+            onClick={handleSkipCurrent}
+            title="Skip this card for the rest of this session"
+          >
+            Skip
+          </button>
         </div>
       ) : (
         <div className="review-actions">
@@ -394,6 +472,14 @@ export function ReviewPage({
             onClick={() => setRevealed(true)}
           >
             Reveal
+          </button>
+          <button
+            type="button"
+            className="review-btn review-btn-skip"
+            onClick={handleSkipCurrent}
+            title="Skip this card for the rest of this session"
+          >
+            Skip
           </button>
         </div>
       )}
