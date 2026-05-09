@@ -12,6 +12,7 @@ function expectedCards(
   chars,
   phoneticComponentKeys = null,
   phoneticComponentsByChar = null,
+  wroteKeys = null,
 ) {
   const out = new Map();
   const saved = new Set(savedWords);
@@ -48,6 +49,17 @@ function expectedCards(
         itemKey: key,
         itemKind: "component",
         facet: "componentSound",
+      });
+    }
+  }
+  if (wroteKeys) {
+    for (const key of savedWords) {
+      if ([...key].length !== 1) continue;
+      if (!wroteKeys.has(key)) continue;
+      out.set(`char|production|${key}`, {
+        itemKey: key,
+        itemKind: "char",
+        facet: "production",
       });
     }
   }
@@ -191,6 +203,22 @@ test("familyTransfer does nothing without phoneticComponents data", () => {
   for (const k of m.keys()) {
     assert.equal(k.startsWith("char|familyTransfer|"), false, k);
   }
+});
+
+test("production seeds for single-char saved items at wrote tier", () => {
+  const m = expectedCards(["你"], fixtureChars, null, null, new Set(["你"]));
+  assert.ok(m.has("char|production|你"));
+});
+
+test("production does NOT seed for multi-char saved words at wrote tier", () => {
+  const m = expectedCards(["你好"], fixtureChars, null, null, new Set(["你好"]));
+  assert.equal(m.has("char|production|你好"), false);
+  assert.equal(m.has("char|production|你"), false);
+});
+
+test("production does NOT seed when char is saved but not in wroteKeys", () => {
+  const m = expectedCards(["你"], fixtureChars, null, null, new Set());
+  assert.equal(m.has("char|production|你"), false);
 });
 
 let failures = 0;

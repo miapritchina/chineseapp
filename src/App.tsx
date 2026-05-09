@@ -76,6 +76,7 @@ export function App() {
     chars: charsData.chars,
     phoneticComponentKeys,
     phoneticComponentsByChar: phonetics.byChar,
+    wroteKeys: wrote,
   });
   const { dueCards, grade, attributeFailure } = reviewState;
 
@@ -308,7 +309,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v72"
+          version="chinese v73"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"

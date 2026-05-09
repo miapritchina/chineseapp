@@ -97,6 +97,9 @@ interface UseReviewOpts {
     string,
     { char: string; pinyin: string; family: string[] }
   >;
+  // Items at status "wrote" (✒). Triggers the production-drill seed
+  // rule (single-char items at wrote tier get a Hanzi Writer trace card).
+  wroteKeys?: Set<string>;
 }
 
 function loadLocalCards(): Map<string, ReviewCard> {
@@ -142,6 +145,7 @@ export function useReview({
   chars,
   phoneticComponentKeys,
   phoneticComponentsByChar,
+  wroteKeys,
 }: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
@@ -234,8 +238,22 @@ export function useReview({
         }
       }
     }
+    // production: any saved single-character item at "wrote" tier gets a
+    // Hanzi Writer trace drill. Multi-char saved words at wrote tier
+    // don't seed production cards yet (chained-quiz UX is a follow-up).
+    if (wroteKeys && wroteKeys.size > 0) {
+      for (const key of scheduledKeys) {
+        if ([...key].length !== 1) continue;
+        if (!wroteKeys.has(key)) continue;
+        out.set(rowId(key, "char", "production"), {
+          itemKey: key,
+          itemKind: "char",
+          facet: "production",
+        });
+      }
+    }
     return out;
-  }, [scheduledKeys, chars, phoneticComponentKeys, phoneticComponentsByChar]);
+  }, [scheduledKeys, chars, phoneticComponentKeys, phoneticComponentsByChar, wroteKeys]);
 
   // Reconcile: ensure every expected card exists; drop any auto-seeded
   // facet card whose key is no longer expected. Cascaded char recognition
@@ -287,7 +305,9 @@ export function useReview({
             (row.facet === "meaningRecognition" ||
               row.facet === "soundRecognition")) ||
           (row.itemKind === "char" &&
-            (row.facet === "phoneticTap" || row.facet === "familyTransfer")) ||
+            (row.facet === "phoneticTap" ||
+              row.facet === "familyTransfer" ||
+              row.facet === "production")) ||
           (row.itemKind === "component" && row.facet === "componentSound");
         if (isAutoFacet && !expectedCards.has(id)) {
           next.delete(id);

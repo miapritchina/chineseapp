@@ -7,6 +7,7 @@ import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
 import { PhoneticTapCard } from "./PhoneticTapCard";
 import { ComponentSoundCard } from "./ComponentSoundCard";
 import { FamilyTransferCard } from "./FamilyTransferCard";
+import { ProductionCard } from "./ProductionCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
@@ -334,6 +335,46 @@ export function ReviewPage({
                 return n;
               });
             }}
+            onSkip={handleSkipCurrent}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Production drill (✒ Wrote tier): trace the char via Hanzi Writer.
+  if (current.facet === "production") {
+    const cd = chars?.[current.itemKey];
+    if (!cd) {
+      return (
+        <DrillFrame
+          tag="Write"
+          onClose={onClose}
+          progressIndex={progressIndex}
+          total={total}
+          onSkip={handleSkipCurrent}
+        >
+          <div className="review-empty-hint">Loading character data…</div>
+        </DrillFrame>
+      );
+    }
+    return (
+      <div className="review-root">
+        <div className="review-header">
+          <button className="back-btn" type="button" onClick={onClose}>
+            ← Done
+          </button>
+          <span className="review-kind-tag">Write</span>
+          <span className="review-progress">
+            {progressIndex} / {total}
+          </span>
+        </div>
+        <div className="review-body">
+          <ProductionCard
+            key={rid(current)}
+            char={current.itemKey}
+            charData={cd}
+            onGrade={handlePhoneticTapGrade}
             onSkip={handleSkipCurrent}
           />
         </div>
