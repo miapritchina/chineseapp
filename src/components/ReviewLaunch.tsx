@@ -85,14 +85,24 @@ interface Props {
   // about to study before tapping Start.
   facetCounts: Record<string, number>;
   totalDue: number;
+  // Whether the user has enough saved words to launch a cluster recall.
+  canCluster: boolean;
   onStart: (settings: ReviewSettings) => void;
+  onStartCluster: () => void;
   onClose: () => void;
 }
 
 // Launch surface for a review session. Shown when the user navigates to
 // #/review; hands a settings object up to the parent on Start. Settings
 // persist in localStorage so reopening uses the user's last choice.
-export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props) {
+export function ReviewLaunch({
+  facetCounts,
+  totalDue,
+  canCluster,
+  onStart,
+  onStartCluster,
+  onClose,
+}: Props) {
   const [enabled, setEnabled] = useState<Set<Facet>>(
     () => new Set(loadSettings().enabledFacets),
   );
@@ -215,6 +225,19 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
           disabled={visibleDue === 0}
         >
           Start review · {visibleDue} cards
+        </button>
+        <button
+          type="button"
+          className="review-btn"
+          onClick={onStartCluster}
+          disabled={!canCluster}
+          title={
+            canCluster
+              ? "Surface 3–4 related saved words for whole-cluster recall"
+              : "Save at least 3 words first"
+          }
+        >
+          Cluster recall
         </button>
       </div>
     </div>
