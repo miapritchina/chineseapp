@@ -726,6 +726,57 @@ body {
   margin-top: 4px;
 }
 
+/* Cluster recall — 3–4 related saved words on one screen for
+   whole-cluster recall. Tap each cell to reveal pinyin + gloss + audio,
+   then grade Need work / Knew most / Knew all once all are revealed. */
+.cluster-body {
+  flex-direction: column;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 12px 14px 24px;
+  overflow-y: auto;
+  gap: 12px;
+}
+.cluster-prompt {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.cluster-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.cluster-cell {
+  background: var(--surface, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 110px;
+}
+.cluster-cell.is-revealed { border-color: var(--accent); }
+.cluster-cell-hanzi {
+  font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  font-size: 36px;
+  line-height: 1;
+  font-weight: 500;
+}
+.cluster-cell-pinyin { font-size: 14px; color: var(--muted); }
+.cluster-cell-gloss {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
 .topbar-end {
   display: flex;
   align-items: center;
