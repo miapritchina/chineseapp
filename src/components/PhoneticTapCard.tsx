@@ -135,11 +135,12 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
           );
         })}
       </div>
-      {picked !== null && (
-        <div className={`phonetic-tap-feedback${isCorrect ? " is-correct" : " is-wrong"}`}>
-          {isCorrect
-            ? "Right — sound component."
-            : `Sound was ${correctChar}${correct?.pinyin ? ` (${correct.pinyin})` : ""}.`}
+      {/* Wrong-answer feedback only — the chip's green border is enough on
+          its own when the user got it right (the redundant "Right —"
+          line was distracting). */}
+      {isWrong && correct && (
+        <div className="phonetic-tap-feedback is-wrong">
+          Sound: {correctChar}{correct.pinyin ? ` · ${correct.pinyin}` : ""}
         </div>
       )}
       {picked !== null && (

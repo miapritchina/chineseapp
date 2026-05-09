@@ -140,11 +140,11 @@ export function ComponentSoundCard({ entry, pool, onGrade }: Props) {
           );
         })}
       </div>
-      {picked !== null && (
-        <div className={`phonetic-tap-feedback${isCorrect ? " is-correct" : " is-wrong"}`}>
-          {isCorrect
-            ? `Right — ${entry.char} = ${firstReading(entry.pinyinTones) || entry.pinyin}.`
-            : `${entry.char} = ${firstReading(entry.pinyinTones) || entry.pinyin}.`}
+      {/* Wrong-answer feedback only — the right-answer is already obvious
+          from the green chip + the audio playback. */}
+      {isWrong && (
+        <div className="phonetic-tap-feedback is-wrong">
+          {entry.char} = {firstReading(entry.pinyinTones) || entry.pinyin}
         </div>
       )}
       {picked !== null && (
