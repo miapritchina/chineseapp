@@ -29,6 +29,11 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
     label: "Sound of a component",
     hint: "Multi-choice pinyin for productive phonetic components.",
   },
+  {
+    facet: "familyTransfer",
+    label: "Family transfer",
+    hint: '"You know 青 = qīng — what about 情?" Tests the youbian-dubian skill on un-saved family members.',
+  },
 ];
 
 export function loadSettings(): ReviewSettings {

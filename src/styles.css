@@ -708,6 +708,24 @@ body {
   padding-left: 26px;
 }
 
+/* Family transfer drill — riff on the phonetic-tap layout, but the
+   prompt is "you know X = pinyin, what about Y?" so the focal glyph
+   is the un-saved family member, not the parent component. */
+.family-transfer-question {
+  font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  font-size: 24px;
+  color: var(--text);
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+.family-transfer-target {
+  font-size: 80px;
+  font-weight: 500;
+  display: block;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+
 .topbar-end {
   display: flex;
   align-items: center;

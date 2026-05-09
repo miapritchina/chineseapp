@@ -74,6 +74,7 @@ export function App() {
     scheduledKeys,
     chars: charsData.chars,
     phoneticComponentKeys,
+    phoneticComponentsByChar: phonetics.byChar,
   });
 
   // Wake the Supabase project early to mask cold-start latency.
@@ -300,7 +301,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v66"
+          version="chinese v67"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"

@@ -5,6 +5,7 @@ import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { PhoneticTapCard } from "./PhoneticTapCard";
 import { ComponentSoundCard } from "./ComponentSoundCard";
+import { FamilyTransferCard } from "./FamilyTransferCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import { speak } from "../lib/speech";
@@ -258,6 +259,62 @@ export function ReviewPage({
           />
         </div>
       </div>
+    );
+  }
+
+  // Family-transfer drill: "you know 青, what about 情?" Picks the
+  // component for the prompt by walking phoneticComponentsByChar to find
+  // any saved component whose family includes this card's itemKey.
+  if (current.facet === "familyTransfer") {
+    const cd = chars?.[current.itemKey];
+    if (!phoneticComponents || !phoneticComponentsByChar || !cd) {
+      return (
+        <DrillFrame
+          tag="Family"
+          onClose={onClose}
+          progressIndex={progressIndex}
+          total={total}
+          onSkip={handleSkipCurrent}
+        >
+          <div className="review-empty-hint">Loading family data…</div>
+        </DrillFrame>
+      );
+    }
+    const componentEntry =
+      phoneticComponents.find((p) => p.family.includes(current.itemKey)) ??
+      null;
+    if (!componentEntry) {
+      return (
+        <DrillFrame
+          tag="Family"
+          onClose={onClose}
+          progressIndex={progressIndex}
+          total={total}
+          onSkip={handleSkipCurrent}
+        >
+          <div className="review-empty-hint">
+            No phonetic component found for {current.itemKey}. Tap Skip.
+          </div>
+        </DrillFrame>
+      );
+    }
+    return (
+      <DrillFrame
+        tag="Family"
+        onClose={onClose}
+        progressIndex={progressIndex}
+        total={total}
+        onSkip={handleSkipCurrent}
+      >
+        <FamilyTransferCard
+          key={rid(current)}
+          familyMember={current.itemKey}
+          charData={cd}
+          componentEntry={componentEntry}
+          pool={phoneticComponents}
+          onGrade={handlePhoneticTapGrade}
+        />
+      </DrillFrame>
     );
   }
 
