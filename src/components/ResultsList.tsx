@@ -1,12 +1,19 @@
 import type { Word } from "../lib/types";
+import type { Status } from "../hooks/useSaved";
+import { StatusButton } from "./StatusButton";
 
 interface Props {
   matches: Word[];
   saved: Set<string>;
   onOpen: (word: string) => void;
+  // Optional status controls. When present, each row gets a
+  // StatusButton in the trailing slot so the user can save / promote
+  // a result without opening the modal first.
+  getStatus?: (key: string) => Status | null;
+  setStatus?: (key: string, next: Status | null) => void;
 }
 
-export function ResultsList({ matches, saved, onOpen }: Props) {
+export function ResultsList({ matches, saved, onOpen, getStatus, setStatus }: Props) {
   if (matches.length === 0) {
     return <div className="empty-state">No matches.</div>;
   }
@@ -20,25 +27,45 @@ export function ResultsList({ matches, saved, onOpen }: Props) {
   return (
     <section className="results" aria-label="Search results">
       {ordered.map((w) => {
-        const isSaved = saved.has(w.word);
+        const status = getStatus ? getStatus(w.word) : undefined;
         return (
-          <button
+          <div
             key={w.word}
             className="result-row"
-            type="button"
+            role="button"
+            tabIndex={0}
             onClick={() => onOpen(w.word)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpen(w.word);
+              }
+            }}
           >
             <div className="r-hanzi">{w.simp}</div>
             <div className="r-mid">
               <div className="r-pinyin">{w.pinyin}</div>
               <div className="r-gloss">{(w.definitions || []).join("; ")}</div>
             </div>
-            {isSaved && (
-              <span className="r-saved" aria-label="In your saved list" title="Saved">
-                ★
-              </span>
+            {getStatus && setStatus ? (
+              <div className="r-status" onClick={(e) => e.stopPropagation()}>
+                <StatusButton
+                  status={status ?? null}
+                  onChange={(next) => setStatus(w.word, next)}
+                />
+              </div>
+            ) : (
+              saved.has(w.word) && (
+                <span
+                  className="r-saved"
+                  aria-label="In your saved list"
+                  title="Saved"
+                >
+                  ★
+                </span>
+              )
             )}
-          </button>
+          </div>
         );
       })}
     </section>

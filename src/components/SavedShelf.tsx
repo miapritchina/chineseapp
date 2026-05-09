@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Char, Word } from "../lib/types";
-import type { SavedEntry } from "../hooks/useSaved";
+import type { SavedEntry, Status } from "../hooks/useSaved";
 import { Card, CharOnlyCard } from "./Card";
 import { normalizePinyin } from "../lib/pinyin";
 
@@ -13,6 +13,8 @@ interface Props {
   chars: Record<string, Char>;
   onOpenWord: (word: string) => void;
   onOpenChar: (char: string) => void;
+  getStatus?: (key: string) => Status | null;
+  setStatus?: (key: string, next: Status | null) => void;
 }
 
 type SortMode = "recent" | "pinyin" | "strokes" | "hsk" | "common";
@@ -43,10 +45,22 @@ function renderCard(
   chars: Record<string, Char>,
   onOpenWord: (word: string) => void,
   onOpenChar: (char: string) => void,
+  getStatus?: (key: string) => Status | null,
+  setStatus?: (key: string, next: Status | null) => void,
 ) {
   const key = entry.word;
   const w = findWord(key);
-  if (w) return <Card key={key} word={w} onOpen={onOpenWord} />;
+  if (w) {
+    return (
+      <Card
+        key={key}
+        word={w}
+        onOpen={onOpenWord}
+        getStatus={getStatus}
+        setStatus={setStatus}
+      />
+    );
+  }
   const c = chars[key];
   if (c) {
     return (
@@ -56,6 +70,8 @@ function renderCard(
         pinyin={c.pinyin || ""}
         gloss={c.definitions?.[0] || ""}
         onOpen={onOpenChar}
+        getStatus={getStatus}
+        setStatus={setStatus}
       />
     );
   }
@@ -83,6 +99,8 @@ export function SavedShelf({
   chars,
   onOpenWord,
   onOpenChar,
+  getStatus,
+  setStatus,
 }: Props) {
   const isEmpty = savedList.length === 0;
 
@@ -242,13 +260,13 @@ export function SavedShelf({
         </div>
       ) : !sectioned ? (
         <div className="saved-grid">
-          {sortedAll.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+          {sortedAll.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
         </div>
       ) : (
         <>
           {savedOnlyList.length > 0 ? (
             <div className="saved-grid">
-              {sortedSavedOnly.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+              {sortedSavedOnly.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
             </div>
           ) : (
             <div className="saved-empty">
@@ -267,7 +285,7 @@ export function SavedShelf({
                 </div>
               </div>
               <div className="saved-grid">
-                {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+                {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
               </div>
             </>
           )}
@@ -281,7 +299,7 @@ export function SavedShelf({
                 </div>
               </div>
               <div className="saved-grid">
-                {sortedLearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+                {sortedLearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
               </div>
             </>
           )}
@@ -295,7 +313,7 @@ export function SavedShelf({
                 </div>
               </div>
               <div className="saved-grid">
-                {sortedWrote.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
+                {sortedWrote.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
               </div>
             </>
           )}
