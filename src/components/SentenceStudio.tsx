@@ -15,6 +15,9 @@ interface Props {
   // Pre-hydrate so the bank has data on first paint after the page
   // opens with cards out of cache.
   ensureCached: (keys: string[]) => Promise<void>;
+  // Signed-in user id (null = signed out) — so the draft + saved
+  // sentences sync to Supabase.
+  userId: string | null;
   onClose: () => void;
 }
 
@@ -51,9 +54,9 @@ function matchesQuery(w: Word, rawQuery: string): boolean {
 // Visual notes: uses the app palette (--bg / --surface-2 / --accent),
 // not the handoff's vermillion / Fraunces stack. POS color stripe on
 // each chip + token keeps the handoff's functional color hint.
-export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: Props) {
-  const { keys, append, removeAt, clear, replace } = useSentenceDraft();
-  const sentences = useSavedSentences();
+export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onClose }: Props) {
+  const { keys, append, removeAt, clear, replace } = useSentenceDraft({ userId });
+  const sentences = useSavedSentences({ userId });
   const [tab, setTab] = useState<Pos | "all">("all");
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState(false);
@@ -241,7 +244,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
               <div className="saved-sentences-head">Saved sentences</div>
               <div className="saved-sentences-list">
                 {sentences.items.map((s) => (
-                  <div key={s.id} className="saved-sentence-row">
+                  <div key={s.hanzi} className="saved-sentence-row">
                     <button
                       type="button"
                       className="saved-sentence-load"
@@ -258,7 +261,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
                       type="button"
                       className="saved-sentence-del"
                       aria-label={`Delete saved sentence ${s.hanzi}`}
-                      onClick={() => sentences.remove(s.id)}
+                      onClick={() => sentences.remove(s.hanzi)}
                     >
                       ×
                     </button>

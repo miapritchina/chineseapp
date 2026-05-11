@@ -5,6 +5,8 @@ const SAVED_KEY = "chinese.saved";
 const LEARNED_KEY = "chinese.learned";
 const WROTE_KEY = "chinese.wrote";
 const REVIEW_KEY = "chinese.review";
+// Re-fetch from Supabase on tab focus, but at most once per this window.
+const RECONCILE_THROTTLE_MS = 20_000;
 
 export type Status = "saved" | "learned" | "wrote" | "review";
 
@@ -62,8 +64,10 @@ interface UseSavedOpts {
 //   ❗ review   (review_at IS NOT NULL — "needs another look")
 //
 // At most one of {learned_at, wrote_at, review_at} is non-null at a time.
-// All four live in localStorage (offline resilience + survives sign-out)
-// AND mirror to user_saves columns when signed in.
+// Supabase (`user_saves`) is the source of truth; the four localStorage
+// maps are an offline read-cache. The cloud is reconciled on sign-in AND
+// whenever the tab regains focus (throttled), so a change made on another
+// device flows in without a reload.
 export function useSaved({ userId }: UseSavedOpts) {
   const [items, setItems] = useState<Map<string, number>>(() => loadLocalMap(SAVED_KEY));
   const [learnedItems, setLearnedItems] = useState<Map<string, number>>(() =>
@@ -77,6 +81,7 @@ export function useSaved({ userId }: UseSavedOpts) {
   );
   const [syncing, setSyncing] = useState(false);
   const lastSyncedUserRef = useRef<string | null>(null);
+  const lastReconcileAtRef = useRef(0);
 
   // Read-only views.
   const saved = useMemo(() => new Set(items.keys()), [items]);
@@ -103,7 +108,123 @@ export function useSaved({ userId }: UseSavedOpts) {
     [items, wroteItems, learnedItems, reviewItems],
   );
 
-  // Initial sync when a user signs in (or switches accounts).
+  // Pull from Supabase and merge: remote wins on overlap (the DB is the
+  // source of truth); local rows the DB doesn't have are uploaded (covers
+  // pre-account / offline edits). Called on sign-in and on tab focus.
+  const reconcile = useCallback(async () => {
+    if (!userId) return;
+    setSyncing(true);
+    type FullRow = {
+      word: string;
+      saved_at: string;
+      learned_at: string | null;
+      wrote_at: string | null;
+      review_at: string | null;
+    };
+    type LegacyRow = Omit<FullRow, "review_at">;
+    let rows: FullRow[] = [];
+    {
+      const { data, error } = await supabase
+        .from("user_saves")
+        .select("word, saved_at, learned_at, wrote_at, review_at")
+        .eq("user_id", userId);
+      if (error) {
+        console.warn(
+          "user_saves wide select failed, falling back without review_at:",
+          error,
+        );
+        const fallback = await supabase
+          .from("user_saves")
+          .select("word, saved_at, learned_at, wrote_at")
+          .eq("user_id", userId);
+        if (fallback.error) {
+          console.error("user_saves load failed:", fallback.error);
+          setSyncing(false);
+          return;
+        }
+        rows = (fallback.data as LegacyRow[]).map((r) => ({ ...r, review_at: null }));
+      } else {
+        rows = (data || []) as FullRow[];
+      }
+    }
+    lastReconcileAtRef.current = Date.now();
+
+    const remoteSaved = new Map<string, number>();
+    const remoteLearned = new Map<string, number>();
+    const remoteWrote = new Map<string, number>();
+    const remoteReview = new Map<string, number>();
+    for (const r of rows) {
+      remoteSaved.set(r.word, new Date(r.saved_at).getTime());
+      if (r.wrote_at) remoteWrote.set(r.word, new Date(r.wrote_at).getTime());
+      else if (r.learned_at) remoteLearned.set(r.word, new Date(r.learned_at).getTime());
+      else if (r.review_at) remoteReview.set(r.word, new Date(r.review_at).getTime());
+    }
+
+    let localSavedBefore: Map<string, number> = new Map();
+    let localLearnedBefore: Map<string, number> = new Map();
+    let localWroteBefore: Map<string, number> = new Map();
+    let localReviewBefore: Map<string, number> = new Map();
+
+    setItems((prev) => {
+      localSavedBefore = prev;
+      const merged = new Map(prev);
+      for (const [word, ts] of remoteSaved) merged.set(word, ts);
+      persistLocalMap(SAVED_KEY, merged);
+      return merged;
+    });
+    setLearnedItems((prev) => {
+      localLearnedBefore = prev;
+      const merged = new Map(prev);
+      for (const [word, ts] of remoteLearned) merged.set(word, ts);
+      persistLocalMap(LEARNED_KEY, merged);
+      return merged;
+    });
+    setWroteItems((prev) => {
+      localWroteBefore = prev;
+      const merged = new Map(prev);
+      for (const [word, ts] of remoteWrote) merged.set(word, ts);
+      persistLocalMap(WROTE_KEY, merged);
+      return merged;
+    });
+    setReviewItems((prev) => {
+      localReviewBefore = prev;
+      const merged = new Map(prev);
+      for (const [word, ts] of remoteReview) merged.set(word, ts);
+      persistLocalMap(REVIEW_KEY, merged);
+      return merged;
+    });
+
+    const allLocalKeys = new Set<string>([
+      ...localSavedBefore.keys(),
+      ...localLearnedBefore.keys(),
+      ...localWroteBefore.keys(),
+      ...localReviewBefore.keys(),
+    ]);
+    const toUpload = [...allLocalKeys].filter(
+      (w) =>
+        !remoteSaved.has(w) ||
+        (localLearnedBefore.has(w) && !remoteLearned.has(w)) ||
+        (localWroteBefore.has(w) && !remoteWrote.has(w)) ||
+        (localReviewBefore.has(w) && !remoteReview.has(w)),
+    );
+    if (toUpload.length > 0) {
+      const now = new Date().toISOString();
+      const uploadRows = toUpload.map((w) => ({
+        user_id: userId,
+        word: w,
+        ...(localLearnedBefore.has(w) ? { learned_at: now } : {}),
+        ...(localWroteBefore.has(w) ? { wrote_at: now } : {}),
+        ...(localReviewBefore.has(w) ? { review_at: now } : {}),
+      }));
+      const { error: upErr } = await supabase
+        .from("user_saves")
+        .upsert(uploadRows, { onConflict: "user_id,word" });
+      if (upErr) console.error("user_saves upload failed:", upErr);
+    }
+    setSyncing(false);
+  }, [userId]);
+
+  // Initial reconcile when a user signs in / switches accounts.
   useEffect(() => {
     if (!userId) {
       lastSyncedUserRef.current = null;
@@ -111,125 +232,25 @@ export function useSaved({ userId }: UseSavedOpts) {
     }
     if (lastSyncedUserRef.current === userId) return;
     lastSyncedUserRef.current = userId;
+    void reconcile();
+  }, [userId, reconcile]);
 
-    let cancelled = false;
-    setSyncing(true);
-    (async () => {
-      type FullRow = {
-        word: string;
-        saved_at: string;
-        learned_at: string | null;
-        wrote_at: string | null;
-        review_at: string | null;
-      };
-      type LegacyRow = Omit<FullRow, "review_at">;
-      let rows: FullRow[] = [];
-      {
-        const { data, error } = await supabase
-          .from("user_saves")
-          .select("word, saved_at, learned_at, wrote_at, review_at")
-          .eq("user_id", userId);
-        if (cancelled) return;
-        if (error) {
-          console.warn(
-            "user_saves wide select failed, falling back without review_at:",
-            error,
-          );
-          const fallback = await supabase
-            .from("user_saves")
-            .select("word, saved_at, learned_at, wrote_at")
-            .eq("user_id", userId);
-          if (cancelled) return;
-          if (fallback.error) {
-            console.error("user_saves load failed:", fallback.error);
-            setSyncing(false);
-            return;
-          }
-          rows = (fallback.data as LegacyRow[]).map((r) => ({ ...r, review_at: null }));
-        } else {
-          rows = (data || []) as FullRow[];
-        }
-      }
-
-      const remoteSaved = new Map<string, number>();
-      const remoteLearned = new Map<string, number>();
-      const remoteWrote = new Map<string, number>();
-      const remoteReview = new Map<string, number>();
-      for (const r of rows) {
-        remoteSaved.set(r.word, new Date(r.saved_at).getTime());
-        if (r.wrote_at) remoteWrote.set(r.word, new Date(r.wrote_at).getTime());
-        else if (r.learned_at) remoteLearned.set(r.word, new Date(r.learned_at).getTime());
-        else if (r.review_at) remoteReview.set(r.word, new Date(r.review_at).getTime());
-      }
-
-      let localSavedBefore: Map<string, number> = new Map();
-      let localLearnedBefore: Map<string, number> = new Map();
-      let localWroteBefore: Map<string, number> = new Map();
-      let localReviewBefore: Map<string, number> = new Map();
-
-      setItems((prev) => {
-        localSavedBefore = prev;
-        const merged = new Map(prev);
-        for (const [word, ts] of remoteSaved) merged.set(word, ts);
-        persistLocalMap(SAVED_KEY, merged);
-        return merged;
-      });
-      setLearnedItems((prev) => {
-        localLearnedBefore = prev;
-        const merged = new Map(prev);
-        for (const [word, ts] of remoteLearned) merged.set(word, ts);
-        persistLocalMap(LEARNED_KEY, merged);
-        return merged;
-      });
-      setWroteItems((prev) => {
-        localWroteBefore = prev;
-        const merged = new Map(prev);
-        for (const [word, ts] of remoteWrote) merged.set(word, ts);
-        persistLocalMap(WROTE_KEY, merged);
-        return merged;
-      });
-      setReviewItems((prev) => {
-        localReviewBefore = prev;
-        const merged = new Map(prev);
-        for (const [word, ts] of remoteReview) merged.set(word, ts);
-        persistLocalMap(REVIEW_KEY, merged);
-        return merged;
-      });
-
-      const allLocalKeys = new Set<string>([
-        ...localSavedBefore.keys(),
-        ...localLearnedBefore.keys(),
-        ...localWroteBefore.keys(),
-        ...localReviewBefore.keys(),
-      ]);
-      const toUpload = [...allLocalKeys].filter(
-        (w) =>
-          !remoteSaved.has(w) ||
-          (localLearnedBefore.has(w) && !remoteLearned.has(w)) ||
-          (localWroteBefore.has(w) && !remoteWrote.has(w)) ||
-          (localReviewBefore.has(w) && !remoteReview.has(w)),
-      );
-      if (toUpload.length > 0) {
-        const now = new Date().toISOString();
-        const rows = toUpload.map((w) => ({
-          user_id: userId,
-          word: w,
-          ...(localLearnedBefore.has(w) ? { learned_at: now } : {}),
-          ...(localWroteBefore.has(w) ? { wrote_at: now } : {}),
-          ...(localReviewBefore.has(w) ? { review_at: now } : {}),
-        }));
-        const { error: upErr } = await supabase
-          .from("user_saves")
-          .upsert(rows, { onConflict: "user_id,word" });
-        if (upErr) console.error("user_saves upload failed:", upErr);
-      }
-
-      if (!cancelled) setSyncing(false);
-    })();
-    return () => {
-      cancelled = true;
+  // Re-reconcile when the tab regains focus (cross-device freshness),
+  // throttled so quick app-switches don't hammer the API.
+  useEffect(() => {
+    if (!userId) return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastReconcileAtRef.current < RECONCILE_THROTTLE_MS) return;
+      void reconcile();
     };
-  }, [userId]);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [userId, reconcile]);
 
   // Single setter for the new mutually-exclusive status model.
   // Pass null to remove the word entirely.

@@ -14,6 +14,8 @@ import { componentClosure } from "../lib/componentSearch";
 const FSRS_KEY = "chinese.fsrs.v1";
 const INTRODUCED_KEY = "chinese.fsrs.introducedToday";
 const CASCADE_CAP_DAYS = 7;
+// Re-fetch from Supabase on tab focus, but at most once per this window.
+const RECONCILE_THROTTLE_MS = 20_000;
 // Daily cap on how many *new* (never-directly-reviewed) cards can surface
 // in a single calendar day. Resets at midnight (UTC). Brief recommends
 // 5–15 for sustainable language learning; user picked 25.
@@ -150,6 +152,7 @@ export function useReview({
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
   const lastSyncedUserRef = useRef<string | null>(null);
+  const lastReconcileAtRef = useRef(0);
   const [introducedToday, setIntroducedToday] = useState<Set<string>>(() =>
     loadIntroducedToday(),
   );
@@ -331,7 +334,108 @@ export function useReview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expectedCards, userId]);
 
-  // Initial sync when a user signs in.
+  // Initial sync when a user signs in, plus a re-sync whenever the tab
+  // regains focus (throttled) — Supabase is the source of truth, the
+  // local cards map is just an offline cache. On conflict the row with
+  // more reps wins, so a re-sync can't clobber a card graded on this
+  // device whose write to Supabase hasn't landed yet.
+  const reconcile = useCallback(async () => {
+    if (!userId) return;
+    setSyncing(true);
+    const { data, error } = await supabase
+      .from("user_fsrs_state")
+      .select("item_key, item_kind, facet, card, due_at, last_review_at")
+      .eq("user_id", userId);
+    if (error) {
+      // Migration probably not yet applied; degrade silently.
+      if (!/relation .*user_fsrs_state.*does not exist/i.test(error.message || "")) {
+        console.warn("fsrs load failed:", error);
+      }
+      setSyncing(false);
+      return;
+    }
+    lastReconcileAtRef.current = Date.now();
+    const remote = new Map<string, ReviewCard>();
+    for (const r of data || []) {
+      // Migrate legacy "recognition" rows from the DB into the new
+      // "meaningRecognition" facet on the way in (one-time, in-memory).
+      const facet =
+        r.facet === "recognition"
+          ? ("meaningRecognition" as Facet)
+          : (r.facet as Facet);
+      const row: ReviewCard = {
+        itemKey: r.item_key,
+        itemKind: r.item_kind as ItemKind,
+        facet,
+        card: r.card as SerializedCard,
+        dueAt: new Date(r.due_at).getTime(),
+        lastReviewAt: r.last_review_at ? new Date(r.last_review_at).getTime() : null,
+      };
+      remote.set(rowId(row.itemKey, row.itemKind, row.facet), row);
+    }
+    let localBefore: Map<string, ReviewCard> = new Map();
+    setCards((prev) => {
+      localBefore = prev;
+      const merged = new Map(prev);
+      for (const [id, r] of remote) {
+        const p = merged.get(id);
+        if (!p) {
+          merged.set(id, r);
+          continue;
+        }
+        const pReps = p.card.reps ?? 0;
+        const rReps = r.card.reps ?? 0;
+        if (rReps > pReps) {
+          // Remote saw a grade we don't have — take it, but keep our
+          // local-only bookkeeping fields (not stored in the schema).
+          merged.set(id, {
+            ...r,
+            directReviews: p.directReviews,
+            cascadeReviews: p.cascadeReviews,
+          });
+        } else if (rReps === pReps) {
+          const pT = p.lastReviewAt ?? 0;
+          const rT = r.lastReviewAt ?? 0;
+          if (rT >= pT) {
+            merged.set(id, {
+              ...r,
+              directReviews: p.directReviews,
+              cascadeReviews: p.cascadeReviews,
+            });
+          }
+          // else: local was reviewed more recently than the remote row
+          // records — keep local; the pending write will catch the DB up.
+        }
+        // rReps < pReps → keep local (it has a grade the DB hasn't stored).
+      }
+      persistLocalCards(merged);
+      return merged;
+    });
+    // Upload any local rows the remote didn't have.
+    const toUpload: ReviewCard[] = [];
+    for (const [id, row] of localBefore) {
+      if (!remote.has(id)) toUpload.push(row);
+    }
+    if (toUpload.length > 0) {
+      const { error: upErr } = await supabase.from("user_fsrs_state").upsert(
+        toUpload.map((row) => ({
+          user_id: userId,
+          item_key: row.itemKey,
+          item_kind: row.itemKind,
+          facet: row.facet,
+          card: row.card,
+          due_at: new Date(row.dueAt).toISOString(),
+          last_review_at: row.lastReviewAt ? new Date(row.lastReviewAt).toISOString() : null,
+        })),
+        { onConflict: "user_id,item_key,item_kind,facet" },
+      );
+      if (upErr && !/relation .*user_fsrs_state.*does not exist/i.test(upErr.message || "")) {
+        console.error("fsrs upload failed:", upErr);
+      }
+    }
+    setSyncing(false);
+  }, [userId]);
+
   useEffect(() => {
     if (!userId) {
       lastSyncedUserRef.current = null;
@@ -339,76 +443,23 @@ export function useReview({
     }
     if (lastSyncedUserRef.current === userId) return;
     lastSyncedUserRef.current = userId;
+    void reconcile();
+  }, [userId, reconcile]);
 
-    let cancelled = false;
-    setSyncing(true);
-    (async () => {
-      const { data, error } = await supabase
-        .from("user_fsrs_state")
-        .select("item_key, item_kind, facet, card, due_at, last_review_at")
-        .eq("user_id", userId);
-      if (cancelled) return;
-      if (error) {
-        // Migration probably not yet applied; degrade silently.
-        if (!/relation .*user_fsrs_state.*does not exist/i.test(error.message || "")) {
-          console.warn("fsrs load failed:", error);
-        }
-        setSyncing(false);
-        return;
-      }
-      const remote = new Map<string, ReviewCard>();
-      for (const r of data || []) {
-        // Migrate legacy "recognition" rows from the DB into the new
-        // "meaningRecognition" facet on the way in (one-time, in-memory).
-        const facet =
-          r.facet === "recognition"
-            ? ("meaningRecognition" as Facet)
-            : (r.facet as Facet);
-        const row: ReviewCard = {
-          itemKey: r.item_key,
-          itemKind: r.item_kind as ItemKind,
-          facet,
-          card: r.card as SerializedCard,
-          dueAt: new Date(r.due_at).getTime(),
-          lastReviewAt: r.last_review_at ? new Date(r.last_review_at).getTime() : null,
-        };
-        remote.set(rowId(row.itemKey, row.itemKind, row.facet), row);
-      }
-      setCards((prev) => {
-        // Remote wins on conflict (multi-device honesty); local-only rows
-        // get uploaded below.
-        const merged = new Map(prev);
-        for (const [id, row] of remote) merged.set(id, row);
-        persistLocalCards(merged);
-        return merged;
-      });
-      // Upload any local rows the remote didn't have.
-      const toUpload: ReviewCard[] = [];
-      for (const [id, row] of cards) {
-        if (!remote.has(id)) toUpload.push(row);
-      }
-      if (toUpload.length > 0) {
-        const { error: upErr } = await supabase.from("user_fsrs_state").upsert(
-          toUpload.map((row) => ({
-            user_id: userId,
-            item_key: row.itemKey,
-            item_kind: row.itemKind,
-            facet: row.facet,
-            card: row.card,
-            due_at: new Date(row.dueAt).toISOString(),
-            last_review_at: row.lastReviewAt ? new Date(row.lastReviewAt).toISOString() : null,
-          })),
-          { onConflict: "user_id,item_key,item_kind,facet" },
-        );
-        if (upErr) console.error("fsrs upload failed:", upErr);
-      }
-      if (!cancelled) setSyncing(false);
-    })();
-    return () => {
-      cancelled = true;
+  useEffect(() => {
+    if (!userId) return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastReconcileAtRef.current < RECONCILE_THROTTLE_MS) return;
+      void reconcile();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [userId, reconcile]);
 
   // Due cards. Char + component cards before word cards (the brief: review
   // sub-items in isolation occasionally), then oldest-due first. Daily
