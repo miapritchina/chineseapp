@@ -79,7 +79,7 @@ Four web apps deployed together via GitHub Pages:
 │   ├── extract-chinese.mjs          chinese-lexicon → public/data*.json
 │   ├── extract-phonetic-components.mjs ranks sound components, dumps JSON
 │   ├── seed-supabase.mjs            bulk-loads ~91k words via service role
-│   └── test-*.mjs                   six headless test files (npm test)
+│   └── test-*.mjs                   ten headless test files (npm test)
 ├── supabase/
 │   └── migrations/
 │       ├── 0001_dictionary.sql
@@ -206,10 +206,14 @@ wrote_at, review_at}` is non-null at a time.
 
 `useReview` hook owns the scheduler:
 
-- Wraps `ts-fsrs` (open-spaced-repetition/ts-fsrs, MIT). FSRS-6 default
-  scheduler at retention 0.9. `src/lib/fsrs.ts` is the thin wrapper:
-  `seedCard`, `gradeCard`, `applyCascadeCredit`, `serialize/deserialize`,
-  `isDue`.
+- Wraps `ts-fsrs` (open-spaced-repetition/ts-fsrs, MIT). FSRS-6 at
+  retention 0.9, **`enable_short_term: false`** — the intraday learning
+  steps (`["1m","10m"]`) are off, so a brand-new card graded Good
+  schedules a real multi-day interval immediately instead of bouncing
+  back in ten minutes. (Without this the schedule felt broken: a word
+  you "reviewed" reappeared on the next page open.) `src/lib/fsrs.ts`
+  is the thin wrapper: `seedCard`, `gradeCard`, `applyCascadeCredit`,
+  `serialize/deserialize`, `isDue`.
 - **All saved words** get a recognition card (saving == queue for learning,
   per the user's stated "learn all my words" goal — statuses are about
   progression, not about whether something is scheduled).
@@ -286,7 +290,7 @@ wrote_at, review_at}` is non-null at a time.
 
 ### Tests
 
-`npm test` chains ten headless Node test files under `scripts/` — 95
+`npm test` chains ten headless Node test files under `scripts/` — 96
 cases total. All run with stock Node (no build, no jsdom).
 
 - `test-components.mjs` — graph-data builder for `/components/` page
@@ -350,7 +354,7 @@ after a chinese-lexicon update:
 
 - `npm run dev` for a Vite dev server with HMR.
 - `npm run build` produces `dist/`; `npm run preview` serves it locally.
-- `npm test` runs all six headless test files (~57 cases).
+- `npm test` runs all ten headless test files (~96 cases).
 - Bump the `chinese vN` version label in the `<HamburgerMenu />` props
   inside `App.tsx` on every push so you can verify the right build is
   live from your phone (the version is shown at the bottom of the
