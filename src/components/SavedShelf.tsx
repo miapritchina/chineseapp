@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Char, Word } from "../lib/types";
 import type { SavedEntry, Status } from "../hooks/useSaved";
 import { Card, CharOnlyCard } from "./Card";
@@ -149,47 +149,57 @@ export function SavedShelf({
     };
   }, [sortMode, savedList, strokeCounts]);
 
-  function pinyinFor(key: string): string {
-    const w = findWord(key);
-    if (w) return w.searchablePinyin || normalizePinyin(w.pinyin);
-    let acc = "";
-    for (const ch of key) {
-      const cd = chars[ch];
-      if (cd?.pinyin) acc += normalizePinyin(cd.pinyin);
+  // Pre-compute sort keys once per render; the inner comparator does
+  // O(1) Map lookups instead of recomputing pinyin / hsk / rank / strokes
+  // per pairwise comparison. Called from useMemo'd sortFor below.
+  const sortKeys = useMemo(() => {
+    const m = new Map<
+      string,
+      { pinyin: string; strokes: number; hsk: number; rank: number }
+    >();
+    for (const e of savedList) {
+      const w = findWord(e.word);
+      let pinyin = "";
+      if (w) {
+        pinyin = w.searchablePinyin || normalizePinyin(w.pinyin);
+      } else {
+        for (const ch of e.word) {
+          const cd = chars[ch];
+          if (cd?.pinyin) pinyin += normalizePinyin(cd.pinyin);
+        }
+      }
+      let strokes = 0;
+      let allKnown = true;
+      for (const c of e.word) {
+        const n = strokeCounts.get(c);
+        if (n === undefined) {
+          allKnown = false;
+          break;
+        }
+        strokes += n;
+      }
+      m.set(e.word, {
+        pinyin,
+        strokes: allKnown ? strokes : Number.POSITIVE_INFINITY,
+        hsk: w?.hsk ?? Number.POSITIVE_INFINITY,
+        rank: w?.rank ?? Number.POSITIVE_INFINITY,
+      });
     }
-    return acc;
-  }
-
-  function strokesFor(key: string): number {
-    let total = 0;
-    for (const c of key) {
-      const n = strokeCounts.get(c);
-      if (n === undefined) return Number.POSITIVE_INFINITY; // not loaded → bottom
-      total += n;
-    }
-    return total;
-  }
-
-  function hskFor(key: string): number {
-    return findWord(key)?.hsk ?? Number.POSITIVE_INFINITY;
-  }
-
-  function rankFor(key: string): number {
-    return findWord(key)?.rank ?? Number.POSITIVE_INFINITY;
-  }
+    return m;
+  }, [savedList, findWord, chars, strokeCounts]);
 
   function sortList(list: SavedEntry[]): SavedEntry[] {
     if (sortMode === "recent") return list; // already newest-first from useSaved
     const arr = [...list];
     arr.sort((a, b) => {
+      const ka = sortKeys.get(a.word);
+      const kb = sortKeys.get(b.word);
+      if (!ka || !kb) return 0;
       let cmp = 0;
-      if (sortMode === "pinyin") {
-        const pa = pinyinFor(a.word);
-        const pb = pinyinFor(b.word);
-        cmp = (pa || "￿").localeCompare(pb || "￿");
-      } else if (sortMode === "strokes") cmp = strokesFor(a.word) - strokesFor(b.word);
-      else if (sortMode === "hsk") cmp = hskFor(a.word) - hskFor(b.word);
-      else if (sortMode === "common") cmp = rankFor(a.word) - rankFor(b.word);
+      if (sortMode === "pinyin")   cmp = (ka.pinyin || "￿").localeCompare(kb.pinyin || "￿");
+      else if (sortMode === "strokes") cmp = ka.strokes - kb.strokes;
+      else if (sortMode === "hsk")     cmp = ka.hsk - kb.hsk;
+      else if (sortMode === "common")  cmp = ka.rank - kb.rank;
       if (cmp !== 0) return cmp;
       return b.savedAt - a.savedAt; // stable tiebreak
     });

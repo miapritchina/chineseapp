@@ -464,29 +464,83 @@ export function useReview({
     (itemKey: string, rating: RatingName, kind: ItemKind = FIRST_KIND, facet: Facet = MEANING_FACET) => {
       const now = new Date();
       const parentId = rowId(itemKey, kind, facet);
-      const parentRow = cards.get(parentId);
-      if (!parentRow) return;
+      // BUG FIX (v76): use the functional-setState form so two grade()
+      // calls in the same tick (combined recognition card fires
+      // meaning + sound back-to-back) don't both read a stale `cards`
+      // snapshot and lose one of the two updates. Re-set `changed`
+      // inside the updater so StrictMode's double-invoke doesn't
+      // duplicate the remote upsert.
+      let changed: ReviewCard[] = [];
+      let parentWasNew = false;
+      setCards((prev) => {
+        const parentRow = prev.get(parentId);
+        if (!parentRow) {
+          changed = [];
+          return prev;
+        }
+        parentWasNew =
+          (parentRow.directReviews ?? 0) === 0 && (parentRow.card.reps ?? 0) === 0;
+        const next = new Map(prev);
+        const localChanged: ReviewCard[] = [];
 
-      const next = new Map(cards);
-      const changed: ReviewCard[] = [];
+        // 1. Parent.
+        const newParentCard = gradeCard(parentRow.card, rating, now);
+        const newParent: ReviewCard = {
+          ...parentRow,
+          card: newParentCard,
+          dueAt: new Date(newParentCard.due).getTime(),
+          lastReviewAt: now.getTime(),
+          directReviews: (parentRow.directReviews ?? 0) + 1,
+        };
+        next.set(parentId, newParent);
+        localChanged.push(newParent);
 
-      // 1. Parent.
-      const newParentCard = gradeCard(parentRow.card, rating, now);
-      const newParent: ReviewCard = {
-        ...parentRow,
-        card: newParentCard,
-        dueAt: new Date(newParentCard.due).getTime(),
-        lastReviewAt: now.getTime(),
-        directReviews: (parentRow.directReviews ?? 0) + 1,
-      };
-      next.set(parentId, newParent);
-      changed.push(newParent);
+        // 2. Cascade to component closure (only for word kinds + Good/Easy).
+        const cascade =
+          kind === FIRST_KIND && (rating === "Good" || rating === "Easy");
+        if (cascade) {
+          const closure = componentClosure(itemKey, chars);
+          closure.delete(itemKey);
+          for (const childKey of closure) {
+            const childKind: ItemKind = "char";
+            const childId = rowId(childKey, childKind, MEANING_FACET);
+            let childRow = next.get(childId);
+            if (!childRow) {
+              const seeded = seedCard(now);
+              childRow = {
+                itemKey: childKey,
+                itemKind: childKind,
+                facet: MEANING_FACET,
+                card: seeded,
+                dueAt: new Date(seeded.due).getTime(),
+                lastReviewAt: null,
+                directReviews: 0,
+                cascadeReviews: 0,
+              };
+            }
+            const isDirect = (childRow.directReviews ?? 0) > 0;
+            const newChildCard = applyCascadeCredit(
+              childRow.card,
+              isDirect ? null : CASCADE_CAP_DAYS,
+              now,
+            );
+            const newChild: ReviewCard = {
+              ...childRow,
+              card: newChildCard,
+              dueAt: new Date(newChildCard.due).getTime(),
+              cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
+            };
+            next.set(childId, newChild);
+            localChanged.push(newChild);
+          }
+        }
 
-      // Daily-cap bookkeeping: this is a "new card introduction" if the
-      // card had never been graded before this call.
-      const wasNew =
-        (parentRow.directReviews ?? 0) === 0 && (parentRow.card.reps ?? 0) === 0;
-      if (wasNew) {
+        persistLocalCards(next);
+        changed = localChanged;
+        return next;
+      });
+
+      if (parentWasNew) {
         setIntroducedToday((prev) => {
           if (prev.has(parentId)) return prev;
           const n = new Set(prev);
@@ -495,56 +549,11 @@ export function useReview({
           return n;
         });
       }
-
-      // 2. Cascade to component closure (only for word kinds + Good/Easy).
-      const cascade =
-        kind === FIRST_KIND && (rating === "Good" || rating === "Easy");
-      if (cascade) {
-        const closure = componentClosure(itemKey, chars);
-        closure.delete(itemKey); // don't double-credit the parent itself
-        for (const childKey of closure) {
-          // PR 3 simplification: every cascaded sub-item is kind="char".
-          // The graph data already distinguishes char vs component; in the
-          // schedule we treat them uniformly until PR 4 introduces the
-          // facet split.
-          const childKind: ItemKind = "char";
-          const childId = rowId(childKey, childKind, MEANING_FACET);
-          let childRow = next.get(childId);
-          if (!childRow) {
-            const seeded = seedCard(now);
-            childRow = {
-              itemKey: childKey,
-              itemKind: childKind,
-              facet: MEANING_FACET,
-              card: seeded,
-              dueAt: new Date(seeded.due).getTime(),
-              lastReviewAt: null,
-              directReviews: 0,
-              cascadeReviews: 0,
-            };
-          }
-          const isDirect = (childRow.directReviews ?? 0) > 0;
-          const newChildCard = applyCascadeCredit(
-            childRow.card,
-            isDirect ? null : CASCADE_CAP_DAYS,
-            now,
-          );
-          const newChild: ReviewCard = {
-            ...childRow,
-            card: newChildCard,
-            dueAt: new Date(newChildCard.due).getTime(),
-            cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
-          };
-          next.set(childId, newChild);
-          changed.push(newChild);
-        }
-      }
-
-      persistLocalCards(next);
-      setCards(next);
-      remoteUpsert(changed);
+      if (changed.length > 0) remoteUpsert(changed);
     },
-    [userId, cards, chars],
+    // `cards` dropped from deps — we now access via setCards's functional form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, chars],
   );
 
   // Apply a real Again to a specific child of a parent that just failed.
@@ -554,35 +563,40 @@ export function useReview({
       const now = new Date();
       const childKind: ItemKind = "char";
       const childId = rowId(childKey, childKind, MEANING_FACET);
-      let childRow = cards.get(childId);
-      if (!childRow) {
-        const seeded = seedCard(now);
-        childRow = {
-          itemKey: childKey,
-          itemKind: childKind,
-          facet: MEANING_FACET,
-          card: seeded,
-          dueAt: new Date(seeded.due).getTime(),
-          lastReviewAt: null,
-          directReviews: 0,
-          cascadeReviews: 0,
+      let updated: ReviewCard | null = null;
+      setCards((prev) => {
+        let childRow = prev.get(childId);
+        if (!childRow) {
+          const seeded = seedCard(now);
+          childRow = {
+            itemKey: childKey,
+            itemKind: childKind,
+            facet: MEANING_FACET,
+            card: seeded,
+            dueAt: new Date(seeded.due).getTime(),
+            lastReviewAt: null,
+            directReviews: 0,
+            cascadeReviews: 0,
+          };
+        }
+        const newCard = gradeCard(childRow.card, "Again", now);
+        const newRow: ReviewCard = {
+          ...childRow,
+          card: newCard,
+          dueAt: new Date(newCard.due).getTime(),
+          lastReviewAt: now.getTime(),
+          directReviews: (childRow.directReviews ?? 0) + 1,
         };
-      }
-      const newCard = gradeCard(childRow.card, "Again", now);
-      const updated: ReviewCard = {
-        ...childRow,
-        card: newCard,
-        dueAt: new Date(newCard.due).getTime(),
-        lastReviewAt: now.getTime(),
-        directReviews: (childRow.directReviews ?? 0) + 1,
-      };
-      const next = new Map(cards);
-      next.set(childId, updated);
-      persistLocalCards(next);
-      setCards(next);
-      remoteUpsert([updated]);
+        const next = new Map(prev);
+        next.set(childId, newRow);
+        persistLocalCards(next);
+        updated = newRow;
+        return next;
+      });
+      if (updated) remoteUpsert([updated]);
     },
-    [userId, cards],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId],
   );
 
   return {

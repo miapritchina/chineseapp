@@ -114,29 +114,25 @@ export function ReviewPage({
   // the same item are graded together in the combined card, so the
   // queue should only surface ONE entry per (itemKind, itemKey) for
   // these facets. Prefer meaningRecognition when both are due.
+  // Linear: pre-compute which (kind, key) pairs have a meaning row, then
+  // walk the queue once with O(1) skip lookups.
   const isRecogFacet = (f: Facet) =>
     f === "meaningRecognition" || f === "soundRecognition" || f === "recognition";
+  const meaningKeys = new Set<string>();
+  for (const c of filtered) {
+    if (c.facet === "meaningRecognition" || c.facet === "recognition") {
+      meaningKeys.add(`${c.itemKind}|${c.itemKey}`);
+    }
+  }
   const seenRecogKey = new Set<string>();
   const dedupedFiltered: ReviewCard[] = [];
-  // Two-pass: first keep meaningRecognition if present, then keep sound
-  // for keys not yet covered, then everything else.
   for (const c of filtered) {
     if (isRecogFacet(c.facet)) {
       const k = `${c.itemKind}|${c.itemKey}`;
       if (seenRecogKey.has(k)) continue;
-      // Skip soundRecognition if the meaningRecognition for the same
-      // key is still ahead of us in the queue (since we want meaning to
-      // be the canonical surface).
-      if (c.facet === "soundRecognition") {
-        const meaningExists = filtered.some(
-          (other) =>
-            other !== c &&
-            other.itemKind === c.itemKind &&
-            other.itemKey === c.itemKey &&
-            (other.facet === "meaningRecognition" || other.facet === "recognition"),
-        );
-        if (meaningExists) continue;
-      }
+      // Sound entries are dropped only when their meaning sibling is
+      // also in the queue — otherwise sound IS the canonical row.
+      if (c.facet === "soundRecognition" && meaningKeys.has(k)) continue;
       seenRecogKey.add(k);
       dedupedFiltered.push(c);
       continue;

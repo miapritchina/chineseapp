@@ -1,5 +1,9 @@
 # Repo Development Guide
 
+> **For the design rationale**, see `DESIGN.md` (architecture, status
+> model, SRS facet split, cascade math, local-first sync pattern).
+> This file is the file-tree + dev-tips reference.
+
 Four web apps deployed together via GitHub Pages:
 
 - **Chinese** (root) — React + TypeScript + Vite app at `/`. Character learning
@@ -271,17 +275,33 @@ wrote_at, review_at}` is non-null at a time.
 
 ### Tests
 
-`npm test` chains six headless Node test files under `scripts/`:
+`npm test` chains nine headless Node test files under `scripts/` — 87
+cases total. All run with stock Node (no build, no jsdom).
 
 - `test-components.mjs` — graph-data builder for `/components/` page
 - `test-component-search.mjs` — recursive component-closure search +
-  frequency map
+  frequency map for the by-component search mode
 - `test-fsrs.mjs` — ts-fsrs lifecycle + cascade math
-- `test-review-seeding.mjs` — `expectedCards` rule (which (item, kind,
-  facet) tuples should have cards)
+- `test-review-seeding.mjs` — `expectedCards` rule (which `(item, kind,
+  facet)` tuples should have a card seeded). Covers all six facets
+  including `meaningRecognition` / `soundRecognition`, `phoneticTap`,
+  `componentSound`, `familyTransfer`, and `production`.
 - `test-phonetic-components.mjs` — verifies the build artifact's shape +
   componentSound seed predicate
-- `test-confusion-clusters.mjs` — cluster lookup helpers
+- `test-confusion-clusters.mjs` — cluster lookup helpers used by the
+  leech disambig view
+- `test-pinyin.mjs` — `normalizePinyin` tone-stripping + multibyte
+  edge cases
+- `test-mnemonics.mjs` — `buildStarterMnemonic` template against
+  role-tagged components
+- `test-cluster-recall.mjs` — `pickCluster` picker: phonetic-family
+  preference, shared-char fallback, plain-sample fallback, size cap
+
+Where a function lives in TypeScript and the test needs a pure-JS
+counterpart (e.g. the `expectedCards` rule inside `useReview`), the
+test re-implements the function and the production code keeps a
+short comment naming the test file as the canonical fixture. Keep
+them in sync if the rule changes.
 
 ### Adding new words to the dictionary
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import type { Char, TreeNode } from "../lib/types";
 import { walkTree } from "../lib/tree";
@@ -83,16 +83,23 @@ function estimateCardHeight(node: TreeNode, charsData: Record<string, Char>): nu
 
 export function DecompositionTree({ tree, chars, saved, onNodeClick }: Props) {
   // Per-char usage count: how many of the user's saved multi-char words
-  // contain this char (excluding the char saved as itself). Recomputed on
-  // each render — `saved` is a Set so this is O(saved.size · word.length).
-  const usageOf = (char: string): number => {
-    let n = 0;
+  // contain this char (excluding the char saved as itself). Memoized as
+  // a single pass over the saved set so DecompositionTree's re-renders
+  // don't replay the O(saved.size · word.length) walk per node.
+  const usageByChar = useMemo(() => {
+    const m = new Map<string, number>();
     for (const k of saved) {
-      if (k === char) continue;
-      if (k.length > 1 && k.includes(char)) n++;
+      if (k.length <= 1) continue;
+      const seen = new Set<string>();
+      for (const c of k) {
+        if (c === k || seen.has(c)) continue;
+        seen.add(c);
+        m.set(c, (m.get(c) || 0) + 1);
+      }
     }
-    return n;
-  };
+    return m;
+  }, [saved]);
+  const usageOf = (char: string): number => usageByChar.get(char) || 0;
   const svgRef = useRef<SVGSVGElement>(null);
   const innerRef = useRef<SVGGElement>(null);
   const [placements, setPlacements] = useState<Placement[]>([]);
