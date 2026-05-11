@@ -22,6 +22,7 @@ import { ComponentTable } from "./components/ComponentTable";
 import { PhoneticsPage } from "./components/PhoneticsPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
 import { ClusterRecall } from "./components/ClusterRecall";
+import { SentenceStudio } from "./components/SentenceStudio";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
@@ -59,6 +60,9 @@ export function App() {
   const [showPhonetics, setShowPhonetics] = useState(
     typeof window !== "undefined" && window.location.hash === "#/phonetics",
   );
+  const [showSentence, setShowSentence] = useState(
+    typeof window !== "undefined" && window.location.hash === "#/sentence",
+  );
 
   // Every saved word is queued for review — the user's stated goal is to
   // learn all of them, and the four statuses are about progression
@@ -94,6 +98,7 @@ export function App() {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
       setShowPhonetics(window.location.hash === "#/phonetics");
+      setShowSentence(window.location.hash === "#/sentence");
       // Reset the launched-flag so re-opening Review goes back to the
       // launch screen first.
       if (window.location.hash !== "#/review") {
@@ -111,6 +116,7 @@ export function App() {
       // the page after the user closes it before hashchange fires.
       if (target === "#/review") setShowReview(false);
       if (target === "#/phonetics") setShowPhonetics(false);
+      if (target === "#/sentence") setShowSentence(false);
     }
   };
 
@@ -311,10 +317,11 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v77"
+          version="chinese v78"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
+          sentenceHref="#/sentence"
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -377,6 +384,15 @@ export function App() {
           getStatus={getStatus}
           setStatus={setStatus}
           onClose={() => closeHashPage("#/phonetics")}
+        />
+      )}
+
+      {showSentence && (
+        <SentenceStudio
+          savedWords={savedList.map((s) => s.word)}
+          findWord={dict.findWord}
+          ensureCached={dict.ensureCached}
+          onClose={() => closeHashPage("#/sentence")}
         />
       )}
 

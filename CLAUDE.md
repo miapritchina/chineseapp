@@ -42,6 +42,7 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── ComponentSoundCard       drill: pick the pinyin a component gives
 │   │   ├── DisambiguationCard       leech-cluster side-by-side compare
 │   │   ├── PhoneticsPage            list + save the top-250 productive components
+│   │   ├── SentenceStudio           build-a-sentence (E2) composer + POS bank
 │   │   ├── AuthButton + SignInModal magic-link auth
 │   ├── hooks/
 │   │   ├── useDictionary            Supabase RPC + cache for word lookups
@@ -49,13 +50,17 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── useSaved                 4-status localStorage + Supabase mirror
 │   │   ├── useReview                ts-fsrs scheduler at word/char/component level
 │   │   ├── usePhoneticComponents    fetches public/phonetic-components.json
+│   │   ├── useMnemonics             per-word/char user notes
+│   │   ├── useSentenceDraft         localStorage-backed sentence composer state
 │   │   ├── useStrokeData            per-session HanziWriter cache
 │   │   ├── useModalStack            history.pushState integration for tree modals
 │   │   └── useAuth                  supabase.auth wrapper
 │   └── lib/
 │       ├── types.ts                 Word, Char, Component, Role, Status…
 │       ├── pinyin.ts                tone-stripping
+│       ├── pos.ts                   POS heuristic for Sentence Studio tabs
 │       ├── search.ts                client-side ranking (legacy)
+│       ├── speech.ts                Web Speech API helper
 │       ├── tree.ts                  buildCharTree, strokeRoleForIndex
 │       ├── componentSearch.mjs+.d.ts recursive-closure search + freq map
 │       ├── confusionClusters.mjs+.d.ts hand-curated leech clusters
@@ -233,6 +238,12 @@ wrote_at, review_at}` is non-null at a time.
 - **Review** (`#/review`) — SRS queue. Hamburger badge shows "N due".
 - **Phonetics** (`#/phonetics`) — list of top-250 productive sound
   components, each with pinyin + family + a StatusButton.
+- **Sentence** (`#/sentence`) — Sentence Studio. Compose a sentence by
+  tapping chips drawn from your saved words; POS tabs filter the bank.
+  Pure UX, no schedule effect. Draft persists in `localStorage` under
+  `e2.draft`. POS detected by `src/lib/pos.ts` (lookup tables for
+  closed-class + def-prefix heuristic — the dictionary doesn't carry
+  POS tags so we infer).
 - **Network** (`/Ai-/network/`) — static Cytoscape graph; `?focus=<key>`
   centers + highlights a saved word/char on load (used by CharPopup's
   "Show in network →" button).
@@ -275,7 +286,7 @@ wrote_at, review_at}` is non-null at a time.
 
 ### Tests
 
-`npm test` chains nine headless Node test files under `scripts/` — 87
+`npm test` chains ten headless Node test files under `scripts/` — 95
 cases total. All run with stock Node (no build, no jsdom).
 
 - `test-components.mjs` — graph-data builder for `/components/` page
@@ -296,6 +307,8 @@ cases total. All run with stock Node (no build, no jsdom).
   role-tagged components
 - `test-cluster-recall.mjs` — `pickCluster` picker: phonetic-family
   preference, shared-char fallback, plain-sample fallback, size cap
+- `test-pos.mjs` — `detectPos` heuristic used by the Sentence Studio
+  POS tabs (lookup tables + def-prefix patterns)
 
 Where a function lives in TypeScript and the test needs a pure-JS
 counterpart (e.g. the `expectedCards` rule inside `useReview`), the
