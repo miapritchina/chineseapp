@@ -2,12 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Char, Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
 import type { Status } from "../hooks/useSaved";
-import {
-  buildStarterMnemonic,
-  clearMnemonic,
-  loadMnemonic,
-  saveMnemonic,
-} from "../lib/mnemonics";
+import { buildStarterMnemonic, type MnemonicEntry } from "../lib/mnemonics";
 
 interface Props {
   char: string;
@@ -18,32 +13,44 @@ interface Props {
   onClose: () => void;
   onJumpToWord: (word: string) => void;
   findWord: (key: string) => Word | null;
+  // Per-user mnemonic store. Synced to Supabase when signed in.
+  getMnemonic: (key: string) => MnemonicEntry | null;
+  saveMnemonic: (key: string, text: string) => void;
+  clearMnemonic: (key: string) => void;
 }
 
-export function CharPopup({ char, charData, saved, getStatus, setStatus, onClose, onJumpToWord, findWord }: Props) {
+export function CharPopup({
+  char,
+  charData,
+  saved,
+  getStatus,
+  setStatus,
+  onClose,
+  onJumpToWord,
+  findWord,
+  getMnemonic,
+  saveMnemonic,
+  clearMnemonic,
+}: Props) {
   const writerRef = useRef<HTMLDivElement>(null);
   const writerInstanceRef = useRef<any>(null);
 
   // "💡 Make it stick" — self-generated mnemonic encoding (Kuo & Hooper).
   // Pre-populated from the role tree on first open; user can edit or
-  // accept. Edited state is persisted in localStorage.
+  // accept. Persisted via useMnemonics (local + cross-device).
   const starter = buildStarterMnemonic(char, charData);
-  const [mnemonic, setMnemonic] = useState<string>(() => {
-    const stored = loadMnemonic(char);
-    return stored?.text ?? starter;
-  });
-  const [editedFlag, setEditedFlag] = useState<boolean>(() => {
-    return !!loadMnemonic(char)?.edited;
-  });
+  const stored = getMnemonic(char);
+  const [mnemonic, setMnemonic] = useState<string>(() => stored?.text ?? starter);
+  const [editedFlag, setEditedFlag] = useState<boolean>(() => !!stored?.edited);
   const [mnemonicEditing, setMnemonicEditing] = useState(false);
   // Reload when the popup switches to a different char (component
-  // instance is reused).
+  // instance is reused) or when a remote sync brings in a new entry.
   useEffect(() => {
-    const stored = loadMnemonic(char);
-    setMnemonic(stored?.text ?? buildStarterMnemonic(char, charData));
-    setEditedFlag(!!stored?.edited);
+    const s = getMnemonic(char);
+    setMnemonic(s?.text ?? buildStarterMnemonic(char, charData));
+    setEditedFlag(!!s?.edited);
     setMnemonicEditing(false);
-  }, [char, charData]);
+  }, [char, charData, getMnemonic]);
 
   const persistMnemonic = (text: string) => {
     if (text === starter && !editedFlag) {

@@ -24,6 +24,7 @@ import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
 import { ClusterRecall } from "./components/ClusterRecall";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
+import { useMnemonics } from "./hooks/useMnemonics";
 
 import type { Word } from "./lib/types";
 
@@ -65,6 +66,7 @@ export function App() {
   const scheduledKeys = saved;
 
   const phonetics = usePhoneticComponents();
+  const mnemonics = useMnemonics({ userId: auth.user?.id ?? null });
   const phoneticComponentKeys = useMemo(
     () => new Set(phonetics.components.map((c) => c.char)),
     [phonetics.components],
@@ -309,7 +311,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v76"
+          version="chinese v77"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -437,6 +439,9 @@ export function App() {
           saved={saved}
           getStatus={getStatus}
           setStatus={setStatus}
+          getMnemonic={mnemonics.get}
+          saveMnemonic={mnemonics.save}
+          clearMnemonic={mnemonics.clear}
           onPop={pop}
           onNodeClick={openCharPopup}
         />
@@ -452,6 +457,9 @@ export function App() {
           onClose={() => setPopupChar(null)}
           onJumpToWord={(w) => void openWord(w)}
           findWord={dict.findWord}
+          getMnemonic={mnemonics.get}
+          saveMnemonic={mnemonics.save}
+          clearMnemonic={mnemonics.clear}
         />
       )}
 

@@ -1,7 +1,5 @@
 import type { Char } from "./types";
 
-const KEY = "chinese.mnemonics.v1";
-
 export interface MnemonicEntry {
   text: string;
   // True once the user has edited or replaced the auto-suggested
@@ -11,15 +9,10 @@ export interface MnemonicEntry {
   updatedAt: number;
 }
 
-// Build a starter sentence for a character from its role-tagged
-// components. Pure function over the data — no IO.
-//
-// Examples:
+// Pure helper. Builds a starter sentence for a CHARACTER from its
+// role-tagged components. See test-mnemonics.mjs for the contract.
 //   清 (氵=water meaning, 青=qing sound) → "氵 (water) + 青 (qing) → 清"
 //   林 (木 + 木 iconic)                  → "木 + 木 → 林"
-//
-// Edge cases: characters without components (or with only a single
-// characterless ◎ stub) get a single-line stub the user can replace.
 export function buildStarterMnemonic(char: string, cd: Char | undefined): string {
   if (!cd) return char;
   const parts = (cd.components || []).filter((c) => c?.char && c.char !== "◎");
@@ -37,46 +30,32 @@ export function buildStarterMnemonic(char: string, cd: Char | undefined): string
   return parts.map(piece).join(" + ") + ` → ${char}`;
 }
 
-function loadAll(): Record<string, MnemonicEntry> {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object") return parsed as Record<string, MnemonicEntry>;
-  } catch {
-    /* ignore */
+// Build a starter for a WORD by chaining its characters' pinyin + first
+// definition. Cheap heuristic — readable, often good enough on its own
+// for two-char compounds.
+//   新年 (xīn nián, new + year) → "新 (xīn, new) + 年 (nián, year) → 新年 (new year)"
+export function buildStarterWordMnemonic(
+  word: string,
+  pinyin: string,
+  wholeMeaning: string,
+  chars: Record<string, Char>,
+): string {
+  if (!word) return "";
+  const cells = [...word];
+  if (cells.length < 2) {
+    // Single-char path lives in buildStarterMnemonic; falling back to
+    // the bare word here keeps the API symmetric.
+    return word;
   }
-  return {};
-}
-
-function persistAll(map: Record<string, MnemonicEntry>) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(map));
-  } catch {
-    /* private mode / quota */
-  }
-}
-
-export function loadMnemonic(char: string): MnemonicEntry | null {
-  return loadAll()[char] ?? null;
-}
-
-export function saveMnemonic(char: string, text: string): MnemonicEntry {
-  const all = loadAll();
-  const prev = all[char];
-  const entry: MnemonicEntry = {
-    text,
-    edited: true,
-    updatedAt: Date.now(),
-  };
-  all[char] = entry;
-  persistAll(all);
-  return entry;
-}
-
-export function clearMnemonic(char: string) {
-  const all = loadAll();
-  if (!all[char]) return;
-  delete all[char];
-  persistAll(all);
+  const pieces = cells.map((c) => {
+    const cd = chars[c];
+    const py = cd?.pinyin || "";
+    const def = cd?.definitions?.[0] || "";
+    if (py && def) return `${c} (${py}, ${def})`;
+    if (py) return `${c} (${py})`;
+    if (def) return `${c} (${def})`;
+    return c;
+  });
+  const head = pieces.join(" + ") + ` → ${word}`;
+  return wholeMeaning ? `${head} (${wholeMeaning})` : head;
 }
