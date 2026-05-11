@@ -3,47 +3,52 @@ import type { Char, Word } from "../lib/types";
 import type { Status } from "../hooks/useSaved";
 import type { MnemonicEntry } from "../lib/mnemonics";
 import { StatusButton } from "./StatusButton";
-import { buildStarterMnemonic } from "../lib/mnemonics";
+import { buildStarterMnemonic, buildStarterWordMnemonic } from "../lib/mnemonics";
 import { toneLabel } from "../lib/pinyin";
 import { detectPos, POS_LABEL, POS_COLOR } from "../lib/pos";
+import { speak } from "../lib/speech";
 
 interface Props {
-  // Single-character key (a character or a component — same thing in
-  // this app: a character can be a component of another character).
-  charKey: string;
-  charData: Char | undefined;
+  // Exactly one of these identifies the entity. `word` wins when both
+  // are set. A single-character word is rendered the same way as a bare
+  // character ("a character can be a word — don't model them apart").
+  word?: Word | null;
+  charKey?: string;
+  // For etymology lookups (the entity's components are characters too).
+  chars: Record<string, Char>;
   saved: Set<string>;
   getStatus: (key: string) => Status | null;
   setStatus: (key: string, next: Status | null) => void;
   getMnemonic: (key: string) => MnemonicEntry | null;
   saveMnemonic: (key: string, text: string) => void;
   clearMnemonic: (key: string) => void;
-  // Resolve a saved word key → Word, for the "in your saved words" rows.
   findWord: (key: string) => Word | null;
   onClose: () => void;
-  // Tap a saved-word chip → open that word (TreeModal, for now).
   onOpenWord: (word: string) => void;
-  // Tap the etymology preview → open the full recursive decomposition
-  // tree for this character.
-  onOpenTree: (charKey: string) => void;
+  onOpenChar: (charKey: string) => void;
+  // Open the full recursive d3 decomposition tree for THIS entity.
+  onOpenTree: () => void;
 }
 
-// Unified detail surface: a bottom sheet on mobile, a centered modal on
-// desktop. Opened on every word / character / component tap. PR 1 handles
-// the character/component case (replaces the old CharPopup); PR 2 folds
-// in the multi-char word surface (WordDetail) so the same chrome serves
-// everything.
+// Unified detail surface: a bottom sheet on mobile (drag handle, slides
+// up, swipe down to dismiss), a centered modal on desktop. Opened on
+// every word / character / component tap, so the home grid, search
+// results, decomposition-tree nodes and the sheet's own sub-entity
+// chips all land on the same chrome.
 //
-// Layout cribbed from the "vague design" handoff:
-//   PINYIN · TONE n
-//   大字 (stroke animation; tap to replay)
-//   POS · POS • gloss · gloss · gloss
-//   ── Nº 01 · ETYMOLOGY    (one-level decomposition; tap → full tree)
-//   ── Nº 02 · IN YOUR SAVED WORDS
-//   ── 💡 Make it stick     (editable mnemonic)
+// Layout (from the design handoff):
+//   PINYIN · TONE n · TOP n
+//   大字 / 词        (single chars: tap to replay the stroke animation;
+//                     words: tap 🔊 to hear it)
+//   POS • gloss · gloss · gloss
+//   ── Nº 01 · ETYMOLOGY / MADE OF   (one level; each piece taps into
+//                                     its own sheet; ⤢ → full tree)
+//   ── Nº 02 · IN YOUR SAVED WORDS / CHARACTERS
+//   ── 💡 Make it stick              (editable mnemonic)
 export function EntitySheet({
+  word,
   charKey,
-  charData,
+  chars,
   saved,
   getStatus,
   setStatus,
@@ -53,8 +58,26 @@ export function EntitySheet({
   findWord,
   onClose,
   onOpenWord,
+  onOpenChar,
   onOpenTree,
 }: Props) {
+  // ── Identity ───────────────────────────────────────────────────
+  const key = word?.word ?? charKey ?? "";
+  const isMultiCharWord = !!word && [...word.word].length > 1;
+  const charData = chars[key];
+  // For a single-char word the dictionary row usually has richer
+  // glosses than the chars file; prefer it when present.
+  const defs =
+    word?.definitions && word.definitions.length > 0
+      ? word.definitions
+      : charData?.definitions ?? [];
+  const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
+  const tone = toneLabel(pinyin);
+  const freq = commonnessLabel(word?.rank);
+  const pos =
+    defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
+
+  // ── Refs ───────────────────────────────────────────────────────
   const writerRef = useRef<HTMLDivElement>(null);
   const writerInstanceRef = useRef<{ animateCharacter: () => void } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -93,35 +116,43 @@ export function EntitySheet({
   }, [onClose]);
 
   // ── Mnemonic ("💡 Make it stick") ──────────────────────────────
-  const starter = buildStarterMnemonic(charKey, charData);
-  const stored = getMnemonic(charKey);
+  const starter = isMultiCharWord
+    ? buildStarterWordMnemonic(word!.word, pinyin, defs[0] ?? "", chars)
+    : buildStarterMnemonic(key, charData);
+  const stored = getMnemonic(key);
   const [mnemonic, setMnemonic] = useState<string>(() => stored?.text ?? starter);
   const [editedFlag, setEditedFlag] = useState<boolean>(() => !!stored?.edited);
   const [mnemonicEditing, setMnemonicEditing] = useState(false);
   useEffect(() => {
-    const s = getMnemonic(charKey);
-    setMnemonic(s?.text ?? buildStarterMnemonic(charKey, charData));
+    const s = getMnemonic(key);
+    setMnemonic(s?.text ?? starter);
     setEditedFlag(!!s?.edited);
     setMnemonicEditing(false);
     setDragDy(0);
-  }, [charKey, charData, getMnemonic]);
+    // Re-derive when the entity key changes (the component instance is
+    // reused as the user drills around). `starter` / `getMnemonic` are
+    // referentially unstable; the effect intentionally doesn't re-fire
+    // on those.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
   const persistMnemonic = (text: string) => {
     if (text === starter && !editedFlag) {
-      clearMnemonic(charKey);
+      clearMnemonic(key);
       return;
     }
-    saveMnemonic(charKey, text);
+    saveMnemonic(key, text);
     setEditedFlag(true);
   };
   const resetMnemonic = () => {
-    clearMnemonic(charKey);
+    clearMnemonic(key);
     setMnemonic(starter);
     setEditedFlag(false);
     setMnemonicEditing(false);
   };
 
-  // ── Stroke animation (hanzi-writer) ────────────────────────────
+  // ── Stroke animation (single-char entities only) ───────────────
   useEffect(() => {
+    if (isMultiCharWord) return;
     const el = writerRef.current;
     if (!el) return;
     el.innerHTML = "";
@@ -131,7 +162,7 @@ export function EntitySheet({
       el.innerHTML = "";
       const fb = document.createElement("div");
       fb.className = "sheet-glyph-fallback";
-      fb.textContent = charKey;
+      fb.textContent = key;
       el.appendChild(fb);
     };
     if (typeof HW === "undefined") {
@@ -140,7 +171,7 @@ export function EntitySheet({
     }
     try {
       const size = Math.min(220, el.clientWidth || 220);
-      const writer = HW.create(el, charKey, {
+      const writer = HW.create(el, key, {
         width: size,
         height: size,
         padding: 4,
@@ -165,39 +196,39 @@ export function EntitySheet({
     return () => {
       writerInstanceRef.current = null;
     };
-  }, [charKey]);
+  }, [key, isMultiCharWord]);
   const replay = () => writerInstanceRef.current?.animateCharacter();
 
-  // ── Derived bits ───────────────────────────────────────────────
-  const pinyin = charData?.pinyin ?? "";
-  const tone = toneLabel(pinyin);
-  const defs = charData?.definitions ?? [];
-  // Best-effort POS via the same heuristic the Sentence Studio uses.
-  const pos =
-    defs.length > 0 ? detectPos({ word: charKey, definitions: defs } as Word) : null;
-  const components = (charData?.components ?? []).filter((c) => c?.char && c.char !== "◎");
+  // ── Etymology / "made of" pieces ───────────────────────────────
+  // For a word: the characters it's spelled with. For a character:
+  // its direct components (role-tinted). Both are characters, so both
+  // are tappable into their own sheet.
+  const pieces: { char: string; color?: string }[] = isMultiCharWord
+    ? [...word!.word].map((c) => ({ char: c }))
+    : (charData?.components ?? [])
+        .filter((c) => c?.char && c.char !== "◎")
+        .map((c) => ({ char: c.char!, color: roleColor(c.type) }));
   const hasEtym =
-    components.length > 0 ||
-    !!charData?.notes ||
-    (!!charData?.originalMeaning &&
-      charData.originalMeaning !== "characterless component");
-  const matches = [...saved].filter((w) => w !== charKey && w.includes(charKey));
+    pieces.length > 0 ||
+    (!isMultiCharWord &&
+      (!!charData?.notes ||
+        (!!charData?.originalMeaning &&
+          charData.originalMeaning !== "characterless component")));
 
-  const roleColor = (type: string | undefined): string | undefined => {
-    switch (type) {
-      case "sound":
-        return "#b14430";
-      case "meaning":
-        return "#4f7d3a";
-      case "iconic":
-        return "#2f5a8e";
-      default:
-        return undefined;
-    }
-  };
+  const matches = isMultiCharWord
+    ? []
+    : [...saved].filter((w) => w !== key && w.includes(key));
+
+  // Section numbering: ETYMOLOGY is Nº 01 only when it renders.
+  let sectionNo = 0;
+  const nextNo = () => String(++sectionNo).padStart(2, "0");
+  const etymNo = hasEtym ? nextNo() : null;
+  const peopleNo =
+    isMultiCharWord || matches.length > 0 ? nextNo() : null;
+  const mnemonicNo = nextNo();
 
   return (
-    <div className="sheet-root" role="dialog" aria-modal="true" aria-label={`Details for ${charKey}`}>
+    <div className="sheet-root" role="dialog" aria-modal="true" aria-label={`Details for ${key}`}>
       <div className="sheet-backdrop" onClick={onClose} />
       <div
         ref={panelRef}
@@ -227,29 +258,43 @@ export function EntitySheet({
           </svg>
         </button>
         <div className="sheet-status">
-          <StatusButton status={getStatus(charKey)} variant="iconLg" onChange={(n) => setStatus(charKey, n)} />
+          <StatusButton status={getStatus(key)} variant="iconLg" onChange={(n) => setStatus(key, n)} />
         </div>
 
         <div className="sheet-eyebrow">
-          {pinyin ? pinyin.toUpperCase() : charKey}
-          {tone && <span className="sheet-eyebrow-dot"> · </span>}
-          {tone && <span className="sheet-eyebrow-tone">{tone}</span>}
+          <span>{pinyin ? pinyin.toUpperCase() : key}</span>
+          {tone && <span className="sheet-eyebrow-dim"> · {tone}</span>}
+          {freq && <span className="sheet-eyebrow-dim"> · {freq.toUpperCase()}</span>}
         </div>
 
-        <div
-          ref={writerRef}
-          className="sheet-glyph"
-          role="button"
-          tabIndex={0}
-          aria-label={`Replay stroke animation for ${charKey}`}
-          onClick={replay}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              replay();
-            }
-          }}
-        />
+        {isMultiCharWord ? (
+          <div className="sheet-glyph sheet-glyph-word">
+            <span className="sheet-glyph-text">{word!.word}</span>
+            <button
+              type="button"
+              className="sheet-speak"
+              aria-label={`Play ${word!.word}`}
+              onClick={() => speak(word!.word)}
+            >
+              🔊
+            </button>
+          </div>
+        ) : (
+          <div
+            ref={writerRef}
+            className="sheet-glyph"
+            role="button"
+            tabIndex={0}
+            aria-label={`Replay stroke animation for ${key}`}
+            onClick={replay}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                replay();
+              }
+            }}
+          />
+        )}
 
         <div className="sheet-defs">
           {pos && (
@@ -268,73 +313,104 @@ export function EntitySheet({
         {hasEtym && (
           <section className="sheet-section">
             <div className="sheet-section-head">
-              <span className="sheet-section-num">Nº 01</span>
-              <span className="sheet-section-name">ETYMOLOGY</span>
+              <span className="sheet-section-num">Nº {etymNo}</span>
+              <span className="sheet-section-name">
+                {isMultiCharWord ? "MADE OF" : "ETYMOLOGY"}
+              </span>
             </div>
-            {components.length > 0 ? (
-              <button
-                type="button"
-                className="sheet-etym-row"
-                onClick={() => onOpenTree(charKey)}
-                title="Open the full decomposition tree"
-              >
-                {components.map((c, i) => (
-                  <span key={`${c.char}-${i}`} className="sheet-etym-piece">
+            {pieces.length > 0 && (
+              <div className="sheet-etym-row">
+                {pieces.map((p, i) => (
+                  <span key={`${p.char}-${i}`} className="sheet-etym-piece">
                     {i > 0 && <span className="sheet-etym-op">+</span>}
-                    <span className="sheet-etym-glyph" style={{ color: roleColor(c.type) }}>
-                      {c.char}
-                    </span>
+                    <button
+                      type="button"
+                      className="sheet-etym-glyph sheet-etym-glyph-btn"
+                      style={p.color ? { color: p.color } : undefined}
+                      onClick={() => onOpenChar(p.char)}
+                      title={`Open ${p.char}`}
+                    >
+                      {p.char}
+                    </button>
                   </span>
                 ))}
                 <span className="sheet-etym-op">=</span>
-                <span className="sheet-etym-glyph sheet-etym-result">{charKey}</span>
-                <span className="sheet-etym-expand" aria-hidden="true">⤢</span>
-              </button>
-            ) : null}
-            {charData?.originalMeaning &&
+                <span className="sheet-etym-glyph sheet-etym-result">{key}</span>
+                <button
+                  type="button"
+                  className="sheet-etym-expand"
+                  aria-label="Open the full decomposition tree"
+                  title="Full decomposition tree"
+                  onClick={onOpenTree}
+                >
+                  ⤢
+                </button>
+              </div>
+            )}
+            {!isMultiCharWord &&
+              charData?.originalMeaning &&
               charData.originalMeaning !== "characterless component" && (
                 <div className="sheet-etym-note">
                   Originally: {charData.originalMeaning}
                 </div>
               )}
-            {charData?.notes && <div className="sheet-etym-note sheet-etym-note-em">{charData.notes}</div>}
+            {!isMultiCharWord && charData?.notes && (
+              <div className="sheet-etym-note sheet-etym-note-em">{charData.notes}</div>
+            )}
           </section>
         )}
 
-        {matches.length > 0 && (
+        {(isMultiCharWord || matches.length > 0) && (
           <section className="sheet-section">
             <div className="sheet-section-head">
-              <span className="sheet-section-num">Nº {hasEtym ? "02" : "01"}</span>
-              <span className="sheet-section-name">IN YOUR SAVED WORDS</span>
+              <span className="sheet-section-num">Nº {peopleNo}</span>
+              <span className="sheet-section-name">
+                {isMultiCharWord ? "CHARACTERS" : "IN YOUR SAVED WORDS"}
+              </span>
             </div>
             <div className="sheet-saved-list">
-              {matches.map((w) => {
-                const word = findWord(w);
-                const gloss = word?.definitions?.[0] ?? "";
-                return (
-                  <button
-                    key={w}
-                    className="sheet-saved-row"
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onOpenWord(w);
-                    }}
-                  >
-                    <span className="sheet-saved-hanzi">{w}</span>
-                    {word?.pinyin && <span className="sheet-saved-pinyin">{word.pinyin}</span>}
-                    {gloss && <span className="sheet-saved-gloss">{gloss}</span>}
-                  </button>
-                );
-              })}
+              {isMultiCharWord
+                ? [...word!.word].map((c, i) => {
+                    const cd = chars[c];
+                    const gloss = cd?.definitions?.[0] ?? "";
+                    return (
+                      <button
+                        key={`${c}-${i}`}
+                        className="sheet-saved-row"
+                        type="button"
+                        onClick={() => onOpenChar(c)}
+                      >
+                        <span className="sheet-saved-hanzi">{c}</span>
+                        {cd?.pinyin && <span className="sheet-saved-pinyin">{cd.pinyin}</span>}
+                        {gloss && <span className="sheet-saved-gloss">{gloss}</span>}
+                      </button>
+                    );
+                  })
+                : matches.map((w) => {
+                    const wd = findWord(w);
+                    const gloss = wd?.definitions?.[0] ?? "";
+                    return (
+                      <button
+                        key={w}
+                        className="sheet-saved-row"
+                        type="button"
+                        onClick={() => onOpenWord(w)}
+                      >
+                        <span className="sheet-saved-hanzi">{w}</span>
+                        {wd?.pinyin && <span className="sheet-saved-pinyin">{wd.pinyin}</span>}
+                        {gloss && <span className="sheet-saved-gloss">{gloss}</span>}
+                      </button>
+                    );
+                  })}
             </div>
           </section>
         )}
 
         <section className="sheet-section">
           <div className="sheet-section-head">
+            <span className="sheet-section-num">Nº {mnemonicNo}</span>
             <span className="sheet-section-name sheet-mnemonic-title">
-              💡 Make it stick
+              💡 MAKE IT STICK
               {editedFlag && <span className="mnemonic-saved-tag">your version</span>}
             </span>
             {editedFlag && (
@@ -342,7 +418,7 @@ export function EntitySheet({
                 type="button"
                 className="mnemonic-reset"
                 onClick={resetMnemonic}
-                title="Reset to the auto-suggested mnemonic from the components"
+                title="Reset to the auto-suggested mnemonic"
               >
                 reset
               </button>
@@ -362,7 +438,7 @@ export function EntitySheet({
                 if (e.key === "Escape") setMnemonicEditing(false);
               }}
               rows={3}
-              placeholder="Write a story, image, or hook that makes this character memorable…"
+              placeholder="Write a story, image, or hook that makes this stick…"
             />
           ) : (
             <button
@@ -379,7 +455,7 @@ export function EntitySheet({
         <a
           className="sheet-network-link"
           role="button"
-          href={`./network/?focus=${encodeURIComponent(charKey)}`}
+          href={`./network/?focus=${encodeURIComponent(key)}`}
           onClick={onClose}
         >
           Show in network →
@@ -387,4 +463,28 @@ export function EntitySheet({
       </div>
     </div>
   );
+}
+
+// One-line frequency band for the corpus rank. The user asked: no HSK,
+// but keep a hint. Ranges loosely follow the chinese-lexicon rank
+// distribution. Mirrors the helper that used to live in WordDetail.
+function commonnessLabel(rank: number | null | undefined): string | null {
+  if (rank == null) return null;
+  if (rank < 1000) return "Top 1 000";
+  if (rank < 3000) return "Top 3 000";
+  if (rank < 10000) return "Top 10 000";
+  return "Less common";
+}
+
+function roleColor(type: string | undefined): string | undefined {
+  switch (type) {
+    case "sound":
+      return "#b14430";
+    case "meaning":
+      return "#4f7d3a";
+    case "iconic":
+      return "#2f5a8e";
+    default:
+      return undefined;
+  }
 }

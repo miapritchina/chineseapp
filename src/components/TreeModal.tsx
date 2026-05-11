@@ -3,9 +3,7 @@ import type { Char, ModalEntry, Word } from "../lib/types";
 import { buildCharTree, buildWordTree } from "../lib/tree";
 import { DecompositionTree } from "./DecompositionTree";
 import { StatusButton } from "./StatusButton";
-import { WordDetail } from "./WordDetail";
 import type { Status } from "../hooks/useSaved";
-import type { MnemonicEntry } from "../lib/mnemonics";
 
 interface Props {
   entry: ModalEntry;
@@ -15,13 +13,14 @@ interface Props {
   saved: Set<string>;
   getStatus: (key: string) => Status | null;
   setStatus: (key: string, next: Status | null) => void;
-  getMnemonic: (key: string) => MnemonicEntry | null;
-  saveMnemonic: (key: string, text: string) => void;
-  clearMnemonic: (key: string) => void;
   onPop: () => void;
   onNodeClick: (char: string) => void;
 }
 
+// Full recursive decomposition tree (d3) page. Reached from the
+// "⤢ full tree" affordance inside EntitySheet. The lighter detail
+// (definitions, etymology blurb, mnemonic) lives in the sheet now;
+// this view is just the zoomable role-tinted tree.
 export function TreeModal({
   entry,
   word,
@@ -30,9 +29,6 @@ export function TreeModal({
   saved,
   getStatus,
   setStatus,
-  getMnemonic,
-  saveMnemonic,
-  clearMnemonic,
   onPop,
   onNodeClick,
 }: Props) {
@@ -47,9 +43,6 @@ export function TreeModal({
   const titleHanzi = entry.kind === "word" ? word?.simp ?? entry.key : entry.key;
   const titlePinyin =
     entry.kind === "word" ? word?.pinyin ?? "" : chars[entry.key]?.pinyin ?? "";
-
-  // User asked: no HSK badge, but keep a frequency hint. WordDetail
-  // below owns the hint when this is a multi-char word.
 
   return (
     <div className="modal-root open" aria-hidden="false">
@@ -70,15 +63,6 @@ export function TreeModal({
         </div>
       </div>
       <div className="modal-body">
-        {entry.kind === "word" && word && [...word.word].length > 1 && (
-          <WordDetail
-            word={word}
-            chars={chars}
-            getMnemonic={getMnemonic}
-            saveMnemonic={saveMnemonic}
-            clearMnemonic={clearMnemonic}
-          />
-        )}
         {tree ? (
           <DecompositionTree tree={tree} chars={chars} saved={saved} onNodeClick={onNodeClick} />
         ) : (

@@ -52,7 +52,6 @@ export function App() {
   const [searchMode, setSearchMode] = useState<SearchMode>("all");
   const [searchResults, setSearchResults] = useState<Word[]>([]);
   const [searching, setSearching] = useState(false);
-  const [popupChar, setPopupChar] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showReview, setShowReview] = useState(
     typeof window !== "undefined" && window.location.hash === "#/review",
@@ -307,7 +306,7 @@ export function App() {
     push({ kind: "word", key: word });
   };
 
-  const openCharPopup = (char: string) => setPopupChar(char);
+  const openChar = (char: string) => push({ kind: "char", key: char });
 
 
   const top = stack[stack.length - 1];
@@ -317,7 +316,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v80"
+          version="chinese v81"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -439,14 +438,14 @@ export function App() {
             findWord={dict.findWord}
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
-            onOpenChar={openCharPopup}
+            onOpenChar={openChar}
             getStatus={getStatus}
             setStatus={setStatus}
           />
         </main>
       )}
 
-      {top && (
+      {top && top.view === "tree" && (
         <TreeModal
           entry={top}
           word={topWord}
@@ -455,18 +454,16 @@ export function App() {
           saved={saved}
           getStatus={getStatus}
           setStatus={setStatus}
-          getMnemonic={mnemonics.get}
-          saveMnemonic={mnemonics.save}
-          clearMnemonic={mnemonics.clear}
           onPop={pop}
-          onNodeClick={openCharPopup}
+          onNodeClick={openChar}
         />
       )}
 
-      {popupChar && (
+      {top && top.view !== "tree" && (
         <EntitySheet
-          charKey={popupChar}
-          charData={charsData.chars[popupChar]}
+          word={top.kind === "word" ? topWord : null}
+          charKey={top.key}
+          chars={charsData.chars}
           saved={saved}
           getStatus={getStatus}
           setStatus={setStatus}
@@ -474,15 +471,10 @@ export function App() {
           saveMnemonic={mnemonics.save}
           clearMnemonic={mnemonics.clear}
           findWord={dict.findWord}
-          onClose={() => setPopupChar(null)}
-          onOpenWord={(w) => {
-            setPopupChar(null);
-            void openWord(w);
-          }}
-          onOpenTree={(c) => {
-            setPopupChar(null);
-            push({ kind: "char", key: c });
-          }}
+          onClose={pop}
+          onOpenWord={(w) => void openWord(w)}
+          onOpenChar={openChar}
+          onOpenTree={() => push({ ...top, view: "tree" })}
         />
       )}
 

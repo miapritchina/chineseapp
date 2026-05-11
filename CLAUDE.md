@@ -32,10 +32,9 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── SavedShelf               home grid w/ status sections + sort pills
 │   │   ├── ComponentTable           empty-state for By-component search
 │   │   ├── Card / NodeCard          shared word + tree-node cards
-│   │   ├── TreeModal                full recursive decomposition tree (d3) page
+│   │   ├── TreeModal                full recursive decomposition tree (d3) page — view: "tree"
 │   │   ├── DecompositionTree        d3-hierarchy + d3-zoom + foreignObject cards
-│   │   ├── EntitySheet              unified word/char/component sheet (bottom sheet mobile / modal desktop)
-│   │   ├── WordDetail               multi-char word panel (folds into EntitySheet — PR 2)
+│   │   ├── EntitySheet              unified word/char/component sheet (bottom sheet mobile / modal desktop) — view: "sheet"
 │   │   ├── HamburgerMenu            top-bar drawer (Review / Phonetics / Network …)
 │   │   ├── StatusButton             4-tier status dropdown shared by every place
 │   │   ├── ReviewPage               full-screen SRS surface, routes by facet
@@ -276,9 +275,15 @@ wrote_at, review_at}` is non-null at a time.
 - `useReview` owns FSRS scheduling; mirrors `user_fsrs_state`. Exposes
   `dueCards`, `grade(itemKey, rating, kind?, facet?)`,
   `attributeFailure(childKey)`.
-- `useModalStack` integrates with `history.pushState` for the tree-modal
-  back-button stack. Top-level pages (Review, Phonetics) use plain
-  `#/foo` hash routing in App.tsx instead.
+- `useModalStack` integrates with `history.pushState` for the modal
+  back-button stack. A stack entry is `{ kind: "word"|"char", key,
+  view?: "sheet"|"tree" }` — `view` defaults to `"sheet"` (EntitySheet);
+  `"tree"` renders the full d3 `TreeModal`. App.tsx renders only the
+  top entry. Tapping anything (home grid, search result, tree node,
+  a piece inside a sheet) does `push({ kind, key })` — i.e. opens a
+  sheet, which can stack. Tapping the `⤢` in a sheet does
+  `push({ ...top, view: "tree" })`. Top-level pages (Review, Phonetics,
+  Sentence) use plain `#/foo` hash routing in App.tsx instead.
 - `useStrokeData` is a per-session cache around
   `HanziWriter.loadCharacterData`.
 - `DecompositionTree` mounts d3-hierarchy + d3-zoom on an SVG ref; node
@@ -286,15 +291,17 @@ wrote_at, review_at}` is non-null at a time.
   positioned by d3 layout. Card heights estimated per-content; layout
   reflows accordingly.
 - `EntitySheet` is the unified detail surface (replaces the old
-  CharPopup): a bottom sheet on mobile (drag-handle, slides up, swipe
-  down to dismiss), a centered modal on desktop. Opens on tree-node tap
-  and single-char saved-word tap. Sections: eyebrow (`PINYIN · TONE n`)
-  → tappable stroke animation → POS + glosses → `Nº 01 · ETYMOLOGY`
-  (one-level decomposition, the row itself taps through to the full
-  d3 tree) → `Nº 02 · IN YOUR SAVED WORDS` → `💡 Make it stick`
-  mnemonic. PR 2 will route multi-char word taps through it too and
-  fold in WordDetail. The static `/network/` page's popup is left
-  separate (different codebase).
+  CharPopup + WordDetail): a bottom sheet on mobile (drag-handle,
+  slides up, swipe down to dismiss), a centered modal on desktop.
+  Opened by every word / character / component tap. Takes either a
+  `word` (multi-char) or a `charKey`; a single-char word renders the
+  same as a bare character. Sections: eyebrow (`PINYIN · TONE n ·
+  TOP n`) → tappable stroke animation (single chars) or 🔊 (words) →
+  POS + glosses → `Nº 01 · ETYMOLOGY` / `MADE OF` (one level — each
+  piece is a button into its own sheet; the `⤢` opens the full d3
+  tree) → `Nº 02 · IN YOUR SAVED WORDS` (chars) / `CHARACTERS` (words)
+  → `💡 MAKE IT STICK` mnemonic → "Show in network →". The static
+  `/network/` page's own popup is left separate (different codebase).
 
 ### Tests
 
