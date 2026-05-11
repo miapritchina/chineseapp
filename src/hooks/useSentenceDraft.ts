@@ -40,5 +40,10 @@ export function useSentenceDraft() {
     setKeys([]);
   }, []);
 
-  return { keys, append, removeAt, clear };
+  // Replace the whole draft — used when loading a saved sentence.
+  const replace = useCallback((next: string[]) => {
+    setKeys(next.filter((x): x is string => typeof x === "string"));
+  }, []);
+
+  return { keys, append, removeAt, clear, replace };
 }

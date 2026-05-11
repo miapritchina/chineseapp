@@ -52,6 +52,7 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── usePhoneticComponents    fetches public/phonetic-components.json
 │   │   ├── useMnemonics             per-word/char user notes
 │   │   ├── useSentenceDraft         localStorage-backed sentence composer state
+│   │   ├── useSavedSentences        localStorage list of saved sentences (e2.sentences)
 │   │   ├── useStrokeData            per-session HanziWriter cache
 │   │   ├── useModalStack            history.pushState integration for tree modals
 │   │   └── useAuth                  supabase.auth wrapper
@@ -244,10 +245,15 @@ wrote_at, review_at}` is non-null at a time.
   components, each with pinyin + family + a StatusButton.
 - **Sentence** (`#/sentence`) — Sentence Studio. Compose a sentence by
   tapping chips drawn from your saved words; POS tabs filter the bank.
-  Pure UX, no schedule effect. Draft persists in `localStorage` under
-  `e2.draft`. POS detected by `src/lib/pos.ts` (lookup tables for
-  closed-class + def-prefix heuristic — the dictionary doesn't carry
-  POS tags so we infer).
+  You can also type pinyin (or hanzi) into the composer to filter the
+  bank to matching saved words — tapping a match appends it and clears
+  the input (Enter appends the first match; Backspace on an empty input
+  pops the last token). Sentences can be saved (Save button next to
+  Copy) — they're listed under the composer, tap to reload, × to
+  delete. Pure UX, no schedule effect. Draft persists in `localStorage`
+  under `e2.draft`, saved sentences under `e2.sentences`. POS detected
+  by `src/lib/pos.ts` (lookup tables for closed-class + def-prefix
+  heuristic — the dictionary doesn't carry POS tags so we infer).
 - **Network** (`/Ai-/network/`) — static Cytoscape graph; `?focus=<key>`
   centers + highlights a saved word/char on load (used by CharPopup's
   "Show in network →" button).
