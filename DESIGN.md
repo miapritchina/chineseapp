@@ -51,7 +51,25 @@ hamburger. Removing a page is removing those two anchors.
 | `public/data-chars.json` | ~10k chars + components + etymology | Static, built once via `extract-chinese.mjs` |
 | `public/phonetic-components.json` | Top-250 productive sound components | Static, built via `extract-phonetic-components.mjs` |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
-| Supabase `user_saves` + `user_fsrs_state` | User-private state | Live; mirrored from `localStorage` |
+| Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics` (+ planned `user_sentences`) | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
+
+### Data persistence policy (user directive)
+
+Supabase is the source of truth for **all** user data — saved words,
+statuses, FSRS state, mnemonics, sentences (composer draft + saved
+sentences). `localStorage` is permitted **only as an offline
+read-cache**: hydrate from it for instant paint, then reconcile against
+the DB with the DB winning. Public derivable data (dictionary rows,
+`data-chars.json`, stroke data, the per-day new-card counter) may stay
+cached locally — user state that exists nowhere else may not. Every new
+user-data feature ships with a table + RLS + sync from day one.
+
+Open gap (pre-dates the directive): `useSaved` / `useReview` /
+`useMnemonics` still treat `localStorage` as authoritative when signed
+out, and the Sentence Studio is local-only with no DB table. Closing it
+needs a `user_sentences` migration + a rework of those hooks so the DB
+leads. Until then the cloud-mirror pattern below is the *current*
+behavior, not the *target* one.
 
 ### Why chars are static but words are not
 
@@ -61,22 +79,26 @@ tree open is a latency cliff for no real win. Words are 3.9 MB
 gzipped — too heavy for first-load on mobile; one-keystroke debounced
 fetches are tolerable.
 
-### Local-first + cloud mirror pattern
+### Cloud-first + local cache pattern
 
-Every persisted state follows the same shape:
+Every persisted state follows the same shape (target shape — see the
+persistence policy above for the gap between this and today's code):
 
 1. `useFoo` hook owns a Map<key, value> in React state.
-2. State is mirrored to `localStorage` on every mutation (`persistFoo`).
+2. On first paint, hydrate from `localStorage` so there's no flash.
 3. On `userId` change (sign in), the hook does ONE catch-up sync:
-   - Read remote → merge into local (remote-wins on conflict).
-   - Local-only entries get uploaded.
-4. Each subsequent mutation writes through to both local and remote
-   in fire-and-forget mode.
-5. Errors are downgraded to warnings — the app keeps working offline
-   or when migrations haven't applied yet.
+   - Read remote → it wins; merge into state; refresh the local cache.
+   - Any local-only entries (offline edits) get uploaded.
+4. Each mutation writes to React state, refreshes the `localStorage`
+   cache, and writes through to Supabase fire-and-forget.
+5. Network/migration errors are downgraded to warnings — the app keeps
+   working offline, then reconciles on the next successful sync. The
+   local copy is a cache, never the authority.
 
-Files: `useSaved.ts`, `useReview.ts` follow this exactly. New persisted
-state should clone the pattern.
+Files: `useSaved.ts`, `useReview.ts`, `useMnemonics.ts` follow most of
+this (they currently treat the local copy as authoritative when signed
+out — a known gap). New persisted state should clone the *target*
+pattern and ship a DB table from the start; never local-only.
 
 ### Migration discipline
 
@@ -364,6 +386,12 @@ For a function that's plain JS today (`componentSearch.mjs`,
 
 ## Open work / explicitly deferred
 
+- **Cloud-first rework** (user directive) — make Supabase the source of
+  truth for every piece of user data, demoting `localStorage` to a pure
+  offline cache. Needs a `user_sentences` migration (composer draft +
+  saved sentences) and a rework of `useSaved` / `useReview` /
+  `useMnemonics` / `useSentenceDraft` / `useSavedSentences` so the DB
+  leads instead of the local copy. See the Data persistence policy.
 - **FSRS optimizer** — train custom params from the review log.
   Wait until the user has ~1,000 reviews. The package is
   `@open-spaced-repetition/binding`.
@@ -372,9 +400,6 @@ For a function that's plain JS today (`componentSearch.mjs`,
   scope.
 - **Multi-char production drill** — chain Hanzi Writer quizzes
   across all chars of a saved word at ✒ Wrote tier.
-- **Cross-device mnemonic sync** — v74 mnemonics live in
-  localStorage only. Add `0008_user_saves_mnemonic.sql` if/when the
-  user asks.
 - **Tone-colored pinyin** — explicitly cut from the original brief.
 - **Stats dashboard** — v66 separates sound + meaning into distinct
   FSRS Cards; the data's there, no UI yet shows the percentages
