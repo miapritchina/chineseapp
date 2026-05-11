@@ -1,4 +1,4 @@
-// Tests for src/lib/pinyin.ts → normalizePinyin.
+// Tests for src/lib/pinyin.ts → normalizePinyin / tonePattern / toneLabel.
 // Run with: node scripts/test-pinyin.mjs
 
 import assert from "node:assert/strict";
@@ -12,6 +12,29 @@ function normalizePinyin(s) {
     .replace(/[̀-ͯ]/g, "")
     .replace(/\s+/g, "")
     .toLowerCase();
+}
+
+// Mirror tonePattern / toneLabel from src/lib/pinyin.ts.
+const TONE_MARK = { 0x0304: 1, 0x0301: 2, 0x030c: 3, 0x0300: 4 };
+function tonePattern(pinyin) {
+  if (!pinyin) return "";
+  const syllables = pinyin.normalize("NFD").split(/\s+/).filter(Boolean);
+  if (syllables.length === 0) return "";
+  return syllables
+    .map((s) => {
+      for (const ch of s) {
+        const t = TONE_MARK[ch.charCodeAt(0)];
+        if (t) return String(t);
+      }
+      return "0";
+    })
+    .join(" ");
+}
+function toneLabel(pinyin) {
+  const p = tonePattern(pinyin);
+  if (!p) return "";
+  const parts = p.split(" ");
+  return parts.length === 1 ? `TONE ${parts[0]}` : `TONES ${p}`;
 }
 
 const tests = [];
@@ -52,6 +75,20 @@ test("ü is stripped to plain u — searchable by 'nu'", () => {
   // The regex strips both diacritics, leaving a plain "u". This is
   // intentional: the search bar shouldn't require typing ü.
   assert.equal(normalizePinyin("nǚ"), "nu");
+});
+
+test("tonePattern reads per-syllable tone numbers", () => {
+  assert.equal(tonePattern("hǎo"), "3");
+  assert.equal(tonePattern("xīn nián"), "1 2");
+  assert.equal(tonePattern("shàng hǎi"), "4 3");
+  assert.equal(tonePattern("ma ma"), "0 0"); // neutral / unmarked
+  assert.equal(tonePattern(""), "");
+});
+
+test("toneLabel formats a short header label", () => {
+  assert.equal(toneLabel("hǎo"), "TONE 3");
+  assert.equal(toneLabel("xīn nián"), "TONES 1 2");
+  assert.equal(toneLabel(""), "");
 });
 
 let failures = 0;

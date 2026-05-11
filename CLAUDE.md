@@ -32,9 +32,10 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── SavedShelf               home grid w/ status sections + sort pills
 │   │   ├── ComponentTable           empty-state for By-component search
 │   │   ├── Card / NodeCard          shared word + tree-node cards
-│   │   ├── TreeModal                decomposition tree modal
+│   │   ├── TreeModal                full recursive decomposition tree (d3) page
 │   │   ├── DecompositionTree        d3-hierarchy + d3-zoom + foreignObject cards
-│   │   ├── CharPopup                tap-a-component popup
+│   │   ├── EntitySheet              unified word/char/component sheet (bottom sheet mobile / modal desktop)
+│   │   ├── WordDetail               multi-char word panel (folds into EntitySheet — PR 2)
 │   │   ├── HamburgerMenu            top-bar drawer (Review / Phonetics / Network …)
 │   │   ├── StatusButton             4-tier status dropdown shared by every place
 │   │   ├── ReviewPage               full-screen SRS surface, routes by facet
@@ -284,13 +285,20 @@ wrote_at, review_at}` is non-null at a time.
   cards are React components rendered into `<foreignObject>` slots
   positioned by d3 layout. Card heights estimated per-content; layout
   reflows accordingly.
-- `CharPopup` opens on tree-node tap: stroke animation, full
-  definitions, StatusButton, "Show in network →" link, list of saved
-  words containing this character.
+- `EntitySheet` is the unified detail surface (replaces the old
+  CharPopup): a bottom sheet on mobile (drag-handle, slides up, swipe
+  down to dismiss), a centered modal on desktop. Opens on tree-node tap
+  and single-char saved-word tap. Sections: eyebrow (`PINYIN · TONE n`)
+  → tappable stroke animation → POS + glosses → `Nº 01 · ETYMOLOGY`
+  (one-level decomposition, the row itself taps through to the full
+  d3 tree) → `Nº 02 · IN YOUR SAVED WORDS` → `💡 Make it stick`
+  mnemonic. PR 2 will route multi-char word taps through it too and
+  fold in WordDetail. The static `/network/` page's popup is left
+  separate (different codebase).
 
 ### Tests
 
-`npm test` chains ten headless Node test files under `scripts/` — 96
+`npm test` chains ten headless Node test files under `scripts/` — 98
 cases total. All run with stock Node (no build, no jsdom).
 
 - `test-components.mjs` — graph-data builder for `/components/` page
@@ -306,7 +314,7 @@ cases total. All run with stock Node (no build, no jsdom).
 - `test-confusion-clusters.mjs` — cluster lookup helpers used by the
   leech disambig view
 - `test-pinyin.mjs` — `normalizePinyin` tone-stripping + multibyte
-  edge cases
+  edge cases; `tonePattern` / `toneLabel` per-syllable tone numbers
 - `test-mnemonics.mjs` — `buildStarterMnemonic` template against
   role-tagged components
 - `test-cluster-recall.mjs` — `pickCluster` picker: phonetic-family

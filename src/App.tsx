@@ -13,7 +13,7 @@ import { searchByComponent, componentFrequencies } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
-import { CharPopup } from "./components/CharPopup";
+import { EntitySheet } from "./components/EntitySheet";
 import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
@@ -317,7 +317,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v79"
+          version="chinese v80"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -464,18 +464,25 @@ export function App() {
       )}
 
       {popupChar && (
-        <CharPopup
-          char={popupChar}
+        <EntitySheet
+          charKey={popupChar}
           charData={charsData.chars[popupChar]}
           saved={saved}
           getStatus={getStatus}
           setStatus={setStatus}
-          onClose={() => setPopupChar(null)}
-          onJumpToWord={(w) => void openWord(w)}
-          findWord={dict.findWord}
           getMnemonic={mnemonics.get}
           saveMnemonic={mnemonics.save}
           clearMnemonic={mnemonics.clear}
+          findWord={dict.findWord}
+          onClose={() => setPopupChar(null)}
+          onOpenWord={(w) => {
+            setPopupChar(null);
+            void openWord(w);
+          }}
+          onOpenTree={(c) => {
+            setPopupChar(null);
+            push({ kind: "char", key: c });
+          }}
         />
       )}
 
