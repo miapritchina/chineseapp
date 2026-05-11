@@ -7,7 +7,10 @@
 import assert from "node:assert/strict";
 import { fsrs, createEmptyCard, Rating } from "ts-fsrs";
 
-const scheduler = fsrs();
+// Must mirror src/lib/fsrs.ts — short-term learning steps disabled so a
+// new card graded Good schedules a real multi-day interval immediately
+// instead of bouncing back in 10 minutes.
+const scheduler = fsrs({ enable_short_term: false });
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
 
@@ -68,6 +71,20 @@ test("due date is in the future after a successful review", () => {
     next.due.getTime() > now.getTime(),
     `next.due (${next.due.toISOString()}) should be after now (${now.toISOString()})`,
   );
+});
+
+test("a brand-new card graded Good is due at least a day out (no 10m bounce)", () => {
+  const now = new Date("2026-05-08T12:00:00Z");
+  const c = createEmptyCard(now);
+  const next = scheduler.next(c, now, Rating.Good).card;
+  const intervalDays = (next.due.getTime() - now.getTime()) / 86400000;
+  assert.ok(
+    intervalDays >= 1,
+    `first Good should schedule >= 1 day, got ${intervalDays.toFixed(3)}d — short-term learning steps must be disabled`,
+  );
+  // State.Review === 2 in ts-fsrs — the card graduated, it's not stuck
+  // in an intraday Learning step.
+  assert.equal(next.state, 2, "card should be in Review state, not Learning");
 });
 
 // Cascade math (PR 3): re-implement the wrapper's applyCascadeCredit

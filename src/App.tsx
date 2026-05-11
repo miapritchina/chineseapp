@@ -13,7 +13,7 @@ import { searchByComponent, componentFrequencies } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
-import { CharPopup } from "./components/CharPopup";
+import { EntitySheet } from "./components/EntitySheet";
 import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
@@ -22,6 +22,7 @@ import { ComponentTable } from "./components/ComponentTable";
 import { PhoneticsPage } from "./components/PhoneticsPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
 import { ClusterRecall } from "./components/ClusterRecall";
+import { SentenceStudio } from "./components/SentenceStudio";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
@@ -51,13 +52,15 @@ export function App() {
   const [searchMode, setSearchMode] = useState<SearchMode>("all");
   const [searchResults, setSearchResults] = useState<Word[]>([]);
   const [searching, setSearching] = useState(false);
-  const [popupChar, setPopupChar] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showReview, setShowReview] = useState(
     typeof window !== "undefined" && window.location.hash === "#/review",
   );
   const [showPhonetics, setShowPhonetics] = useState(
     typeof window !== "undefined" && window.location.hash === "#/phonetics",
+  );
+  const [showSentence, setShowSentence] = useState(
+    typeof window !== "undefined" && window.location.hash === "#/sentence",
   );
 
   // Every saved word is queued for review — the user's stated goal is to
@@ -94,6 +97,7 @@ export function App() {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
       setShowPhonetics(window.location.hash === "#/phonetics");
+      setShowSentence(window.location.hash === "#/sentence");
       // Reset the launched-flag so re-opening Review goes back to the
       // launch screen first.
       if (window.location.hash !== "#/review") {
@@ -111,6 +115,7 @@ export function App() {
       // the page after the user closes it before hashchange fires.
       if (target === "#/review") setShowReview(false);
       if (target === "#/phonetics") setShowPhonetics(false);
+      if (target === "#/sentence") setShowSentence(false);
     }
   };
 
@@ -301,7 +306,7 @@ export function App() {
     push({ kind: "word", key: word });
   };
 
-  const openCharPopup = (char: string) => setPopupChar(char);
+  const openChar = (char: string) => push({ kind: "char", key: char });
 
 
   const top = stack[stack.length - 1];
@@ -311,10 +316,11 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v77"
+          version="chinese v81"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
+          sentenceHref="#/sentence"
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -380,6 +386,15 @@ export function App() {
         />
       )}
 
+      {showSentence && (
+        <SentenceStudio
+          savedWords={savedList.map((s) => s.word)}
+          findWord={dict.findWord}
+          ensureCached={dict.ensureCached}
+          onClose={() => closeHashPage("#/sentence")}
+        />
+      )}
+
       {showSignIn && (
         <SignInModal
           onClose={() => setShowSignIn(false)}
@@ -423,14 +438,14 @@ export function App() {
             findWord={dict.findWord}
             chars={charsData.chars}
             onOpenWord={(w) => void openWord(w)}
-            onOpenChar={openCharPopup}
+            onOpenChar={openChar}
             getStatus={getStatus}
             setStatus={setStatus}
           />
         </main>
       )}
 
-      {top && (
+      {top && top.view === "tree" && (
         <TreeModal
           entry={top}
           word={topWord}
@@ -439,27 +454,27 @@ export function App() {
           saved={saved}
           getStatus={getStatus}
           setStatus={setStatus}
-          getMnemonic={mnemonics.get}
-          saveMnemonic={mnemonics.save}
-          clearMnemonic={mnemonics.clear}
           onPop={pop}
-          onNodeClick={openCharPopup}
+          onNodeClick={openChar}
         />
       )}
 
-      {popupChar && (
-        <CharPopup
-          char={popupChar}
-          charData={charsData.chars[popupChar]}
+      {top && top.view !== "tree" && (
+        <EntitySheet
+          word={top.kind === "word" ? topWord : null}
+          charKey={top.key}
+          chars={charsData.chars}
           saved={saved}
           getStatus={getStatus}
           setStatus={setStatus}
-          onClose={() => setPopupChar(null)}
-          onJumpToWord={(w) => void openWord(w)}
-          findWord={dict.findWord}
           getMnemonic={mnemonics.get}
           saveMnemonic={mnemonics.save}
           clearMnemonic={mnemonics.clear}
+          findWord={dict.findWord}
+          onClose={pop}
+          onOpenWord={(w) => void openWord(w)}
+          onOpenChar={openChar}
+          onOpenTree={() => push({ ...top, view: "tree" })}
         />
       )}
 

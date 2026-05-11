@@ -128,12 +128,24 @@ review > saved.
 
 ### Why ts-fsrs
 
-Default FSRS-6 scheduler, retention target 0.9. The brief covers the
+FSRS-6 scheduler, retention target 0.9. The brief covers the
 empirical case (FSRS-6 wins log-loss against SM-2 in ~99% of Anki
 collections; 20–30% fewer reviews for the same retention). The
 package is MIT, browser-ready, maintained by the spec authors. We
-ship the default parameters until the user has ~1,000 reviews; then
+ship near-default parameters until the user has ~1,000 reviews; then
 the optional `@open-spaced-repetition/binding` package can re-train.
+
+One non-default knob: **`enable_short_term: false`**. ts-fsrs ships
+intraday "learning steps" (`["1m","10m"]`) on by default — a brand-new
+card graded Good only moves ~10 minutes into the future and needs a
+*second* Good (or one Easy) to graduate to a real interval. For a
+review-once-a-day app that reads as "I reviewed this and it came right
+back" — the schedule looks broken. With short-term disabled the first
+Good schedules straight from initial stability (~3 days for Good).
+Again still recurs quickly (same-day / next-day). Existing cards stuck
+in a Learning state graduate automatically on their next grade — no
+migration. Covered by `scripts/test-fsrs.mjs` ("a brand-new card
+graded Good is due at least a day out").
 
 ### Item kind × facet
 

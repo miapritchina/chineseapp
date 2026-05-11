@@ -10,7 +10,14 @@ import {
   type Grade,
 } from "ts-fsrs";
 
-const scheduler = fsrs(); // default parameters; FSRS-6, retention 0.9
+// FSRS-6, retention 0.9. `enable_short_term: false` disables the intraday
+// "learning steps" (the default ["1m","10m"]) — without it, a brand-new
+// card graded Good only moves ~10 minutes into the future, so it pops
+// back up on the next page open and the schedule feels broken. With
+// short-term off, the first Good schedules a real multi-day interval
+// straight from initial stability, which is what a "review once a day"
+// app wants. (Again still comes back quickly — same-day / next-day.)
+const scheduler = fsrs({ enable_short_term: false });
 
 export type RatingName = "Again" | "Hard" | "Good" | "Easy";
 

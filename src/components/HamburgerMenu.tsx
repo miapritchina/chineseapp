@@ -6,6 +6,7 @@ interface Props {
   reviewHref?: string | null;
   reviewBadge?: number;
   phoneticsHref?: string | null;
+  sentenceHref?: string | null;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
@@ -16,6 +17,7 @@ export function HamburgerMenu({
   reviewHref = null,
   reviewBadge = 0,
   phoneticsHref = null,
+  sentenceHref = null,
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -94,6 +96,16 @@ export function HamburgerMenu({
               onClick={() => setOpen(false)}
             >
               <span>Phonetics</span>
+            </a>
+          )}
+          {sentenceHref && (
+            <a
+              role="menuitem"
+              className="hamburger-item"
+              href={sentenceHref}
+              onClick={() => setOpen(false)}
+            >
+              <span>Sentence</span>
             </a>
           )}
           <a role="menuitem" className="hamburger-item" href="./network/">

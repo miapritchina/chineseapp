@@ -65,6 +65,9 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
+// `view` picks the surface: "sheet" (default) is the unified
+// EntitySheet; "tree" is the full recursive d3 decomposition page.
+export type ModalView = "sheet" | "tree";
 export type ModalEntry =
-  | { kind: "word"; key: string }
-  | { kind: "char"; key: string };
+  | { kind: "word"; key: string; view?: ModalView }
+  | { kind: "char"; key: string; view?: ModalView };

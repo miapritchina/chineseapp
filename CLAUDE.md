@@ -32,9 +32,9 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── SavedShelf               home grid w/ status sections + sort pills
 │   │   ├── ComponentTable           empty-state for By-component search
 │   │   ├── Card / NodeCard          shared word + tree-node cards
-│   │   ├── TreeModal                decomposition tree modal
+│   │   ├── TreeModal                full recursive decomposition tree (d3) page — view: "tree"
 │   │   ├── DecompositionTree        d3-hierarchy + d3-zoom + foreignObject cards
-│   │   ├── CharPopup                tap-a-component popup
+│   │   ├── EntitySheet              unified word/char/component sheet (bottom sheet mobile / modal desktop) — view: "sheet"
 │   │   ├── HamburgerMenu            top-bar drawer (Review / Phonetics / Network …)
 │   │   ├── StatusButton             4-tier status dropdown shared by every place
 │   │   ├── ReviewPage               full-screen SRS surface, routes by facet
@@ -42,6 +42,7 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── ComponentSoundCard       drill: pick the pinyin a component gives
 │   │   ├── DisambiguationCard       leech-cluster side-by-side compare
 │   │   ├── PhoneticsPage            list + save the top-250 productive components
+│   │   ├── SentenceStudio           build-a-sentence (E2) composer + POS bank
 │   │   ├── AuthButton + SignInModal magic-link auth
 │   ├── hooks/
 │   │   ├── useDictionary            Supabase RPC + cache for word lookups
@@ -49,13 +50,17 @@ Four web apps deployed together via GitHub Pages:
 │   │   ├── useSaved                 4-status localStorage + Supabase mirror
 │   │   ├── useReview                ts-fsrs scheduler at word/char/component level
 │   │   ├── usePhoneticComponents    fetches public/phonetic-components.json
+│   │   ├── useMnemonics             per-word/char user notes
+│   │   ├── useSentenceDraft         localStorage-backed sentence composer state
 │   │   ├── useStrokeData            per-session HanziWriter cache
 │   │   ├── useModalStack            history.pushState integration for tree modals
 │   │   └── useAuth                  supabase.auth wrapper
 │   └── lib/
 │       ├── types.ts                 Word, Char, Component, Role, Status…
 │       ├── pinyin.ts                tone-stripping
+│       ├── pos.ts                   POS heuristic for Sentence Studio tabs
 │       ├── search.ts                client-side ranking (legacy)
+│       ├── speech.ts                Web Speech API helper
 │       ├── tree.ts                  buildCharTree, strokeRoleForIndex
 │       ├── componentSearch.mjs+.d.ts recursive-closure search + freq map
 │       ├── confusionClusters.mjs+.d.ts hand-curated leech clusters
@@ -74,7 +79,7 @@ Four web apps deployed together via GitHub Pages:
 │   ├── extract-chinese.mjs          chinese-lexicon → public/data*.json
 │   ├── extract-phonetic-components.mjs ranks sound components, dumps JSON
 │   ├── seed-supabase.mjs            bulk-loads ~91k words via service role
-│   └── test-*.mjs                   six headless test files (npm test)
+│   └── test-*.mjs                   ten headless test files (npm test)
 ├── supabase/
 │   └── migrations/
 │       ├── 0001_dictionary.sql
@@ -201,10 +206,14 @@ wrote_at, review_at}` is non-null at a time.
 
 `useReview` hook owns the scheduler:
 
-- Wraps `ts-fsrs` (open-spaced-repetition/ts-fsrs, MIT). FSRS-6 default
-  scheduler at retention 0.9. `src/lib/fsrs.ts` is the thin wrapper:
-  `seedCard`, `gradeCard`, `applyCascadeCredit`, `serialize/deserialize`,
-  `isDue`.
+- Wraps `ts-fsrs` (open-spaced-repetition/ts-fsrs, MIT). FSRS-6 at
+  retention 0.9, **`enable_short_term: false`** — the intraday learning
+  steps (`["1m","10m"]`) are off, so a brand-new card graded Good
+  schedules a real multi-day interval immediately instead of bouncing
+  back in ten minutes. (Without this the schedule felt broken: a word
+  you "reviewed" reappeared on the next page open.) `src/lib/fsrs.ts`
+  is the thin wrapper: `seedCard`, `gradeCard`, `applyCascadeCredit`,
+  `serialize/deserialize`, `isDue`.
 - **All saved words** get a recognition card (saving == queue for learning,
   per the user's stated "learn all my words" goal — statuses are about
   progression, not about whether something is scheduled).
@@ -233,6 +242,12 @@ wrote_at, review_at}` is non-null at a time.
 - **Review** (`#/review`) — SRS queue. Hamburger badge shows "N due".
 - **Phonetics** (`#/phonetics`) — list of top-250 productive sound
   components, each with pinyin + family + a StatusButton.
+- **Sentence** (`#/sentence`) — Sentence Studio. Compose a sentence by
+  tapping chips drawn from your saved words; POS tabs filter the bank.
+  Pure UX, no schedule effect. Draft persists in `localStorage` under
+  `e2.draft`. POS detected by `src/lib/pos.ts` (lookup tables for
+  closed-class + def-prefix heuristic — the dictionary doesn't carry
+  POS tags so we infer).
 - **Network** (`/Ai-/network/`) — static Cytoscape graph; `?focus=<key>`
   centers + highlights a saved word/char on load (used by CharPopup's
   "Show in network →" button).
@@ -260,22 +275,37 @@ wrote_at, review_at}` is non-null at a time.
 - `useReview` owns FSRS scheduling; mirrors `user_fsrs_state`. Exposes
   `dueCards`, `grade(itemKey, rating, kind?, facet?)`,
   `attributeFailure(childKey)`.
-- `useModalStack` integrates with `history.pushState` for the tree-modal
-  back-button stack. Top-level pages (Review, Phonetics) use plain
-  `#/foo` hash routing in App.tsx instead.
+- `useModalStack` integrates with `history.pushState` for the modal
+  back-button stack. A stack entry is `{ kind: "word"|"char", key,
+  view?: "sheet"|"tree" }` — `view` defaults to `"sheet"` (EntitySheet);
+  `"tree"` renders the full d3 `TreeModal`. App.tsx renders only the
+  top entry. Tapping anything (home grid, search result, tree node,
+  a piece inside a sheet) does `push({ kind, key })` — i.e. opens a
+  sheet, which can stack. Tapping the `⤢` in a sheet does
+  `push({ ...top, view: "tree" })`. Top-level pages (Review, Phonetics,
+  Sentence) use plain `#/foo` hash routing in App.tsx instead.
 - `useStrokeData` is a per-session cache around
   `HanziWriter.loadCharacterData`.
 - `DecompositionTree` mounts d3-hierarchy + d3-zoom on an SVG ref; node
   cards are React components rendered into `<foreignObject>` slots
   positioned by d3 layout. Card heights estimated per-content; layout
   reflows accordingly.
-- `CharPopup` opens on tree-node tap: stroke animation, full
-  definitions, StatusButton, "Show in network →" link, list of saved
-  words containing this character.
+- `EntitySheet` is the unified detail surface (replaces the old
+  CharPopup + WordDetail): a bottom sheet on mobile (drag-handle,
+  slides up, swipe down to dismiss), a centered modal on desktop.
+  Opened by every word / character / component tap. Takes either a
+  `word` (multi-char) or a `charKey`; a single-char word renders the
+  same as a bare character. Sections: eyebrow (`PINYIN · TONE n ·
+  TOP n`) → tappable stroke animation (single chars) or 🔊 (words) →
+  POS + glosses → `Nº 01 · ETYMOLOGY` / `MADE OF` (one level — each
+  piece is a button into its own sheet; the `⤢` opens the full d3
+  tree) → `Nº 02 · IN YOUR SAVED WORDS` (chars) / `CHARACTERS` (words)
+  → `💡 MAKE IT STICK` mnemonic → "Show in network →". The static
+  `/network/` page's own popup is left separate (different codebase).
 
 ### Tests
 
-`npm test` chains nine headless Node test files under `scripts/` — 87
+`npm test` chains ten headless Node test files under `scripts/` — 98
 cases total. All run with stock Node (no build, no jsdom).
 
 - `test-components.mjs` — graph-data builder for `/components/` page
@@ -291,11 +321,13 @@ cases total. All run with stock Node (no build, no jsdom).
 - `test-confusion-clusters.mjs` — cluster lookup helpers used by the
   leech disambig view
 - `test-pinyin.mjs` — `normalizePinyin` tone-stripping + multibyte
-  edge cases
+  edge cases; `tonePattern` / `toneLabel` per-syllable tone numbers
 - `test-mnemonics.mjs` — `buildStarterMnemonic` template against
   role-tagged components
 - `test-cluster-recall.mjs` — `pickCluster` picker: phonetic-family
   preference, shared-char fallback, plain-sample fallback, size cap
+- `test-pos.mjs` — `detectPos` heuristic used by the Sentence Studio
+  POS tabs (lookup tables + def-prefix patterns)
 
 Where a function lives in TypeScript and the test needs a pure-JS
 counterpart (e.g. the `expectedCards` rule inside `useReview`), the
@@ -337,7 +369,7 @@ after a chinese-lexicon update:
 
 - `npm run dev` for a Vite dev server with HMR.
 - `npm run build` produces `dist/`; `npm run preview` serves it locally.
-- `npm test` runs all six headless test files (~57 cases).
+- `npm test` runs all ten headless test files (~96 cases).
 - Bump the `chinese vN` version label in the `<HamburgerMenu />` props
   inside `App.tsx` on every push so you can verify the right build is
   live from your phone (the version is shown at the bottom of the
