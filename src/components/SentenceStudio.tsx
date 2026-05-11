@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Word } from "../lib/types";
 import { POS_COLOR, POS_LABEL, detectPos, type Pos } from "../lib/pos";
+import { normalizePinyin, HAN_RE } from "../lib/pinyin";
 import { useSentenceDraft } from "../hooks/useSentenceDraft";
+import { useSavedSentences } from "../hooks/useSavedSentences";
 import { speak } from "../lib/speech";
 
 interface Props {
@@ -26,20 +28,37 @@ const TABS: { id: Pos | "all"; label: string }[] = [
   { id: "part", label: "Particle" },
 ];
 
-// Sentence Studio (E2): tap a saved word to append it to the composer,
-// tap a composer token to remove it. POS tabs filter the bank. Drafts
-// persist in localStorage; nothing here touches the SRS schedule.
+// Does this word match a typed query? Pinyin queries (no Han chars) match
+// against the tone-stripped searchable pinyin; queries containing Han
+// chars match against the hanzi. Substring match either way — forgiving.
+function matchesQuery(w: Word, rawQuery: string): boolean {
+  const q = rawQuery.trim();
+  if (!q) return true;
+  if (HAN_RE.test(q)) return w.word.includes(q);
+  const nq = normalizePinyin(q);
+  if (!nq) return true;
+  const np = w.searchablePinyin ? normalizePinyin(w.searchablePinyin) : normalizePinyin(w.pinyin);
+  return np.includes(nq);
+}
+
+// Sentence Studio (E2): build a sentence from your saved words. Tap a
+// chip to append a token, tap a composer token to remove it. Type
+// pinyin into the composer to filter the bank to matching words; tap a
+// match and the typed pinyin is replaced by that word's token. POS tabs
+// filter the bank when not searching. Save sentences locally; nothing
+// here touches the SRS schedule.
 //
-// Design from claude.ai/design → "Hifi E2" handoff. Visual notes:
-//   - Uses the app's existing palette (--bg, --surface-2, --accent),
-//     not the handoff's vermillion / Fraunces stack. The "don't go
-//     over the head" cue.
-//   - POS color stripe on each chip + token shadow keeps the handoff's
-//     functional color hint.
+// Visual notes: uses the app palette (--bg / --surface-2 / --accent),
+// not the handoff's vermillion / Fraunces stack. POS color stripe on
+// each chip + token keeps the handoff's functional color hint.
 export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: Props) {
-  const { keys, append, removeAt, clear } = useSentenceDraft();
+  const { keys, append, removeAt, clear, replace } = useSentenceDraft();
+  const sentences = useSavedSentences();
   const [tab, setTab] = useState<Pos | "all">("all");
+  const [query, setQuery] = useState("");
   const [copied, setCopied] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Warm the dictionary cache for everything the bank wants to render.
   useEffect(() => {
@@ -66,13 +85,16 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
     return c;
   }, [bank]);
 
-  const visible = useMemo(
-    () => (tab === "all" ? bank : bank.filter((b) => b.pos === tab)),
-    [bank, tab],
-  );
+  const q = query.trim();
+  const searching = q.length > 0;
+  // When the user is typing pinyin, the bank shows matches across ALL
+  // saved words (the POS tab is ignored — "search through everything").
+  const visible = useMemo(() => {
+    if (searching) return bank.filter(({ word }) => matchesQuery(word, q));
+    return tab === "all" ? bank : bank.filter((b) => b.pos === tab);
+  }, [bank, tab, searching, q]);
 
-  // Composer tokens = the draft keys resolved through findWord. Lookup
-  // happens on every render; cheap (Map.get).
+  // Composer tokens = the draft keys resolved through findWord.
   const tokens = useMemo(
     () =>
       keys
@@ -84,6 +106,12 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
   const empty = tokens.length === 0;
   const sentencePinyin = tokens.map((t) => t.word.pinyin).join(" ");
   const sentenceHanzi = tokens.map((t) => t.word.word).join("");
+
+  const addWord = (w: string) => {
+    append(w);
+    setQuery("");
+    inputRef.current?.focus();
+  };
 
   const handleCopy = async () => {
     if (empty) return;
@@ -103,6 +131,25 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
     }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const handleSave = () => {
+    if (empty) return;
+    sentences.add({ keys, hanzi: sentenceHanzi, pinyin: sentencePinyin });
+    setSavedFlash(true);
+    window.setTimeout(() => setSavedFlash(false), 1600);
+  };
+
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && query === "" && tokens.length > 0) {
+      removeAt(tokens.length - 1);
+    } else if (e.key === "Enter" && searching && visible.length > 0) {
+      e.preventDefault();
+      addWord(visible[0].word.word);
+    } else if (e.key === "Escape" && query !== "") {
+      e.preventDefault();
+      setQuery("");
+    }
   };
 
   return (
@@ -131,44 +178,51 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
               <button
                 type="button"
                 className="composer-clear"
-                onClick={clear}
+                onClick={() => {
+                  clear();
+                  setQuery("");
+                }}
                 disabled={empty}
                 aria-label="Clear sentence"
               >
                 clear
               </button>
             </div>
-            <div
-              className={`composer-canvas${empty ? " is-empty" : ""}`}
-              role="group"
-              aria-label="Sentence in progress"
-            >
-              {empty ? (
-                <div className="composer-placeholder">
-                  Tap words below to start building.
-                </div>
-              ) : (
-                <div className="composer-tokens">
-                  {tokens.map((t, i) => (
-                    <button
-                      key={`${t.word.word}-${i}`}
-                      type="button"
-                      className="composer-token"
-                      style={{ ["--pos-c" as never]: POS_COLOR[t.pos] }}
-                      onClick={() => removeAt(i)}
-                      aria-label={`Remove ${t.word.word}`}
-                    >
-                      <span className="composer-token-c">{t.word.word}</span>
-                      <span className="composer-token-p">{t.word.pinyin}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div className="composer-canvas" role="group" aria-label="Sentence in progress">
+              <div className="composer-tokens">
+                {tokens.map((t, i) => (
+                  <button
+                    key={`${t.word.word}-${i}`}
+                    type="button"
+                    className="composer-token"
+                    style={{ ["--pos-c" as never]: POS_COLOR[t.pos] }}
+                    onClick={() => removeAt(i)}
+                    aria-label={`Remove ${t.word.word}`}
+                  >
+                    <span className="composer-token-c">{t.word.word}</span>
+                    <span className="composer-token-p">{t.word.pinyin}</span>
+                  </button>
+                ))}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="composer-input"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={onInputKeyDown}
+                  placeholder={
+                    empty ? "Type pinyin, or tap a word below…" : "+ pinyin…"
+                  }
+                  aria-label="Add a word by typing pinyin"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                />
+              </div>
             </div>
             <div className="composer-foot">
-              <span className="composer-pinyin">
-                {empty ? "—" : sentencePinyin}
-              </span>
+              <span className="composer-pinyin">{empty ? "—" : sentencePinyin}</span>
               {!empty && (
                 <button
                   type="button"
@@ -182,30 +236,66 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
             </div>
           </div>
 
-          <div className="pos-tabs" role="tablist" aria-label="Filter word bank by part of speech">
-            {TABS.map((t) => {
-              const n = counts[t.id] || 0;
-              const isActive = tab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  className={`pos-tab${isActive ? " is-active" : ""}`}
-                  onClick={() => setTab(t.id)}
-                >
-                  <span>{t.label}</span>
-                  <span className="pos-tab-count">{n}</span>
-                </button>
-              );
-            })}
-          </div>
+          {sentences.items.length > 0 && (
+            <div className="saved-sentences">
+              <div className="saved-sentences-head">Saved sentences</div>
+              <div className="saved-sentences-list">
+                {sentences.items.map((s) => (
+                  <div key={s.id} className="saved-sentence-row">
+                    <button
+                      type="button"
+                      className="saved-sentence-load"
+                      onClick={() => {
+                        replace(s.keys);
+                        setQuery("");
+                      }}
+                      title="Load into the composer"
+                    >
+                      <span className="saved-sentence-hanzi">{s.hanzi}</span>
+                      <span className="saved-sentence-pinyin">{s.pinyin}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="saved-sentence-del"
+                      aria-label={`Delete saved sentence ${s.hanzi}`}
+                      onClick={() => sentences.remove(s.id)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!searching && (
+            <div className="pos-tabs" role="tablist" aria-label="Filter word bank by part of speech">
+              {TABS.map((t) => {
+                const n = counts[t.id] || 0;
+                const isActive = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`pos-tab${isActive ? " is-active" : ""}`}
+                    onClick={() => setTab(t.id)}
+                  >
+                    <span>{t.label}</span>
+                    <span className="pos-tab-count">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <div className="word-bank">
             {visible.length === 0 ? (
               <div className="review-empty-hint" style={{ padding: "20px 16px" }}>
-                No saved {tab === "all" ? "words" : POS_LABEL[tab]} yet.
+                {searching
+                  ? `No saved word matches “${q}”.`
+                  : `No saved ${tab === "all" ? "words" : POS_LABEL[tab]} yet.`}
               </div>
             ) : (
               visible.map(({ word, pos }) => (
@@ -214,7 +304,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
                   type="button"
                   className="bank-chip"
                   style={{ ["--pos-c" as never]: POS_COLOR[pos] }}
-                  onClick={() => append(word.word)}
+                  onClick={() => addWord(word.word)}
                 >
                   <span className="bank-chip-c">{word.word}</span>
                   <span className="bank-chip-meta">
@@ -230,6 +320,14 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, onClose }: 
           </div>
 
           <div className="sentence-cta-wrap">
+            <button
+              type="button"
+              className="sentence-cta sentence-cta-2nd"
+              onClick={handleSave}
+              disabled={empty}
+            >
+              {savedFlash ? "✓ Saved" : "Save sentence"}
+            </button>
             <button
               type="button"
               className="sentence-cta"

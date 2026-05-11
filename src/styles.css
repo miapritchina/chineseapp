@@ -1883,11 +1883,14 @@ body {
   inset: 0;
   z-index: 60;
   background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Plain block scroll container — NOT a flex column. As a fixed-height
+     flex column it would squeeze the scrollable .pos-tabs strip down to
+     ~0 (an overflow:auto flex item has automatic minimum size 0), which
+     clipped the tab labels. */
+  display: block;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: env(safe-area-inset-top);
 }
 
 .composer {
@@ -1924,26 +1927,32 @@ body {
 .composer-clear:hover:not(:disabled) { color: var(--accent); }
 .composer-clear:disabled { opacity: 0.4; cursor: default; }
 .composer-canvas {
-  min-height: 72px;
+  min-height: 64px;
   padding: 10px 4px;
   border-top: 1px dashed var(--border);
   border-bottom: 1px dashed var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.composer-canvas.is-empty .composer-placeholder {
-  font-size: 14px;
-  color: var(--muted);
-  font-style: italic;
 }
 .composer-tokens {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   width: 100%;
-  align-items: baseline;
+  align-items: center;
 }
+/* Inline pinyin search — type to filter the bank; tap a match below to
+   append it (the typed pinyin is then cleared). */
+.composer-input {
+  flex: 1 1 110px;
+  min-width: 90px;
+  border: none;
+  background: transparent;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  padding: 8px 2px;
+}
+.composer-input::placeholder { color: var(--muted); font-style: italic; }
 .composer-token {
   display: inline-flex;
   flex-direction: column;
@@ -2014,6 +2023,7 @@ body {
 
 .pos-tabs {
   display: flex;
+  flex-shrink: 0;
   gap: 6px;
   padding: 6px 12px 10px;
   overflow-x: auto;
@@ -2059,7 +2069,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  padding: 0 14px 96px;
+  padding: 0 14px calc(120px + env(safe-area-inset-bottom));
 }
 .bank-chip {
   position: relative;
@@ -2132,9 +2142,10 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, transparent 0%, var(--bg) 40%);
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, var(--bg) 45%);
   display: flex;
+  gap: 10px;
   justify-content: center;
   pointer-events: none;
 }
@@ -2142,8 +2153,9 @@ body {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 12px 22px;
+  padding: 12px 20px;
   background: var(--accent);
   color: #fff;
   border: none;
@@ -2155,11 +2167,84 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   -webkit-tap-highlight-color: transparent;
 }
+.sentence-cta-2nd {
+  background: var(--surface, var(--bg));
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
 .sentence-cta:hover:not(:disabled) { filter: brightness(1.06); }
+.sentence-cta-2nd:hover:not(:disabled) { background: var(--surface-2); filter: none; }
 .sentence-cta:disabled {
   opacity: 0.4;
   cursor: default;
   box-shadow: none;
+}
+
+/* Saved sentences list (between the composer and the bank). */
+.saved-sentences { padding: 8px 16px 4px; }
+.saved-sentences-head {
+  font-size: 11px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.saved-sentences-list { display: flex; flex-direction: column; gap: 4px; }
+.saved-sentence-row { display: flex; align-items: center; gap: 6px; }
+.saved-sentence-load {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.saved-sentence-load:hover, .saved-sentence-load:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+.saved-sentence-hanzi {
+  font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  font-size: 17px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+.saved-sentence-pinyin {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 2;
+}
+.saved-sentence-del {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.saved-sentence-del:hover, .saved-sentence-del:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  outline: none;
 }
 
 @media (max-width: 380px) {
