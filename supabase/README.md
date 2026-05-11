@@ -76,6 +76,8 @@ disk, gone the moment the run finishes).
 | `0005_user_saves_wrote.sql` | `wrote_at` column |
 | `0006_user_saves_review.sql` | `review_at` column ("Need to learn" tier) |
 | `0007_fsrs_state.sql` | `user_fsrs_state(user_id, item_key, item_kind, facet, card jsonb, due_at, last_review_at)` for the SRS scheduler |
+| `0008_user_mnemonics.sql` | `user_mnemonics(user_id, key, text, edited, updated_at)` — per-key "make it stick" notes |
+| `0009_user_sentences.sql` | `user_sentences(user_id, hanzi, keys jsonb, pinyin, created_at)` (saved sentences, PK user_id+hanzi) + `user_sentence_draft(user_id, keys jsonb, updated_at)` (one in-progress composer draft per user) |
 
 `user_saves` enforces "at most one of `{learned_at, wrote_at, review_at}`
 non-null at a time" by client convention (no DB constraint) — that's how

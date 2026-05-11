@@ -51,7 +51,7 @@ hamburger. Removing a page is removing those two anchors.
 | `public/data-chars.json` | ~10k chars + components + etymology | Static, built once via `extract-chinese.mjs` |
 | `public/phonetic-components.json` | Top-250 productive sound components | Static, built via `extract-phonetic-components.mjs` |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
-| Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics` (+ planned `user_sentences`) | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
+| Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
 
 ### Data persistence policy (user directive)
 
@@ -64,12 +64,16 @@ the DB with the DB winning. Public derivable data (dictionary rows,
 cached locally — user state that exists nowhere else may not. Every new
 user-data feature ships with a table + RLS + sync from day one.
 
+Done: the Sentence Studio is on board — `useSavedSentences` →
+`user_sentences` (PK `user_id,hanzi`, so re-saving bumps `created_at`),
+`useSentenceDraft` → `user_sentence_draft` (one row per user); migration
+`0009_user_sentences.sql`; cloud wins on sign-in, local is the cache.
+
 Open gap (pre-dates the directive): `useSaved` / `useReview` /
 `useMnemonics` still treat `localStorage` as authoritative when signed
-out, and the Sentence Studio is local-only with no DB table. Closing it
-needs a `user_sentences` migration + a rework of those hooks so the DB
-leads. Until then the cloud-mirror pattern below is the *current*
-behavior, not the *target* one.
+out — they need the same flip so the DB always leads. Until then the
+cloud-mirror pattern below is the *current* behavior for those three,
+not the *target* one.
 
 ### Why chars are static but words are not
 
@@ -386,12 +390,12 @@ For a function that's plain JS today (`componentSearch.mjs`,
 
 ## Open work / explicitly deferred
 
-- **Cloud-first rework** (user directive) — make Supabase the source of
-  truth for every piece of user data, demoting `localStorage` to a pure
-  offline cache. Needs a `user_sentences` migration (composer draft +
-  saved sentences) and a rework of `useSaved` / `useReview` /
-  `useMnemonics` / `useSentenceDraft` / `useSavedSentences` so the DB
-  leads instead of the local copy. See the Data persistence policy.
+- **Cloud-first rework, part 2** (user directive) — the Sentence Studio
+  is done (migration `0009`, `useSentenceDraft` / `useSavedSentences`
+  now DB-led). Still to do: flip `useSaved` / `useReview` /
+  `useMnemonics` so the DB is authoritative even when signed out (today
+  they treat the local copy as the source of truth offline). See the
+  Data persistence policy.
 - **FSRS optimizer** — train custom params from the review log.
   Wait until the user has ~1,000 reviews. The package is
   `@open-spaced-repetition/binding`.

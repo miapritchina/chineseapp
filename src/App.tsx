@@ -316,7 +316,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v82"
+          version="chinese v83"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -391,6 +391,7 @@ export function App() {
           savedWords={savedList.map((s) => s.word)}
           findWord={dict.findWord}
           ensureCached={dict.ensureCached}
+          userId={auth.user?.id ?? null}
           onClose={() => closeHashPage("#/sentence")}
         />
       )}
