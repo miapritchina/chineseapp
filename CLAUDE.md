@@ -22,13 +22,19 @@
 > (`CREATE TABLE IF NOT EXISTS`, idempotent) and don't auto-merge — the
 > user re-runs the Setup Supabase workflow.
 >
-> Status: the Sentence Studio is on board — `useSavedSentences` →
-> `user_sentences` (PK `user_id,hanzi`), `useSentenceDraft` →
-> `user_sentence_draft` (one row per user), migration
-> `0009_user_sentences.sql`; cloud wins on sign-in, localStorage is just
-> the offline cache. Still to close: `useSaved`, `useReview`,
-> `useMnemonics` treat `localStorage` as authoritative when signed out —
-> they need the same flip so the DB always leads.
+> Implemented: every user-data hook (`useSaved`, `useReview`,
+> `useMnemonics`, `useSentenceDraft`, `useSavedSentences`) hydrates from
+> its `localStorage` cache for instant paint, then reconciles against
+> Supabase on sign-in **and on every tab focus** (throttled ~20s) — DB
+> wins on conflict (per-key newer-wins where a timestamp exists; for FSRS
+> cards, more-reps-wins so a re-sync can't drop a just-graded card).
+> Tables: `user_saves`, `user_fsrs_state`, `user_mnemonics`,
+> `user_sentences` (PK `user_id,hanzi`), `user_sentence_draft` (one row
+> per user). **Known limitation:** the merge is union-with-remote-wins,
+> so a *deletion* made on another device doesn't propagate to a device
+> that still has the item cached locally (no tombstones) — fixing that
+> needs a tombstone column or a "wholesale replace on re-sync" pass; not
+> done yet.
 
 Four web apps deployed together via GitHub Pages:
 

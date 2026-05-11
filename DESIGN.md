@@ -64,16 +64,21 @@ the DB with the DB winning. Public derivable data (dictionary rows,
 cached locally — user state that exists nowhere else may not. Every new
 user-data feature ships with a table + RLS + sync from day one.
 
-Done: the Sentence Studio is on board — `useSavedSentences` →
-`user_sentences` (PK `user_id,hanzi`, so re-saving bumps `created_at`),
-`useSentenceDraft` → `user_sentence_draft` (one row per user); migration
-`0009_user_sentences.sql`; cloud wins on sign-in, local is the cache.
+Done: every user-data hook (`useSaved`, `useReview`, `useMnemonics`,
+`useSentenceDraft`, `useSavedSentences`) hydrates from its `localStorage`
+cache, then reconciles against Supabase on sign-in **and on every tab
+focus** (throttled ~20 s). DB wins on conflict — per-key newer-wins
+where a timestamp exists; for FSRS cards, more-reps-wins so a focus
+re-sync can't drop a card graded on this device before its write lands.
+Tables: `user_saves`, `user_fsrs_state`, `user_mnemonics`,
+`user_sentences` (PK `user_id,hanzi`), `user_sentence_draft` (one row
+per user; migration `0009_user_sentences.sql`).
 
-Open gap (pre-dates the directive): `useSaved` / `useReview` /
-`useMnemonics` still treat `localStorage` as authoritative when signed
-out — they need the same flip so the DB always leads. Until then the
-cloud-mirror pattern below is the *current* behavior for those three,
-not the *target* one.
+Known limitation: the reconcile is union-with-remote-wins, so a
+*deletion* on another device doesn't propagate to a device that still
+has the item cached locally (no tombstones / no "wholesale replace on
+re-sync" pass). Acceptable for a single-user app that's usually signed
+in; revisit if it bites.
 
 ### Why chars are static but words are not
 
@@ -85,24 +90,26 @@ fetches are tolerable.
 
 ### Cloud-first + local cache pattern
 
-Every persisted state follows the same shape (target shape — see the
-persistence policy above for the gap between this and today's code):
+Every persisted state follows the same shape:
 
 1. `useFoo` hook owns a Map<key, value> in React state.
 2. On first paint, hydrate from `localStorage` so there's no flash.
-3. On `userId` change (sign in), the hook does ONE catch-up sync:
-   - Read remote → it wins; merge into state; refresh the local cache.
-   - Any local-only entries (offline edits) get uploaded.
+3. `reconcile()`: read remote → DB wins on conflict; merge into state;
+   refresh the `localStorage` cache; upload any local-only entries
+   (covers pre-account / offline edits). Called on sign-in **and** on
+   tab focus (`visibilitychange` / `window.focus`), throttled ~20 s by
+   a `lastReconcileAtRef` so quick app-switches don't hammer the API.
 4. Each mutation writes to React state, refreshes the `localStorage`
    cache, and writes through to Supabase fire-and-forget.
 5. Network/migration errors are downgraded to warnings — the app keeps
-   working offline, then reconciles on the next successful sync. The
-   local copy is a cache, never the authority.
+   working off the cache, then reconciles on the next successful pull.
+   The local copy is a cache, never the authority.
 
-Files: `useSaved.ts`, `useReview.ts`, `useMnemonics.ts` follow most of
-this (they currently treat the local copy as authoritative when signed
-out — a known gap). New persisted state should clone the *target*
-pattern and ship a DB table from the start; never local-only.
+Files: `useSaved.ts`, `useReview.ts`, `useMnemonics.ts`,
+`useSentenceDraft.ts`, `useSavedSentences.ts` all follow this. New
+persisted state should clone it and ship a DB table from day one —
+never local-only. (The composer draft is a single per-user row rather
+than a Map, but the lifecycle is the same.)
 
 ### Migration discipline
 
@@ -390,12 +397,14 @@ For a function that's plain JS today (`componentSearch.mjs`,
 
 ## Open work / explicitly deferred
 
-- **Cloud-first rework, part 2** (user directive) — the Sentence Studio
-  is done (migration `0009`, `useSentenceDraft` / `useSavedSentences`
-  now DB-led). Still to do: flip `useSaved` / `useReview` /
-  `useMnemonics` so the DB is authoritative even when signed out (today
-  they treat the local copy as the source of truth offline). See the
-  Data persistence policy.
+- **Cross-device deletion propagation** — the cloud-first rework is
+  done (all five user-data hooks reconcile on sign-in + focus, DB wins
+  on conflict). The one remaining hole: a *deletion* on another device
+  doesn't propagate to a device that still has the item cached, because
+  the reconcile is union-with-remote-wins. Fixing it needs a tombstone
+  column or a "wholesale replace local with remote on re-sync, keeping
+  only edits newer than the last reconcile" pass. Low priority for a
+  single-user app.
 - **FSRS optimizer** — train custom params from the review log.
   Wait until the user has ~1,000 reviews. The package is
   `@open-spaced-repetition/binding`.
