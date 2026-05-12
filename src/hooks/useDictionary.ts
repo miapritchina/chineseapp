@@ -89,6 +89,16 @@ export function useDictionary() {
           .map((r) => byWord.get(r.word))
           .filter((w): w is Word => !!w);
       }
+
+      // An exact-hanzi hit always outranks substring/compound matches —
+      // searching 中国 must surface 中国 above 发展中国家 even if the RPC's
+      // tiering doesn't. Stable partition: exact match(es) first, rest in
+      // their original tier order.
+      const exact = hydrated.filter((w) => w.word === trimmed);
+      if (exact.length > 0 && hydrated[0]?.word !== trimmed) {
+        hydrated = [...exact, ...hydrated.filter((w) => w.word !== trimmed)];
+      }
+
       ingest(hydrated);
 
       // Cache + bound size.
