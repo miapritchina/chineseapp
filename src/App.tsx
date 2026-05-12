@@ -26,6 +26,7 @@ import { SentenceStudio } from "./components/SentenceStudio";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
+import { buildShareUrl, decodeWords } from "./lib/share";
 
 import type { Word } from "./lib/types";
 
@@ -269,6 +270,41 @@ export function App() {
     })();
   }, [auth.loading, importSaved]);
 
+  // Auto-import via ?share=<token> — a self-contained "share my words" link
+  // (the word list is encoded in the URL, no backend; see src/lib/share.ts).
+  // Same confirm + auth-loading gate as ?import=.
+  const autoShareRanRef = useRef(false);
+  useEffect(() => {
+    if (autoShareRanRef.current) return;
+    if (auth.loading) return;
+    autoShareRanRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("share");
+    if (!token) return;
+
+    (async () => {
+      try {
+        const items = decodeWords(token);
+        if (!items) {
+          alert("This share link looks broken or empty.");
+          return;
+        }
+        const ok = window.confirm(
+          `Someone shared ${items.length} word${items.length === 1 ? "" : "s"} with you. Add them to your saved list?`,
+        );
+        if (!ok) return;
+        const { added, total } = await importSaved(items);
+        const skipped = total - added;
+        const skippedNote = skipped > 0 ? ` (${skipped} already saved)` : "";
+        alert(`Added ${added} word${added === 1 ? "" : "s"}${skippedNote}.`);
+      } finally {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("share");
+        window.history.replaceState({}, "", url.toString());
+      }
+    })();
+  }, [auth.loading, importSaved]);
+
   // Auto-clear via ?clear=1. Symmetric to ?import=. Always confirms first;
   // wipes localStorage + (if signed in) every user_saves row for the user.
   // Same auth-loading gate as ?import= — without it the DB rows survive and
@@ -301,6 +337,41 @@ export function App() {
     }
   };
 
+  // Build a self-contained share link for the saved set and hand it off via
+  // the native share sheet (mobile) or the clipboard (desktop / fallback).
+  const shareMyWords = () => {
+    if (savedList.length === 0) {
+      alert("You haven't saved any words yet — nothing to share.");
+      return;
+    }
+    const words = savedList.map((s) => s.word);
+    const url = buildShareUrl(words);
+    const label = `${words.length} word${words.length === 1 ? "" : "s"}`;
+    void (async () => {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        try {
+          await navigator.share({
+            title: "My Chinese words",
+            text: `Here are ${label} I've saved — open the link to add them to your list.`,
+            url,
+          });
+          return;
+        } catch (err) {
+          // User dismissed the share sheet — don't fall through to copy.
+          if (err instanceof Error && err.name === "AbortError") return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(
+          `Share link copied (${label}). Send it to anyone — opening it adds these words to their saved list.`,
+        );
+      } catch {
+        window.prompt(`Copy this link to share your ${label}:`, url);
+      }
+    })();
+  };
+
   const openWord = async (word: string) => {
     await dict.ensureCached([word]);
     push({ kind: "word", key: word });
@@ -316,11 +387,13 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v84"
+          version="chinese v85"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
           sentenceHref="#/sentence"
+          onShareWords={shareMyWords}
+          wordCount={savedList.length}
         />
         <h1>中文</h1>
         <div className="topbar-end">

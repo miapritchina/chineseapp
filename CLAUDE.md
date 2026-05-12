@@ -98,6 +98,7 @@ Four web apps deployed together via GitHub Pages:
 │       ├── componentSearch.mjs+.d.ts recursive-closure search + freq map
 │       ├── confusionClusters.mjs+.d.ts hand-curated leech clusters
 │       ├── fsrs.ts                  ts-fsrs wrapper + cascade math
+│       ├── share.ts                 encode/decode the saved set ↔ ?share= link
 │       └── supabase.ts              client + wakeUp ping
 ├── public/
 │   ├── data-chars.json              ~10k chars + components + etymology
@@ -112,7 +113,7 @@ Four web apps deployed together via GitHub Pages:
 │   ├── extract-chinese.mjs          chinese-lexicon → public/data*.json
 │   ├── extract-phonetic-components.mjs ranks sound components, dumps JSON
 │   ├── seed-supabase.mjs            bulk-loads ~91k words via service role
-│   └── test-*.mjs                   ten headless test files (npm test)
+│   └── test-*.mjs                   eleven headless test files (npm test)
 ├── supabase/
 │   └── migrations/
 │       ├── 0001_dictionary.sql
@@ -298,6 +299,16 @@ wrote_at, review_at}` is non-null at a time.
   "Show in network →" button).
 - **Components** (`/Ai-/components/`) — static Cytoscape vocabulary-
   structure graph (words → chars → components, all bounded by saved set).
+- **Share my words** — not a page; an action. Builds a self-contained
+  link (`?share=<url-safe-base64 of the saved-word list as JSON>` — no
+  backend, no stored share record; the payload is just a copy of
+  `user_saves`) and hands it off via `navigator.share` (mobile) or the
+  clipboard (desktop / fallback). Opening such a link fires the
+  `?share=` handler in `App.tsx` — confirm, then `importSaved` (which
+  syncs to `user_saves` as usual). Encode/decode lives in
+  `src/lib/share.ts`; round-trip is pinned by `scripts/test-share.mjs`.
+  (Sibling of the older `?import=<same-origin-json-url>` and `?clear=1`
+  query-param handlers.)
 
 ### Search has two modes
 
@@ -350,7 +361,7 @@ wrote_at, review_at}` is non-null at a time.
 
 ### Tests
 
-`npm test` chains ten headless Node test files under `scripts/` — 98
+`npm test` chains eleven headless Node test files under `scripts/` — ~105
 cases total. All run with stock Node (no build, no jsdom).
 
 - `test-components.mjs` — graph-data builder for `/components/` page
@@ -373,6 +384,8 @@ cases total. All run with stock Node (no build, no jsdom).
   preference, shared-char fallback, plain-sample fallback, size cap
 - `test-pos.mjs` — `detectPos` heuristic used by the Sentence Studio
   POS tabs (lookup tables + def-prefix patterns)
+- `test-share.mjs` — `encodeWords` / `decodeWords` round-trip behind the
+  "Share my words" link (url-safe base64, UTF-8, garbage-token handling)
 
 Where a function lives in TypeScript and the test needs a pure-JS
 counterpart (e.g. the `expectedCards` rule inside `useReview`), the
@@ -414,7 +427,7 @@ after a chinese-lexicon update:
 
 - `npm run dev` for a Vite dev server with HMR.
 - `npm run build` produces `dist/`; `npm run preview` serves it locally.
-- `npm test` runs all ten headless test files (~96 cases).
+- `npm test` runs all eleven headless test files (~105 cases).
 - Bump the `chinese vN` version label in the `<HamburgerMenu />` props
   inside `App.tsx` on every push so you can verify the right build is
   live from your phone (the version is shown at the bottom of the

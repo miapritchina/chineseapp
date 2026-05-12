@@ -7,6 +7,8 @@ interface Props {
   reviewBadge?: number;
   phoneticsHref?: string | null;
   sentenceHref?: string | null;
+  onShareWords?: () => void;
+  wordCount?: number;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
@@ -18,6 +20,8 @@ export function HamburgerMenu({
   reviewBadge = 0,
   phoneticsHref = null,
   sentenceHref = null,
+  onShareWords,
+  wordCount = 0,
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -114,6 +118,20 @@ export function HamburgerMenu({
           <a role="menuitem" className="hamburger-item" href="./components/">
             <span>Components</span>
           </a>
+          {onShareWords && (
+            <button
+              type="button"
+              role="menuitem"
+              className="hamburger-item"
+              onClick={() => {
+                onShareWords();
+                setOpen(false);
+              }}
+            >
+              <span>Share my words</span>
+              {wordCount > 0 && <span className="hamburger-soon">{wordCount}</span>}
+            </button>
+          )}
           <div className="hamburger-divider" />
           <div className="hamburger-version">{version}</div>
         </div>
