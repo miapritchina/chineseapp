@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Style Guide — Chinese-Character Learning App</title>
+<style>
+/* ── Tokens (inline copy of design-tokens.css) ─────────────────── */
+:root {
+  color-scheme: light dark;
+  --bg: #faf8f4; --card-bg: #ffffff; --surface-2: #f0ece4;
+  --text: #1d1b18; --muted: #6b6359; --accent: #b12a2a; --border: #e4dfd5;
+  --role-iconic: #2563eb; --role-meaning: #16a34a; --role-sound: #dc2626;
+  --role-simplified: #9333ea; --role-deleted: #6b7280; --role-unknown: #6b7280;
+  --role-word: #1d1b18;
+  --pos-pron: #6b3a8a; --pos-v: #b14430; --pos-n: #2f5a8e;
+  --pos-adj: #4f7d3a; --pos-adv: #8a6a26; --pos-part: #8a8273; --pos-conj: #7a6a8a;
+  --status-saved: #d97706; --status-review: #c2410c;
+  --status-learned: #2e7d32; --status-wrote: #7a3aa8;
+  --grade-again: #b91c1c; --grade-good: #15803d; --grade-easy: #1d4ed8;
+  --feedback-correct: #2e7d32; --feedback-wrong: #b91c1c;
+  --error-bg: #b03a2e; --error-text: #ffffff;
+  --backdrop-sheet: rgba(0,0,0,0.34); --backdrop-popup: rgba(20,18,14,0.42);
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", sans-serif;
+  --font-hanzi: "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16140f; --card-bg: #211e15; --surface-2: #272319;
+    --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
+    --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
+    --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
+    --role-word: #ece7dc;
+    --status-saved: #f59e0b; --status-review: #fb923c;
+    --status-learned: #6dba84; --status-wrote: #b07ad8;
+    --grade-again: #f87171; --grade-good: #4ade80; --grade-easy: #60a5fa;
+    --feedback-correct: #6dba84; --feedback-wrong: #f87171;
+    --backdrop-popup: rgba(0,0,0,0.6);
+  }
+}
+/* Force-dark class for side-by-side preview */
+.force-dark {
+  --bg: #16140f; --card-bg: #211e15; --surface-2: #272319;
+  --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
+  --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
+  --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
+  --role-word: #ece7dc;
+  --status-saved: #f59e0b; --status-review: #fb923c;
+  --status-learned: #6dba84; --status-wrote: #b07ad8;
+  --grade-again: #f87171; --grade-good: #4ade80; --grade-easy: #60a5fa;
+  --feedback-correct: #6dba84; --feedback-wrong: #f87171;
+}
+/* ── Page layout ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg); color: var(--text);
+  margin: 0; padding: 24px; max-width: 960px; margin: 0 auto;
+  line-height: 1.5;
+}
+h1 { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; margin: 0 0 4px; }
+.subtitle { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+h2 {
+  font-size: 11px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted);
+  margin: 40px 0 16px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text); }
+
+/* ── Swatch grid ─────────────────────────────────────────────────── */
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.swatch {
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  font-size: 11px;
+}
+.swatch-color { height: 48px; }
+.swatch-info { padding: 8px 10px; background: var(--bg); }
+.swatch-name { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.5px; color: var(--muted); }
+.swatch-hex { font-family: var(--font-mono); font-size: 12px; margin-top: 2px; }
+
+/* Side-by-side light/dark */
+.side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+.side-panel { padding: 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); }
+.side-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 12px; }
+@media (max-width: 600px) { .side-by-side { grid-template-columns: 1fr; } }
+
+/* ── Type scale ──────────────────────────────────────────────────── */
+.type-row { display: flex; align-items: baseline; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.type-sample { min-width: 0; flex-shrink: 0; }
+.type-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+/* ── Radius / shadow ─────────────────────────────────────────────── */
+.radius-grid { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.radius-item { text-align: center; }
+.radius-box {
+  width: 64px; height: 48px; border: 2px solid var(--accent);
+  background: var(--surface-2); margin-bottom: 4px;
+}
+.radius-label { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+.shadow-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 8px; }
+.shadow-item {
+  width: 120px; height: 80px; border-radius: 14px;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 8px; font-size: 10px; color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+/* ── Component examples ──────────────────────────────────────────── */
+.example-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin: 10px 0; }
+
+/* Card */
+.ex-card {
+  background: var(--card-bg); border-radius: 12px;
+  padding: 14px 8px 12px; text-align: center;
+  width: 120px; position: relative;
+}
+.ex-card-char { font-family: var(--font-hanzi); font-size: 46px; line-height: 1; margin-bottom: 6px; }
+.ex-card-pinyin { font-size: 14px; color: var(--muted); margin-bottom: 2px; }
+.ex-card-gloss { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Status button */
+.ex-status-btn {
+  background: none; border: none; padding: 6px; border-radius: 8px;
+  cursor: pointer; font-size: 16px; line-height: 0;
+}
+.ex-status-menu {
+  min-width: 160px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 4px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.ex-status-item {
+  display: flex; align-items: center; gap: 10px;
+  background: transparent; border: none; border-radius: 8px;
+  padding: 8px 10px; font-size: 14px; cursor: pointer;
+  font-family: var(--font-body); color: var(--text);
+}
+.ex-status-item:hover { background: var(--surface-2); }
+.ex-status-item.current { background: var(--surface-2); font-weight: 500; }
+
+/* Section header */
+.ex-section-head {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ex-section-num, .ex-section-name {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+}
+.ex-section-num { opacity: 0.75; }
+
+/* Eyebrow */
+.ex-eyebrow {
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 2.5px; color: var(--muted); text-transform: uppercase;
+}
+
+/* Chip row */
+.ex-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ex-chip {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+  background: transparent; border: 1px solid var(--border); border-radius: 12px;
+  padding: 8px 6px 6px; cursor: pointer; min-width: 72px;
+}
+.ex-chip:hover { background: var(--surface-2); border-color: var(--accent); }
+.ex-chip-char { font-family: var(--font-hanzi); font-size: 26px; line-height: 1; }
+.ex-chip-pinyin { font-size: 11px; color: var(--muted); }
+
+/* Grade buttons */
+.ex-grade-row { display: flex; gap: 8px; }
+.ex-grade-btn {
+  flex: 1; background: transparent; border: 1px solid var(--border);
+  border-radius: 12px; font-family: var(--font-body);
+  font-size: 15px; font-weight: 500; padding: 14px 8px; cursor: pointer;
+}
+.ex-grade-btn:hover { background: var(--surface-2); }
+
+/* Bottom sheet shell */
+.ex-sheet-demo {
+  position: relative; width: 100%; max-width: 400px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.22);
+  padding: 0 22px 24px;
+}
+.ex-sheet-handle {
+  width: 38px; height: 4px; border-radius: 999px;
+  background: var(--border); margin: 10px auto 12px;
+}
+.ex-sheet-dismiss {
+  position: absolute; top: 16px; right: 18px;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: none; background: var(--surface-2); color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer;
+}
+
+/* Empty state */
+.ex-empty { text-align: center; color: var(--muted); padding: 30px 18px; }
+.ex-empty-title { font-size: 18px; color: var(--text); margin-bottom: 6px; }
+.ex-empty-hint { font-size: 14px; max-width: 30em; margin: 0 auto; }
+
+/* Pill tabs */
+.ex-pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.ex-pill {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); font-family: var(--font-body); font-size: 11px;
+  letter-spacing: 0.4px; padding: 4px 10px; border-radius: 999px;
+  cursor: pointer; text-transform: uppercase;
+}
+.ex-pill:hover { color: var(--text); border-color: var(--text); }
+.ex-pill.active { color: var(--accent); border-color: var(--accent); background: var(--surface-2); }
+
+/* Role-tinted glyph */
+.ex-role-glyph {
+  font-family: var(--font-hanzi); font-size: 48px; line-height: 1;
+  display: inline-block; margin: 0 8px;
+}
+</style>
+</head>
+<body>
+
+<h1>Chinese-Character Learning App</h1>
+<p class="subtitle">Living Style Guide &middot; Paper / Ink / Vermillion</p>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<h2>Color — Core Palette</h2>
+
+<div class="side-by-side">
+  <div class="side-panel" id="light-panel">
+    <div class="side-label">Light</div>
+    <div class="swatch-grid" id="light-swatches"></div>
+  </div>
+  <div class="side-panel force-dark" id="dark-panel">
+    <div class="side-label">Dark</div>
+    <div class="swatch-grid" id="dark-swatches"></div>
+  </div>
+</div>
+
+<h3>Decomposition Role Colors</h3>
+<div class="example-row" id="role-swatches"></div>
+
+<h3>Part-of-Speech Colors</h3>
+<div class="example-row" id="pos-swatches"></div>
+
+<h3>Status Tier Colors</h3>
+<div class="example-row" id="status-swatches"></div>
+
+<h3>Grade Button Colors</h3>
+<div class="example-row" id="grade-swatches"></div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<h2>Typography</h2>
+
+<div id="type-scale"></div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<h2>Border Radius</h2>
+<div class="radius-grid" id="radius-demo"></div>
+
+<h2>Shadows</h2>
+<div class="shadow-grid" id="shadow-demo"></div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<h2>Component Examples</h2>
+
+<h3>Card (Saved Grid)</h3>
+<div class="example-row">
+  <div class="ex-card"><div class="ex-card-char">学</div><div class="ex-card-pinyin">xué</div><div class="ex-card-gloss">to learn; to study</div></div>
+  <div class="ex-card"><div class="ex-card-char">好</div><div class="ex-card-pinyin">hǎo</div><div class="ex-card-gloss">good; well</div></div>
+  <div class="ex-card" style="opacity:0.55"><div class="ex-card-char">中</div><div class="ex-card-pinyin">zhōng</div><div class="ex-card-gloss">middle (syncing…)</div></div>
+</div>
+
+<h3>Status Button + Open Menu</h3>
+<div class="example-row">
+  <div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <span class="ex-status-btn" style="color:var(--muted)">☆</span>
+      <span class="ex-status-btn" style="color:var(--status-saved)">★</span>
+      <span class="ex-status-btn" style="color:var(--status-review)">❗</span>
+      <span class="ex-status-btn" style="color:var(--status-learned)">🎓</span>
+      <span class="ex-status-btn" style="color:var(--status-wrote)">✒</span>
+    </div>
+    <div class="ex-status-menu">
+      <button class="ex-status-item current"><span style="color:var(--status-saved)">★</span> Saved</button>
+      <button class="ex-status-item"><span style="color:var(--status-review)">❗</span> Need to learn</button>
+      <button class="ex-status-item"><span style="color:var(--status-learned)">🎓</span> Learned</button>
+      <button class="ex-status-item"><span style="color:var(--status-wrote)">✒</span> Wrote</button>
+      <button class="ex-status-item" style="color:var(--muted)">✕ Remove</button>
+    </div>
+  </div>
+</div>
+
+<h3>Section Header</h3>
+<div class="example-row">
+  <div class="ex-section-head"><span class="ex-section-num">Nº 01</span><span class="ex-section-name">· Etymology</span></div>
+</div>
+<div class="example-row" style="margin-top:4px">
+  <div class="ex-section-head"><span class="ex-section-num">Nº 02</span><span class="ex-section-name">· In your saved words</span></div>
+</div>
+
+<h3>Eyebrow Label</h3>
+<div class="example-row">
+  <span class="ex-eyebrow">Character · hàn zì</span>
+</div>
+
+<h3>Component Chip Row</h3>
+<div class="ex-chip-row">
+  <div class="ex-chip"><span class="ex-chip-char">木</span><span class="ex-chip-pinyin">mù</span></div>
+  <div class="ex-chip"><span class="ex-chip-char">口</span><span class="ex-chip-pinyin">kǒu</span></div>
+  <div class="ex-chip"><span class="ex-chip-char">心</span><span class="ex-chip-pinyin">xīn</span></div>
+  <div class="ex-chip"><span class="ex-chip-char">水</span><span class="ex-chip-pinyin">shuǐ</span></div>
+</div>
+
+<h3>Grade Buttons</h3>
+<div class="ex-grade-row" style="max-width:400px">
+  <button class="ex-grade-btn" style="color:var(--grade-again)">Again</button>
+  <button class="ex-grade-btn" style="color:var(--grade-good)">Good</button>
+  <button class="ex-grade-btn" style="color:var(--grade-easy)">Easy</button>
+</div>
+
+<h3>Bottom Sheet Shell</h3>
+<div class="example-row">
+  <div class="ex-sheet-demo">
+    <div class="ex-sheet-handle"></div>
+    <button class="ex-sheet-dismiss">↓</button>
+    <div class="ex-eyebrow" style="margin-top:8px">Character · xué</div>
+    <div style="font-family:var(--font-hanzi);font-size:80px;line-height:1;margin:8px 0 4px;">学</div>
+    <div style="font-size:16px;line-height:1.4;margin-bottom:12px;">to learn; to study; school; learning</div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;">
+      <div class="ex-section-head"><span class="ex-section-num">Nº 01</span><span class="ex-section-name">· Etymology</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>Empty State</h3>
+<div class="ex-empty">
+  <div class="ex-empty-title">Nothing to review</div>
+  <div class="ex-empty-hint">Save some words first, then come back here to practice.</div>
+</div>
+
+<h3>Pill Tabs</h3>
+<div class="ex-pill-row">
+  <button class="ex-pill active">All</button>
+  <button class="ex-pill">Recent</button>
+  <button class="ex-pill">Pinyin</button>
+  <button class="ex-pill">Strokes</button>
+  <button class="ex-pill">HSK</button>
+</div>
+
+<h3>Role-Tinted Glyphs</h3>
+<div class="example-row" style="align-items:center">
+  <span class="ex-role-glyph" style="color:var(--role-iconic)">日</span>
+  <span style="font-size:16px;color:var(--muted)">+</span>
+  <span class="ex-role-glyph" style="color:var(--role-meaning)">月</span>
+  <span style="font-size:16px;color:var(--muted)">=</span>
+  <span class="ex-role-glyph" style="color:var(--text);font-weight:500">明</span>
+</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px;">
+  <span style="color:var(--role-iconic)">■</span> Iconic &nbsp;
+  <span style="color:var(--role-meaning)">■</span> Meaning &nbsp;
+  <span style="color:var(--role-sound)">■</span> Sound &nbsp;
+  <span style="color:var(--role-simplified)">■</span> Simplified &nbsp;
+  <span style="color:var(--role-deleted)">■</span> Deleted
+</div>
+
+<h3>Error Banner</h3>
+<div style="background:var(--error-bg);color:var(--error-text);padding:12px 18px;font-size:14px;text-align:center;border-radius:8px;">
+  Failed to load dictionary data. Please refresh.
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Color swatches ──────────────────────────────────────────────
+const CORE = [
+  ['--bg','#faf8f4','#16140f'],['--card-bg','#ffffff','#211e15'],
+  ['--surface-2','#f0ece4','#272319'],['--text','#1d1b18','#ece7dc'],
+  ['--muted','#6b6359','#a39c8f'],['--accent','#b12a2a','#e07070'],
+  ['--border','#e4dfd5','#2a2620']
+];
+function renderSwatches(list, lightEl, darkEl) {
+  list.forEach(([name, light, dark]) => {
+    [lightEl, darkEl].forEach((el, i) => {
+      const hex = i === 0 ? light : dark;
+      el.innerHTML += `<div class="swatch"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-info"><div class="swatch-name">${name}</div><div class="swatch-hex">${hex}</div></div></div>`;
+    });
+  });
+}
+renderSwatches(CORE, document.getElementById('light-swatches'), document.getElementById('dark-swatches'));
+
+// Role swatches
+const ROLES = [
+  ['iconic','#2563eb'],['meaning','#16a34a'],['sound','#dc2626'],
+  ['simplified','#9333ea'],['deleted','#6b7280'],['unknown','#6b7280'],['word','#1d1b18']
+];
+const roleEl = document.getElementById('role-swatches');
+ROLES.forEach(([name, hex]) => {
+  roleEl.innerHTML += `<div class="swatch" style="width:100px"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-info"><div class="swatch-name">--role-${name}</div><div class="swatch-hex">${hex}</div></div></div>`;
+});
+
+// POS swatches
+const POS = [['pron','#6b3a8a'],['v','#b14430'],['n','#2f5a8e'],['adj','#4f7d3a'],['adv','#8a6a26'],['part','#8a8273'],['conj','#7a6a8a']];
+const posEl = document.getElementById('pos-swatches');
+POS.forEach(([name, hex]) => {
+  posEl.innerHTML += `<div class="swatch" style="width:100px"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-info"><div class="swatch-name">--pos-${name}</div><div class="swatch-hex">${hex}</div></div></div>`;
+});
+
+// Status swatches
+const STATUS = [['★ Saved','#d97706'],['❗ Need to learn','#c2410c'],['🎓 Learned','#2e7d32'],['✒ Wrote','#7a3aa8']];
+const statusEl = document.getElementById('status-swatches');
+STATUS.forEach(([name, hex]) => {
+  statusEl.innerHTML += `<div class="swatch" style="width:130px"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-info"><div class="swatch-name">${name}</div><div class="swatch-hex">${hex}</div></div></div>`;
+});
+
+// Grade swatches
+const GRADES = [['Again','#b91c1c'],['Good','#15803d'],['Easy','#1d4ed8']];
+const gradeEl = document.getElementById('grade-swatches');
+GRADES.forEach(([name, hex]) => {
+  gradeEl.innerHTML += `<div class="swatch" style="width:100px"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-info"><div class="swatch-name">${name}</div><div class="swatch-hex">${hex}</div></div></div>`;
+});
+
+// ── Type scale ──────────────────────────────────────────────────
+const TYPES = [
+  {sample:'学',size:120,font:'hanzi',weight:500,lh:1,label:'sheet-glyph-fallback'},
+  {sample:'听',size:96,font:'hanzi',weight:500,lh:1,label:'phonetic-tap-glyph'},
+  {sample:'好',size:84,font:'hanzi',weight:500,lh:1.1,label:'review-hanzi'},
+  {sample:'明',size:64,font:'hanzi',weight:500,lh:1,label:'disambig-cell-glyph'},
+  {sample:'字',size:46,font:'hanzi',weight:400,lh:1,label:'card .char'},
+  {sample:'木',size:30,font:'hanzi',weight:400,lh:1,label:'sheet-etym-glyph'},
+  {sample:'我',size:26,font:'hanzi',weight:500,lh:1,label:'bank-chip-c'},
+  {sample:'to learn; to study',size:16,font:'body',weight:400,lh:1.4,label:'sheet-defs (body)'},
+  {sample:'Again · Good · Easy',size:15,font:'body',weight:500,lh:1,label:'review-btn'},
+  {sample:'Tap anywhere to continue',size:14,font:'body',weight:400,lh:1.4,label:'body text'},
+  {sample:'3 / 12',size:13,font:'body',weight:400,lh:1,label:'review-progress'},
+  {sample:'ETYMOLOGY',size:11,font:'mono',weight:600,lh:1,label:'section-name'},
+  {sample:'RECOGNITION',size:10,font:'mono',weight:500,lh:1,label:'kind-tag'},
+  {sample:'ADV',size:8,font:'mono',weight:400,lh:1,label:'bank-chip-pos'},
+];
+const typeEl = document.getElementById('type-scale');
+TYPES.forEach(t => {
+  const ff = t.font==='hanzi'?'var(--font-hanzi)':t.font==='mono'?'var(--font-mono)':'var(--font-body)';
+  typeEl.innerHTML += `<div class="type-row"><span class="type-sample" style="font-family:${ff};font-size:${t.size}px;font-weight:${t.weight};line-height:${t.lh}">${t.sample}</span><span class="type-meta">${t.size}px / ${t.weight} — ${t.label}</span></div>`;
+});
+
+// ── Radius demo ─────────────────────────────────────────────────
+const RADII = [[3,'xs'],[6,'sm'],[8,'md'],[10,'base'],[12,'lg'],[14,'xl'],[16,'2xl'],[18,'3xl'],[22,'4xl'],[999,'pill']];
+const radiusEl = document.getElementById('radius-demo');
+RADII.forEach(([r, name]) => {
+  radiusEl.innerHTML += `<div class="radius-item"><div class="radius-box" style="border-radius:${r===999?'999px':r+'px'}"></div><div class="radius-label">${r}px<br>${name}</div></div>`;
+});
+
+// ── Shadow demo ─────────────────────────────────────────────────
+const SHADOWS = [
+  ['menu','0 6px 20px rgba(0,0,0,.15)'],
+  ['sheet','0 -10px 40px rgba(0,0,0,.22)'],
+  ['modal','0 24px 64px rgba(0,0,0,.28)'],
+  ['dropdown','0 4px 16px rgba(0,0,0,.18)'],
+  ['CTA','0 4px 12px rgba(0,0,0,.18)'],
+];
+const shadowEl = document.getElementById('shadow-demo');
+SHADOWS.forEach(([name, val]) => {
+  shadowEl.innerHTML += `<div class="shadow-item" style="box-shadow:${val}">${name}</div>`;
+});
+</script>
+</body>
+</html>

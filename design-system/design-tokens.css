@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Design Tokens — Chinese-Character Learning App
+
+   REFERENCE FILE — not imported by the build. Keep in sync with
+   src/styles.css (:root), src/lib/pos.ts, src/lib/tree.ts. See
+   CLAUDE.md → "Design system reference" for the sync rule.
+
+   Some tokens here are normalized/aspirational: they promote values
+   that the codebase currently inlines or hardcodes (status hues, grade
+   colors, the type scale, etc.) to named tokens. Where this file and
+   src/styles.css disagree, src/styles.css is authoritative for what
+   ships; this file is the design intent.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ── Core palette ──────────────────────────────────────────────── */
+  --bg:        #faf8f4;   /* Page background — warm off-white         */
+  --surface:   #fefdfb;   /* Elevated panels (menus, sheets, cards)   */
+  --card-bg:   #ffffff;   /* Brightest surface — SavedShelf grid cards */
+  --surface-2: #f0ece4;   /* Hover fills, active pill fills, chip bg  */
+  --text:      #1d1b18;   /* Primary ink                              */
+  --muted:     #6b6359;   /* Secondary / caption text                 */
+  --accent:    #b12a2a;   /* Vermillion — CTA, active tab, error link */
+  --border:    #e4dfd5;   /* Dividers, card strokes, input borders    */
+
+  /* ── Decomposition role colors ─────────────────────────────────── */
+  --role-iconic:      #2563eb;  /* Blue  — pictographic / iconic comp  */
+  --role-meaning:     #16a34a;  /* Green — semantic / meaning comp     */
+  --role-sound:       #dc2626;  /* Red   — phonetic / sound comp       */
+  --role-simplified:  #9333ea;  /* Purple — simplification artifact    */
+  --role-deleted:     #6b7280;  /* Gray  — historically deleted comp   */
+  --role-unknown:     #6b7280;  /* Gray  — role not determined         */
+  --role-word:        #1d1b18;  /* Ink   — word-root node in the tree  */
+
+  /* ── Part-of-speech colors (Sentence Studio) ───────────────────
+     Set inline as --pos-c per chip/token; these named tokens promote
+     the hardcoded values from src/lib/pos.ts POS_COLOR.            */
+  --pos-pron: #6b3a8a;   /* Pronoun — purple     */
+  --pos-v:    #b14430;   /* Verb — vermillion     */
+  --pos-n:    #2f5a8e;   /* Noun — steel blue     */
+  --pos-adj:  #4f7d3a;   /* Adjective — leaf      */
+  --pos-adv:  #8a6a26;   /* Adverb — ochre        */
+  --pos-part: #8a8273;   /* Particle — warm gray  */
+  --pos-conj: #7a6a8a;   /* Conjunction — mauve   */
+
+  /* ── Status tier colors (light mode) ───────────────────────────── */
+  --status-saved:   #d97706;  /* ★ Saved — amber/gold           */
+  --status-review:  #c2410c;  /* ❗ Need to learn — burnt orange */
+  --status-learned: #2e7d32;  /* 🎓 Learned — forest green      */
+  --status-wrote:   #7a3aa8;  /* ✒ Wrote — violet               */
+
+  /* ── Grade button colors (light mode) ──────────────────────────── */
+  --grade-again: #b91c1c;  /* Red — Again   */
+  --grade-good:  #15803d;  /* Green — Good  */
+  --grade-easy:  #1d4ed8;  /* Blue — Easy   */
+
+  /* ── Feedback / result colors (light mode) ─────────────────────── */
+  --feedback-correct:       #2e7d32;
+  --feedback-correct-bg:    rgba(46, 125, 50, 0.12);
+  --feedback-correct-border:#2e7d32;
+  --feedback-wrong:         #b91c1c;
+  --feedback-wrong-bg:      rgba(185, 28, 28, 0.12);
+  --feedback-wrong-border:  #b91c1c;
+
+  /* ── Error banner ──────────────────────────────────────────────── */
+  --error-bg:   #b03a2e;
+  --error-text: #ffffff;
+
+  /* ── Backdrop overlays ─────────────────────────────────────────── */
+  --backdrop-sheet: rgba(0, 0, 0, 0.34);
+  --backdrop-popup: rgba(20, 18, 14, 0.42);
+
+  /* ── (resolved) EntitySheet's roleColor() used to hardcode a separate
+     muted role palette (#b14430 / #4f7d3a / #2f5a8e); it now returns
+     var(--role-*), so there's one source of truth. Kept here only as a
+     historical note — these tokens are unused.                         */
+  /* --role-sound-etym / --role-meaning-etym / --role-iconic-etym — removed */
+
+  /* ── Typography ────────────────────────────────────────────────── */
+  --font-body:  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB",
+                "Noto Sans CJK SC", sans-serif;
+  --font-hanzi: "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC",
+                system-ui, sans-serif;
+  --font-mono:  ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── Type scale ────────────────────────────────────────────────── */
+  --text-display-hanzi:  120px;  /* sheet-glyph-fallback               */
+  --text-display-hanzi2: 96px;   /* phonetic-tap-glyph                 */
+  --text-display-hanzi3: 84px;   /* review-hanzi                       */
+  --text-display-hanzi4: 64px;   /* disambig-cell-glyph                */
+  --text-display-word:   60px;   /* sheet-glyph-text (clamp max)       */
+  --text-lg-hanzi:       46px;   /* card .char (saved grid)            */
+  --text-lg-hanzi2:      36px;   /* cluster-cell-hanzi                 */
+  --text-lg-hanzi3:      32px;   /* result-row .r-hanzi                */
+  --text-lg-hanzi4:      30px;   /* sheet-etym-glyph, phonetics-row    */
+  --text-lg-hanzi5:      26px;   /* bank-chip-c                        */
+  --text-body-lg:        22px;   /* review-pinyin, composer-token-c     */
+  --text-body:           16px;   /* sheet-defs, review-gloss            */
+  --text-body-sm:        15px;   /* review-btn, launch-option-label     */
+  --text-body-xs:        14px;   /* hamburger-item, mnemonic, phonetics */
+  --text-meta:           13px;   /* review-progress, r-pinyin, r-gloss  */
+  --text-meta-sm:        12px;   /* eyebrow labels, POS tags, hints     */
+  --text-micro:          11px;   /* shelf-title, section-num/name, tabs,
+                                    review-kind-tag, bank-chip-pos       */
+  --text-micro-sm:       10px;   /* mnemonic-saved-tag                  */
+  --text-micro-xs:        9px;   /* card-role-badge — candidate to floor at 11 */
+  /* --text-micro-xxs (8px) removed: bank-chip-pos floored to --text-micro (11px) */
+
+  /* ── Spacing (commonly used values) ────────────────────────────── */
+  --space-1:   2px;
+  --space-2:   4px;
+  --space-3:   6px;
+  --space-4:   8px;
+  --space-5:  10px;
+  --space-6:  12px;
+  --space-7:  14px;
+  --space-8:  16px;
+  --space-9:  18px;
+  --space-10: 20px;
+  --space-11: 22px;
+  --space-12: 24px;
+  --space-13: 28px;
+  --space-14: 32px;
+
+  /* ── Border radii ──────────────────────────────────────────────── */
+  --radius-xs:    3px;   /* bank-chip-pos tag               */
+  --radius-sm:    6px;   /* auth-signout, composer-clear     */
+  --radius-md:    8px;   /* buttons, hamburger-btn, tabs     */
+  --radius-base: 10px;   /* bank-chip, mnemonic, sheet-row   */
+  --radius-lg:   12px;   /* cards, menus, review-btn         */
+  --radius-xl:   14px;   /* phonetic-tap-pick, cluster-cell  */
+  --radius-2xl:  16px;   /* node-card                        */
+  --radius-3xl:  18px;   /* popup-panel, review-card          */
+  --radius-4xl:  22px;   /* sheet-panel                       */
+  --radius-pill: 999px;  /* pills, badges, search input       */
+
+  /* ── Shadows ───────────────────────────────────────────────────── */
+  --shadow-menu:    0 6px 20px rgba(0, 0, 0, 0.15);
+  --shadow-sheet:   0 -10px 40px rgba(0, 0, 0, 0.22);
+  --shadow-modal:   0 24px 64px rgba(0, 0, 0, 0.28);
+  --shadow-dropdown:0 4px 16px rgba(0, 0, 0, 0.18);
+  --shadow-cta:     0 4px 12px rgba(0, 0, 0, 0.18);
+  --shadow-cta-2nd: 0 2px 8px rgba(0, 0, 0, 0.14);
+  --shadow-chip:    1px 1px 0 var(--pos-c, transparent);
+
+  /* ── Z-index layers ────────────────────────────────────────────── */
+  --z-search:    4;
+  --z-topbar:    5;
+  --z-modal:    10;
+  --z-loading:  30;
+  --z-popup:    50;
+  --z-sheet:    55;
+  --z-review:   60;   /* ReviewPage, PhoneticsPage, SentenceStudio */
+  --z-auth:     60;   /* auth-dropdown                              */
+  --z-menu:     80;   /* hamburger-menu, status-menu                */
+
+  /* ── Breakpoints (documentary — CSS can't use vars in @media) ──── */
+  /* --bp-narrow:  380px;   word-bank → single column                */
+  /* --bp-phone:   480px;   card grid condenses                      */
+  /* --bp-desktop: 700px;   sheet switches to centered modal         */
+  /* NOTE: 699px and 700px are used inconsistently. Recommend
+     canonical set: ≤ 480 narrow, ≤ 699 phone, ≥ 700 desktop.      */
+
+  /* ── Transitions / motion ──────────────────────────────────────── */
+  --ease-sheet:     cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-tree:      cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-sheet:  0.26s;  /* sheet-rise                          */
+  --duration-pop:    0.18s;  /* sheet-pop (desktop)                 */
+  --duration-tree:   0.25s;  /* node transform transitions          */
+  --duration-hover:  0.12s;  /* general hover/active feedback        */
+  --duration-fade:   0.15s;  /* phonetic-tap-pick bg/border          */
+}
+
+
+/* ── Dark mode overrides ─────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #16140f;
+    --surface:   #1d1a13;
+    --card-bg:   #211e15;
+    --surface-2: #272319;
+    --text:      #ece7dc;
+    --muted:     #a39c8f;
+    --accent:    #e07070;
+    --border:    #2a2620;
+
+    --role-iconic:     #60a5fa;
+    --role-meaning:    #4ade80;
+    --role-sound:      #f87171;
+    --role-simplified: #c084fc;
+    --role-deleted:    #9ca3af;
+    --role-unknown:    #9ca3af;
+    --role-word:       #ece7dc;
+
+    --status-saved:   #f59e0b;
+    --status-review:  #fb923c;
+    --status-learned: #6dba84;
+    --status-wrote:   #b07ad8;
+
+    --grade-again: #f87171;
+    --grade-good:  #4ade80;
+    --grade-easy:  #60a5fa;
+
+    --feedback-correct:        #6dba84;
+    --feedback-correct-bg:     rgba(109, 186, 132, 0.15);
+    --feedback-correct-border: #6dba84;
+    --feedback-wrong:          #f87171;
+    --feedback-wrong-bg:       rgba(248, 113, 113, 0.15);
+    --feedback-wrong-border:   #f87171;
+
+    --backdrop-popup: rgba(0, 0, 0, 0.6);
+
+    /* POS, error, and shadow tokens are unchanged in dark mode */
+  }
+}

@@ -104,6 +104,10 @@ Four web apps deployed together via GitHub Pages:
 │   ├── data-chars.json              ~10k chars + components + etymology
 │   ├── phonetic-components.json     top-250 productive sound components
 │   └── favicon.svg
+├── design-system/                   UI reference (NOT built/served) — see "Design system reference"
+│   ├── DESIGN-SYSTEM.md             tokens, type scale, component inventory, proposals
+│   ├── design-tokens.css            standalone :root token file (mirrors src/styles.css)
+│   └── style-guide.html             dependency-free living style guide
 ├── palette/                         (untouched: HTML/CSS/JS watercolor app)
 ├── network/index.html               (static word-graph page)
 ├── components/                      (static vocab-structure graph page)
@@ -405,6 +409,34 @@ after a chinese-lexicon update:
 4. Commit those files.
 5. Re-run seed-supabase to reload the `words` table:
    `SUPABASE_SERVICE_ROLE_KEY=… node scripts/seed-supabase.mjs`.
+
+## Design system reference
+
+`design-system/` holds the canonical UI reference — **use it when designing
+or restyling screens, and keep it in sync with the code**:
+
+- `DESIGN-SYSTEM.md` — colors, typography + type scale, spacing/radii/
+  shadows/breakpoints/z-index, motion, layout patterns, the component
+  inventory, and componentization proposals. Also imports cleanly into
+  Claude Design.
+- `design-tokens.css` — a standalone `:root` token file (colors, `--pos-*`,
+  `--role-*`, type scale, spacing, radii, shadows, z-index) mirroring
+  `src/styles.css`. Some tokens are *normalized/aspirational* — they
+  promote values the code still inlines (status hues, grade colors, the
+  type scale) to named tokens; where this file and `src/styles.css`
+  disagree, **`src/styles.css` is authoritative for what ships**.
+- `style-guide.html` — a dependency-free living style guide (swatches,
+  type scale, component states). Open it in a browser; it isn't built or
+  served.
+
+**Reference-only**: nothing in `design-system/` is imported by the app or
+copied by the Pages workflow. **Sync rule**: when you change `:root`
+tokens in `src/styles.css`, the color constants in `src/lib/pos.ts`, the
+role-color mapping, the breakpoints, or add a reusable component/hook
+(e.g. the `usePopover` extraction), update `design-system/` in the same
+commit. If `design-tokens.css` ever becomes the single source of truth,
+have `src/styles.css` `@import` it (or generate one from the other) — not
+done yet.
 
 ## GitHub Pages deployment
 
