@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { Status } from "../hooks/useSaved";
+import { usePopover } from "../hooks/usePopover";
 
 const STATUS_LABEL: Record<Status, string> = {
   saved: "Saved",
@@ -82,31 +83,8 @@ export function StatusButton({
   onChange,
   defaultIfEmpty = "saved",
 }: Props) {
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const { open, setOpen, ref: wrapperRef } = usePopover<HTMLDivElement>();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-
-  // Close on outside click / Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    const onDoc = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node | null;
-      if (target && wrapperRef.current && !wrapperRef.current.contains(target)) {
-        setOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("touchstart", onDoc, { passive: true });
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("touchstart", onDoc);
-    };
-  }, [open]);
 
   const handleTriggerClick = (e: React.MouseEvent) => {
     e.stopPropagation();
