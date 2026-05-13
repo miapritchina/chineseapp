@@ -111,10 +111,38 @@ export function CombinedRecognitionCard({
     }
   };
 
+  // Swipe-to-grade (2B): after reveal, a horizontal swipe sets both
+  // grades — right → Good, left → Again. Buttons stay for Hard/Easy.
+  // (≥ 60px horizontal travel, and mostly horizontal.)
+  const SWIPE_MIN = 60;
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!revealed || allGraded) {
+      swipeStartRef.current = null;
+      return;
+    }
+    const t = e.touches[0];
+    swipeStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start || !revealed || allGraded) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const rating: RatingName = dx > 0 ? "Good" : "Again";
+    if (meaningRequired) setMeaningGrade(rating);
+    if (soundRequired) setSoundGrade(rating);
+  };
+
   return (
     <div
       className="combined-card-surface"
       onClick={handleAnywhereClick}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
