@@ -27,7 +27,7 @@ import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
 
-import type { Word } from "./lib/types";
+import type { Word, ModalEntry } from "./lib/types";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -90,9 +90,27 @@ export function App() {
     wakeUp();
   }, []);
 
+  // --- Deep links: #/c/:char and #/w/:word open the EntitySheet. ---
+  // stackRef gives the hashchange handler a fresh view of the modal
+  // stack without re-subscribing the listener every render.
+  const stackRef = useRef(stack);
+  stackRef.current = stack;
+  const deepLinkDepsRef = useRef({ ensureCached: dict.ensureCached, push });
+  deepLinkDepsRef.current = { ensureCached: dict.ensureCached, push };
+  // Open an entry parsed from the URL hash. Strips the deep-link hash
+  // first (replaceState) so a later history.back() lands on a hash-free
+  // entry instead of re-triggering this handler in a loop.
+  const openFromHash = useRef((entry: ModalEntry) => {
+    history.replaceState(history.state, "", location.pathname + location.search);
+    const { ensureCached, push: pushEntry } = deepLinkDepsRef.current;
+    if (entry.kind === "word") void ensureCached([entry.key]).then(() => pushEntry(entry));
+    else pushEntry(entry);
+  }).current;
+
   // Track full-screen pages via URL hash. Same pattern as the modal stack
   // (in useModalStack); kept inline here because these pages are
-  // top-level, not nested.
+  // top-level, not nested. Also routes the #/c/ and #/w/ entity deep
+  // links on in-page hashchange events.
   useEffect(() => {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
@@ -104,10 +122,20 @@ export function App() {
         setReviewLaunched(null);
         setClusterActive(false);
       }
+      const entry = parseHash();
+      if (entry) {
+        // Only open if this entry isn't already somewhere in the stack —
+        // a hashchange fired by history.back() is just a back-navigation
+        // to an entry useModalStack's popstate handler already manages.
+        const inStack = stackRef.current.some(
+          (e) => e.kind === entry.kind && e.key === entry.key && e.view !== "tree",
+        );
+        if (!inStack) openFromHash(entry);
+      }
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, []);
+  }, [openFromHash]);
   const closeHashPage = (target: string) => {
     if (window.location.hash === target) history.back();
     else {
@@ -192,19 +220,14 @@ export function App() {
     void dict.ensureCached([...saved]);
   }, [saved, dict.ensureCached]);
 
-  // Deep-link via hash on first load.
+  // Deep-link via hash on first (cold) load.
   const deepLinkRunRef = useRef(false);
   useEffect(() => {
     if (deepLinkRunRef.current) return;
     deepLinkRunRef.current = true;
     const initial = parseHash();
-    if (!initial) return;
-    if (initial.kind === "word") {
-      void dict.ensureCached([initial.key]).then(() => push(initial));
-    } else if (initial.kind === "char") {
-      push(initial);
-    }
-  }, [dict.ensureCached, push]);
+    if (initial) openFromHash(initial);
+  }, [openFromHash]);
 
   // Auto-import via ?import=<url> on first load. Same-origin only; the user
   // confirms before anything writes. Useful for one-tap "save these N words"
@@ -316,7 +339,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v84"
+          version="chinese v85"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"

@@ -5,6 +5,7 @@ import { normalizePinyin, HAN_RE } from "../lib/pinyin";
 import { useSentenceDraft } from "../hooks/useSentenceDraft";
 import { useSavedSentences } from "../hooks/useSavedSentences";
 import { speak } from "../lib/speech";
+import { hanziScaleStyle } from "../lib/hanzi";
 
 interface Props {
   // Saved-word keys (newest-first order from useSaved).
@@ -306,7 +307,8 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
                   key={word.word}
                   type="button"
                   className="bank-chip"
-                  style={{ ["--pos-c" as never]: POS_COLOR[pos] }}
+                  title={POS_LABEL[pos]}
+                  style={{ ...hanziScaleStyle(word.word), ["--pos-c" as never]: POS_COLOR[pos] }}
                   onClick={() => addWord(word.word)}
                 >
                   <span className="bank-chip-c">{word.word}</span>
@@ -316,7 +318,6 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
                       {(word.definitions?.[0] || "").slice(0, 40)}
                     </span>
                   </span>
-                  <span className="bank-chip-pos">{POS_LABEL[pos]}</span>
                 </button>
               ))
             )}
@@ -325,7 +326,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
           <div className="sentence-cta-wrap">
             <button
               type="button"
-              className="sentence-cta sentence-cta-2nd"
+              className="sentence-cta"
               onClick={handleSave}
               disabled={empty}
             >
@@ -333,7 +334,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
             </button>
             <button
               type="button"
-              className="sentence-cta"
+              className="sentence-cta sentence-cta-2nd"
               onClick={handleCopy}
               disabled={empty}
             >

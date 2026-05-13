@@ -11,6 +11,9 @@ export interface ReviewSettings {
 
 const SETTINGS_KEY = "chinese.reviewSettings";
 
+// The five drill types offered on the launch screen. The two granular
+// component-level drills ("Tap the sound component" / "Sound of a
+// component") were dropped — too micro to be worth a card slot.
 const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
   {
     facet: "meaningRecognition",
@@ -23,16 +26,6 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
     hint: "How is it pronounced? Audio + tone-marked pinyin.",
   },
   {
-    facet: "phoneticTap",
-    label: "Tap the sound component",
-    hint: "Pick which part of the character carries the sound.",
-  },
-  {
-    facet: "componentSound",
-    label: "Sound of a component",
-    hint: "Multi-choice pinyin for productive phonetic components.",
-  },
-  {
     facet: "familyTransfer",
     label: "Family transfer",
     hint: '"You know 青 = qīng — what about 情?" Tests the youbian-dubian skill on un-saved family members.',
@@ -43,17 +36,15 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
     hint: "Trace the character that matches a meaning + sound prompt. Auto-graded by stroke mistakes via Hanzi Writer. Surfaces only for saved chars at ✒ Wrote tier.",
   },
 ];
+// Facets the launch screen knows about — used to scrub stale entries
+// (e.g. the retired phoneticTap / componentSound) from saved settings.
+const KNOWN_FACETS = new Set<Facet>(ALL_FACET_OPTIONS.map((o) => o.facet));
 
-// Default-on facets — drilling a word's saved set without surfacing
-// every cascaded sub-character. familyTransfer + production are opt-in
-// (familyTransfer targets un-saved chars; production is a heavier
+// Default-on facets: the two reveal-style recognition drills. The combined
+// card grades meaning + sound together. familyTransfer + production are
+// opt-in (familyTransfer targets un-saved chars; production is a heavier
 // trace drill scoped to ✒ Wrote tier items).
-const DEFAULT_FACETS: Facet[] = [
-  "meaningRecognition",
-  "soundRecognition",
-  "phoneticTap",
-  "componentSound",
-];
+const DEFAULT_FACETS: Facet[] = ["meaningRecognition", "soundRecognition"];
 
 export function loadSettings(): ReviewSettings {
   try {
@@ -61,8 +52,11 @@ export function loadSettings(): ReviewSettings {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ReviewSettings>;
       if (Array.isArray(parsed.enabledFacets)) {
+        const cleaned = (parsed.enabledFacets as Facet[]).filter((f) =>
+          KNOWN_FACETS.has(f),
+        );
         return {
-          enabledFacets: parsed.enabledFacets as Facet[],
+          enabledFacets: cleaned.length > 0 ? cleaned : DEFAULT_FACETS,
           randomOrder: !!parsed.randomOrder,
           includeSubchars: !!parsed.includeSubchars,
         };

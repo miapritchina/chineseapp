@@ -65,8 +65,13 @@ export function HamburgerMenu({
           />
         </svg>
       </button>
-      {open && (
-        <div className="hamburger-menu" role="menu">
+      {/* Always rendered; toggled via .is-open (visibility/opacity/
+          transform) so dismissing doesn't yank a box out of layout. */}
+      <div
+        className={`hamburger-menu${open ? " is-open" : ""}`}
+        role="menu"
+        aria-hidden={!open}
+      >
           {reviewHref ? (
             <a
               role="menuitem"
@@ -116,8 +121,7 @@ export function HamburgerMenu({
           </a>
           <div className="hamburger-divider" />
           <div className="hamburger-version">{version}</div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

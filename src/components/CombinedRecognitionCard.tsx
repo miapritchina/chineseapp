@@ -1,7 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Word, Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
 import { speak, stopSpeech } from "../lib/speech";
+import { hanziScaleStyle } from "../lib/hanzi";
+
+const CONTINUE_HINT_KEY = "hint.seen.review-continue";
+function hintAlreadySeen(): boolean {
+  try {
+    return !!sessionStorage.getItem(CONTINUE_HINT_KEY);
+  } catch {
+    return false;
+  }
+}
 
 interface Props {
   itemKey: string;
@@ -48,6 +58,10 @@ export function CombinedRecognitionCard({
   const [revealed, setRevealed] = useState(false);
   const [meaningGrade, setMeaningGrade] = useState<RatingName | null>(null);
   const [soundGrade, setSoundGrade] = useState<RatingName | null>(null);
+  // "Tap anywhere to continue →" shows once per session, then fades after
+  // 2s and never reappears (UX-2).
+  const seenContinueRef = useRef(hintAlreadySeen());
+  const [hideContinueHint, setHideContinueHint] = useState(seenContinueRef.current);
 
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
   const gloss = word
@@ -71,6 +85,20 @@ export function CombinedRecognitionCard({
   const allGraded =
     (!meaningRequired || meaningGrade !== null) &&
     (!soundRequired || soundGrade !== null);
+
+  useEffect(() => {
+    if (!revealed || !allGraded || hideContinueHint) return;
+    const t = window.setTimeout(() => {
+      setHideContinueHint(true);
+      try {
+        sessionStorage.setItem(CONTINUE_HINT_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      seenContinueRef.current = true;
+    }, 2000);
+    return () => window.clearTimeout(t);
+  }, [revealed, allGraded, hideContinueHint]);
 
   const handleAnywhereClick = () => {
     if (!revealed) {
@@ -98,7 +126,7 @@ export function CombinedRecognitionCard({
       aria-label={revealed ? "Card revealed" : "Tap anywhere to reveal"}
     >
       <div className="combined-card-stack">
-        <div className="review-hanzi">{itemKey}</div>
+        <div className="review-hanzi" style={hanziScaleStyle(itemKey)}>{itemKey}</div>
         {!revealed && (
           <div className="review-tap-hint">Tap anywhere to reveal</div>
         )}
@@ -166,7 +194,7 @@ export function CombinedRecognitionCard({
             </div>
           </div>
         )}
-        {revealed && allGraded && (
+        {revealed && allGraded && !hideContinueHint && (
           <div className="drill-tap-hint">Tap anywhere to continue →</div>
         )}
         {/* Skip is only available BEFORE the user picks anything. After

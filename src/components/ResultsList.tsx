@@ -1,6 +1,7 @@
 import type { Word } from "../lib/types";
 import type { Status } from "../hooks/useSaved";
 import { StatusButton } from "./StatusButton";
+import { hanziScaleStyle } from "../lib/hanzi";
 
 interface Props {
   matches: Word[];
@@ -32,6 +33,7 @@ export function ResultsList({ matches, saved, onOpen, getStatus, setStatus }: Pr
           <div
             key={w.word}
             className="result-row"
+            style={hanziScaleStyle(w.simp)}
             role="button"
             tabIndex={0}
             onClick={() => onOpen(w.word)}
