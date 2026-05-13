@@ -6,7 +6,7 @@ import { useChars } from "./hooks/useChars";
 import { useSaved } from "./hooks/useSaved";
 import { useModalStack, parseHash } from "./hooks/useModalStack";
 import { useAuth } from "./hooks/useAuth";
-import { wakeUp } from "./lib/supabase";
+import { supabase, wakeUp } from "./lib/supabase";
 
 import { SearchBar, type SearchMode } from "./components/SearchBar";
 import { searchByComponent, componentFrequencies } from "./lib/componentSearch";
@@ -26,7 +26,7 @@ import { SentenceStudio } from "./components/SentenceStudio";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
-import { buildShareUrl, decodeWords } from "./lib/share";
+import { decodeWords, encodeWords, looksLikeShareToken, makeShareToken, shareUrl } from "./lib/share";
 
 import type { Word } from "./lib/types";
 
@@ -270,23 +270,39 @@ export function App() {
     })();
   }, [auth.loading, importSaved]);
 
-  // Auto-import via ?share=<token> — a self-contained "share my words" link
-  // (the word list is encoded in the URL, no backend; see src/lib/share.ts).
-  // Same confirm + auth-loading gate as ?import=.
+  // Auto-import via ?share=<value> — a "share my words" link. <value> is
+  // either a short token (resolved against the user_shares table via the
+  // get_shared_words RPC) or a self-contained inline payload (decoded
+  // locally; see src/lib/share.ts). Same confirm + auth-loading gate as
+  // ?import=.
   const autoShareRanRef = useRef(false);
   useEffect(() => {
     if (autoShareRanRef.current) return;
     if (auth.loading) return;
     autoShareRanRef.current = true;
     const params = new URLSearchParams(window.location.search);
-    const token = params.get("share");
-    if (!token) return;
+    const value = params.get("share");
+    if (!value) return;
 
     (async () => {
       try {
-        const items = decodeWords(token);
+        let items: string[] | null = null;
+        if (looksLikeShareToken(value)) {
+          try {
+            const { data, error } = await supabase.rpc("get_shared_words", { p_token: value });
+            if (!error && Array.isArray(data)) {
+              const list = (data as unknown[]).filter(
+                (x): x is string => typeof x === "string" && x.length > 0,
+              );
+              if (list.length > 0) items = list;
+            }
+          } catch {
+            /* table/RPC missing, offline, etc. — fall through to inline decode */
+          }
+        }
+        if (!items) items = decodeWords(value);
         if (!items) {
-          alert("This share link looks broken or empty.");
+          alert("This share link looks broken, expired, or empty.");
           return;
         }
         const ok = window.confirm(
@@ -337,17 +353,32 @@ export function App() {
     }
   };
 
-  // Build a self-contained share link for the saved set and hand it off via
-  // the native share sheet (mobile) or the clipboard (desktop / fallback).
+  // Build a share link for the saved set and hand it off via the native
+  // share sheet (mobile) or the clipboard (desktop / fallback). When signed
+  // in, mint a short ?share=<token> link backed by user_shares (stays small
+  // however many words you have); otherwise — or if that write fails — fall
+  // back to a self-contained inline ?share=<lz-string blob> link.
   const shareMyWords = () => {
     if (savedList.length === 0) {
       alert("You haven't saved any words yet — nothing to share.");
       return;
     }
     const words = savedList.map((s) => s.word);
-    const url = buildShareUrl(words);
     const label = `${words.length} word${words.length === 1 ? "" : "s"}`;
     void (async () => {
+      let url = shareUrl(encodeWords(words));
+      const uid = auth.user?.id;
+      if (uid) {
+        try {
+          const token = makeShareToken();
+          const { error } = await supabase
+            .from("user_shares")
+            .insert({ token, user_id: uid, words });
+          if (!error) url = shareUrl(token);
+        } catch {
+          /* table missing / offline / collision — keep the inline link */
+        }
+      }
       if (typeof navigator !== "undefined" && navigator.share) {
         try {
           await navigator.share({
@@ -387,7 +418,7 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v88"
+          version="chinese v89"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
