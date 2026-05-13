@@ -1931,20 +1931,14 @@ body {
 
 /* Sentence Studio (E2) — pulls from saved words; tap a chip to append,
    tap a composer token to remove. POS color (`--pos-c`) is set inline
-   per chip/token. Reuses the review-page header + back button shell. */
-.sentence-root {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: var(--bg);
-  /* Plain block scroll container — NOT a flex column. As a fixed-height
-     flex column it would squeeze the scrollable .pos-tabs strip down to
-     ~0 (an overflow:auto flex item has automatic minimum size 0), which
-     clipped the tab labels. */
+   per chip/token. Rendered inline as the "Sentence" home tab — a plain
+   block (NOT a flex column: a fixed-height flex column would squeeze the
+   scrollable .pos-tabs strip down to ~0 and clip the tab labels). */
+.sentence-studio {
   display: block;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-top: env(safe-area-inset-top);
+}
+.sentence-studio-empty {
+  padding: 40px 18px 60px;
 }
 
 .composer {

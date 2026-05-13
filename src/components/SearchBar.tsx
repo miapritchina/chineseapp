@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export type SearchMode = "all" | "byComponent";
+export type SearchMode = "all" | "byComponent" | "sentence";
 
 interface Props {
   value: string;
@@ -13,7 +13,14 @@ interface Props {
 const PLACEHOLDER: Record<SearchMode, string> = {
   all: "Search 汉字, pinyin, English…",
   byComponent: "Find saved words containing this component…",
+  sentence: "Type pinyin to filter your saved words…",
 };
+
+const TABS: { id: SearchMode; label: string }[] = [
+  { id: "all", label: "Dictionary" },
+  { id: "byComponent", label: "My Words by Component" },
+  { id: "sentence", label: "Sentence" },
+];
 
 export function SearchBar({ value, onChange, onEnter, mode, onModeChange }: Props) {
   const ref = useRef<HTMLInputElement>(null);
@@ -34,24 +41,18 @@ export function SearchBar({ value, onChange, onEnter, mode, onModeChange }: Prop
   return (
     <div className="search-bar">
       <div className="search-mode-tabs" role="tablist" aria-label="Search mode">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "all"}
-          className={`search-mode-tab${mode === "all" ? " is-active" : ""}`}
-          onClick={() => onModeChange("all")}
-        >
-          Dictionary
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "byComponent"}
-          className={`search-mode-tab${mode === "byComponent" ? " is-active" : ""}`}
-          onClick={() => onModeChange("byComponent")}
-        >
-          My words by component
-        </button>
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={mode === t.id}
+            className={`search-mode-tab${mode === t.id ? " is-active" : ""}`}
+            onClick={() => onModeChange(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
       <div className="search-field">
         <input

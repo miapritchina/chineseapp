@@ -59,9 +59,6 @@ export function App() {
   const [showPhonetics, setShowPhonetics] = useState(
     typeof window !== "undefined" && window.location.hash === "#/phonetics",
   );
-  const [showSentence, setShowSentence] = useState(
-    typeof window !== "undefined" && window.location.hash === "#/sentence",
-  );
 
   // Every saved word is queued for review — the user's stated goal is to
   // learn all of them, and the four statuses are about progression
@@ -115,7 +112,12 @@ export function App() {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
       setShowPhonetics(window.location.hash === "#/phonetics");
-      setShowSentence(window.location.hash === "#/sentence");
+      // Sentence Studio used to live at #/sentence; it's now a home tab.
+      // Honor an old link by switching to that tab and dropping the hash.
+      if (window.location.hash === "#/sentence") {
+        setSearchMode("sentence");
+        history.replaceState(history.state, "", location.pathname + location.search);
+      }
       // Reset the launched-flag so re-opening Review goes back to the
       // launch screen first.
       if (window.location.hash !== "#/review") {
@@ -143,7 +145,6 @@ export function App() {
       // the page after the user closes it before hashchange fires.
       if (target === "#/review") setShowReview(false);
       if (target === "#/phonetics") setShowPhonetics(false);
-      if (target === "#/sentence") setShowSentence(false);
     }
   };
 
@@ -174,7 +175,9 @@ export function App() {
   // Run search when the debounced query (or mode) changes.
   useEffect(() => {
     let cancelled = false;
-    if (!debouncedQuery.trim()) {
+    // The Sentence tab consumes the query directly (it filters the word
+    // bank), so there's no dictionary lookup to run here.
+    if (searchMode === "sentence" || !debouncedQuery.trim()) {
       setSearchResults([]);
       setSearching(false);
       return;
@@ -319,6 +322,7 @@ export function App() {
   }, [auth.loading, clearAll]);
 
   const handleEnter = () => {
+    if (searchMode === "sentence") return;
     if (searchResults.length > 0) {
       void openWord(searchResults[0].word);
     }
@@ -343,7 +347,6 @@ export function App() {
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
-          sentenceHref="#/sentence"
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -409,16 +412,6 @@ export function App() {
         />
       )}
 
-      {showSentence && (
-        <SentenceStudio
-          savedWords={savedList.map((s) => s.word)}
-          findWord={dict.findWord}
-          ensureCached={dict.ensureCached}
-          userId={auth.user?.id ?? null}
-          onClose={() => closeHashPage("#/sentence")}
-        />
-      )}
-
       {showSignIn && (
         <SignInModal
           onClose={() => setShowSignIn(false)}
@@ -434,7 +427,17 @@ export function App() {
         onModeChange={setSearchMode}
       />
 
-      {debouncedQuery.trim() ? (
+      {searchMode === "sentence" ? (
+        <main className="home" aria-label="Sentence">
+          <SentenceStudio
+            savedWords={savedList.map((s) => s.word)}
+            findWord={dict.findWord}
+            ensureCached={dict.ensureCached}
+            userId={auth.user?.id ?? null}
+            externalQuery={debouncedQuery}
+          />
+        </main>
+      ) : debouncedQuery.trim() ? (
         searching && searchResults.length === 0 ? (
           <div className="empty-state">Searching…</div>
         ) : (
