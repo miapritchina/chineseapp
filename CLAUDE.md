@@ -129,7 +129,7 @@ Four web apps deployed together via GitHub Pages:
 │       ├── 0007_fsrs_state.sql              SRS scheduler state
 │       ├── 0008_user_mnemonics.sql          per-key mnemonics
 │       └── 0009_user_sentences.sql          Sentence Studio: saved sentences + composer draft
-├── package.json                     react, d3, ts-fsrs, supabase-js
+├── package.json                     react, d3, ts-fsrs, supabase-js, lz-string
 ├── vite.config.ts
 ├── tsconfig.json
 └── .github/workflows/pages.yml      builds Vite, copies palette/, network/, components/
@@ -304,15 +304,21 @@ wrote_at, review_at}` is non-null at a time.
 - **Components** (`/Ai-/components/`) — static Cytoscape vocabulary-
   structure graph (words → chars → components, all bounded by saved set).
 - **Share my words** — not a page; an action. Builds a self-contained
-  link (`?share=<url-safe-base64 of the saved-word list as JSON>` — no
+  link (`?share=<lz-string-compressed saved-word list as JSON>` — no
   backend, no stored share record; the payload is just a copy of
   `user_saves`) and hands it off via `navigator.share` (mobile) or the
-  clipboard (desktop / fallback). Opening such a link fires the
+  clipboard (desktop / fallback). Compression (`lz-string`
+  `compressToEncodedURIComponent`) keeps the link short enough to paste
+  into a messenger (~2.5–3× shorter than plain base64-of-JSON);
+  `decodeWords` still understands the original uncompressed base64
+  format for links shared before v88. Opening such a link fires the
   `?share=` handler in `App.tsx` — confirm, then `importSaved` (which
   syncs to `user_saves` as usual). Encode/decode lives in
   `src/lib/share.ts`; round-trip is pinned by `scripts/test-share.mjs`.
   (Sibling of the older `?import=<same-origin-json-url>` and `?clear=1`
-  query-param handlers.)
+  query-param handlers.) If a power user's list is so long even the
+  compressed link is unwieldy, the next step is a Supabase short-link
+  table (`?share=<token>` → DB lookup) — not built yet.
 
 ### Search has two modes
 
