@@ -133,6 +133,16 @@
       .tooltip.show { opacity: 1; }
       .tooltip .pinyin { color: var(--muted); margin-left: 4px; }
       .tooltip .gloss { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+      .gesture-hint {
+        position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%);
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 999px; padding: 8px 16px;
+        font-size: 12px; color: var(--text); text-align: center;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+        z-index: 30; pointer-events: none;
+        opacity: 0; transition: opacity 0.25s;
+      }
+      .gesture-hint.show { opacity: 1; }
       .page-id {
         position: fixed; bottom: 6px; right: 10px;
         font-size: 10px; color: var(--muted); opacity: 0.6;
@@ -151,6 +161,7 @@
       </div>
     </div>
     <div id="cy"></div>
+    <div class="gesture-hint" id="gestureHint">Long-press for translation · Double-tap to open</div>
     <div class="legend">
       <span><span class="legend-square" style="background: var(--word)"></span>Word</span>
       <span><span class="legend-square" style="background: var(--word-learned)"></span>Learned</span>
@@ -161,7 +172,7 @@
       <span><span class="legend-dot" style="background: var(--role-sound)"></span>Sound</span>
     </div>
     <div class="tooltip" id="tip"></div>
-    <div class="page-id">components v2</div>
+    <div class="page-id">components v3</div>
 
     <script type="module">
       import { buildGraph } from "./graph-data.mjs";
@@ -269,7 +280,8 @@
               "text-valign": "center", "text-halign": "center",
               "font-family": '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',
               "font-size": "16px", "font-weight": "500",
-              "width": 42, "height": 42,
+              // 44px is the minimum touch-target target.
+              "width": 44, "height": 44,
               "shape": "round-hexagon",
             }},
             { selector: 'node[kind="component"]', style: {
@@ -278,8 +290,8 @@
               "color": "#fff",
               "text-valign": "center", "text-halign": "center",
               "font-family": '"PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif',
-              "font-size": "13px",
-              "width": 28, "height": 28,
+              "font-size": "14px",
+              "width": 44, "height": 44,
               "shape": "ellipse",
             }},
             { selector: "edge", style: {
@@ -297,6 +309,24 @@
           ],
           layout: layoutFor("cose"),
         });
+
+        // First-visit gesture hint (UX-7): floats over the canvas, auto-
+        // dismisses after 5s or on the first interaction.
+        (function () {
+          try { if (sessionStorage.getItem('hint.seen.graph')) return; } catch (_) {}
+          const el = document.getElementById('gestureHint');
+          if (!el) return;
+          el.classList.add('show');
+          let done = false;
+          const hide = () => {
+            if (done) return; done = true;
+            el.classList.remove('show');
+            try { sessionStorage.setItem('hint.seen.graph', '1'); } catch (_) {}
+            setTimeout(() => el.remove(), 300);
+          };
+          setTimeout(hide, 5000);
+          cy.one('tap dbltap taphold', hide);
+        })();
 
         // Tap any node → highlight closed neighborhood; tap blank to clear.
         cy.on("tap", "node", (e) => {
