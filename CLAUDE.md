@@ -475,9 +475,12 @@ done yet.
   site doesn't update, check Actions → deploy job for "environment
   protection rules" rejection.
 - After a Supabase migration lands (e.g. `0007_fsrs_state.sql`), re-run the
-  Setup Supabase workflow with the user's PAT so the new schema applies.
-  The app degrades gracefully when the new column/table is missing — sync
-  errors are silently downgraded.
+  Setup Supabase workflow so the new schema applies. The workflow reads
+  the Supabase PAT from the `github-pages` environment secret `supabaseapi`
+  (Settings → Environments → github-pages → Environment secrets) — no
+  prompt, just click Run. Rotate by updating the secret value and revoking
+  the old PAT. The app degrades gracefully when a new column/table is
+  missing — sync errors are silently downgraded.
 
 ## Development tips
 
