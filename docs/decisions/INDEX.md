@@ -1,0 +1,43 @@
+# Architecture Decision Records
+
+Each ADR captures one decision: the context that forced the choice,
+the choice itself, and the consequences we accept by making it.
+
+Numbering is sequential and **immutable** — once assigned, an ADR
+number never changes, even if the ADR is superseded.
+
+## Index
+
+| # | Title | Status |
+|---|---|---|
+| 0001 | [Supabase is the source of truth for user data](0001-supabase-source-of-truth.md) | Accepted |
+| 0002 | [Disable FSRS short-term learning steps](0002-fsrs-short-term-steps-disabled.md) | Accepted |
+| 0003 | [Four-status tier model with per-tier timestamps](0003-four-status-tier-model.md) | Accepted |
+| 0004 | [Cascade FSRS credit on Good/Easy only, not Again](0004-cascade-credit-on-good-not-again.md) | Accepted |
+| 0005 | [Additive-only migrations; widest-shape-first queries](0005-additive-migrations-and-shape-fallback.md) | Accepted |
+| 0006 | [Daily new-card cap (25) + active leech interleaving](0006-daily-cap-and-leech-interleave.md) | Accepted |
+| 0007 | [Tap-anywhere-to-advance, no auto-advance timers](0007-tap-anywhere-to-advance.md) | Accepted |
+| 0008 | [Functional setState in `useReview` for concurrent grades](0008-functional-setstate-for-concurrent-grade.md) | Accepted |
+| 0009 | [Char data static, word data in DB](0009-chars-static-words-in-db.md) | Accepted |
+
+## Writing a new ADR
+
+Format:
+
+```markdown
+# ADR-NNNN — Short imperative title
+
+**Status:** Proposed | Accepted | Superseded by ADR-XXXX · **Date:** YYYY-MM-DD
+
+## Context
+What forced the decision? Constraints, prior pain, alternatives considered.
+
+## Decision
+The choice, stated plainly. Code-level specifics if helpful.
+
+## Consequences
+What we now have to live with — both wins and costs.
+```
+
+Keep it short. If a decision needs more than a screen, the ADR is too
+broad; split it.

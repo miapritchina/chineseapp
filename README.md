@@ -1,83 +1,52 @@
-# RIPsV Editor
+# Chinese-character learning app
 
-A cross-platform code editor for cloud, mobile, and desktop environments.
+Mobile-first web app for learning Chinese characters — search,
+decomposition tree, four-tier status model, FSRS-scheduled review.
+Live at https://decobots.github.io/Ai-/.
 
-## Overview
+One app, three surfaces: a React main UI at `/`, plus Cytoscape views
+at `/network/` (word-graph of the saved set) and `/components/`
+(vocabulary-structure graph).
 
-RIPsV is a modern, lightweight code editor designed to work seamlessly across multiple platforms:
+## Stack
 
-- **Cloud** — Browser-based editing with real-time collaboration
-- **Mobile** — Native mobile experience for coding on the go (iOS & Android)
-- **Desktop** — Full-featured desktop application (Windows, macOS, Linux)
+- React + TypeScript + Vite for the main UI
+- Supabase (Postgres + RLS) for dictionary + user-private state
+- `ts-fsrs` for spaced-repetition scheduling
+- `hanzi-writer` (CDN) for stroke animation + production drills
+- Cytoscape.js for the `/network/` and `/components/` views
 
-## Features
-
-- Syntax highlighting for 50+ languages
-- Intelligent code completion
-- Integrated terminal
-- File explorer with tree view
-- Multi-tab editing
-- Themes and customization
-- Cross-device sync
-- Offline support
-- Git integration
-
-## Tech Stack
-
-- **Frontend**: TypeScript, React
-- **Editor Core**: Monaco Editor
-- **Desktop**: Electron
-- **Mobile**: React Native
-- **Backend**: Node.js
-- **Build Tool**: Vite
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js >= 18
-- npm >= 9
-
-### Installation
+## Quick start
 
 ```bash
-npm install
+npm ci
+npm run dev      # Vite dev server with HMR
+npm run build    # writes dist/
+npm test         # ~105 headless cases across scripts/test-*.mjs
 ```
 
-### Development
+## Documentation
 
-```bash
-# Start web development server
-npm run dev
+The project's documentation lives in two places:
 
-# Build for production
-npm run build
+- **`CLAUDE.md`** (repo root) — file-tree reference and the working
+  agreement for Claude Code (workflow, communication, doc-sync rules).
+  Read this first if you're picking up the project.
+- **[`docs/`](docs/INDEX.md)** — everything else, organized:
+  - [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) — how the app is shaped
+  - [`docs/decisions/`](docs/decisions/INDEX.md) — ADRs (the *why* for specific calls)
+  - [`docs/design-system/`](docs/design-system/INDEX.md) — tokens, type scale, component inventory
+  - [`docs/product/`](docs/product/INDEX.md) — UX redesign spec, QA findings, card-type catalog
+  - [`docs/archive/`](docs/INDEX.md) — historical handoff prompts
 
-# Run tests
-npm test
+## Deployment
 
-# Lint code
-npm run lint
-```
-
-## Project Structure
-
-```
-├── src/
-│   ├── core/           # Editor core logic
-│   ├── components/     # Shared UI components
-│   ├── platform/
-│   │   ├── web/        # Web/cloud platform layer
-│   │   ├── desktop/    # Electron desktop layer
-│   │   └── mobile/     # React Native mobile layer
-│   ├── services/       # Backend services & API
-│   ├── themes/         # Editor themes
-│   ├── utils/          # Shared utilities
-│   └── types/          # TypeScript type definitions
-├── public/             # Static assets
-└── tests/              # Test suites
-```
+Pushing to `claude/main` (default branch) triggers
+`.github/workflows/pages.yml`. It builds Vite, copies the static
+network/components pages, and publishes to GitHub Pages. Supabase
+migrations apply automatically on pushes that touch
+`supabase/migrations/**`.
 
 ## License
 
-MIT
+Unspecified.

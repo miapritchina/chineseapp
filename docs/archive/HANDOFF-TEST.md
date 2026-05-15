@@ -24,7 +24,6 @@ Web apps deployed together on GitHub Pages. **Test the live deployed site:**
 - Chinese learning app (the main one — this is ~all of the work): `https://decobots.github.io/Ai-/`
 - Network graph (satellite): `https://decobots.github.io/Ai-/network/`
 - Components graph (satellite): `https://decobots.github.io/Ai-/components/`
-- **`https://decobots.github.io/Ai-/palette/` — a watercolor painting app. COMPLETELY OUT OF SCOPE. Do not open it, test it, audit it, or screenshot it. Don't mention it beyond noting it exists and was excluded.**
 
 Confirm you're testing the current build: open the Chinese app's **hamburger menu** (top-left) — the version label at the bottom should read `chinese v84` (or higher). Also fetch `https://decobots.github.io/Ai-/build-info.txt` and note the build timestamp. If the version looks stale, say so in the report and test what's live anyway.
 
@@ -44,7 +43,7 @@ Set up a headless browser (Playwright is easiest: `npm i -D playwright && npx pl
   2. **Executive summary**: (a) bugs ranked by severity (Critical / High / Medium / Low / Cosmetic), each referencing its `T-NNN`(s); (b) the top UX/UI recommendations, each referencing its `UX-NNN`.
   3. **Functional test sections** (one per app/screen — see the checklist). For each test: `**T-NNN — <short name>**`, then **Steps**, **Expected**, **Actual**, **Result** (PASS / FAIL / PARTIAL / BLOCKED), **Severity** (if not PASS), **Notes**. For any test of a *visual* screen or element, embed the relevant **screenshot(s)** directly under the test, captioned with the `T-NNN` and viewport/theme (e.g. "T-014 — Saved shelf, mobile, dark"). If a screenshot shows a defect, annotate it — draw a callout box/arrow on the image if convenient, otherwise describe the location precisely in Notes ("the POS tab strip, top ~40% clipped").
   4. **UX/UI audit & recommendations** (see the audit section). Each: `**UX-NNN — <short name>**`, **Where** (which screen/element), **Observation**, **Recommendation**, **Why it helps** (tie to the owner's stated preferences where relevant), **Effort** (S/M/L), **Priority** (High/Med/Low). For visual ones, embed a screenshot of the current state and, if you can, a sketch/markup of the proposed change.
-  5. **Coverage matrix**: a table of areas × what was covered × what was skipped/blocked and why (palette is "excluded by owner").
+  5. **Coverage matrix**: a table of areas × what was covered × what was skipped/blocked and why.
   6. **Appendix**: full list of console errors/warnings seen, per page; environment details (browser version, viewport sizes, etc.).
 - Capture a screenshot of **every distinct screen and major UI state** even when the test passes — the owner wants visual evidence throughout, not just for failures.
 
@@ -113,7 +112,6 @@ Set up a headless browser (Playwright is easiest: `npm i -D playwright && npx pl
 - Console: zero uncaught errors across all pages; note any warnings.
 
 **M. Out of scope (note in the report, don't attempt)**
-- **The watercolor app at `/palette/`** — explicitly excluded by the project owner. Do not open, test, audit, or screenshot it.
 - **Magic-link sign-in** (`AuthButton` → email modal): test that the modal opens and shows "Check your email" after submitting a (fake) address — but you cannot complete sign-in without email access. Don't try.
 - **Cross-device Supabase sync** (saved words / FSRS / mnemonics / sentences syncing across devices): requires a signed-in session on two clients — out of scope. Also: the sentence-sync tables (`user_sentences`, `user_sentence_draft`) may not exist yet if a recent Supabase migration hasn't been applied — if sentence features behave purely locally, that's expected; note it.
 

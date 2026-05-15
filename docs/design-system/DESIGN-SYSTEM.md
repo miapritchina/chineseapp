@@ -1,9 +1,7 @@
 # Design System — Chinese-Character Learning App
 
 > For import into Claude Design or as a reference when designing new screens.
-> Extracted from the codebase (`src/styles.css`, `src/lib/pos.ts`, `src/lib/tree.ts`, `src/lib/types.ts`, component source). See also `design-tokens.css` (machine-usable token file) and `style-guide.html` (living visual reference).
->
-> **This is a reference doc, not built or imported by the app.** Keep it in sync with `src/` — see `CLAUDE.md` → "Design system reference" for the rule. A few "recommendation" notes below have since been actioned in code: `--surface` is now defined; the POS hues are now `--pos-*` tokens in `:root`; `EntitySheet`'s `roleColor()` now returns `var(--role-*)` (no separate hardcoded palette); `usePopover()` consolidates the outside-click/Escape wiring; `.drill-tap-hint` is transient; `.review-kind-tag` / `.bank-chip-pos` floored at 11px. Where this doc and `src/styles.css` disagree, `styles.css` wins for what ships.
+> All values are extracted verbatim from the codebase (`src/styles.css`, `src/lib/pos.ts`, `src/lib/tree.ts`, `src/lib/types.ts`, component source files). See also `design-tokens.css` for a machine-usable token file and `style-guide.html` for a living visual reference.
 
 ---
 
@@ -316,7 +314,7 @@ The app respects iOS safe areas throughout: `env(safe-area-inset-top)` on `.topb
 
 ### 5.3 Motion principles
 
-From DESIGN.md: **No auto-advance timers in drills.** All progression is user-initiated (tap-anywhere-to-advance). The "tap to continue" hint uses a subtle pulse animation (`drill-tap-hint-pulse`) rather than a static label — **design preference: hints should be transient** (fade after ~1.5–2 s or first-occurrence-only), not permanent on-screen text.
+Per [ADR-0007](../decisions/0007-tap-anywhere-to-advance.md): **No auto-advance timers in drills.** All progression is user-initiated (tap-anywhere-to-advance). The "tap to continue" hint uses a subtle pulse animation (`drill-tap-hint-pulse`) rather than a static label — **design preference: hints should be transient** (fade after ~1.5–2 s or first-occurrence-only), not permanent on-screen text.
 
 ---
 
@@ -555,7 +553,7 @@ Every dark-mode override is a hand-written `@media (prefers-color-scheme: dark)`
 
 ### 9.6 Event propagation inconsistency
 
-Some drill buttons stop event propagation (`e.stopPropagation()`) unconditionally; others do so conditionally based on grading state. The v75/v76 bugfix documented in DESIGN.md established the pattern: stop propagation only when `!allGraded`. **Recommendation:** Audit all `stopPropagation` calls across drill components for consistency.
+Some drill buttons stop event propagation (`e.stopPropagation()`) unconditionally; others do so conditionally based on grading state. [ADR-0007](../decisions/0007-tap-anywhere-to-advance.md) established the pattern: stop propagation only when `!allGraded`. **Recommendation:** Audit all `stopPropagation` calls across drill components for consistency.
 
 ### 9.7 Font stack declared twice on search input
 

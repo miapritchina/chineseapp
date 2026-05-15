@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entity Card Type Catalog — Chinese Learning App</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --card-bg: #ffffff;
+  --surface-2: #f0ece4;
+  --text: #1d1b18;
+  --muted: #6b6359;
+  --accent: #b12a2a;
+  --border: #e4dfd5;
+  --role-iconic: #2563eb;
+  --role-meaning: #16a34a;
+  --role-sound: #dc2626;
+  --role-simplified: #9333ea;
+  --pos-pron: #6b3a8a;
+  --pos-v: #b14430;
+  --pos-n: #2f5a8e;
+  --pos-adj: #4f7d3a;
+  --pos-adv: #8a6a26;
+  --pos-part: #8a8273;
+  --status-saved: #d97706;
+  --status-learned: #2e7d32;
+  --status-wrote: #7a3aa8;
+  --status-review: #c2410c;
+  --grade-again: #b91c1c;
+  --grade-good: #15803d;
+  --grade-easy: #1d4ed8;
+  --correct-bg: rgba(46, 125, 50, 0.12);
+  --wrong-bg: rgba(185, 28, 28, 0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hanzi {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", system-ui, sans-serif;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+header {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 32px 40px;
+}
+
+header h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 42px;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+header h1 span {
+  font-style: italic;
+  color: var(--accent);
+}
+
+header p.subtitle {
+  margin-top: 12px;
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+header .stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+header .stat {
+  display: flex;
+  flex-direction: column;
+}
+
+header .stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+
+header .stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-top: 4px;
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 32px 80px;
+}
+
+.catalog-entry {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 32px;
+  padding: 40px 0;
+  border-top: 1px solid var(--border);
+  align-items: start;
+}
+
+.catalog-entry:first-child {
+  border-top: none;
+}
+
+.entry-meta {
+  position: sticky;
+  top: 24px;
+}
+
+.entry-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.entry-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.entry-class {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: rgba(177, 42, 42, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.entry-where {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.entry-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.entry-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.info-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.entry-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.entry-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(177,42,42,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(37,99,235,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ── Card Type Mockups ── */
+
+/* 1. Saved Shelf Card */
+.mock-shelf-card {
+  width: 130px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.mock-shelf-card .star {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 14px;
+  color: var(--status-saved);
+}
+
+.mock-shelf-card .pinyin {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mock-shelf-card .char {
+  font-size: 46px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 2px 0;
+}
+
+.mock-shelf-card .gloss {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 2. Result Row */
+.mock-result-row {
+  width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.mock-result-row .char {
+  font-size: 32px;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.mock-result-row .mid {
+  flex: 1;
+  min-width: 0;
+}
+
+.mock-result-row .pinyin {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.mock-result-row .gloss {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mock-result-row .star {
+  font-size: 18px;
+  color: var(--status-saved);
+  flex-shrink: 0;
+}
+
+/* 3. EntitySheet Header */
+.mock-sheet-header {
+  width: 280px;
+  background: var(--card-bg);
+  border-radius: 22px 22px 12px 12px;
+  padding: 20px 24px 18px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+}
+
+.mock-sheet-header .handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 14px;
+}
+
+.mock-sheet-header .eyebrow {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mock-sheet-header .char {
+  font-size: 120px;
+  font-weight: 500;
+  line-height: 1;
+  margin: 4px 0;
+  color: var(--text);
+  opacity: 0.15;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.mock-sheet-header .char-front {
+  font-size: 80px;
+  font-weight: 500;
+  line-height: 1;
+  margin: 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.mock-sheet-header .pos {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mock-sheet-header .defs {
+  font-size: 14px;
+  color: var(--text);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* 4. Etymology Glyph */
+.mock-etym-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 14px 20px;
+  border: 1px solid var(--border);
+}
+
+.mock-etym-glyph {
+  font-size: 30px;
+  font-weight: 400;
+  padding: 2px 4px;
+}
+
+.mock-etym-op {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.mock-etym-result {
+  font-size: 30px;
+  font-weight: 500;
+}
+
+/* 5. Saved Words Row */
+.mock-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 260px;
+}
+
+.mock-saved-row .char {
+  font-size: 20px;
+}
+
+.mock-saved-row .pinyin {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mock-saved-row .gloss {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 6. NodeCard (Tree) */
+.mock-node-card {
+  width: 200px;
+  background: var(--card-bg);
+  border: 2px solid var(--role-meaning);
+  border-radius: 16px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.mock-node-card .badge {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--role-meaning);
+  border: 1px solid var(--role-meaning);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-bottom: 6px;
+}
+
+.mock-node-card .char {
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1;
+  margin: 4px 0;
+}
+
+.mock-node-card .pinyin {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mock-node-card .gloss {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.mock-node-card .etym-note {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 6px;
+  line-height: 1.4;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+/* 7. Bank Chip */
+.mock-bank-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--pos-n);
+  border-radius: 10px;
+  padding: 8px 12px;
+  width: 170px;
+}
+
+.mock-bank-chip .char {
+  font-size: 26px;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.mock-bank-chip .info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mock-bank-chip .pinyin {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mock-bank-chip .gloss {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mock-bank-chip .pos-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--pos-n);
+  background: rgba(47,90,142,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+/* 8. Composer Token */
+.mock-composer-token {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px 6px;
+}
+
+.mock-composer-token .char {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.mock-composer-token .pinyin {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+}
+
+/* 9. Phonetics Row */
+.mock-phonetics-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  width: 360px;
+}
+
+.mock-phonetics-row .char {
+  font-size: 30px;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.mock-phonetics-row .mid {
+  flex: 1;
+}
+
+.mock-phonetics-row .pinyin {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.mock-phonetics-row .count {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mock-phonetics-row .family {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mock-phonetics-row .family-char {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.mock-phonetics-row .star {
+  font-size: 16px;
+  color: var(--border);
+  flex-shrink: 0;
+}
+
+/* 10. Component Chip */
+.mock-component-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
+.mock-component-chip .char {
+  font-size: 24px;
+}
+
+.mock-component-chip .pinyin {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mock-component-chip .count {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* 11. Review Hanzi */
+.mock-review-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 28px 40px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  width: 260px;
+}
+
+.mock-review-display .char {
+  font-size: 84px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.mock-review-display .speaker {
+  font-size: 18px;
+  color: var(--muted);
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.mock-review-display .pinyin {
+  font-size: 22px;
+  color: var(--text);
+  margin-top: 8px;
+}
+
+.mock-review-display .gloss {
+  font-size: 16px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* 12. Drill Pick Button */
+.mock-drill-picks {
+  display: flex;
+  gap: 16px;
+}
+
+.mock-drill-pick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.mock-drill-pick .char {
+  font-size: 30px;
+}
+
+.mock-drill-pick.correct {
+  border-color: var(--role-meaning);
+  background: var(--correct-bg);
+}
+
+.mock-drill-pick.wrong {
+  border-color: var(--grade-again);
+  background: var(--wrong-bg);
+}
+
+/* 13. Cluster Cell */
+.mock-cluster-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mock-cluster-cell {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.mock-cluster-cell .char {
+  font-size: 36px;
+  line-height: 1.1;
+}
+
+.mock-cluster-cell .gloss {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.mock-cluster-cell.revealed {
+  border-color: var(--role-meaning);
+}
+
+.mock-cluster-cell.hidden .char,
+.mock-cluster-cell.hidden .gloss {
+  opacity: 0.15;
+}
+
+/* 14. Disambig Cell */
+.mock-disambig {
+  display: flex;
+  gap: 12px;
+}
+
+.mock-disambig-cell {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  text-align: center;
+  flex: 1;
+}
+
+.mock-disambig-cell .char {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.mock-disambig-cell .gloss {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* 15. Graph Node */
+.mock-graph-area {
+  width: 300px;
+  height: 180px;
+  position: relative;
+}
+
+.mock-graph-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid;
+}
+
+.mock-graph-node.word {
+  border-radius: 6px;
+  background: rgba(177,42,42,0.08);
+  border-color: var(--accent);
+  padding: 4px 8px;
+}
+
+.mock-graph-node.word .char {
+  font-size: 16px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.mock-graph-node.component {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.mock-graph-node.component .char {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.mock-graph-node.component.role-m {
+  border-color: var(--role-meaning);
+  background: rgba(22,163,74,0.08);
+}
+
+.mock-graph-node.component.role-m .char {
+  color: var(--role-meaning);
+}
+
+.mock-graph-node.component.role-s {
+  border-color: var(--role-sound);
+  background: rgba(220,38,38,0.08);
+}
+
+.mock-graph-node.component.role-s .char {
+  color: var(--role-sound);
+}
+
+.mock-graph-edge {
+  position: absolute;
+  height: 1px;
+  background: var(--border);
+  transform-origin: 0 0;
+}
+
+/* 16. Saved Sentence */
+.mock-sentence-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 300px;
+}
+
+.mock-sentence-row .chars {
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+
+.mock-sentence-row .pinyin {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mock-sentence-row .load-icon {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ── Multi-card displays ── */
+.multi-cards {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .catalog-entry {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .entry-meta {
+    position: static;
+  }
+  header h1 {
+    font-size: 32px;
+  }
+  .mock-phonetics-row,
+  .mock-result-row,
+  .mock-sentence-row {
+    width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Entity Card <span>Catalog</span></h1>
+  <p class="subtitle">Every place a Chinese character or word appears as a visual unit in the app. 16 distinct types, each with its own classes, sizes, and layout — all representing the same conceptual element.</p>
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-num">16</span>
+      <span class="stat-label">Card types</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">40+</span>
+      <span class="stat-label">CSS classes</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">8–132</span>
+      <span class="stat-label">px hanzi range</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- 1. Shelf Card -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M1</div>
+    <div class="entry-name">Shelf Card</div>
+    <div class="entry-class">.card .char</div>
+    <div class="entry-where">SavedShelf</div>
+    <p class="entry-desc">Square tile in the 3-column saved-words grid. The most-seen card in the app. Pinyin top, large hanzi center, English gloss bottom, status star top-right. Tap opens EntitySheet.</p>
+    <div class="entry-info">
+      <span class="info-pill">46px hanzi</span>
+      <span class="info-pill">38px mobile</span>
+      <span class="info-pill">tap → sheet</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="multi-cards">
+      <div class="mock-shelf-card">
+        <span class="star">★</span>
+        <div class="pinyin">hǎo</div>
+        <div class="char hanzi">好</div>
+        <div class="gloss">good</div>
+      </div>
+      <div class="mock-shelf-card">
+        <span class="star">★</span>
+        <div class="pinyin">nǐhǎo</div>
+        <div class="char hanzi" style="font-size:36px;">你好</div>
+        <div class="gloss">hello</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Result Row -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M2</div>
+    <div class="entry-name">Result Row</div>
+    <div class="entry-class">.result-row .r-hanzi</div>
+    <div class="entry-where">Dictionary search</div>
+    <p class="entry-desc">Full-width list row in search results. Hanzi left, pinyin + English right, star far-right. Tap opens EntitySheet.</p>
+    <div class="entry-info">
+      <span class="info-pill">32px hanzi</span>
+      <span class="info-pill">22px mobile</span>
+      <span class="info-pill">tap → sheet</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-result-row">
+      <div class="char hanzi">好</div>
+      <div class="mid">
+        <div class="pinyin">hǎo</div>
+        <div class="gloss">good; fine; nice</div>
+      </div>
+      <div class="star">★</div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. EntitySheet Header -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M3</div>
+    <div class="entry-name">EntitySheet Header</div>
+    <div class="entry-class">.sheet-glyph-*</div>
+    <div class="entry-where">EntitySheet (bottom sheet / modal)</div>
+    <p class="entry-desc">The full detail surface. Stroke-animated hanzi (120px single, clamp 40–60px multi), eyebrow label, POS tag, full glosses, status dropdown. The richest representation.</p>
+    <div class="entry-info">
+      <span class="info-pill">120px single</span>
+      <span class="info-pill">clamp 40–60px multi</span>
+      <span class="info-pill">stroke animation</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-sheet-header">
+      <div class="handle"></div>
+      <div class="eyebrow">HǍO · TONE 3 · TOP 1 000</div>
+      <div class="char hanzi">好</div>
+      <div class="char-front hanzi">好</div>
+      <div class="pos">ADJ</div>
+      <div class="defs">good; fine; nice; OK; it's settled</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Etymology Glyph -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M4</div>
+    <div class="entry-name">Etymology Glyph</div>
+    <div class="entry-class">.sheet-etym-glyph</div>
+    <div class="entry-where">EntitySheet §01 Etymology</div>
+    <p class="entry-desc">Role-colored hanzi in the decomposition equation (女 + 子 = 好). Each component colored by its semantic role: blue = iconic, green = meaning, red = sound, purple = simplified. Tap drills into that component's sheet.</p>
+    <div class="entry-info">
+      <span class="info-pill">30px hanzi</span>
+      <span class="info-pill">role-colored</span>
+      <span class="info-pill">tap → drill</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-etym-row">
+      <div class="mock-etym-glyph hanzi" style="color: var(--role-meaning);">女</div>
+      <div class="mock-etym-op">+</div>
+      <div class="mock-etym-glyph hanzi" style="color: var(--role-meaning);">子</div>
+      <div class="mock-etym-op">=</div>
+      <div class="mock-etym-result hanzi">好</div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. "In Your Saved Words" Row -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M5</div>
+    <div class="entry-name">"In Your Saved Words" Row</div>
+    <div class="entry-class">.sheet-saved-hanzi</div>
+    <div class="entry-where">EntitySheet §02</div>
+    <p class="entry-desc">Compact pill showing a saved word that contains the current character. Hanzi + pinyin + gloss inline. Tap navigates to that word's sheet.</p>
+    <div class="entry-info">
+      <span class="info-pill">20px hanzi</span>
+      <span class="info-pill">inline pill</span>
+      <span class="info-pill">tap → navigate</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-saved-row">
+      <div class="char hanzi">你好</div>
+      <div>
+        <div class="pinyin">nǐhǎo</div>
+        <div class="gloss">hello</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. NodeCard -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M6</div>
+    <div class="entry-name">NodeCard</div>
+    <div class="entry-class">.node-card</div>
+    <div class="entry-where">DecompositionTree (SVG foreignObject)</div>
+    <p class="entry-desc">220px wide card inside the SVG tree. Role badge, large hanzi (132px at node scale), pinyin, gloss, etymology note. Role-tinted border. Rendered inside foreignObject so actual pixel size depends on SVG zoom.</p>
+    <div class="entry-info">
+      <span class="info-pill">132px fallback</span>
+      <span class="info-pill">220px wide</span>
+      <span class="info-pill">role-tinted border</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-node-card">
+      <div class="badge">meaning</div>
+      <div class="char hanzi">女</div>
+      <div class="pinyin">nǚ</div>
+      <div class="gloss">female · woman · daughter</div>
+      <div class="etym-note">Pictograph of a kneeling woman</div>
+    </div>
+  </div>
+</div>
+
+<!-- 7. Bank Chip -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M7</div>
+    <div class="entry-name">Bank Chip</div>
+    <div class="entry-class">.bank-chip .bank-chip-c</div>
+    <div class="entry-where">SentenceStudio word bank</div>
+    <p class="entry-desc">Card in 2-column word bank grid. POS-colored left border, hanzi left, pinyin + gloss + POS micro-badge right. Tap adds word to sentence composer.</p>
+    <div class="entry-info">
+      <span class="info-pill">26px hanzi</span>
+      <span class="info-pill">POS-colored border</span>
+      <span class="info-pill">tap → compose</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="mock-bank-chip">
+        <div class="char hanzi">老师</div>
+        <div class="info">
+          <div class="pinyin">lǎoshī</div>
+          <div class="gloss">teacher</div>
+          <div class="pos-badge">noun</div>
+        </div>
+      </div>
+      <div class="mock-bank-chip" style="border-left-color: var(--pos-adj);">
+        <div class="char hanzi">好</div>
+        <div class="info">
+          <div class="pinyin">hǎo</div>
+          <div class="gloss">good</div>
+          <div class="pos-badge" style="color: var(--pos-adj); background: rgba(79,125,58,0.08);">adj</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 8. Composer Token -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M8</div>
+    <div class="entry-name">Composer Token</div>
+    <div class="entry-class">.composer-token-c</div>
+    <div class="entry-where">SentenceStudio composer</div>
+    <p class="entry-desc">Small chip in the sentence composer line. Hanzi over pinyin. Tap to remove from sentence. The smallest interactive entity representation.</p>
+    <div class="entry-info">
+      <span class="info-pill">22px hanzi</span>
+      <span class="info-pill">10px pinyin</span>
+      <span class="info-pill">tap → remove</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: flex; gap: 6px; align-items: end;">
+      <div class="mock-composer-token">
+        <div class="char hanzi">你好</div>
+        <div class="pinyin">nǐhǎo</div>
+      </div>
+      <div class="mock-composer-token">
+        <div class="char hanzi">老师</div>
+        <div class="pinyin">lǎoshī</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 9. Phonetics Row -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M9</div>
+    <div class="entry-name">Phonetics Row</div>
+    <div class="entry-class">.phonetics-row .phonetics-row-char</div>
+    <div class="entry-where">PhoneticsPage</div>
+    <p class="entry-desc">Full-width row listing a phonetic component. Main character left, pinyin + "in N chars" count, then a preview strip of family members at tiny size. Star far-right.</p>
+    <div class="entry-info">
+      <span class="info-pill">30px main</span>
+      <span class="info-pill">16px family</span>
+      <span class="info-pill">tap → sheet</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-phonetics-row">
+      <div class="char hanzi">非</div>
+      <div class="mid">
+        <div class="pinyin">fēi · in 17 chars</div>
+        <div class="family">
+          <span class="family-char hanzi">啡</span>
+          <span class="family-char hanzi">排</span>
+          <span class="family-char hanzi">罪</span>
+          <span class="family-char hanzi">辈</span>
+          <span class="family-char hanzi">悲</span>
+          <span class="family-char hanzi">菲</span>
+        </div>
+      </div>
+      <div class="star">☆</div>
+    </div>
+  </div>
+</div>
+
+<!-- 10. Component Chip -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M10</div>
+    <div class="entry-name">Component Chip</div>
+    <div class="entry-class">.component-chip</div>
+    <div class="entry-where">ComponentTable (My Words by Component)</div>
+    <p class="entry-desc">Small pill in the component grid. Shows a shared component character + pinyin + count of saved words containing it. Tap filters the saved grid by that component.</p>
+    <div class="entry-info">
+      <span class="info-pill">24px hanzi</span>
+      <span class="info-pill">tap → filter</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: flex; gap: 8px;">
+      <div class="mock-component-chip">
+        <div class="char hanzi">女</div>
+        <div class="pinyin">nǚ</div>
+        <div class="count">3 words</div>
+      </div>
+      <div class="mock-component-chip">
+        <div class="char hanzi">子</div>
+        <div class="pinyin">zǐ</div>
+        <div class="count">2 words</div>
+      </div>
+      <div class="mock-component-chip">
+        <div class="char hanzi">口</div>
+        <div class="pinyin">kǒu</div>
+        <div class="count">5 words</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11. Review Hanzi -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M11</div>
+    <div class="entry-name">Review Hanzi Display</div>
+    <div class="entry-class">.review-hanzi</div>
+    <div class="entry-where">CombinedRecognitionCard</div>
+    <p class="entry-desc">Hero-size centered glyph on the drill card. The focal element of every review session. Speaker icon, pinyin below (revealed), gloss below that. Not a "card" per se — a standalone display element.</p>
+    <div class="entry-info">
+      <span class="info-pill">84px hanzi</span>
+      <span class="info-pill">22px pinyin</span>
+      <span class="info-pill">tap → reveal</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-review-display">
+      <div class="char hanzi">家</div>
+      <div class="speaker">🔊</div>
+      <div class="pinyin">jiā</div>
+      <div class="gloss">home; family</div>
+    </div>
+  </div>
+</div>
+
+<!-- 12. Drill Pick Button -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M12</div>
+    <div class="entry-name">Drill Pick Button</div>
+    <div class="entry-class">.phonetic-tap-pick-char</div>
+    <div class="entry-where">PhoneticTap / FamilyTransfer drills</div>
+    <p class="entry-desc">Tappable answer choice showing a single component character. Border flashes green (correct) or red (wrong) on tap. Used in "tap the sound component" and family transfer drills.</p>
+    <div class="entry-info">
+      <span class="info-pill">30px hanzi</span>
+      <span class="info-pill">correct/wrong flash</span>
+      <span class="info-pill">tap → grade</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-drill-picks">
+      <div class="mock-drill-pick">
+        <div class="char hanzi">宀</div>
+      </div>
+      <div class="mock-drill-pick correct">
+        <div class="char hanzi">豕</div>
+      </div>
+      <div class="mock-drill-pick wrong">
+        <div class="char hanzi">氵</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 13. Cluster Cell -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M13</div>
+    <div class="entry-name">Cluster Cell</div>
+    <div class="entry-class">.cluster-cell .cluster-cell-hanzi</div>
+    <div class="entry-where">ClusterRecall</div>
+    <p class="entry-desc">Card in a 2×2 grid of related saved words. Tap to reveal, then grade the cluster. Hidden state shows blurred/dimmed content. Similar to shelf card but simpler — no status icon.</p>
+    <div class="entry-info">
+      <span class="info-pill">36px hanzi</span>
+      <span class="info-pill">tap → reveal</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-cluster-grid">
+      <div class="mock-cluster-cell revealed">
+        <div class="char hanzi">好</div>
+        <div class="gloss">good</div>
+      </div>
+      <div class="mock-cluster-cell revealed">
+        <div class="char hanzi">你好</div>
+        <div class="gloss">hello</div>
+      </div>
+      <div class="mock-cluster-cell hidden">
+        <div class="char hanzi">女</div>
+        <div class="gloss">female</div>
+      </div>
+      <div class="mock-cluster-cell hidden">
+        <div class="char hanzi">子</div>
+        <div class="gloss">child</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 14. Disambig Cell -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M14</div>
+    <div class="entry-name">Disambiguation Cell</div>
+    <div class="entry-class">.disambig-cell .disambig-cell-glyph</div>
+    <div class="entry-where">DisambiguationCard (leech interleave)</div>
+    <p class="entry-desc">Side-by-side comparison of confusable characters. Large hanzi with gloss below. Helps learners distinguish visually similar characters.</p>
+    <div class="entry-info">
+      <span class="info-pill">64px hanzi</span>
+      <span class="info-pill">side-by-side</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-disambig">
+      <div class="mock-disambig-cell">
+        <div class="char hanzi">大</div>
+        <div class="gloss">big; large</div>
+      </div>
+      <div class="mock-disambig-cell">
+        <div class="char hanzi">太</div>
+        <div class="gloss">too; very</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 15. Graph Node -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M15</div>
+    <div class="entry-name">Graph Node</div>
+    <div class="entry-class">Cytoscape.js node</div>
+    <div class="entry-where">Network / Components graphs</div>
+    <p class="entry-desc">Cytoscape.js rendered shapes. Word nodes are red rounded squares, character nodes are grey circles, component nodes are role-colored (green/blue/red) hexagons. Hanzi as label only. Long-press for translation, double-tap to navigate.</p>
+    <div class="entry-info">
+      <span class="info-pill">~16px label</span>
+      <span class="info-pill">long-press → info</span>
+      <span class="info-pill">double-tap → navigate</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-graph-area">
+      <svg width="300" height="180" style="position:absolute;inset:0;pointer-events:none;">
+        <line x1="150" y1="40" x2="70" y2="110" stroke="#e4dfd5" stroke-width="1"/>
+        <line x1="150" y1="40" x2="230" y2="110" stroke="#e4dfd5" stroke-width="1"/>
+        <line x1="70" y1="110" x2="50" y2="160" stroke="#16a34a" stroke-width="1" opacity="0.5"/>
+        <line x1="70" y1="110" x2="120" y2="160" stroke="#16a34a" stroke-width="1" opacity="0.5"/>
+        <line x1="230" y1="110" x2="200" y2="160" stroke="#dc2626" stroke-width="1" opacity="0.5"/>
+        <line x1="230" y1="110" x2="260" y2="160" stroke="#16a34a" stroke-width="1" opacity="0.5"/>
+      </svg>
+      <div class="mock-graph-node word" style="left:120px;top:24px;">
+        <span class="char hanzi">你好</span>
+      </div>
+      <div class="mock-graph-node component" style="left:52px;top:92px;">
+        <span class="char hanzi">你</span>
+      </div>
+      <div class="mock-graph-node component" style="left:212px;top:92px;">
+        <span class="char hanzi">好</span>
+      </div>
+      <div class="mock-graph-node component role-m" style="left:32px;top:142px;">
+        <span class="char hanzi">亻</span>
+      </div>
+      <div class="mock-graph-node component role-s" style="left:102px;top:142px;">
+        <span class="char hanzi">尔</span>
+      </div>
+      <div class="mock-graph-node component role-m" style="left:182px;top:142px;">
+        <span class="char hanzi">女</span>
+      </div>
+      <div class="mock-graph-node component role-m" style="left:242px;top:142px;">
+        <span class="char hanzi">子</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 16. Saved Sentence Row -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num">M16</div>
+    <div class="entry-name">Saved Sentence Row</div>
+    <div class="entry-class">.saved-sentence-hanzi</div>
+    <div class="entry-where">SentenceStudio saved list</div>
+    <p class="entry-desc">Row of a previously composed sentence. Hanzi string + pinyin. Tap to reload into the composer. The smallest hanzi size in the app (17px).</p>
+    <div class="entry-info">
+      <span class="info-pill">17px hanzi</span>
+      <span class="info-pill">tap → reload</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div class="mock-sentence-row">
+      <div>
+        <div class="chars hanzi">你好老师</div>
+        <div class="pinyin">nǐhǎo lǎoshī</div>
+      </div>
+      <div class="load-icon">↻</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PROPOSED VARIANTS                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div style="margin-top: 60px; padding-top: 40px; border-top: 3px solid var(--accent);">
+
+<h2 style="font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; margin-bottom: 6px;">Proposed <span style="font-style: italic; color: var(--accent);">&lt;Entity&gt;</span> Variants</h2>
+<p style="font-size: 14px; color: var(--muted); margin-bottom: 32px; max-width: 560px; line-height: 1.6;">One component, four sizes. Same visual stack everywhere: pinyin (top) → hanzi (center) → meaning + POS inline (bottom). Status ★ in top-right corner at medium+.</p>
+
+<!-- P1. Tiny -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num" style="color: var(--accent);">P1</div>
+    <div class="entry-name">Entity · Tiny</div>
+    <div class="entry-class">&lt;Entity size="tiny"&gt;</div>
+    <div class="entry-where">Graph nodes</div>
+    <p class="entry-desc">Compact circle. Hanzi + meaning inside (no pinyin). Role-color border when applicable. Pinyin appears on hover/long-press only.</p>
+    <div class="entry-info">
+      <span class="info-pill">22px hanzi</span>
+      <span class="info-pill">no pinyin inline</span>
+      <span class="info-pill">role-color border</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <div style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--role-meaning); background: var(--card-bg);">
+        <span class="hanzi" style="font-size: 22px; line-height: 1;">好</span>
+        <span style="font-size: 9px; color: var(--muted); line-height: 1; margin-top: 1px;">good</span>
+      </div>
+      <div style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--role-sound); background: var(--card-bg);">
+        <span class="hanzi" style="font-size: 22px; line-height: 1;">尔</span>
+        <span style="font-size: 9px; color: var(--muted); line-height: 1; margin-top: 1px;">you</span>
+      </div>
+      <div style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--border); background: var(--card-bg);">
+        <span class="hanzi" style="font-size: 18px; line-height: 1;">你好</span>
+        <span style="font-size: 8px; color: var(--muted); line-height: 1; margin-top: 1px;">hello</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P2. Small -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num" style="color: var(--accent);">P2</div>
+    <div class="entry-name">Entity · Small</div>
+    <div class="entry-class">&lt;Entity size="sm"&gt;</div>
+    <div class="entry-where">Etymology glyphs, phonetics preview, "in your saved words"</div>
+    <p class="entry-desc">Compact card with role-color left border. Stack: pinyin (top) → hanzi → meaning + POS suffix. POS is inline after meaning, not a separate badge.</p>
+    <div class="entry-info">
+      <span class="info-pill">28px hanzi</span>
+      <span class="info-pill">role-color border</span>
+      <span class="info-pill">POS inline</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: flex; gap: 10px; align-items: start;">
+      <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 8px 14px; border-radius: 8px; border-left: 3px solid var(--role-meaning); background: var(--card-bg); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <span style="font-size: 11px; color: var(--muted); line-height: 1;">nǚ</span>
+        <span class="hanzi" style="font-size: 28px; line-height: 1.1; margin-top: 2px;">女</span>
+        <span style="font-size: 12px; color: var(--muted); margin-top: 3px;">female <span style="font-size: 10px; color: var(--border);">noun</span></span>
+      </div>
+      <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 8px 14px; border-radius: 8px; border-left: 3px solid var(--role-meaning); background: var(--card-bg); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <span style="font-size: 11px; color: var(--muted); line-height: 1;">zǐ</span>
+        <span class="hanzi" style="font-size: 28px; line-height: 1.1; margin-top: 2px;">子</span>
+        <span style="font-size: 12px; color: var(--muted); margin-top: 3px;">child <span style="font-size: 10px; color: var(--border);">noun</span></span>
+      </div>
+      <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 8px 14px; border-radius: 8px; border-left: 3px solid var(--pos-n); background: var(--card-bg); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <span style="font-size: 11px; color: var(--muted); line-height: 1;">nǐhǎo</span>
+        <span class="hanzi" style="font-size: 24px; line-height: 1.1; margin-top: 2px;">你好</span>
+        <span style="font-size: 12px; color: var(--muted); margin-top: 3px;">hello <span style="font-size: 10px; color: var(--border);">intj</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P3. Medium -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num" style="color: var(--accent);">P3</div>
+    <div class="entry-name">Entity · Medium</div>
+    <div class="entry-class">&lt;Entity size="md"&gt;</div>
+    <div class="entry-where">Shelf cards, search rows, word bank chips, cluster cells</div>
+    <p class="entry-desc">The workhorse. Same stack: pinyin → hanzi → meaning + POS. Status ★ in top-right corner. Hanzi scales adaptively: 40px (1 char), 36px (2), 32px (3), 22px (4+).</p>
+    <div class="entry-info">
+      <span class="info-pill">40→22px adaptive</span>
+      <span class="info-pill">★ top-right</span>
+      <span class="info-pill">POS inline</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: flex; gap: 12px; align-items: start;">
+      <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 14px 16px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border); min-width: 110px; position: relative;">
+        <span style="position: absolute; top: 8px; right: 10px; font-size: 14px; color: var(--status-saved);">★</span>
+        <span style="font-size: 12px; color: var(--muted); line-height: 1;">hǎo</span>
+        <span class="hanzi" style="font-size: 40px; line-height: 1.15; margin-top: 2px;">好</span>
+        <span style="font-size: 13px; color: var(--muted); margin-top: 4px;">good <span style="font-size: 10px; color: var(--border);">adj</span></span>
+      </div>
+      <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 14px 16px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border); min-width: 110px; position: relative;">
+        <span style="position: absolute; top: 8px; right: 10px; font-size: 14px; color: var(--status-saved);">★</span>
+        <span style="font-size: 12px; color: var(--muted); line-height: 1;">lǎoshī</span>
+        <span class="hanzi" style="font-size: 32px; line-height: 1.15; margin-top: 2px;">老师</span>
+        <span style="font-size: 13px; color: var(--muted); margin-top: 4px;">teacher <span style="font-size: 10px; color: var(--border);">noun</span></span>
+      </div>
+      <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 14px 12px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border); min-width: 110px; position: relative;">
+        <span style="position: absolute; top: 8px; right: 10px; font-size: 14px; color: var(--status-saved);">★</span>
+        <span style="font-size: 10px; color: var(--muted); line-height: 1;">fāzhǎnzhōngguójiā</span>
+        <span class="hanzi" style="font-size: 22px; line-height: 1.2; margin-top: 2px; letter-spacing: 1px;">发展中国家</span>
+        <span style="font-size: 11px; color: var(--muted); margin-top: 4px; text-align: center;">developing country <span style="font-size: 9px; color: var(--border);">noun</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P4. Large -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num" style="color: var(--accent);">P4</div>
+    <div class="entry-name">Entity · Large</div>
+    <div class="entry-class">&lt;Entity size="lg"&gt;</div>
+    <div class="entry-where">EntitySheet header</div>
+    <p class="entry-desc">Same stack, just bigger. Pinyin → hanzi (56px) → meaning + POS. Status ★ top-right. Component breakdown below the divider, with each component rendered as P1-tiny with pinyin + meaning.</p>
+    <div class="entry-info">
+      <span class="info-pill">56px hanzi</span>
+      <span class="info-pill">★ top-right</span>
+      <span class="info-pill">+ component breakdown</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 20px 28px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border); min-width: 220px; position: relative;">
+      <span style="position: absolute; top: 12px; right: 14px; font-size: 16px; color: var(--status-saved);">★</span>
+      <span style="font-size: 14px; color: var(--muted); line-height: 1;">hǎo</span>
+      <span class="hanzi" style="font-size: 56px; line-height: 1.1; margin-top: 2px;">好</span>
+      <span style="font-size: 15px; color: var(--muted); margin-top: 6px;">good, fine, nice <span style="font-size: 11px; color: var(--border);">adj</span></span>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <span style="font-size: 9px; color: var(--muted); line-height: 1;">nǚ</span>
+          <span class="hanzi" style="font-size: 24px; border: 2px solid var(--role-meaning); border-radius: 6px; padding: 2px 6px; line-height: 1.1;">女</span>
+          <span style="font-size: 9px; color: var(--muted); margin-top: 2px;">female</span>
+        </div>
+        <span style="font-size: 14px; color: var(--muted);">+</span>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <span style="font-size: 9px; color: var(--muted); line-height: 1;">zǐ</span>
+          <span class="hanzi" style="font-size: 24px; border: 2px solid var(--role-meaning); border-radius: 6px; padding: 2px 6px; line-height: 1.1;">子</span>
+          <span style="font-size: 9px; color: var(--muted); margin-top: 2px;">child</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P5. Hero (review) -->
+<div class="catalog-entry">
+  <div class="entry-meta">
+    <div class="entry-num" style="color: var(--accent);">P5</div>
+    <div class="entry-name">Entity · Hero</div>
+    <div class="entry-class">&lt;Entity size="hero"&gt;</div>
+    <div class="entry-where">Review drill cards, disambiguation</div>
+    <p class="entry-desc">Maximum-size display for drill focus. Same stack but much larger. Speaker icon. Used when the character IS the entire screen's purpose. No status icon (irrelevant in review context).</p>
+    <div class="entry-info">
+      <span class="info-pill">84–120px hanzi</span>
+      <span class="info-pill">reveal animation</span>
+      <span class="info-pill">🔊 speaker</span>
+    </div>
+  </div>
+  <div class="entry-visual">
+    <div style="display: flex; flex-direction: column; align-items: center; padding: 24px 40px;">
+      <span style="font-size: 14px; color: var(--muted); line-height: 1;">jiā</span>
+      <span class="hanzi" style="font-size: 100px; line-height: 1; margin-top: 4px;">家</span>
+      <span style="font-size: 16px; color: var(--muted); margin-top: 8px;">home, family <span style="font-size: 12px; color: var(--border);">noun</span></span>
+      <span style="font-size: 18px; color: var(--muted); margin-top: 6px; cursor: pointer;">🔊</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- MAPPING TABLE                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div style="margin-top: 60px; padding-top: 40px; border-top: 3px solid var(--accent);">
+
+<h2 style="font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; margin-bottom: 6px;">Mapping <span style="font-style: italic; color: var(--accent);">M → P</span></h2>
+<p style="font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6;">Which proposed variant replaces each existing card type.</p>
+
+<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+<thead>
+<tr style="border-bottom: 2px solid var(--accent);">
+  <th style="text-align: left; padding: 8px 12px; font-weight: 500;">Current (M)</th>
+  <th style="text-align: left; padding: 8px 12px; font-weight: 500;">Name</th>
+  <th style="text-align: center; padding: 8px 12px; font-weight: 500;">→ Proposed (P)</th>
+  <th style="text-align: left; padding: 8px 12px; font-weight: 500;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M1</td>
+  <td style="padding: 8px 12px;">Shelf Card</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P3</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Medium. Primary use case.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M2</td>
+  <td style="padding: 8px 12px;">Result Row</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">M2 <span style="font-size:10px;color:var(--muted);">(keep)</span></td>
+  <td style="padding: 8px 12px; color: var(--muted);">Keep current horizontal row layout. Hanzi left, pinyin+gloss right, star far-right.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M3</td>
+  <td style="padding: 8px 12px;">EntitySheet Header</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P4</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Large, with component breakdown. Owner likes M4's role-color fills (not just border) — consider for component glyphs inside P4.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M4</td>
+  <td style="padding: 8px 12px;">Etymology Glyph</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">M4 <span style="font-size:10px;color:var(--muted);">(keep)</span></td>
+  <td style="padding: 8px 12px; color: var(--muted);">Keep current role-colored text glyphs in decomposition equation. Don't unify — the colored-text approach is better than bordered cards here.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M5</td>
+  <td style="padding: 8px 12px;">"In Your Saved Words"</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">→ M2</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Merge with Result Row layout. Same horizontal row style as M2.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M6</td>
+  <td style="padding: 8px 12px;">NodeCard (tree)</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">Custom</td>
+  <td style="padding: 8px 12px; color: var(--muted);"><strong style="color:var(--text);">Needs its own redesign.</strong> Keep role-colored border + etymology note. Not a standard P variant — unique to the tree modal context.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M7</td>
+  <td style="padding: 8px 12px;">Bank Chip</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P2</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Small Entity. Compact card for word bank grid.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M8</td>
+  <td style="padding: 8px 12px;">Composer Token</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P1</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Tiny Entity. Minimal inline token in sentence composer.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M9</td>
+  <td style="padding: 8px 12px;">Phonetics Row</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">Custom <span style="font-size:10px;color:var(--muted);">(M6+M2)</span></td>
+  <td style="padding: 8px 12px; color: var(--muted);">Hybrid: row layout like M2, richness like M6's tree card. <strong style="color:var(--text);">+ sound 🔊 button.</strong> Family preview strip stays.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M10</td>
+  <td style="padding: 8px 12px;">Component Chip</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P1</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Tiny, pill variant.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M11</td>
+  <td style="padding: 8px 12px;">Review Hanzi</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P5 <span style="font-size:10px;color:var(--muted);">(mod)</span></td>
+  <td style="padding: 8px 12px; color: var(--muted);">Hero, but with <strong style="color:var(--text);">white background</strong> and <strong style="color:var(--text);">even bigger hanzi</strong> than current P5.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M12</td>
+  <td style="padding: 8px 12px;">Drill Pick Button</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P1</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Tiny, with correct/wrong border state.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M13</td>
+  <td style="padding: 8px 12px;">Cluster Cell</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P2</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Small Entity, with hidden/revealed state overlay.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M14</td>
+  <td style="padding: 8px 12px;">Disambig Cell</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P2</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Small Entity, side-by-side layout. Downsized from P5 Hero.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px 12px; font-weight: 500;">M15</td>
+  <td style="padding: 8px 12px;">Graph Node</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">P1</td>
+  <td style="padding: 8px 12px; color: var(--muted);">Tiny. Role-colored circle/shape.</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+  <td style="padding: 8px 12px; font-weight: 500;">M16</td>
+  <td style="padding: 8px 12px;">Saved Sentence Row</td>
+  <td style="padding: 8px 12px; text-align: center; color: var(--accent); font-weight: 500;">Custom <span style="font-size:10px;color:var(--muted);">(M9+M5+M2)</span></td>
+  <td style="padding: 8px 12px; color: var(--muted);">Hybrid: M2's row layout, M5's "saved words" context, M9's phonetics features. A rich sentence row combining all three patterns.</td>
+</tr>
+</tbody>
+</table>
+
+<div style="margin-top: 24px; padding: 16px; background: var(--surface-2); border-radius: 10px;">
+  <p style="font-size: 13px; color: var(--muted); line-height: 1.7; margin: 0;">
+    <strong style="color: var(--text);">Usage example:</strong> "M7 (Bank Chip) should use P3 (Entity Medium) with a POS-color left border" — or — "M4 should stay as P2 but with the role-color coming from the parent decomposition context."
+  </p>
+</div>
+
+</div>
+
+</main>
+
+</body>
+</html>
