@@ -16,7 +16,7 @@ You are a design-systems engineer. Read an existing web app's code and produce a
 
 ## The app
 
-A mobile-first **Chinese-character learning** web app — React + TypeScript + Vite, deployed to GitHub Pages. Repo: `decobots/Ai-`. Live at `https://decobots.github.io/Ai-/`. Visual character: a warm "paper / ink" palette — an off-white background, near-black ink, a single muted-red ("vermillion") accent; full dark-mode support; lots of **role-colored decomposition UI** (a character breaks into components, each tinted by its semantic role — iconic ≈ blue, meaning ≈ green, sound ≈ red). There are two satellite static pages (`/network/`, `/components/` — Cytoscape graphs) and an unrelated watercolor app at `/palette/` — **ignore `/palette/` entirely** for this exercise.
+A mobile-first **Chinese-character learning** web app — React + TypeScript + Vite, deployed to GitHub Pages. Repo: `decobots/Ai-`. Live at `https://decobots.github.io/Ai-/`. Visual character: a warm "paper / ink" palette — an off-white background, near-black ink, a single muted-red ("vermillion") accent; full dark-mode support; lots of **role-colored decomposition UI** (a character breaks into components, each tinted by its semantic role — iconic ≈ blue, meaning ≈ green, sound ≈ red). There are two satellite static pages (`/network/`, `/components/` — Cytoscape graphs).
 
 ## What to read (in this repo)
 

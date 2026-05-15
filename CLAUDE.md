@@ -36,13 +36,11 @@
 > needs a tombstone column or a "wholesale replace on re-sync" pass; not
 > done yet.
 
-Four web apps deployed together via GitHub Pages:
+Three web apps deployed together via GitHub Pages:
 
 - **Chinese** (root) — React + TypeScript + Vite app at `/`. Character learning
   with role-tagged decomposition tree, stroke animations, etymology, saved
   words, four-status SRS, and three drill types.
-- **Palette** (`palette/`) — Watercolor painting app, single-file static HTML at
-  `/palette/`. Untouched by the Chinese app.
 - **Network** (`network/`) — Cytoscape.js word-graph of the user's saved set
   at `/network/`. Static HTML, reads localStorage directly. Easily deletable.
 - **Components** (`components/`) — Cytoscape.js vocabulary-structure graph at
@@ -108,7 +106,6 @@ Four web apps deployed together via GitHub Pages:
 │   ├── DESIGN-SYSTEM.md             tokens, type scale, component inventory, proposals
 │   ├── design-tokens.css            standalone :root token file (mirrors src/styles.css)
 │   └── style-guide.html             dependency-free living style guide
-├── palette/                         (untouched: HTML/CSS/JS watercolor app)
 ├── network/index.html               (static word-graph page)
 ├── components/                      (static vocab-structure graph page)
 │   ├── index.html
@@ -133,55 +130,8 @@ Four web apps deployed together via GitHub Pages:
 ├── package.json                     react, d3, ts-fsrs, supabase-js, lz-string
 ├── vite.config.ts
 ├── tsconfig.json
-└── .github/workflows/pages.yml      builds Vite, copies palette/, network/, components/
+└── .github/workflows/pages.yml      builds Vite, copies network/, components/
 ```
-
-## `palette/` — watercolor app
-
-Single-file HTML app. All logic is an IIFE inside `palette.html`. Relies on
-`mixbox.js` sitting next to it (relative `<script src="mixbox.js">`).
-
-Key components:
-1. **Color palette** — 12 pigment swatches with dry-paint texture.
-2. **Mixing wells** — 2D canvas with per-pixel latent-space color mixing via mixbox.
-3. **Drawing canvas** — WebGL fluid simulation for watercolor physics.
-4. **Water jar** — Tap to dilute brush, hold to clean.
-
-WebGL watercolor engine (`FluidSim` class):
-- Velocity field with advected Navier-Stokes + pressure solve (20 Jacobi iterations).
-- Dye field stores pigment absorption, not RGB.
-- Wetness field tracks paper water; dries edges inward.
-- Paper texture is procedural noise for dry-brush + granulation.
-- Capillary flow migrates pigment to drying edges (edge darkening).
-- Granulation lets pigment settle into paper valleys.
-
-Display shader converts absorption → visible color: `paintColor = 1.0 - dye`.
-
-Color mixing uses **mixbox** latent space (7-dim) for subtractive pigment mixing.
-Wells store per-pixel latent buffers; brush picks up mixed color on contact.
-
-### Known palette issues / debugging
-
-- **Float texture filtering** — mobile GPUs (e.g. iPhone) often lack
-  `OES_texture_float_linear`. Without it, `texture2D()` returns `(0,0,0,0)` when
-  sampling FLOAT textures with `GL_LINEAR`. Fix: detect extension and use
-  `GL_NEAREST` when float linear is unavailable. Debug log shows
-  `FloatLinear:false`.
-- **Absorption values must stay < 1.0** per channel. The splat shader adds
-  `(1 - rgb/255) * strength` to the dye. Keep strength ≤ 0.5.
-- Debug log (bottom-right overlay) watches for `LINK ERR`, `GL ERR`,
-  `SHADER ERR`. `Frame1 OK` confirms pipeline.
-
-Mobile (iPhone) layout: `@media (max-width: 600px)` stacks palette on top,
-canvas below. Only 2 mixing wells (3rd+ hidden). `touch-action: none` on body,
-pointer events for painting (works with finger + Apple Pencil).
-
-Development tips:
-- Version string bottom-right (`page:palette vX`) — bump on each push to verify
-  deployment.
-- Paint transfer to wells: `dabOnWell()` — controls opacity, stroke fade, color
-  pickup. Loaded brush deposits ~150 dabs empty / ~60 dabs painted before
-  transitioning to mixing.
 
 ## Chinese app — root
 
@@ -466,10 +416,9 @@ done yet.
 
 - Workflow: `.github/workflows/pages.yml`.
 - Runs `npm ci && npm run build`, copies `dist/` to `_site/`, then copies
-  `palette/`, `network/`, and `components/` into the corresponding
-  subdirectories.
-- Chinese app served at `/`, palette at `/palette/`, network at
-  `/network/`, components at `/components/`.
+  `network/` and `components/` into the corresponding subdirectories.
+- Chinese app served at `/`, network at `/network/`, components at
+  `/components/`.
 - **Environment protection rules** on the `github-pages` environment must
   allow the current default branch. If deployment shows success but the
   site doesn't update, check Actions → deploy job for "environment

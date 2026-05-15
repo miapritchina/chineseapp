@@ -18,7 +18,6 @@ Four pages share the deployment under `/Ai-/`:
 | `/` | React + TS + Vite | Search dictionary, save words, decomposition tree, SRS review |
 | `/network/` | Cytoscape.js + plain HTML | Word-graph of the saved set |
 | `/components/` | Cytoscape.js + plain HTML | Words → chars → components graph |
-| `/palette/` | Plain HTML + WebGL | Unrelated watercolor app |
 
 The non-React pages are *deliberately* outside the React app — they're
 "experiments that might be deleted." Coupling is one line in
