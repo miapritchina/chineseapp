@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { loadTimestampMap, persistTimestampMap } from "../lib/localCache";
+import { useReconcileTriggers } from "./useReconcileTriggers";
 
 const SAVED_KEY = "chinese.saved";
 const LEARNED_KEY = "chinese.learned";
 const WROTE_KEY = "chinese.wrote";
 const REVIEW_KEY = "chinese.review";
-// Re-fetch from Supabase on tab focus, but at most once per this window.
-const RECONCILE_THROTTLE_MS = 20_000;
 
 export type Status = "saved" | "learned" | "wrote" | "review";
 
@@ -15,43 +15,8 @@ export interface SavedEntry {
   savedAt: number;
 }
 
-// localStorage v2 shape: { version: 2, items: [[word, ts], ...] }.
-function loadLocalMap(key: string): Map<string, number> {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return new Map();
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.version === 2 && Array.isArray(parsed.items)) {
-      return new Map(
-        (parsed.items as unknown[]).filter(
-          (it): it is [string, number] =>
-            Array.isArray(it) && typeof it[0] === "string" && typeof it[1] === "number",
-        ),
-      );
-    }
-    if (Array.isArray(parsed)) {
-      const now = Date.now();
-      const entries = (parsed as unknown[])
-        .filter((x): x is string => typeof x === "string")
-        .map((w) => [w, now] as const);
-      return new Map(entries);
-    }
-    return new Map();
-  } catch {
-    return new Map();
-  }
-}
-
-function persistLocalMap(key: string, items: Map<string, number>) {
-  try {
-    localStorage.setItem(
-      key,
-      JSON.stringify({ version: 2, items: [...items.entries()] }),
-    );
-  } catch {
-    /* private mode / quota — silent */
-  }
-}
+const loadLocalMap = loadTimestampMap;
+const persistLocalMap = persistTimestampMap;
 
 interface UseSavedOpts {
   userId: string | null;
@@ -73,15 +38,11 @@ export function useSaved({ userId }: UseSavedOpts) {
   const [learnedItems, setLearnedItems] = useState<Map<string, number>>(() =>
     loadLocalMap(LEARNED_KEY),
   );
-  const [wroteItems, setWroteItems] = useState<Map<string, number>>(() =>
-    loadLocalMap(WROTE_KEY),
-  );
+  const [wroteItems, setWroteItems] = useState<Map<string, number>>(() => loadLocalMap(WROTE_KEY));
   const [reviewItems, setReviewItems] = useState<Map<string, number>>(() =>
     loadLocalMap(REVIEW_KEY),
   );
   const [syncing, setSyncing] = useState(false);
-  const lastSyncedUserRef = useRef<string | null>(null);
-  const lastReconcileAtRef = useRef(0);
 
   // Read-only views.
   const saved = useMemo(() => new Set(items.keys()), [items]);
@@ -129,10 +90,7 @@ export function useSaved({ userId }: UseSavedOpts) {
         .select("word, saved_at, learned_at, wrote_at, review_at")
         .eq("user_id", userId);
       if (error) {
-        console.warn(
-          "user_saves wide select failed, falling back without review_at:",
-          error,
-        );
+        console.warn("user_saves wide select failed, falling back without review_at:", error);
         const fallback = await supabase
           .from("user_saves")
           .select("word, saved_at, learned_at, wrote_at")
@@ -147,7 +105,6 @@ export function useSaved({ userId }: UseSavedOpts) {
         rows = (data || []) as FullRow[];
       }
     }
-    lastReconcileAtRef.current = Date.now();
 
     const remoteSaved = new Map<string, number>();
     const remoteLearned = new Map<string, number>();
@@ -224,33 +181,7 @@ export function useSaved({ userId }: UseSavedOpts) {
     setSyncing(false);
   }, [userId]);
 
-  // Initial reconcile when a user signs in / switches accounts.
-  useEffect(() => {
-    if (!userId) {
-      lastSyncedUserRef.current = null;
-      return;
-    }
-    if (lastSyncedUserRef.current === userId) return;
-    lastSyncedUserRef.current = userId;
-    void reconcile();
-  }, [userId, reconcile]);
-
-  // Re-reconcile when the tab regains focus (cross-device freshness),
-  // throttled so quick app-switches don't hammer the API.
-  useEffect(() => {
-    if (!userId) return;
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
-      if (Date.now() - lastReconcileAtRef.current < RECONCILE_THROTTLE_MS) return;
-      void reconcile();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
-    };
-  }, [userId, reconcile]);
+  useReconcileTriggers(userId, reconcile);
 
   // Single setter for the new mutually-exclusive status model.
   // Pass null to remove the word entirely.
@@ -438,10 +369,7 @@ export function useSaved({ userId }: UseSavedOpts) {
       return new Map();
     });
     if (userId) {
-      const { error } = await supabase
-        .from("user_saves")
-        .delete()
-        .eq("user_id", userId);
+      const { error } = await supabase.from("user_saves").delete().eq("user_id", userId);
       if (error) console.error("clearAll user_saves delete failed:", error);
     }
     return { cleared: count };

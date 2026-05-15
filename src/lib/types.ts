@@ -71,3 +71,27 @@ export type ModalView = "sheet" | "tree";
 export type ModalEntry =
   | { kind: "word"; key: string; view?: ModalView }
   | { kind: "char"; key: string; view?: ModalView };
+
+// FSRS item identity. A review row is uniquely keyed by
+// (key, kind, facet); a single saved word can produce multiple rows
+// across kinds and facets via cascade + facet-split rules.
+export type ItemKind = "word" | "char" | "component";
+export type Facet =
+  | "recognition" // legacy pre-v66 — migrated to meaningRecognition on load
+  | "meaningRecognition"
+  | "soundRecognition"
+  | "phoneticTap"
+  | "componentSound"
+  | "familyTransfer"
+  | "production";
+
+// Unified grade event emitted by every drill component. Centralizes the
+// signature so drill callbacks don't all reinvent it.
+import type { RatingName } from "./fsrs";
+export interface GradeEvent {
+  key: string;
+  rating: RatingName;
+  kind: ItemKind;
+  facet: Facet;
+}
+export type GradeHandler = (event: GradeEvent) => void;

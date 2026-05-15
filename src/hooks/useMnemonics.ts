@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { supabase } from "../lib/supabase";
 import type { MnemonicEntry } from "../lib/mnemonics";
+import { loadObjectMap, persistObjectMap } from "../lib/localCache";
+import { useReconcileTriggers } from "./useReconcileTriggers";
 
 // Per-user mnemonic store. Supabase (`user_mnemonics`) is the source of
 // truth; `localStorage` is an offline read-cache only. The cloud is
@@ -11,33 +13,13 @@ import type { MnemonicEntry } from "../lib/mnemonics";
 
 const KEY = "chinese.mnemonics.v1";
 const NO_TABLE = /relation .*user_mnemonics.*does not exist/i;
-// Don't re-fetch on every focus flicker — at most once per this window.
-const RECONCILE_THROTTLE_MS = 20_000;
 
-function loadLocal(): Map<string, MnemonicEntry> {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return new Map();
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object") {
-      const entries = Object.entries(parsed) as [string, MnemonicEntry][];
-      return new Map(entries);
-    }
-  } catch {
-    /* ignore */
-  }
-  return new Map();
+function isMnemonicEntry(v: unknown): v is MnemonicEntry {
+  return !!v && typeof v === "object" && "text" in v && "updatedAt" in v;
 }
 
-function persistLocal(map: Map<string, MnemonicEntry>) {
-  try {
-    const obj: Record<string, MnemonicEntry> = {};
-    for (const [k, v] of map) obj[k] = v;
-    localStorage.setItem(KEY, JSON.stringify(obj));
-  } catch {
-    /* quota / private mode */
-  }
-}
+const loadLocal = () => loadObjectMap<MnemonicEntry>(KEY, isMnemonicEntry);
+const persistLocal = (m: Map<string, MnemonicEntry>) => persistObjectMap(KEY, m);
 
 interface UseMnemonicsOpts {
   userId: string | null;
@@ -45,8 +27,6 @@ interface UseMnemonicsOpts {
 
 export function useMnemonics({ userId }: UseMnemonicsOpts) {
   const [entries, setEntries] = useState<Map<string, MnemonicEntry>>(() => loadLocal());
-  const lastSyncedUserRef = useRef<string | null>(null);
-  const lastReconcileAtRef = useRef(0);
 
   // Pull from the cloud and merge (newer-per-key wins); upload any local
   // entry the cloud doesn't have or that's strictly newer locally.
@@ -62,7 +42,6 @@ export function useMnemonics({ userId }: UseMnemonicsOpts) {
       }
       return;
     }
-    lastReconcileAtRef.current = Date.now();
     type Row = { key: string; text: string; edited: boolean; updated_at: string };
     const remote = new Map<string, MnemonicEntry>();
     for (const r of (data || []) as Row[]) {
@@ -105,33 +84,7 @@ export function useMnemonics({ userId }: UseMnemonicsOpts) {
     }
   }, [userId]);
 
-  // Initial reconcile when a user signs in / switches accounts.
-  useEffect(() => {
-    if (!userId) {
-      lastSyncedUserRef.current = null;
-      return;
-    }
-    if (lastSyncedUserRef.current === userId) return;
-    lastSyncedUserRef.current = userId;
-    void reconcile();
-  }, [userId, reconcile]);
-
-  // Re-reconcile when the tab regains focus (cross-device freshness),
-  // throttled so quick app-switches don't hammer the API.
-  useEffect(() => {
-    if (!userId) return;
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
-      if (Date.now() - lastReconcileAtRef.current < RECONCILE_THROTTLE_MS) return;
-      void reconcile();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
-    };
-  }, [userId, reconcile]);
+  useReconcileTriggers(userId, reconcile);
 
   const get = useCallback(
     (key: string): MnemonicEntry | null => entries.get(key) ?? null,
