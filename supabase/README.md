@@ -40,8 +40,18 @@ Takes ~2-3 min. The final step prints:
 ]
 ```
 
-If you see a `words` count near 91 000, you're done. For future runs
-(after a new migration, etc.) — just steps 3. No PAT prompt.
+If you see a `words` count near 91 000, you're done. After this, **you
+generally won't touch the workflow again** — see "Auto-trigger" below.
+
+### Auto-trigger on new migrations
+
+The workflow runs automatically on push to `claude/main` whenever a file
+under `supabase/migrations/**` changes (i.e. you commit/merge a new
+migration). It applies migrations + refreshes the auth redirect config,
+and **skips the heavy seed step** (the `words` table is already
+populated; seeding is idempotent but slow and uses API quota). If you
+need to re-seed — e.g. after a `chinese-lexicon` update — use the manual
+"Run workflow" path above with the **Upsert all ~91k words** box ticked.
 
 ### Rotating the PAT
 
