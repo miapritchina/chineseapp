@@ -9,6 +9,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
+import { useAutoImport } from "./hooks/useAutoImport";
 import { supabase, wakeUp } from "./lib/supabase";
 
 import { SearchBar } from "./components/SearchBar";
@@ -29,13 +30,7 @@ import { SentenceStudio } from "./components/SentenceStudio";
 
 import { AppStateProvider } from "./state/contexts";
 import { useUIStore } from "./state/uiStore";
-import {
-  decodeWords,
-  encodeWords,
-  looksLikeShareToken,
-  makeShareToken,
-  shareUrl,
-} from "./lib/share";
+import { encodeWords, makeShareToken, shareUrl } from "./lib/share";
 
 import type { Word, ModalEntry } from "./lib/types";
 import { useState } from "react";
@@ -213,130 +208,7 @@ export function App() {
     if (initial) openFromHash(initial);
   }, [openFromHash]);
 
-  // Auto-import via ?import=<url> on first load (same-origin only).
-  const autoImportRanRef = useRef(false);
-  useEffect(() => {
-    if (autoImportRanRef.current) return;
-    if (auth.loading) return;
-    autoImportRanRef.current = true;
-    const params = new URLSearchParams(window.location.search);
-    const importUrl = params.get("import");
-    if (!importUrl) return;
-
-    (async () => {
-      try {
-        const target = new URL(importUrl, window.location.href);
-        if (target.origin !== window.location.origin) {
-          alert("Import URL must be same-origin.");
-          return;
-        }
-        const resp = await fetch(target.toString());
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const json: unknown = await resp.json();
-        let items: string[] | null = null;
-        if (Array.isArray(json)) {
-          items = json.filter((x): x is string => typeof x === "string");
-        } else if (
-          json &&
-          typeof json === "object" &&
-          Array.isArray((json as { saved?: unknown }).saved)
-        ) {
-          items = (json as { saved: unknown[] }).saved.filter(
-            (x): x is string => typeof x === "string",
-          );
-        }
-        if (!items || items.length === 0) {
-          alert("Import URL did not return a valid saved-words file.");
-          return;
-        }
-        const ok = window.confirm(
-          `Import ${items.length} word${items.length === 1 ? "" : "s"} into your saved list?`,
-        );
-        if (!ok) return;
-        const { added, total } = await saved.importSaved(items);
-        const skipped = total - added;
-        const skippedNote = skipped > 0 ? ` (${skipped} already saved)` : "";
-        alert(`Imported ${added} word${added === 1 ? "" : "s"}${skippedNote}.`);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        alert(`Import failed: ${message}`);
-      } finally {
-        const url = new URL(window.location.href);
-        url.searchParams.delete("import");
-        window.history.replaceState({}, "", url.toString());
-      }
-    })();
-  }, [auth.loading, saved]);
-
-  // Auto-import via ?share=<value>.
-  const autoShareRanRef = useRef(false);
-  useEffect(() => {
-    if (autoShareRanRef.current) return;
-    if (auth.loading) return;
-    autoShareRanRef.current = true;
-    const params = new URLSearchParams(window.location.search);
-    const value = params.get("share");
-    if (!value) return;
-
-    (async () => {
-      try {
-        let items: string[] | null = null;
-        if (looksLikeShareToken(value)) {
-          try {
-            const { data, error } = await supabase.rpc("get_shared_words", { p_token: value });
-            if (!error && Array.isArray(data)) {
-              const list = (data as unknown[]).filter(
-                (x): x is string => typeof x === "string" && x.length > 0,
-              );
-              if (list.length > 0) items = list;
-            }
-          } catch {
-            /* table/RPC missing, offline, etc. — fall through to inline decode */
-          }
-        }
-        if (!items) items = decodeWords(value);
-        if (!items) {
-          alert("This share link looks broken, expired, or empty.");
-          return;
-        }
-        const ok = window.confirm(
-          `Someone shared ${items.length} word${items.length === 1 ? "" : "s"} with you. Add them to your saved list?`,
-        );
-        if (!ok) return;
-        const { added, total } = await saved.importSaved(items);
-        const skipped = total - added;
-        const skippedNote = skipped > 0 ? ` (${skipped} already saved)` : "";
-        alert(`Added ${added} word${added === 1 ? "" : "s"}${skippedNote}.`);
-      } finally {
-        const url = new URL(window.location.href);
-        url.searchParams.delete("share");
-        window.history.replaceState({}, "", url.toString());
-      }
-    })();
-  }, [auth.loading, saved]);
-
-  // Auto-clear via ?clear=1.
-  const autoClearRanRef = useRef(false);
-  useEffect(() => {
-    if (autoClearRanRef.current) return;
-    if (auth.loading) return;
-    autoClearRanRef.current = true;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("clear") !== "1") return;
-
-    (async () => {
-      const ok = window.confirm(
-        "Clear ALL your saved words? This removes them from this device and (if you're signed in) from your account on every device. This cannot be undone.",
-      );
-      if (ok) {
-        const { cleared } = await saved.clearAll();
-        alert(`Cleared ${cleared} saved word${cleared === 1 ? "" : "s"}.`);
-      }
-      const url = new URL(window.location.href);
-      url.searchParams.delete("clear");
-      window.history.replaceState({}, "", url.toString());
-    })();
-  }, [auth.loading, saved]);
+  useAutoImport({ saved, authLoading: auth.loading });
 
   const handleEnter = () => {
     if (searchMode === "sentence") return;
