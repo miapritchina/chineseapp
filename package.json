@@ -8,11 +8,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node scripts/test-components.mjs && node scripts/test-component-search.mjs && node scripts/test-fsrs.mjs && node scripts/test-review-seeding.mjs && node scripts/test-phonetic-components.mjs && node scripts/test-confusion-clusters.mjs && node scripts/test-pinyin.mjs && node scripts/test-mnemonics.mjs && node scripts/test-cluster-recall.mjs && node scripts/test-pos.mjs"
+    "test": "node scripts/test-components.mjs && node scripts/test-component-search.mjs && node scripts/test-fsrs.mjs && node scripts/test-review-seeding.mjs && node scripts/test-phonetic-components.mjs && node scripts/test-confusion-clusters.mjs && node scripts/test-pinyin.mjs && node scripts/test-mnemonics.mjs && node scripts/test-cluster-recall.mjs && node scripts/test-pos.mjs && node scripts/test-share.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",
     "d3": "^7.9.0",
+    "lz-string": "^1.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "ts-fsrs": "^5.3.2"

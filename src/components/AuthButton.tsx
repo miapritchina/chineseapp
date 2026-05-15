@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
+import { usePopover } from "../hooks/usePopover";
 
 interface Props {
   user: User | null;
@@ -9,18 +9,7 @@ interface Props {
 }
 
 export function AuthButton({ user, loading, onSignInClick, onSignOut }: Props) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  // Close the dropdown on outside click.
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  const { open, setOpen, ref } = usePopover<HTMLDivElement>();
 
   if (loading) {
     return <span className="auth-button auth-loading" aria-hidden="true" />;

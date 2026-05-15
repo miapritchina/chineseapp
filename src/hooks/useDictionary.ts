@@ -89,12 +89,16 @@ export function useDictionary() {
           .map((r) => byWord.get(r.word))
           .filter((w): w is Word => !!w);
       }
-      // Exact hanzi match always ranks first (BUG-3: "中国" was surfacing
-      // "发展中国家" above the standalone 中国). Stable sort preserves the
-      // RPC's tier order for everything else.
-      hydrated.sort(
-        (a, b) => (a.word === trimmed ? 0 : 1) - (b.word === trimmed ? 0 : 1),
-      );
+
+      // An exact-hanzi hit always outranks substring/compound matches —
+      // searching 中国 must surface 中国 above 发展中国家 even if the RPC's
+      // tiering doesn't. Stable partition: exact match(es) first, rest in
+      // their original tier order.
+      const exact = hydrated.filter((w) => w.word === trimmed);
+      if (exact.length > 0 && hydrated[0]?.word !== trimmed) {
+        hydrated = [...exact, ...hydrated.filter((w) => w.word !== trimmed)];
+      }
+
       ingest(hydrated);
 
       // Cache + bound size.

@@ -98,11 +98,16 @@ Four web apps deployed together via GitHub Pages:
 │       ├── componentSearch.mjs+.d.ts recursive-closure search + freq map
 │       ├── confusionClusters.mjs+.d.ts hand-curated leech clusters
 │       ├── fsrs.ts                  ts-fsrs wrapper + cascade math
+│       ├── share.ts                 encode/decode the saved set ↔ ?share= link
 │       └── supabase.ts              client + wakeUp ping
 ├── public/
 │   ├── data-chars.json              ~10k chars + components + etymology
 │   ├── phonetic-components.json     top-250 productive sound components
 │   └── favicon.svg
+├── design-system/                   UI reference (NOT built/served) — see "Design system reference"
+│   ├── DESIGN-SYSTEM.md             tokens, type scale, component inventory, proposals
+│   ├── design-tokens.css            standalone :root token file (mirrors src/styles.css)
+│   └── style-guide.html             dependency-free living style guide
 ├── palette/                         (untouched: HTML/CSS/JS watercolor app)
 ├── network/index.html               (static word-graph page)
 ├── components/                      (static vocab-structure graph page)
@@ -112,7 +117,7 @@ Four web apps deployed together via GitHub Pages:
 │   ├── extract-chinese.mjs          chinese-lexicon → public/data*.json
 │   ├── extract-phonetic-components.mjs ranks sound components, dumps JSON
 │   ├── seed-supabase.mjs            bulk-loads ~91k words via service role
-│   └── test-*.mjs                   ten headless test files (npm test)
+│   └── test-*.mjs                   eleven headless test files (npm test)
 ├── supabase/
 │   └── migrations/
 │       ├── 0001_dictionary.sql
@@ -123,8 +128,9 @@ Four web apps deployed together via GitHub Pages:
 │       ├── 0006_user_saves_review.sql      "Need to learn" tier (review_at)
 │       ├── 0007_fsrs_state.sql              SRS scheduler state
 │       ├── 0008_user_mnemonics.sql          per-key mnemonics
-│       └── 0009_user_sentences.sql          Sentence Studio: saved sentences + composer draft
-├── package.json                     react, d3, ts-fsrs, supabase-js
+│       ├── 0009_user_sentences.sql          Sentence Studio: saved sentences + composer draft
+│       └── 0010_user_shares.sql             "Share my words" short-link table + get_shared_words RPC
+├── package.json                     react, d3, ts-fsrs, supabase-js, lz-string
 ├── vite.config.ts
 ├── tsconfig.json
 └── .github/workflows/pages.yml      builds Vite, copies palette/, network/, components/
@@ -202,7 +208,11 @@ by hanzi-writer from `hanzi-writer-data` on CDN.
   `user_sentence_draft`. RLS policies restrict to `auth.uid() =
   user_id`. **Supabase is the source of truth** (see the Data
   persistence policy at the top); `localStorage` is only an offline
-  read-cache.
+  read-cache. (`user_shares` also exists — short-link records for
+  "Share my words" — but it's deliberately *not* authoritative state:
+  it holds a copy of `user_saves` keyed by a public token, owner-only
+  for writes, readable by anyone holding the token via the
+  `get_shared_words` RPC.)
 
 ### Data shapes
 
@@ -298,6 +308,35 @@ wrote_at, review_at}` is non-null at a time.
   "Show in network →" button).
 - **Components** (`/Ai-/components/`) — static Cytoscape vocabulary-
   structure graph (words → chars → components, all bounded by saved set).
+- **Share my words** — not a page; an action. Two link flavours, chosen
+  at share time (`shareMyWords` in `App.tsx`):
+  - **Short link** (`?share=<12-char token>`) — used when the user is
+    signed in: `shareMyWords` inserts a `user_shares` row
+    (`token PK, user_id, words jsonb, created_at`) and the link is just
+    the token, so it stays tiny no matter how big the saved set is.
+  - **Inline link** (`?share=<lz-string blob>`) — the fallback for
+    signed-out users (and when the DB insert fails or the table doesn't
+    exist yet): the whole list compressed straight into the URL, no
+    backend. `lz-string`'s `compressToEncodedURIComponent` keeps it
+    ~2.5–3× shorter than plain base64-of-JSON; `decodeWords` also still
+    understands that original uncompressed base64 format (links shared
+    before v88).
+  Handed off via `navigator.share` (mobile) or the clipboard
+  (desktop / fallback). Opening such a link fires the `?share=` handler
+  in `App.tsx`: if the value looks like a token (`looksLikeShareToken`),
+  it calls the `get_shared_words(token)` RPC (a `SECURITY DEFINER`
+  function so anyone with the link can read that one row's words without
+  enumerating the table); otherwise — or on a DB miss — it decodes the
+  inline payload. Then confirm → `importSaved` (which syncs to
+  `user_saves` as usual). Encode/decode/token logic lives in
+  `src/lib/share.ts`; round-trip + token behaviour pinned by
+  `scripts/test-share.mjs`. The `user_shares` table is non-authoritative
+  (the words it holds are a copy of `user_saves`); RLS is owner-only for
+  write/own-read, public token reads go through the RPC. (Sibling of the
+  older `?import=<same-origin-json-url>` and `?clear=1` query-param
+  handlers.) Migration `0010_user_shares.sql` — additive/idempotent;
+  re-run the Setup Supabase workflow to apply it (the app falls back to
+  inline links until then).
 
 ### Search has two modes
 
@@ -350,7 +389,7 @@ wrote_at, review_at}` is non-null at a time.
 
 ### Tests
 
-`npm test` chains ten headless Node test files under `scripts/` — 98
+`npm test` chains eleven headless Node test files under `scripts/` — ~105
 cases total. All run with stock Node (no build, no jsdom).
 
 - `test-components.mjs` — graph-data builder for `/components/` page
@@ -373,6 +412,8 @@ cases total. All run with stock Node (no build, no jsdom).
   preference, shared-char fallback, plain-sample fallback, size cap
 - `test-pos.mjs` — `detectPos` heuristic used by the Sentence Studio
   POS tabs (lookup tables + def-prefix patterns)
+- `test-share.mjs` — `encodeWords` / `decodeWords` round-trip behind the
+  "Share my words" link (url-safe base64, UTF-8, garbage-token handling)
 
 Where a function lives in TypeScript and the test needs a pure-JS
 counterpart (e.g. the `expectedCards` rule inside `useReview`), the
@@ -393,6 +434,34 @@ after a chinese-lexicon update:
 5. Re-run seed-supabase to reload the `words` table:
    `SUPABASE_SERVICE_ROLE_KEY=… node scripts/seed-supabase.mjs`.
 
+## Design system reference
+
+`design-system/` holds the canonical UI reference — **use it when designing
+or restyling screens, and keep it in sync with the code**:
+
+- `DESIGN-SYSTEM.md` — colors, typography + type scale, spacing/radii/
+  shadows/breakpoints/z-index, motion, layout patterns, the component
+  inventory, and componentization proposals. Also imports cleanly into
+  Claude Design.
+- `design-tokens.css` — a standalone `:root` token file (colors, `--pos-*`,
+  `--role-*`, type scale, spacing, radii, shadows, z-index) mirroring
+  `src/styles.css`. Some tokens are *normalized/aspirational* — they
+  promote values the code still inlines (status hues, grade colors, the
+  type scale) to named tokens; where this file and `src/styles.css`
+  disagree, **`src/styles.css` is authoritative for what ships**.
+- `style-guide.html` — a dependency-free living style guide (swatches,
+  type scale, component states). Open it in a browser; it isn't built or
+  served.
+
+**Reference-only**: nothing in `design-system/` is imported by the app or
+copied by the Pages workflow. **Sync rule**: when you change `:root`
+tokens in `src/styles.css`, the color constants in `src/lib/pos.ts`, the
+role-color mapping, the breakpoints, or add a reusable component/hook
+(e.g. the `usePopover` extraction), update `design-system/` in the same
+commit. If `design-tokens.css` ever becomes the single source of truth,
+have `src/styles.css` `@import` it (or generate one from the other) — not
+done yet.
+
 ## GitHub Pages deployment
 
 - Workflow: `.github/workflows/pages.yml`.
@@ -406,15 +475,18 @@ after a chinese-lexicon update:
   site doesn't update, check Actions → deploy job for "environment
   protection rules" rejection.
 - After a Supabase migration lands (e.g. `0007_fsrs_state.sql`), re-run the
-  Setup Supabase workflow with the user's PAT so the new schema applies.
-  The app degrades gracefully when the new column/table is missing — sync
-  errors are silently downgraded.
+  Setup Supabase workflow so the new schema applies. The workflow reads
+  the Supabase PAT from the `github-pages` environment secret `supabaseapi`
+  (Settings → Environments → github-pages → Environment secrets) — no
+  prompt, just click Run. Rotate by updating the secret value and revoking
+  the old PAT. The app degrades gracefully when a new column/table is
+  missing — sync errors are silently downgraded.
 
 ## Development tips
 
 - `npm run dev` for a Vite dev server with HMR.
 - `npm run build` produces `dist/`; `npm run preview` serves it locally.
-- `npm test` runs all ten headless test files (~96 cases).
+- `npm test` runs all eleven headless test files (~105 cases).
 - Bump the `chinese vN` version label in the `<HamburgerMenu />` props
   inside `App.tsx` on every push so you can verify the right build is
   live from your phone (the version is shown at the bottom of the

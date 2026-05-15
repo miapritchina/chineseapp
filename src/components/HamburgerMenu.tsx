@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { usePopover } from "../hooks/usePopover";
 
 interface Props {
   version: string;
@@ -6,6 +6,8 @@ interface Props {
   reviewHref?: string | null;
   reviewBadge?: number;
   phoneticsHref?: string | null;
+  onShareWords?: () => void;
+  wordCount?: number;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
@@ -16,30 +18,10 @@ export function HamburgerMenu({
   reviewHref = null,
   reviewBadge = 0,
   phoneticsHref = null,
+  onShareWords,
+  wordCount = 0,
 }: Props) {
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    const onDoc = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node | null;
-      if (target && wrapperRef.current && !wrapperRef.current.contains(target)) {
-        setOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("touchstart", onDoc, { passive: true });
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("touchstart", onDoc);
-    };
-  }, [open]);
+  const { open, setOpen, ref: wrapperRef } = usePopover<HTMLDivElement>();
 
   return (
     <div ref={wrapperRef} className="hamburger-wrapper">
@@ -107,6 +89,20 @@ export function HamburgerMenu({
           <a role="menuitem" className="hamburger-item" href="./components/">
             <span>Components</span>
           </a>
+          {onShareWords && (
+            <button
+              type="button"
+              role="menuitem"
+              className="hamburger-item"
+              onClick={() => {
+                onShareWords();
+                setOpen(false);
+              }}
+            >
+              <span>Share my words</span>
+              {wordCount > 0 && <span className="hamburger-soon">{wordCount}</span>}
+            </button>
+          )}
           <div className="hamburger-divider" />
           <div className="hamburger-version">{version}</div>
       </div>

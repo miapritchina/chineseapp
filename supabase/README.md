@@ -4,26 +4,30 @@ Project: `https://oigbbgtzzqiceetasayy.supabase.co` (`oigbbgtzzqiceetasayy`).
 
 ## One-paste setup (mobile-friendly)
 
-You hand over **one token, one time**, and the workflow does everything else
-(applies the schema, fetches the service_role key, seeds 91k words, verifies).
-No repo secrets to configure. No SQL editor. No terminal.
+The workflow does everything (applies the schema, fetches the service_role
+key, seeds 91k words, verifies) — it reads the Supabase PAT from a
+**GitHub Environment secret** so you don't paste it each run. No SQL
+editor. No terminal.
 
-### 1. Generate a Supabase Personal Access Token
+### 1. Generate a Supabase Personal Access Token (one time)
 
-Open <https://supabase.com/dashboard/account/tokens> on your phone.
-Click **Generate new token**, give it any name (e.g. `chinese-app-seed`),
-copy the token.
+Open <https://supabase.com/dashboard/account/tokens>.
+Click **Generate new token**, give it any name (e.g. `chinese-app-ci`),
+copy the token. Rotate later by revoking and generating a new one.
 
-The token is sensitive but **temporary** — you can revoke it the moment the
-workflow finishes.
+### 2. Store it as an Environment secret (one time)
 
-### 2. Run the workflow
+In GitHub: **Settings → Environments → `github-pages` → Environment
+secrets → Add secret**. Name it **`supabaseapi`**, paste the token. (If
+the `github-pages` environment doesn't exist yet, create it first — same
+page.)
 
-Open `github.com/decobots/Ai-/actions` on your phone.
+### 3. Run the workflow
 
-- Tap **Seed Supabase Dictionary** → **Run workflow**.
-- Paste the PAT into the **Supabase Personal Access Token** field.
-- Leave the two checkboxes ticked.
+Open `github.com/decobots/Ai-/actions`.
+
+- Tap **Setup Supabase** → **Run workflow**.
+- Leave the three checkboxes ticked.
 - Tap **Run workflow**.
 
 Takes ~2-3 min. The final step prints:
@@ -36,19 +40,19 @@ Takes ~2-3 min. The final step prints:
 ]
 ```
 
-If you see a `words` count near 91 000, you're done.
+If you see a `words` count near 91 000, you're done. For future runs
+(after a new migration, etc.) — just steps 3. No PAT prompt.
 
-### 3. Revoke the PAT (optional but recommended)
+### Rotating the PAT
 
-Back at <https://supabase.com/dashboard/account/tokens>, revoke the token you
-just created. The seed already ran; you don't need it again unless you want
-to re-seed (e.g. after a `chinese-lexicon` update). If you do, generate a
-fresh token then.
+Generate a fresh PAT at the same URL, update the `supabaseapi` secret
+value, then revoke the old one.
 
 ## How it works
 
 The workflow uses the Supabase Management API
-(`https://api.supabase.com/v1/...`) with your PAT as a Bearer token to:
+(`https://api.supabase.com/v1/...`) with the PAT (read from the
+`supabaseapi` Environment secret) as a Bearer token to:
 
 1. Verify the PAT has access to the project.
 2. `POST /projects/<ref>/database/query` with the contents of every file
@@ -56,14 +60,20 @@ The workflow uses the Supabase Management API
    round-trip per file. All migrations are idempotent (`IF NOT EXISTS`,
    `DROP POLICY IF EXISTS` + recreate, etc.) so re-running is safe.
 3. `GET /projects/<ref>/api-keys` — fetches the `service_role` key (used
-   only inside the runner, masked in logs, never stored anywhere).
+   only inside the runner, masked in logs, never written to disk).
 4. Run `node scripts/seed-supabase.mjs` with that key — batched upserts,
    idempotent on the `word` PK.
 5. `POST /projects/<ref>/database/query` again to verify counts.
 
-Nothing about your project leaves the GitHub Actions runner. The PAT exists
-only as the workflow's input value (auto-masked in logs, never written to
-disk, gone the moment the run finishes).
+The PAT is held by GitHub as an encrypted Environment secret (only
+readable to runs of this workflow when gated by the `github-pages`
+environment) and is auto-masked in logs. Nothing about your project leaves
+the GitHub Actions runner. The service_role key is fetched fresh each
+run; it's never persisted.
+
+Because the job is gated by `environment: github-pages`, the workflow can
+only be dispatched from a branch the environment's deployment-branches
+rule allows (typically the default branch).
 
 ## Schema overview
 

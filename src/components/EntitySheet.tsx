@@ -477,14 +477,17 @@ function commonnessLabel(rank: number | null | undefined): string | null {
   return "Less common";
 }
 
+// Reads the role palette from CSS (--role-* in :root / styles.css) so there's
+// one source of truth — keep in step with the .role-* / .node-card.role-*
+// rules and design-tokens.css.
 function roleColor(type: string | undefined): string | undefined {
   switch (type) {
     case "sound":
-      return "#b14430";
+      return "var(--role-sound)";
     case "meaning":
-      return "#4f7d3a";
+      return "var(--role-meaning)";
     case "iconic":
-      return "#2f5a8e";
+      return "var(--role-iconic)";
     default:
       return undefined;
   }

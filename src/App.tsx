@@ -6,7 +6,7 @@ import { useChars } from "./hooks/useChars";
 import { useSaved } from "./hooks/useSaved";
 import { useModalStack, parseHash } from "./hooks/useModalStack";
 import { useAuth } from "./hooks/useAuth";
-import { wakeUp } from "./lib/supabase";
+import { supabase, wakeUp } from "./lib/supabase";
 
 import { SearchBar, type SearchMode } from "./components/SearchBar";
 import { searchByComponent, componentFrequencies } from "./lib/componentSearch";
@@ -26,6 +26,7 @@ import { SentenceStudio } from "./components/SentenceStudio";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
+import { decodeWords, encodeWords, looksLikeShareToken, makeShareToken, shareUrl } from "./lib/share";
 
 import type { Word, ModalEntry } from "./lib/types";
 
@@ -295,6 +296,57 @@ export function App() {
     })();
   }, [auth.loading, importSaved]);
 
+  // Auto-import via ?share=<value> — a "share my words" link. <value> is
+  // either a short token (resolved against the user_shares table via the
+  // get_shared_words RPC) or a self-contained inline payload (decoded
+  // locally; see src/lib/share.ts). Same confirm + auth-loading gate as
+  // ?import=.
+  const autoShareRanRef = useRef(false);
+  useEffect(() => {
+    if (autoShareRanRef.current) return;
+    if (auth.loading) return;
+    autoShareRanRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get("share");
+    if (!value) return;
+
+    (async () => {
+      try {
+        let items: string[] | null = null;
+        if (looksLikeShareToken(value)) {
+          try {
+            const { data, error } = await supabase.rpc("get_shared_words", { p_token: value });
+            if (!error && Array.isArray(data)) {
+              const list = (data as unknown[]).filter(
+                (x): x is string => typeof x === "string" && x.length > 0,
+              );
+              if (list.length > 0) items = list;
+            }
+          } catch {
+            /* table/RPC missing, offline, etc. — fall through to inline decode */
+          }
+        }
+        if (!items) items = decodeWords(value);
+        if (!items) {
+          alert("This share link looks broken, expired, or empty.");
+          return;
+        }
+        const ok = window.confirm(
+          `Someone shared ${items.length} word${items.length === 1 ? "" : "s"} with you. Add them to your saved list?`,
+        );
+        if (!ok) return;
+        const { added, total } = await importSaved(items);
+        const skipped = total - added;
+        const skippedNote = skipped > 0 ? ` (${skipped} already saved)` : "";
+        alert(`Added ${added} word${added === 1 ? "" : "s"}${skippedNote}.`);
+      } finally {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("share");
+        window.history.replaceState({}, "", url.toString());
+      }
+    })();
+  }, [auth.loading, importSaved]);
+
   // Auto-clear via ?clear=1. Symmetric to ?import=. Always confirms first;
   // wipes localStorage + (if signed in) every user_saves row for the user.
   // Same auth-loading gate as ?import= — without it the DB rows survive and
@@ -328,6 +380,56 @@ export function App() {
     }
   };
 
+  // Build a share link for the saved set and hand it off via the native
+  // share sheet (mobile) or the clipboard (desktop / fallback). When signed
+  // in, mint a short ?share=<token> link backed by user_shares (stays small
+  // however many words you have); otherwise — or if that write fails — fall
+  // back to a self-contained inline ?share=<lz-string blob> link.
+  const shareMyWords = () => {
+    if (savedList.length === 0) {
+      alert("You haven't saved any words yet — nothing to share.");
+      return;
+    }
+    const words = savedList.map((s) => s.word);
+    const label = `${words.length} word${words.length === 1 ? "" : "s"}`;
+    void (async () => {
+      let url = shareUrl(encodeWords(words));
+      const uid = auth.user?.id;
+      if (uid) {
+        try {
+          const token = makeShareToken();
+          const { error } = await supabase
+            .from("user_shares")
+            .insert({ token, user_id: uid, words });
+          if (!error) url = shareUrl(token);
+        } catch {
+          /* table missing / offline / collision — keep the inline link */
+        }
+      }
+      if (typeof navigator !== "undefined" && navigator.share) {
+        try {
+          await navigator.share({
+            title: "My Chinese words",
+            text: `Here are ${label} I've saved — open the link to add them to your list.`,
+            url,
+          });
+          return;
+        } catch (err) {
+          // User dismissed the share sheet — don't fall through to copy.
+          if (err instanceof Error && err.name === "AbortError") return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(
+          `Share link copied (${label}). Send it to anyone — opening it adds these words to their saved list.`,
+        );
+      } catch {
+        window.prompt(`Copy this link to share your ${label}:`, url);
+      }
+    })();
+  };
+
   const openWord = async (word: string) => {
     await dict.ensureCached([word]);
     push({ kind: "word", key: word });
@@ -343,10 +445,12 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v85"
+          version="chinese v90"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
+          onShareWords={shareMyWords}
+          wordCount={savedList.length}
         />
         <h1>中文</h1>
         <div className="topbar-end">

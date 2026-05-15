@@ -22,15 +22,18 @@ export const POS_LABEL: Record<Pos, string> = {
   conj: "conj",
 };
 
-// POS hues lifted from the handoff (matches the original wireframe palette).
+// POS hues. The hex values live in :root (--pos-*) and design-tokens.css —
+// these just reference them so there's a single source of truth. Safe to use
+// directly in inline `style` (CSS vars resolve at use time, including when
+// assigned to another custom property such as `--pos-c`).
 export const POS_COLOR: Record<Pos, string> = {
-  pron: "#6b3a8a",
-  v: "#b14430",
-  n: "#2f5a8e",
-  adj: "#4f7d3a",
-  adv: "#8a6a26",
-  part: "#8a8273",
-  conj: "#7a6a8a",
+  pron: "var(--pos-pron)",
+  v: "var(--pos-v)",
+  n: "var(--pos-n)",
+  adj: "var(--pos-adj)",
+  adv: "var(--pos-adv)",
+  part: "var(--pos-part)",
+  conj: "var(--pos-conj)",
 };
 
 const PRONOUNS = new Set([

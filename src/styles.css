@@ -1,6 +1,9 @@
 :root {
   color-scheme: light dark;
+  /* Surface scale: page bg → elevated panel → inset/well. --card-bg is the
+     brightest (white-ish) surface for content cards. */
   --bg: #faf8f4;
+  --surface: #fefdfb;
   --card-bg: #ffffff;
   --surface-2: #f0ece4;
   --text: #1d1b18;
@@ -37,11 +40,22 @@
   --grade-hard: #d97706;
   --grade-good: #15803d;
   --grade-easy: #1d4ed8;
+
+  /* Part-of-speech hues (Sentence Studio chips / EntitySheet POS tag).
+     Single source of truth — src/lib/pos.ts POS_COLOR references these. */
+  --pos-pron: #6b3a8a;
+  --pos-v:    #b14430;
+  --pos-n:    #2f5a8e;
+  --pos-adj:  #4f7d3a;
+  --pos-adv:  #8a6a26;
+  --pos-part: #8a8273;
+  --pos-conj: #7a6a8a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #16140f;
+    --surface: #1d1a13;
     --card-bg: #211e15;
     --surface-2: #272319;
     --text: #ece7dc;
@@ -113,7 +127,7 @@ body {
   left: 0;
   z-index: 80;
   min-width: 200px;
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 4px;
@@ -247,7 +261,7 @@ body {
   width: 100%;
   max-width: 420px;
   min-height: 240px;
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 32px 24px;
@@ -272,6 +286,9 @@ body {
   font-size: 13px;
   color: var(--muted);
   letter-spacing: 0.5px;
+  /* Transient — visible briefly for first-timers, then fades and stays gone
+     (the card is still tappable anywhere). */
+  animation: drill-tap-hint-out 0.6s ease 2.2s forwards;
 }
 .review-pinyin { font-size: 22px; color: var(--muted); }
 .review-gloss {
@@ -324,7 +341,7 @@ body {
 .review-kind-tag {
   margin: 0 8px;
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   text-transform: uppercase;
   border: 1px solid var(--border);
@@ -474,7 +491,7 @@ body {
 }
 .phonetic-tap-glyph {
   font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
-  font-size: 96px;
+  font-size: 110px;
   line-height: 1;
   font-weight: 500;
 }
@@ -509,11 +526,19 @@ body {
   letter-spacing: 0.4px;
   font-weight: 500;
   pointer-events: none;
-  animation: drill-tap-hint-pulse 1.6s ease-in-out infinite;
+  /* Transient: pulses twice for attention, then fades out and stays gone —
+     no permanent on-screen instruction. (The card itself is still tappable
+     anywhere; the hint just isn't a fixture.) */
+  animation:
+    drill-tap-hint-pulse 1.6s ease-in-out 2 forwards,
+    drill-tap-hint-out 0.5s ease 3.2s forwards;
 }
 @keyframes drill-tap-hint-pulse {
   0%, 100% { opacity: 0.7; }
   50%      { opacity: 1; }
+}
+@keyframes drill-tap-hint-out {
+  to { opacity: 0; }
 }
 .phonetic-tap-pinyin {
   font-size: 18px;
@@ -669,7 +694,7 @@ body {
   width: 100%;
 }
 .disambig-cell {
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px 10px;
@@ -730,7 +755,7 @@ body {
 }
 .launch-options { display: flex; flex-direction: column; gap: 6px; }
 .launch-option {
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 14px;
@@ -812,7 +837,7 @@ body {
   gap: 10px;
 }
 .cluster-cell {
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 10px;
@@ -1002,7 +1027,7 @@ body {
 }
 .mnemonic-reset:hover { color: var(--text); }
 .mnemonic-display {
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px dashed var(--border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -1518,7 +1543,7 @@ body {
   right: 0;
   z-index: 80;
   min-width: 160px;
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 4px;
@@ -1944,7 +1969,7 @@ body {
 .composer {
   margin: 14px 16px 8px;
   padding: 12px 14px 10px;
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
 }
@@ -2128,7 +2153,7 @@ body {
   row-gap: 2px;
   align-items: center;
   padding: 10px 12px;
-  background: var(--surface, var(--bg));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-left: 3px solid var(--pos-c, var(--border));
   border-radius: 10px;
@@ -2202,14 +2227,20 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   -webkit-tap-highlight-color: transparent;
 }
+/* Secondary CTA (Save sentence) — an accent-outline button so it reads as
+   tappable next to the filled primary, not as a disabled ghost. */
 .sentence-cta-2nd {
-  background: var(--surface, var(--bg));
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 .sentence-cta:hover:not(:disabled) { filter: brightness(1.06); }
-.sentence-cta-2nd:hover:not(:disabled) { background: var(--surface-2); filter: none; }
+.sentence-cta-2nd:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+  filter: none;
+}
 .sentence-cta:disabled {
   opacity: 0.4;
   cursor: default;
