@@ -10,7 +10,11 @@ Priority: **P0** (do now) · **P1** (next) · **P2** (planned) ·
 
 ## P0 — now
 
-*Empty.*
+| Item | Notes |
+|---|---|
+| **Refactor stage 4 — QuizCardShell + useSpeech** | Extract the shared header / Again-Hard-Good-Easy footer / speak-on-mount logic from the 5 drill cards (`CombinedRecognitionCard`, `PhoneticTapCard`, `ComponentSoundCard`, `FamilyTransferCard`, `ProductionCard`, `DisambiguationCard`). Adopt the new `GradeHandler` signature from `lib/types.ts`. Tests per drill via React Testing Library. |
+| **Refactor stage 5 — split EntitySheet** | 494-line `EntitySheet.tsx` into ≤5 sub-components: `SheetHeader`, `SheetMeta` (pinyin + tone + freq + POS), `EtymologySection`, `RelatedSection`, `MnemonicSection`. Same context dependencies. Snapshot tests for each. |
+| **Refactor stage 6 — CSS reorg** | 2,620-line `styles.css` split into `tokens.css` + per-feature files (`shell.css`, `home.css`, `sheet.css`, `review.css`, `sentence.css`, `phonetics.css`). Imported through a single `styles.css` to preserve cascade order. Visual diff check before merging. |
 
 ## P1 — next
 
