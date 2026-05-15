@@ -1,9 +1,7 @@
 # Design System — Chinese-Character Learning App
 
 > For import into Claude Design or as a reference when designing new screens.
-> Extracted from the codebase (`src/styles.css`, `src/lib/pos.ts`, `src/lib/tree.ts`, `src/lib/types.ts`, component source). See also `design-tokens.css` (machine-usable token file) and `style-guide.html` (living visual reference).
->
-> **This is a reference doc, not built or imported by the app.** Keep it in sync with `src/` — see `CLAUDE.md` → "Design system reference" for the rule. A few "recommendation" notes below have since been actioned in code: `--surface` is now defined; the POS hues are now `--pos-*` tokens in `:root`; `EntitySheet`'s `roleColor()` now returns `var(--role-*)` (no separate hardcoded palette); `usePopover()` consolidates the outside-click/Escape wiring; `.drill-tap-hint` is transient; `.review-kind-tag` / `.bank-chip-pos` floored at 11px. Where this doc and `src/styles.css` disagree, `styles.css` wins for what ships.
+> All values are extracted verbatim from the codebase (`src/styles.css`, `src/lib/pos.ts`, `src/lib/tree.ts`, `src/lib/types.ts`, component source files). See also `design-tokens.css` for a machine-usable token file and `style-guide.html` for a living visual reference.
 
 ---
 

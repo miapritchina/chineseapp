@@ -1,15 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    Design Tokens — Chinese-Character Learning App
-
-   REFERENCE FILE — not imported by the build. Keep in sync with
-   src/styles.css (:root), src/lib/pos.ts, src/lib/tree.ts. See
-   CLAUDE.md → "Design system reference" for the sync rule.
-
-   Some tokens here are normalized/aspirational: they promote values
-   that the codebase currently inlines or hardcodes (status hues, grade
-   colors, the type scale, etc.) to named tokens. Where this file and
-   src/styles.css disagree, src/styles.css is authoritative for what
-   ships; this file is the design intent.
+   Generated from src/styles.css, src/lib/pos.ts, src/lib/tree.ts
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -17,13 +8,18 @@
 
   /* ── Core palette ──────────────────────────────────────────────── */
   --bg:        #faf8f4;   /* Page background — warm off-white         */
-  --surface:   #fefdfb;   /* Elevated panels (menus, sheets, cards)   */
-  --card-bg:   #ffffff;   /* Brightest surface — SavedShelf grid cards */
+  --card-bg:   #ffffff;   /* Card surfaces (SavedShelf grid)          */
   --surface-2: #f0ece4;   /* Hover fills, active pill fills, chip bg  */
   --text:      #1d1b18;   /* Primary ink                              */
   --muted:     #6b6359;   /* Secondary / caption text                 */
   --accent:    #b12a2a;   /* Vermillion — CTA, active tab, error link */
   --border:    #e4dfd5;   /* Dividers, card strokes, input borders    */
+
+  /* NOTE: --surface is referenced as var(--surface, var(--bg)) in
+     many rules but is never explicitly defined in :root. The fallback
+     makes it work today, but it should be defined here. Recommended:
+     --surface: #faf8f4;  (alias of --bg in light, or a distinct
+     elevated value if a three-tier surface system is desired). */
 
   /* ── Decomposition role colors ─────────────────────────────────── */
   --role-iconic:      #2563eb;  /* Blue  — pictographic / iconic comp  */
@@ -72,11 +68,11 @@
   --backdrop-sheet: rgba(0, 0, 0, 0.34);
   --backdrop-popup: rgba(20, 18, 14, 0.42);
 
-  /* ── (resolved) EntitySheet's roleColor() used to hardcode a separate
-     muted role palette (#b14430 / #4f7d3a / #2f5a8e); it now returns
-     var(--role-*), so there's one source of truth. Kept here only as a
-     historical note — these tokens are unused.                         */
-  /* --role-sound-etym / --role-meaning-etym / --role-iconic-etym — removed */
+  /* ── EntitySheet hardcoded role hues (roleColor() in EntitySheet.tsx)
+     These duplicate the --role-* tokens above and should be unified.  */
+  --role-sound-etym:   #b14430;  /* sound in etymology row    */
+  --role-meaning-etym: #4f7d3a;  /* meaning in etymology row  */
+  --role-iconic-etym:  #2f5a8e;  /* iconic in etymology row   */
 
   /* ── Typography ────────────────────────────────────────────────── */
   --font-body:  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -103,11 +99,10 @@
   --text-body-xs:        14px;   /* hamburger-item, mnemonic, phonetics */
   --text-meta:           13px;   /* review-progress, r-pinyin, r-gloss  */
   --text-meta-sm:        12px;   /* eyebrow labels, POS tags, hints     */
-  --text-micro:          11px;   /* shelf-title, section-num/name, tabs,
-                                    review-kind-tag, bank-chip-pos       */
-  --text-micro-sm:       10px;   /* mnemonic-saved-tag                  */
-  --text-micro-xs:        9px;   /* card-role-badge — candidate to floor at 11 */
-  /* --text-micro-xxs (8px) removed: bank-chip-pos floored to --text-micro (11px) */
+  --text-micro:          11px;   /* shelf-title, section-num/name, tabs */
+  --text-micro-sm:       10px;   /* kind-tag, mnemonic-saved-tag        */
+  --text-micro-xs:        9px;   /* card-role-badge                     */
+  --text-micro-xxs:       8px;   /* bank-chip-pos                       */
 
   /* ── Spacing (commonly used values) ────────────────────────────── */
   --space-1:   2px;
@@ -180,7 +175,6 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg:        #16140f;
-    --surface:   #1d1a13;
     --card-bg:   #211e15;
     --surface-2: #272319;
     --text:      #ece7dc;
