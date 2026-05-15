@@ -13,7 +13,7 @@ const stubProviderProps = {
     setStatus: () => {},
   },
   dict: {
-    findWord: (k: string) => (k === "你好" ? ({ word: "你好" } as never) : undefined),
+    findWord: (k: string) => (k === "你好" ? ({ word: "你好" } as never) : null),
     ensureCached: async () => {},
     search: async () => [],
     error: null,
@@ -23,7 +23,7 @@ const stubProviderProps = {
   auth: {
     user: null,
     loading: false,
-    signInWithEmail: async () => ({}),
+    signInWithEmail: async () => ({ error: null }),
     signOut: async () => {},
   },
 };
@@ -45,7 +45,7 @@ describe("AppStateProvider", () => {
       ),
     });
     expect(result.current.findWord("你好")).toBeTruthy();
-    expect(result.current.findWord("missing")).toBeUndefined();
+    expect(result.current.findWord("missing")).toBeNull();
   });
 
   it("provides chars context", () => {

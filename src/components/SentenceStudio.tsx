@@ -7,15 +7,9 @@ import { useSavedSentences } from "../hooks/useSavedSentences";
 import { speak } from "../lib/speech";
 import { hanziScaleStyle } from "../lib/hanzi";
 
+import { useDictCtx, useSavedCtx } from "../state/contexts";
+
 interface Props {
-  // Saved-word keys (newest-first order from useSaved).
-  savedWords: string[];
-  // Resolved Word rows (lazy — anything still loading just doesn't
-  // appear in the bank).
-  findWord: (key: string) => Word | null;
-  // Pre-hydrate so the bank has data on first paint after the page
-  // opens with cards out of cache.
-  ensureCached: (keys: string[]) => Promise<void>;
   // Signed-in user id (null = signed out) — so the draft + saved
   // sentences sync to Supabase.
   userId: string | null;
@@ -56,7 +50,10 @@ function matchesQuery(w: Word, rawQuery: string): boolean {
 // Visual notes: uses the app palette (--bg / --surface-2 / --accent),
 // not the handoff's vermillion / Fraunces stack. POS color stripe on
 // each chip + token keeps the handoff's functional color hint.
-export function SentenceStudio({ savedWords, findWord, ensureCached, userId, externalQuery = "" }: Props) {
+export function SentenceStudio({ userId, externalQuery = "" }: Props) {
+  const { savedList } = useSavedCtx();
+  const { findWord, ensureCached } = useDictCtx();
+  const savedWords = useMemo(() => savedList.map((s) => s.word), [savedList]);
   const { keys, append, removeAt, clear, replace } = useSentenceDraft({ userId });
   const sentences = useSavedSentences({ userId });
   const [tab, setTab] = useState<Pos | "all">("all");
@@ -168,8 +165,8 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, ext
         <div className="review-empty sentence-studio-empty">
           <div className="review-empty-title">Save 5 words to start composing.</div>
           <div className="review-empty-hint">
-            The Sentence Studio pulls from your saved set. Find a word
-            via the Dictionary tab, save it, then come back.
+            The Sentence Studio pulls from your saved set. Find a word via the Dictionary tab, save
+            it, then come back.
           </div>
         </div>
       ) : (
@@ -212,9 +209,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, ext
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onInputKeyDown}
-                  placeholder={
-                    empty ? "Type pinyin, or tap a word below…" : "+ pinyin…"
-                  }
+                  placeholder={empty ? "Type pinyin, or tap a word below…" : "+ pinyin…"}
                   aria-label="Add a word by typing pinyin"
                   autoComplete="off"
                   autoCorrect="off"
@@ -271,7 +266,11 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, ext
           )}
 
           {!searching && (
-            <div className="pos-tabs" role="tablist" aria-label="Filter word bank by part of speech">
+            <div
+              className="pos-tabs"
+              role="tablist"
+              aria-label="Filter word bank by part of speech"
+            >
               {TABS.map((t) => {
                 const n = counts[t.id] || 0;
                 const isActive = tab === t.id;
@@ -322,12 +321,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, ext
           </div>
 
           <div className="sentence-cta-wrap">
-            <button
-              type="button"
-              className="sentence-cta"
-              onClick={handleSave}
-              disabled={empty}
-            >
+            <button type="button" className="sentence-cta" onClick={handleSave} disabled={empty}>
               {savedFlash ? "✓ Saved" : "Save sentence"}
             </button>
             <button

@@ -1,4 +1,5 @@
 import { createContext, useContext, type Context, type ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
 import type { Char, Word } from "../lib/types";
 import type { Status, SavedEntry } from "../hooks/useSaved";
 import type { MnemonicEntry } from "../lib/mnemonics";
@@ -25,7 +26,7 @@ export interface SavedCtxValue {
 }
 
 export interface DictCtxValue {
-  findWord: (key: string) => Word | undefined;
+  findWord: (key: string) => Word | null;
   ensureCached: (words: string[]) => Promise<void>;
   search: (query: string) => Promise<Word[]>;
   error: string | null;
@@ -43,9 +44,9 @@ export interface MnemonicsCtxValue {
 }
 
 export interface AuthCtxValue {
-  user: { id: string; email?: string } | null;
+  user: User | null;
   loading: boolean;
-  signInWithEmail: (email: string) => Promise<{ error?: string }>;
+  signInWithEmail: (email: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 

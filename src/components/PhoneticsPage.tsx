@@ -1,12 +1,10 @@
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
-import type { Status } from "../hooks/useSaved";
 import { StatusButton } from "./StatusButton";
+import { useSavedCtx } from "../state/contexts";
 
 interface Props {
   components: PhoneticComponent[];
   ready: boolean;
-  getStatus: (key: string) => Status | null;
-  setStatus: (key: string, next: Status | null) => void;
   onClose: () => void;
 }
 
@@ -15,13 +13,8 @@ interface Props {
 // (or change its tier) — once saved, the componentSound drill auto-seeds
 // for it via the useReview reconcile rule. The list is read-only static
 // data (public/phonetic-components.json).
-export function PhoneticsPage({
-  components,
-  ready,
-  getStatus,
-  setStatus,
-  onClose,
-}: Props) {
+export function PhoneticsPage({ components, ready, onClose }: Props) {
+  const { getStatus, setStatus } = useSavedCtx();
   return (
     <div className="phonetics-root">
       <div className="review-header">
@@ -52,10 +45,7 @@ export function PhoneticsPage({
                   {c.family.length > 6 ? " …" : ""}
                 </span>
                 <span className="phonetics-row-status">
-                  <StatusButton
-                    status={status}
-                    onChange={(next) => setStatus(c.char, next)}
-                  />
+                  <StatusButton status={status} onChange={(next) => setStatus(c.char, next)} />
                 </span>
               </div>
             );

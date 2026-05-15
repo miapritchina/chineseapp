@@ -1,20 +1,15 @@
 import type { Word } from "../lib/types";
-import type { Status } from "../hooks/useSaved";
 import { StatusButton } from "./StatusButton";
 import { hanziScaleStyle } from "../lib/hanzi";
+import { useSavedCtx } from "../state/contexts";
 
 interface Props {
   matches: Word[];
-  saved: Set<string>;
   onOpen: (word: string) => void;
-  // Optional status controls. When present, each row gets a
-  // StatusButton in the trailing slot so the user can save / promote
-  // a result without opening the modal first.
-  getStatus?: (key: string) => Status | null;
-  setStatus?: (key: string, next: Status | null) => void;
 }
 
-export function ResultsList({ matches, saved, onOpen, getStatus, setStatus }: Props) {
+export function ResultsList({ matches, onOpen }: Props) {
+  const { saved, getStatus, setStatus } = useSavedCtx();
   if (matches.length === 0) {
     return <div className="empty-state">No matches.</div>;
   }
@@ -28,7 +23,7 @@ export function ResultsList({ matches, saved, onOpen, getStatus, setStatus }: Pr
   return (
     <section className="results" aria-label="Search results">
       {ordered.map((w) => {
-        const status = getStatus ? getStatus(w.word) : undefined;
+        const status = getStatus(w.word);
         return (
           <div
             key={w.word}
@@ -49,24 +44,9 @@ export function ResultsList({ matches, saved, onOpen, getStatus, setStatus }: Pr
               <div className="r-pinyin">{w.pinyin}</div>
               <div className="r-gloss">{(w.definitions || []).join("; ")}</div>
             </div>
-            {getStatus && setStatus ? (
-              <div className="r-status" onClick={(e) => e.stopPropagation()}>
-                <StatusButton
-                  status={status ?? null}
-                  onChange={(next) => setStatus(w.word, next)}
-                />
-              </div>
-            ) : (
-              saved.has(w.word) && (
-                <span
-                  className="r-saved"
-                  aria-label="In your saved list"
-                  title="Saved"
-                >
-                  ★
-                </span>
-              )
-            )}
+            <div className="r-status" onClick={(e) => e.stopPropagation()}>
+              <StatusButton status={status} onChange={(next) => setStatus(w.word, next)} />
+            </div>
           </div>
         );
       })}

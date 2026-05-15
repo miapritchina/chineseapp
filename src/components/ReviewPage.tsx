@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Word, Char } from "../lib/types";
 import type { ReviewCard } from "../hooks/useReview";
+import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
@@ -15,29 +15,17 @@ import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 interface Props {
   dueCards: ReviewCard[];
   // Full card map. Used to force-surface cluster members on leech via
-  // the active-interleaving rule: a card whose itemKey is in
-  // promotedCluster gets pulled into the queue even if its dueAt is
-  // still in the future.
+  // the active-interleaving rule.
   cards?: Map<string, ReviewCard>;
-  findWord: (key: string) => Word | null;
-  ensureCached: (keys: string[]) => Promise<void>;
-  onGrade: (
-    itemKey: string,
-    rating: RatingName,
-    kind?: ItemKind,
-    facet?: Facet,
-  ) => void;
+  onGrade: (itemKey: string, rating: RatingName, kind?: ItemKind, facet?: Facet) => void;
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
-  chars?: Record<string, Char>;
   phoneticComponents?: PhoneticComponent[];
   phoneticComponentsByChar?: Map<string, PhoneticComponent>;
-  // From the launch screen. If absent, all facets are enabled and
-  // ordering is the default (sub-items before words, oldest-due first).
+  // From the launch screen. If absent, all facets are enabled.
   enabledFacets?: Set<Facet>;
   randomOrder?: boolean;
   includeSubchars?: boolean;
-  savedKeys?: Set<string>;
 }
 
 // Stable id for a card across the (kind, facet, key) tuple. Used to mark
@@ -54,19 +42,18 @@ function rid(c: ReviewCard) {
 export function ReviewPage({
   dueCards,
   cards,
-  findWord,
-  ensureCached,
   onGrade,
   onAttributeFailure,
   onClose,
-  chars,
   phoneticComponents,
   phoneticComponentsByChar,
   enabledFacets,
   randomOrder,
   includeSubchars,
-  savedKeys,
 }: Props) {
+  const { chars } = useCharsCtx();
+  const { findWord, ensureCached } = useDictCtx();
+  const { saved: savedKeys } = useSavedCtx();
   const [revealed, setRevealed] = useState(false);
   const [attribTarget, setAttribTarget] = useState<string | null>(null);
   // Cards the user has explicitly skipped this session; filtered out of
@@ -77,9 +64,7 @@ export function ReviewPage({
   // Cluster members forced into the queue this session by an active
   // leech interleave. The brief calls for cluster members to surface
   // back-to-back when one of them lapses past LEECH_LAPSES.
-  const [promotedCluster, setPromotedCluster] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [promotedCluster, setPromotedCluster] = useState<Set<string>>(() => new Set());
 
   // Visible queue = dueCards minus this-session skips, filtered by the
   // launch settings.
@@ -88,9 +73,7 @@ export function ReviewPage({
     if (enabledFacets && !enabledFacets.has(c.facet)) {
       // Legacy "recognition" rows count as meaningRecognition for
       // filtering purposes too.
-      if (
-        !(c.facet === "recognition" && enabledFacets.has("meaningRecognition"))
-      ) {
+      if (!(c.facet === "recognition" && enabledFacets.has("meaningRecognition"))) {
         return false;
       }
     }
@@ -173,18 +156,13 @@ export function ReviewPage({
   for (const c of combined) {
     const id = rid(c);
     if (!positionRef.current.has(id)) {
-      positionRef.current.set(
-        id,
-        randomOrder ? Math.random() : positionRef.current.size,
-      );
+      positionRef.current.set(id, randomOrder ? Math.random() : positionRef.current.size);
     }
   }
   const queue = combined
     .slice()
     .sort(
-      (a, b) =>
-        (positionRef.current.get(rid(a)) ?? 0) -
-        (positionRef.current.get(rid(b)) ?? 0),
+      (a, b) => (positionRef.current.get(rid(a)) ?? 0) - (positionRef.current.get(rid(b)) ?? 0),
     );
   const current = queue[0];
 
@@ -274,9 +252,7 @@ export function ReviewPage({
         </div>
         <div className="review-empty">
           <div className="review-empty-title">All caught up.</div>
-          <div className="review-empty-hint">
-            Save a new word to add it to the review queue.
-          </div>
+          <div className="review-empty-hint">Save a new word to add it to the review queue.</div>
         </div>
       </div>
     );
@@ -293,11 +269,7 @@ export function ReviewPage({
   // Leech-cluster disambiguation. One-shot per key per session.
   const isSingleChar = [...current.itemKey].length === 1;
   const cluster = isSingleChar ? clusterFor(current.itemKey) : null;
-  if (
-    cluster &&
-    (current.card.lapses ?? 0) >= LEECH_LAPSES &&
-    !disambigSeen.has(current.itemKey)
-  ) {
+  if (cluster && (current.card.lapses ?? 0) >= LEECH_LAPSES && !disambigSeen.has(current.itemKey)) {
     return (
       <div className="review-root">
         <div className="review-header">
@@ -399,8 +371,7 @@ export function ReviewPage({
       );
     }
     const componentEntry =
-      phoneticComponents.find((p) => p.family.includes(current.itemKey)) ??
-      null;
+      phoneticComponents.find((p) => p.family.includes(current.itemKey)) ?? null;
     if (!componentEntry) {
       return (
         <DrillFrame
@@ -450,9 +421,7 @@ export function ReviewPage({
           total={total}
           onSkip={handleSkipCurrent}
         >
-          <div className="review-empty-hint">
-            Loading phonetic-components data…
-          </div>
+          <div className="review-empty-hint">Loading phonetic-components data…</div>
         </DrillFrame>
       );
     }
@@ -477,9 +446,7 @@ export function ReviewPage({
   // Phonetic-tap drill. Same loading-vs-skip treatment.
   if (current.facet === "phoneticTap") {
     const cd = chars?.[current.itemKey];
-    const hasSoundComponent = !!cd?.components?.some(
-      (c) => c.type === "sound" && c.char,
-    );
+    const hasSoundComponent = !!cd?.components?.some((c) => c.type === "sound" && c.char);
     return (
       <DrillFrame
         tag="Sound · tap"
@@ -517,8 +484,7 @@ export function ReviewPage({
     !!cards?.has(meaningId) ||
     current.facet === "meaningRecognition" ||
     current.facet === "recognition";
-  const hasSoundCard =
-    !!cards?.has(soundId) || current.facet === "soundRecognition";
+  const hasSoundCard = !!cards?.has(soundId) || current.facet === "soundRecognition";
 
   const handleCombinedGrade = (
     rating: RatingName,
@@ -566,11 +532,7 @@ export function ReviewPage({
                   {c}
                 </button>
               ))}
-              <button
-                type="button"
-                className="review-attrib-skip"
-                onClick={onGradedAdvance}
-              >
+              <button type="button" className="review-attrib-skip" onClick={onGradedAdvance}>
                 Skip
               </button>
             </div>
