@@ -34,6 +34,8 @@ RPC).
   `extract-phonetic-components.mjs`).
 - Updating words means re-seeding Supabase via `seed-supabase.mjs`
   with the service-role key (out-of-band, manual).
-- Network/components graph pages read from `localStorage` directly and
-  don't talk to Supabase. That's deliberate — they're "experiments
-  that might be deleted."
+- The network/components views read from `localStorage` directly and
+  don't talk to Supabase. That's a simplification choice — they're
+  part of the same app but the current static-HTML implementation
+  keeps them lean. Migrating them to read from Supabase (or porting
+  them to React routes) is a future option.

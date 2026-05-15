@@ -15,18 +15,25 @@ For deeper context:
 
 ## 1. What the project is
 
-A mobile-first Chinese-character learning web app — React + TypeScript +
-Vite, deployed to GitHub Pages at https://decobots.github.io/Ai-/.
+One Chinese-character learning web app, deployed to GitHub Pages at
+https://decobots.github.io/Ai-/. Mobile-first; iPhone Safari in
+3–7 minute sessions.
 
-Three pages deploy together:
+The app deploys as **one product, three surfaces**:
 
-- **Chinese** (root) — the main app: search, saved-words shelf,
-  decomposition tree, four-status SRS, ~6 review drill types.
-- **Network** (`network/`) — Cytoscape.js word-graph of the saved set.
-  Static HTML, reads `localStorage` directly. Easily deletable.
-- **Components** (`components/`) — Cytoscape.js vocabulary-structure
-  graph (words → chars → component pieces). Static HTML, easily
-  deletable.
+- **Main UI** (root) — React + TypeScript + Vite. Search, saved-words
+  shelf, decomposition tree, four-status SRS, ~6 review drill types.
+- **Network view** (`network/`) — Cytoscape.js word-graph of the
+  user's saved set. Plain HTML, reached from the hamburger menu.
+- **Components view** (`components/`) — Cytoscape.js vocabulary-
+  structure graph (words → chars → component pieces). Plain HTML,
+  reached from the hamburger menu.
+
+The two Cytoscape views are part of the same app — they share the
+saved set and link out to the main UI for entity detail. They live
+outside React purely for implementation simplicity (plain static HTML
+is cheap; rewriting them as React components is a future option, not
+a requirement).
 
 ### Data persistence policy (do not weaken)
 
@@ -154,6 +161,46 @@ These are hard rules. Bend them only after asking.
   unless explicitly asked.
 - **Never create a PR unless explicitly asked.** The owner opens PRs
   from the Claude Code UI.
+
+### Review documentation before pushing
+
+Before every push to a branch that has an open PR (or before merging
+to main):
+
+1. **Re-read the docs you touched.** Skim them as if you'd never seen
+   the change — do the words still describe what the code does?
+2. **Scan adjacent docs.** If you changed feature X, check whether
+   ARCHITECTURE.md, the relevant ADR, or CLAUDE.md still match.
+3. **Verify TODO.md / BUGS.md / CHANGELOG.md reflect the change.**
+   Remove fixed items, add new ones noticed in passing, write the
+   changelog entry under `[Unreleased]`.
+4. **State the result.** In the reply: "Docs reviewed — X updated, Y
+   still accurate, Z needs follow-up." Don't push silently.
+
+### Trackers — keep them current
+
+Three living files at repo root document state, not history:
+
+- **[`CHANGELOG.md`](CHANGELOG.md)** — Keep a Changelog format.
+  Append to `[Unreleased]` in the same commit as the change. On
+  merge to main, the version bump finalizes `[Unreleased]` into
+  `[vNN]` and starts a fresh `[Unreleased]` section.
+- **[`TODO.md`](TODO.md)** — P0 / P1 / P2 / P3 / Deferred. Tasks
+  move between priorities only when external priority changes. On
+  completion, the task is **removed** and added to CHANGELOG.md in
+  the same commit.
+- **[`BUGS.md`](BUGS.md)** — Open / Fixed / Withdrawn. `BUG-NNN` IDs
+  are immutable. Fixed bugs move to the Fixed table; the bug detail
+  stays under "Details" for searchability.
+
+**Update them in the same commit as the work.** Bug fixed → move row
+to Fixed, remove detail (or trim), add CHANGELOG entry — all one
+commit.
+
+**Suggest entries proactively.** Notice a new bug while doing other
+work → add it to BUGS.md (lowest severity that fits, owner re-prioritizes
+later). Notice a TODO worth tracking → propose it in TODO.md. Don't
+hoard observations for "later."
 
 ### Version bump (`chinese vNN`)
 
@@ -302,7 +349,10 @@ details.** Frame everything that way.
 | Add a new persisted field | ARCHITECTURE.md → "Patterns to reuse" |
 | Tokens / type scale / component inventory | [`docs/design-system/DESIGN-SYSTEM.md`](docs/design-system/DESIGN-SYSTEM.md) |
 | Current UX redesign goals | [`docs/product/chinese-app-ux-redesign.md`](docs/product/chinese-app-ux-redesign.md) |
-| Outstanding bugs + UX fixes | [`docs/product/qa-fix-prompt.md`](docs/product/qa-fix-prompt.md) |
+| Outstanding bugs | [`BUGS.md`](BUGS.md) |
+| Active TODO list | [`TODO.md`](TODO.md) |
+| Release history | [`CHANGELOG.md`](CHANGELOG.md) |
+| UX redesign source spec | [`docs/product/qa-fix-prompt.md`](docs/product/qa-fix-prompt.md) |
 | Visual card-type catalog | [`docs/product/card-type-catalog.html`](docs/product/card-type-catalog.html) (open in a browser) |
 | Run tests | `npm test` |
 | Dev server | `npm run dev` |

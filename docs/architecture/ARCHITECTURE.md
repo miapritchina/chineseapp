@@ -12,20 +12,23 @@ For developer workflow (commit style, version bumps, test rules), see
 
 ## What ships
 
-Mobile-first web app, deployed as static files to GitHub Pages with
-one Supabase project behind it. Three pages share the deployment
-under `/Ai-/`:
+**One Chinese-character learning web app**, deployed as static files
+to GitHub Pages with one Supabase project behind it. The app surfaces
+in three places under `/Ai-/`:
 
 | Path | Tech | What it does |
 |---|---|---|
-| `/` | React + TS + Vite | Search dictionary, save words, decomposition tree, SRS review |
-| `/network/` | Cytoscape.js + plain HTML | Word-graph of the saved set |
-| `/components/` | Cytoscape.js + plain HTML | Words → chars → components graph |
+| `/` | React + TS + Vite | Main UI — search, save, decomposition tree, SRS review |
+| `/network/` | Cytoscape.js + plain HTML | Word-graph view of the saved set |
+| `/components/` | Cytoscape.js + plain HTML | Vocabulary-structure view (words → chars → components) |
 
-The non-React pages are *deliberately* outside the React app —
-"experiments that might be deleted." Coupling is one line in
-`.github/workflows/pages.yml` (a `cp`) and one link in `App.tsx`'s
-hamburger menu. Removing a page is removing those two anchors.
+The two Cytoscape views are part of the same app — they share the
+saved set (read via `localStorage` for now, see [ADR-0001](../decisions/0001-supabase-source-of-truth.md))
+and link back into the main UI. They live outside React for
+implementation simplicity, not because they're separate products.
+The coupling is one line in `.github/workflows/pages.yml` (a `cp`)
+and one link in `App.tsx`'s hamburger menu — rewriting them as React
+routes is a future option.
 
 ## Constraints that shape everything
 

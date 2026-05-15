@@ -4,13 +4,17 @@ Mobile-first web app for learning Chinese characters — search,
 decomposition tree, four-tier status model, FSRS-scheduled review.
 Live at https://decobots.github.io/Ai-/.
 
+One app, three surfaces: a React main UI at `/`, plus Cytoscape views
+at `/network/` (word-graph of the saved set) and `/components/`
+(vocabulary-structure graph).
+
 ## Stack
 
-- React + TypeScript + Vite at `/`
+- React + TypeScript + Vite for the main UI
 - Supabase (Postgres + RLS) for dictionary + user-private state
 - `ts-fsrs` for spaced-repetition scheduling
 - `hanzi-writer` (CDN) for stroke animation + production drills
-- Cytoscape.js for the satellite `/network/` and `/components/` pages
+- Cytoscape.js for the `/network/` and `/components/` views
 
 ## Quick start
 
