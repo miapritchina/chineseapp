@@ -1,25 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Char, Word } from "../lib/types";
+import type { Char } from "../lib/types";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import { speak } from "../lib/speech";
 import { firstReading } from "../lib/speech";
+import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
+import { usePhoneticComponents } from "../hooks/usePhoneticComponents";
 
 interface Props {
-  savedList: { word: string; savedAt: number }[];
-  findWord: (key: string) => Word | null;
-  chars: Record<string, Char>;
-  phoneticComponentsByChar?: Map<string, PhoneticComponent>;
   // Apply a grade to every word in the cluster at once. Usually
   // wired through ReviewPage's grade() against the meaningRecognition
   // facet so the cluster recall counts toward the SRS schedule.
-  onGrade: (
-    itemKey: string,
-    rating: RatingName,
-    kind?: ItemKind,
-    facet?: Facet,
-  ) => void;
+  onGrade: (itemKey: string, rating: RatingName, kind?: ItemKind, facet?: Facet) => void;
   onClose: () => void;
 }
 
@@ -86,14 +79,11 @@ export function pickCluster(
 // a small cluster at once produced better delayed-test scores than
 // reviewing each word in isolation. Brief calls this out as the right
 // flow for the "weekly consolidation" use case.
-export function ClusterRecall({
-  savedList,
-  findWord,
-  chars,
-  phoneticComponentsByChar,
-  onGrade,
-  onClose,
-}: Props) {
+export function ClusterRecall({ onGrade, onClose }: Props) {
+  const { savedList } = useSavedCtx();
+  const { findWord } = useDictCtx();
+  const { chars } = useCharsCtx();
+  const { byChar: phoneticComponentsByChar } = usePhoneticComponents();
   const cluster = useMemo(
     () =>
       pickCluster(
@@ -124,8 +114,7 @@ export function ClusterRecall({
         <div className="review-empty">
           <div className="review-empty-title">Save a few more words first.</div>
           <div className="review-empty-hint">
-            Cluster recall needs at least {MIN_SIZE} saved words to surface a
-            related group.
+            Cluster recall needs at least {MIN_SIZE} saved words to surface a related group.
           </div>
         </div>
       </div>
@@ -184,9 +173,7 @@ export function ClusterRecall({
                 <span className="cluster-cell-hanzi">{w}</span>
                 {isRevealed && (
                   <>
-                    <span className="cluster-cell-pinyin">
-                      {firstReading(word?.pinyin || "")}
-                    </span>
+                    <span className="cluster-cell-pinyin">{firstReading(word?.pinyin || "")}</span>
                     <span className="cluster-cell-gloss">
                       {(word?.definitions || []).slice(0, 2).join("; ")}
                     </span>
@@ -226,9 +213,7 @@ export function ClusterRecall({
         ) : graded ? (
           <div className="review-empty-hint">Logged for all {cluster.length}.</div>
         ) : (
-          <div className="review-empty-hint">
-            Tap each card to reveal its answer.
-          </div>
+          <div className="review-empty-hint">Tap each card to reveal its answer.</div>
         )}
       </div>
     </div>

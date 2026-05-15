@@ -1,20 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Char, Word } from "../lib/types";
-import type { SavedEntry, Status } from "../hooks/useSaved";
+import type { SavedEntry } from "../hooks/useSaved";
 import { Card, CharOnlyCard } from "./Card";
 import { normalizePinyin } from "../lib/pinyin";
+import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 
 interface Props {
-  savedList: SavedEntry[];
-  learned: Set<string>;
-  wrote: Set<string>;
-  review: Set<string>;
-  findWord: (key: string) => Word | null;
-  chars: Record<string, Char>;
   onOpenWord: (word: string) => void;
   onOpenChar: (char: string) => void;
-  getStatus?: (key: string) => Status | null;
-  setStatus?: (key: string, next: Status | null) => void;
 }
 
 type SortMode = "recent" | "pinyin" | "strokes" | "hsk" | "common";
@@ -45,21 +38,11 @@ function renderCard(
   chars: Record<string, Char>,
   onOpenWord: (word: string) => void,
   onOpenChar: (char: string) => void,
-  getStatus?: (key: string) => Status | null,
-  setStatus?: (key: string, next: Status | null) => void,
 ) {
   const key = entry.word;
   const w = findWord(key);
   if (w) {
-    return (
-      <Card
-        key={key}
-        word={w}
-        onOpen={onOpenWord}
-        getStatus={getStatus}
-        setStatus={setStatus}
-      />
-    );
+    return <Card key={key} word={w} onOpen={onOpenWord} />;
   }
   const c = chars[key];
   if (c) {
@@ -70,8 +53,6 @@ function renderCard(
         pinyin={c.pinyin || ""}
         gloss={c.definitions?.[0] || ""}
         onOpen={onOpenChar}
-        getStatus={getStatus}
-        setStatus={setStatus}
       />
     );
   }
@@ -90,18 +71,10 @@ function renderCard(
   );
 }
 
-export function SavedShelf({
-  savedList,
-  learned,
-  wrote,
-  review,
-  findWord,
-  chars,
-  onOpenWord,
-  onOpenChar,
-  getStatus,
-  setStatus,
-}: Props) {
+export function SavedShelf({ onOpenWord, onOpenChar }: Props) {
+  const { savedList, learned, wrote, review } = useSavedCtx();
+  const { findWord } = useDictCtx();
+  const { chars } = useCharsCtx();
   const isEmpty = savedList.length === 0;
 
   const [sortMode, setSortMode] = useState<SortMode>(loadSortMode);
@@ -118,7 +91,11 @@ export function SavedShelf({
   const [strokeCounts, setStrokeCounts] = useState<Map<string, number>>(new Map());
   useEffect(() => {
     if (sortMode !== "strokes") return;
-    const HW = (window as unknown as { HanziWriter?: { loadCharacterData: (c: string) => Promise<{ strokes?: string[] } | null> } }).HanziWriter;
+    const HW = (
+      window as unknown as {
+        HanziWriter?: { loadCharacterData: (c: string) => Promise<{ strokes?: string[] } | null> };
+      }
+    ).HanziWriter;
     if (!HW) return;
     const needed = new Set<string>();
     for (const e of savedList) {
@@ -153,10 +130,7 @@ export function SavedShelf({
   // O(1) Map lookups instead of recomputing pinyin / hsk / rank / strokes
   // per pairwise comparison. Called from useMemo'd sortFor below.
   const sortKeys = useMemo(() => {
-    const m = new Map<
-      string,
-      { pinyin: string; strokes: number; hsk: number; rank: number }
-    >();
+    const m = new Map<string, { pinyin: string; strokes: number; hsk: number; rank: number }>();
     for (const e of savedList) {
       const w = findWord(e.word);
       let pinyin = "";
@@ -196,10 +170,10 @@ export function SavedShelf({
       const kb = sortKeys.get(b.word);
       if (!ka || !kb) return 0;
       let cmp = 0;
-      if (sortMode === "pinyin")   cmp = (ka.pinyin || "￿").localeCompare(kb.pinyin || "￿");
+      if (sortMode === "pinyin") cmp = (ka.pinyin || "￿").localeCompare(kb.pinyin || "￿");
       else if (sortMode === "strokes") cmp = ka.strokes - kb.strokes;
-      else if (sortMode === "hsk")     cmp = ka.hsk - kb.hsk;
-      else if (sortMode === "common")  cmp = ka.rank - kb.rank;
+      else if (sortMode === "hsk") cmp = ka.hsk - kb.hsk;
+      else if (sortMode === "common") cmp = ka.rank - kb.rank;
       if (cmp !== 0) return cmp;
       return b.savedAt - a.savedAt; // stable tiebreak
     });
@@ -270,13 +244,13 @@ export function SavedShelf({
         </div>
       ) : !sectioned ? (
         <div className="saved-grid">
-          {sortedAll.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
+          {sortedAll.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
         </div>
       ) : (
         <>
           {savedOnlyList.length > 0 ? (
             <div className="saved-grid">
-              {sortedSavedOnly.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
+              {sortedSavedOnly.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
             </div>
           ) : (
             <div className="saved-empty">
@@ -295,7 +269,7 @@ export function SavedShelf({
                 </div>
               </div>
               <div className="saved-grid">
-                {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
+                {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
               </div>
             </>
           )}
@@ -309,7 +283,7 @@ export function SavedShelf({
                 </div>
               </div>
               <div className="saved-grid">
-                {sortedLearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
+                {sortedLearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
               </div>
             </>
           )}
@@ -323,7 +297,7 @@ export function SavedShelf({
                 </div>
               </div>
               <div className="saved-grid">
-                {sortedWrote.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar, getStatus, setStatus))}
+                {sortedWrote.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
               </div>
             </>
           )}

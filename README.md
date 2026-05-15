@@ -2,7 +2,7 @@
 
 Mobile-first web app for learning Chinese characters — search,
 decomposition tree, four-tier status model, FSRS-scheduled review.
-Live at https://decobots.github.io/Ai-/.
+Live at https://decobots.github.io/chineseapp/.
 
 One app, three surfaces: a React main UI at `/`, plus Cytoscape views
 at `/network/` (word-graph of the saved set) and `/components/`

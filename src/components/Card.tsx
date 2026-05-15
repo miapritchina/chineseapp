@@ -1,20 +1,16 @@
 import type { Word } from "../lib/types";
-import type { Status } from "../hooks/useSaved";
 import { StatusButton } from "./StatusButton";
 import { hanziScaleStyle } from "../lib/hanzi";
+import { useSavedCtx } from "../state/contexts";
 
 interface Props {
   word: Word;
   onOpen: (word: string) => void;
-  // Optional — when present, a small StatusButton overlays the
-  // top-right corner so the user can change tier without opening the
-  // full modal. Stops propagation on click.
-  getStatus?: (key: string) => Status | null;
-  setStatus?: (key: string, next: Status | null) => void;
 }
 
-export function Card({ word, onOpen, getStatus, setStatus }: Props) {
-  const status = getStatus ? getStatus(word.word) : undefined;
+export function Card({ word, onOpen }: Props) {
+  const { getStatus, setStatus } = useSavedCtx();
+  const status = getStatus(word.word);
   return (
     <div
       className="card"
@@ -30,17 +26,9 @@ export function Card({ word, onOpen, getStatus, setStatus }: Props) {
         }
       }}
     >
-      {getStatus && setStatus && (
-        <div
-          className="card-status-corner"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <StatusButton
-            status={status ?? null}
-            onChange={(next) => setStatus(word.word, next)}
-          />
-        </div>
-      )}
+      <div className="card-status-corner" onClick={(e) => e.stopPropagation()}>
+        <StatusButton status={status} onChange={(next) => setStatus(word.word, next)} />
+      </div>
       <div className="pinyin">{word.pinyin}</div>
       <div className="char">{word.simp}</div>
       <div className="gloss">{word.definitions?.[0] || ""}</div>
@@ -53,19 +41,11 @@ interface CharCardProps {
   pinyin: string;
   gloss: string;
   onOpen: (char: string) => void;
-  getStatus?: (key: string) => Status | null;
-  setStatus?: (key: string, next: Status | null) => void;
 }
 
-export function CharOnlyCard({
-  charKey,
-  pinyin,
-  gloss,
-  onOpen,
-  getStatus,
-  setStatus,
-}: CharCardProps) {
-  const status = getStatus ? getStatus(charKey) : undefined;
+export function CharOnlyCard({ charKey, pinyin, gloss, onOpen }: CharCardProps) {
+  const { getStatus, setStatus } = useSavedCtx();
+  const status = getStatus(charKey);
   return (
     <div
       className="card"
@@ -80,17 +60,9 @@ export function CharOnlyCard({
         }
       }}
     >
-      {getStatus && setStatus && (
-        <div
-          className="card-status-corner"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <StatusButton
-            status={status ?? null}
-            onChange={(next) => setStatus(charKey, next)}
-          />
-        </div>
-      )}
+      <div className="card-status-corner" onClick={(e) => e.stopPropagation()}>
+        <StatusButton status={status} onChange={(next) => setStatus(charKey, next)} />
+      </div>
       <div className="pinyin">{pinyin}</div>
       <div className="char">{charKey}</div>
       <div className="gloss">{gloss}</div>

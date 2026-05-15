@@ -1,18 +1,14 @@
 import { useMemo } from "react";
-import type { Char, ModalEntry, Word } from "../lib/types";
+import type { ModalEntry, Word } from "../lib/types";
 import { buildCharTree, buildWordTree } from "../lib/tree";
 import { DecompositionTree } from "./DecompositionTree";
 import { StatusButton } from "./StatusButton";
-import type { Status } from "../hooks/useSaved";
+import { useCharsCtx, useSavedCtx } from "../state/contexts";
 
 interface Props {
   entry: ModalEntry;
   word: Word | null;
-  chars: Record<string, Char>;
   stackLen: number;
-  saved: Set<string>;
-  getStatus: (key: string) => Status | null;
-  setStatus: (key: string, next: Status | null) => void;
   onPop: () => void;
   onNodeClick: (char: string) => void;
 }
@@ -21,17 +17,9 @@ interface Props {
 // "⤢ full tree" affordance inside EntitySheet. The lighter detail
 // (definitions, etymology blurb, mnemonic) lives in the sheet now;
 // this view is just the zoomable role-tinted tree.
-export function TreeModal({
-  entry,
-  word,
-  chars,
-  stackLen,
-  saved,
-  getStatus,
-  setStatus,
-  onPop,
-  onNodeClick,
-}: Props) {
+export function TreeModal({ entry, word, stackLen, onPop, onNodeClick }: Props) {
+  const { chars } = useCharsCtx();
+  const { saved, getStatus, setStatus } = useSavedCtx();
   const tree = useMemo(() => {
     if (entry.kind === "word") {
       if (!word) return null;
@@ -40,9 +28,9 @@ export function TreeModal({
     return buildCharTree(entry.key, chars);
   }, [entry, word, chars]);
 
-  const titleHanzi = entry.kind === "word" ? word?.simp ?? entry.key : entry.key;
+  const titleHanzi = entry.kind === "word" ? (word?.simp ?? entry.key) : entry.key;
   const titlePinyin =
-    entry.kind === "word" ? word?.pinyin ?? "" : chars[entry.key]?.pinyin ?? "";
+    entry.kind === "word" ? (word?.pinyin ?? "") : (chars[entry.key]?.pinyin ?? "");
 
   return (
     <div className="modal-root open" aria-hidden="false">
@@ -66,7 +54,9 @@ export function TreeModal({
         {tree ? (
           <DecompositionTree tree={tree} chars={chars} saved={saved} onNodeClick={onNodeClick} />
         ) : (
-          <p style={{ padding: 24 }}>Unknown {entry.kind}: {entry.key}</p>
+          <p style={{ padding: 24 }}>
+            Unknown {entry.kind}: {entry.key}
+          </p>
         )}
       </div>
     </div>

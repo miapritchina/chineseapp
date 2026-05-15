@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import type { Char, Word } from "../lib/types";
-import type { Status } from "../hooks/useSaved";
-import type { MnemonicEntry } from "../lib/mnemonics";
+import type { Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
 import { buildStarterMnemonic, buildStarterWordMnemonic } from "../lib/mnemonics";
 import { toneLabel } from "../lib/pinyin";
 import { detectPos, POS_LABEL, POS_COLOR } from "../lib/pos";
 import { speak } from "../lib/speech";
 import { hanziScaleStyle } from "../lib/hanzi";
+import { useCharsCtx, useDictCtx, useMnemonicsCtx, useSavedCtx } from "../state/contexts";
 
 interface Props {
   // Exactly one of these identifies the entity. `word` wins when both
@@ -15,15 +14,6 @@ interface Props {
   // character ("a character can be a word — don't model them apart").
   word?: Word | null;
   charKey?: string;
-  // For etymology lookups (the entity's components are characters too).
-  chars: Record<string, Char>;
-  saved: Set<string>;
-  getStatus: (key: string) => Status | null;
-  setStatus: (key: string, next: Status | null) => void;
-  getMnemonic: (key: string) => MnemonicEntry | null;
-  saveMnemonic: (key: string, text: string) => void;
-  clearMnemonic: (key: string) => void;
-  findWord: (key: string) => Word | null;
   onClose: () => void;
   onOpenWord: (word: string) => void;
   onOpenChar: (charKey: string) => void;
@@ -46,22 +36,11 @@ interface Props {
 //                                     its own sheet; ⤢ → full tree)
 //   ── Nº 02 · IN YOUR SAVED WORDS / CHARACTERS
 //   ── 💡 Make it stick              (editable mnemonic)
-export function EntitySheet({
-  word,
-  charKey,
-  chars,
-  saved,
-  getStatus,
-  setStatus,
-  getMnemonic,
-  saveMnemonic,
-  clearMnemonic,
-  findWord,
-  onClose,
-  onOpenWord,
-  onOpenChar,
-  onOpenTree,
-}: Props) {
+export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, onOpenTree }: Props) {
+  const { chars } = useCharsCtx();
+  const { saved, getStatus, setStatus } = useSavedCtx();
+  const { get: getMnemonic, save: saveMnemonic, clear: clearMnemonic } = useMnemonicsCtx();
+  const { findWord } = useDictCtx();
   // ── Identity ───────────────────────────────────────────────────
   const key = word?.word ?? charKey ?? "";
   const isMultiCharWord = !!word && [...word.word].length > 1;
@@ -71,12 +50,11 @@ export function EntitySheet({
   const defs =
     word?.definitions && word.definitions.length > 0
       ? word.definitions
-      : charData?.definitions ?? [];
+      : (charData?.definitions ?? []);
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
   const tone = toneLabel(pinyin);
   const freq = commonnessLabel(word?.rank);
-  const pos =
-    defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
+  const pos = defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
 
   // ── Refs ───────────────────────────────────────────────────────
   const writerRef = useRef<HTMLDivElement>(null);
@@ -84,9 +62,7 @@ export function EntitySheet({
   const panelRef = useRef<HTMLDivElement>(null);
 
   // ── Drag-to-dismiss (mobile only) ──────────────────────────────
-  const isMobile =
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 699px)").matches;
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 699px)").matches;
   const dragStartY = useRef<number | null>(null);
   const [dragDy, setDragDy] = useState(0);
   const onDragStart = (e: React.PointerEvent) => {
@@ -180,13 +156,9 @@ export function EntitySheet({
         strokeAnimationSpeed: 1,
         delayBetweenStrokes: 110,
         strokeColor:
-          getComputedStyle(document.documentElement)
-            .getPropertyValue("--text")
-            .trim() || "#222",
+          getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#222",
         outlineColor:
-          getComputedStyle(document.documentElement)
-            .getPropertyValue("--border")
-            .trim() || "#ddd",
+          getComputedStyle(document.documentElement).getPropertyValue("--border").trim() || "#ddd",
         onLoadCharDataError: fallback,
       });
       writerInstanceRef.current = writer;
@@ -213,19 +185,15 @@ export function EntitySheet({
     pieces.length > 0 ||
     (!isMultiCharWord &&
       (!!charData?.notes ||
-        (!!charData?.originalMeaning &&
-          charData.originalMeaning !== "characterless component")));
+        (!!charData?.originalMeaning && charData.originalMeaning !== "characterless component")));
 
-  const matches = isMultiCharWord
-    ? []
-    : [...saved].filter((w) => w !== key && w.includes(key));
+  const matches = isMultiCharWord ? [] : [...saved].filter((w) => w !== key && w.includes(key));
 
   // Section numbering: ETYMOLOGY is Nº 01 only when it renders.
   let sectionNo = 0;
   const nextNo = () => String(++sectionNo).padStart(2, "0");
   const etymNo = hasEtym ? nextNo() : null;
-  const peopleNo =
-    isMultiCharWord || matches.length > 0 ? nextNo() : null;
+  const peopleNo = isMultiCharWord || matches.length > 0 ? nextNo() : null;
   const mnemonicNo = nextNo();
 
   return (
@@ -259,7 +227,11 @@ export function EntitySheet({
           </svg>
         </button>
         <div className="sheet-status">
-          <StatusButton status={getStatus(key)} variant="iconLg" onChange={(n) => setStatus(key, n)} />
+          <StatusButton
+            status={getStatus(key)}
+            variant="iconLg"
+            onChange={(n) => setStatus(key, n)}
+          />
         </div>
 
         <div className="sheet-eyebrow">
@@ -351,9 +323,7 @@ export function EntitySheet({
             {!isMultiCharWord &&
               charData?.originalMeaning &&
               charData.originalMeaning !== "characterless component" && (
-                <div className="sheet-etym-note">
-                  Originally: {charData.originalMeaning}
-                </div>
+                <div className="sheet-etym-note">Originally: {charData.originalMeaning}</div>
               )}
             {!isMultiCharWord && charData?.notes && (
               <div className="sheet-etym-note sheet-etym-note-em">{charData.notes}</div>

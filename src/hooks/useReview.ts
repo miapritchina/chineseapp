@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   applyCascadeCredit,
@@ -8,14 +8,15 @@ import {
   type RatingName,
   type SerializedCard,
 } from "../lib/fsrs";
-import type { Char } from "../lib/types";
+import type { Char, ItemKind, Facet } from "../lib/types";
+export type { ItemKind, Facet } from "../lib/types";
 import { componentClosure } from "../lib/componentSearch";
+import { useReconcileTriggers } from "./useReconcileTriggers";
 
 const FSRS_KEY = "chinese.fsrs.v1";
 const INTRODUCED_KEY = "chinese.fsrs.introducedToday";
 const CASCADE_CAP_DAYS = 7;
 // Re-fetch from Supabase on tab focus, but at most once per this window.
-const RECONCILE_THROTTLE_MS = 20_000;
 // Daily cap on how many *new* (never-directly-reviewed) cards can surface
 // in a single calendar day. Resets at midnight (UTC). Brief recommends
 // 5–15 for sustainable language learning; user picked 25.
@@ -42,24 +43,11 @@ function loadIntroducedToday(): Set<string> {
 }
 function persistIntroducedToday(ids: Set<string>) {
   try {
-    localStorage.setItem(
-      INTRODUCED_KEY,
-      JSON.stringify({ date: todayKey(), ids: [...ids] }),
-    );
+    localStorage.setItem(INTRODUCED_KEY, JSON.stringify({ date: todayKey(), ids: [...ids] }));
   } catch {
     /* ignore */
   }
 }
-
-export type ItemKind = "word" | "char" | "component";
-export type Facet =
-  | "recognition"          // legacy (pre-v66); migrated to meaningRecognition on load
-  | "meaningRecognition"
-  | "soundRecognition"
-  | "phoneticTap"
-  | "componentSound"
-  | "familyTransfer"
-  | "production";
 
 export interface ReviewCard {
   itemKey: string;
@@ -95,10 +83,7 @@ interface UseReviewOpts {
   phoneticComponentKeys?: Set<string>;
   // Full phonetic-components map keyed by char. Used by the
   // familyTransfer seeding rule (need to walk family[]).
-  phoneticComponentsByChar?: Map<
-    string,
-    { char: string; pinyin: string; family: string[] }
-  >;
+  phoneticComponentsByChar?: Map<string, { char: string; pinyin: string; family: string[] }>;
   // Items at status "wrote" (✒). Triggers the production-drill seed
   // rule (single-char items at wrote tier get a Hanzi Writer trace card).
   wroteKeys?: Set<string>;
@@ -124,10 +109,7 @@ function loadLocalCards(): Map<string, ReviewCard> {
 
 function persistLocalCards(cards: Map<string, ReviewCard>) {
   try {
-    localStorage.setItem(
-      FSRS_KEY,
-      JSON.stringify({ version: 1, items: [...cards.values()] }),
-    );
+    localStorage.setItem(FSRS_KEY, JSON.stringify({ version: 1, items: [...cards.values()] }));
   } catch {
     /* private mode / quota — silent */
   }
@@ -139,7 +121,6 @@ function persistLocalCards(cards: Map<string, ReviewCard>) {
 // lost; they continue training the meaning facet.
 const FIRST_KIND: ItemKind = "word";
 const MEANING_FACET: Facet = "meaningRecognition" as Facet;
-const SOUND_FACET: Facet = "soundRecognition" as Facet;
 
 export function useReview({
   userId,
@@ -151,11 +132,7 @@ export function useReview({
 }: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
-  const lastSyncedUserRef = useRef<string | null>(null);
-  const lastReconcileAtRef = useRef(0);
-  const [introducedToday, setIntroducedToday] = useState<Set<string>>(() =>
-    loadIntroducedToday(),
-  );
+  const [introducedToday, setIntroducedToday] = useState<Set<string>>(() => loadIntroducedToday());
 
   // Build payload for one Supabase upsert row.
   const toRemoteRow = (row: ReviewCard) => ({
@@ -217,11 +194,7 @@ export function useReview({
     // family members the user hasn't saved yet and seed transfer cards
     // on them. Surfaces "you know 青, what's 情?" prompts. Cap is to
     // avoid drowning the queue when the user has saved many components.
-    if (
-      phoneticComponentsByChar &&
-      phoneticComponentKeys &&
-      phoneticComponentKeys.size > 0
-    ) {
+    if (phoneticComponentsByChar && phoneticComponentKeys && phoneticComponentKeys.size > 0) {
       const FAMILY_PER_COMPONENT = 2;
       for (const key of scheduledKeys) {
         if ([...key].length !== 1) continue;
@@ -305,8 +278,7 @@ export function useReview({
       for (const [id, row] of next) {
         const isAutoFacet =
           (row.itemKind === "word" &&
-            (row.facet === "meaningRecognition" ||
-              row.facet === "soundRecognition")) ||
+            (row.facet === "meaningRecognition" || row.facet === "soundRecognition")) ||
           (row.itemKind === "char" &&
             (row.facet === "phoneticTap" ||
               row.facet === "familyTransfer" ||
@@ -354,15 +326,12 @@ export function useReview({
       setSyncing(false);
       return;
     }
-    lastReconcileAtRef.current = Date.now();
     const remote = new Map<string, ReviewCard>();
     for (const r of data || []) {
       // Migrate legacy "recognition" rows from the DB into the new
       // "meaningRecognition" facet on the way in (one-time, in-memory).
       const facet =
-        r.facet === "recognition"
-          ? ("meaningRecognition" as Facet)
-          : (r.facet as Facet);
+        r.facet === "recognition" ? ("meaningRecognition" as Facet) : (r.facet as Facet);
       const row: ReviewCard = {
         itemKey: r.item_key,
         itemKind: r.item_kind as ItemKind,
@@ -436,30 +405,7 @@ export function useReview({
     setSyncing(false);
   }, [userId]);
 
-  useEffect(() => {
-    if (!userId) {
-      lastSyncedUserRef.current = null;
-      return;
-    }
-    if (lastSyncedUserRef.current === userId) return;
-    lastSyncedUserRef.current = userId;
-    void reconcile();
-  }, [userId, reconcile]);
-
-  useEffect(() => {
-    if (!userId) return;
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
-      if (Date.now() - lastReconcileAtRef.current < RECONCILE_THROTTLE_MS) return;
-      void reconcile();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
-    };
-  }, [userId, reconcile]);
+  useReconcileTriggers(userId, reconcile);
 
   // Due cards. Char + component cards before word cards (the brief: review
   // sub-items in isolation occasionally), then oldest-due first. Daily
@@ -512,7 +458,12 @@ export function useReview({
   // plan). On Again, no cascade — the user can attribute the failure to
   // a specific child via attributeFailure().
   const grade = useCallback(
-    (itemKey: string, rating: RatingName, kind: ItemKind = FIRST_KIND, facet: Facet = MEANING_FACET) => {
+    (
+      itemKey: string,
+      rating: RatingName,
+      kind: ItemKind = FIRST_KIND,
+      facet: Facet = MEANING_FACET,
+    ) => {
       const now = new Date();
       const parentId = rowId(itemKey, kind, facet);
       // BUG FIX (v76): use the functional-setState form so two grade()
@@ -529,8 +480,7 @@ export function useReview({
           changed = [];
           return prev;
         }
-        parentWasNew =
-          (parentRow.directReviews ?? 0) === 0 && (parentRow.card.reps ?? 0) === 0;
+        parentWasNew = (parentRow.directReviews ?? 0) === 0 && (parentRow.card.reps ?? 0) === 0;
         const next = new Map(prev);
         const localChanged: ReviewCard[] = [];
 
@@ -547,8 +497,7 @@ export function useReview({
         localChanged.push(newParent);
 
         // 2. Cascade to component closure (only for word kinds + Good/Easy).
-        const cascade =
-          kind === FIRST_KIND && (rating === "Good" || rating === "Easy");
+        const cascade = kind === FIRST_KIND && (rating === "Good" || rating === "Easy");
         if (cascade) {
           const closure = componentClosure(itemKey, chars);
           closure.delete(itemKey);

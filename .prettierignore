@@ -1,0 +1,5 @@
+dist
+node_modules
+public/data-chars.json
+public/phonetic-components.json
+*.pdf

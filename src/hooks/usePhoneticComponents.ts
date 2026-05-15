@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 
 export interface PhoneticComponent {
   char: string;
-  pinyin: string;        // tone-free
-  pinyinTones: string;   // raw, with diacritics
-  count: number;         // # of distinct chars that use it as a sound component
-  family: string[];      // capped sample of those chars
+  pinyin: string; // tone-free
+  pinyinTones: string; // raw, with diacritics
+  count: number; // # of distinct chars that use it as a sound component
+  family: string[]; // capped sample of those chars
 }
 
 interface State {
@@ -16,7 +16,7 @@ interface State {
 
 const EMPTY: State = { components: [], byChar: new Map(), ready: false };
 
-// Loads /Ai-/phonetic-components.json (built by
+// Loads ./phonetic-components.json (built by
 // scripts/extract-phonetic-components.mjs). Soft-fails on network error so
 // the rest of the app keeps working without phonetic data.
 export function usePhoneticComponents(): State {
