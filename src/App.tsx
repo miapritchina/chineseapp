@@ -191,13 +191,29 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, searchMode, saved.savedList, charsData.chars, dict, setSearching]);
+    // `dict` itself is a fresh object literal each render (the hook
+    // doesn't memoize its return); depending on its stable function
+    // refs only so this effect doesn't tear down + restart the
+    // in-flight search on every render — that caused a "searches
+    // forever" hang on a real user.
+  }, [
+    debouncedQuery,
+    searchMode,
+    saved.savedList,
+    charsData.chars,
+    dict.search,
+    dict.ensureCached,
+    dict.findWord,
+    setSearching,
+  ]);
 
   // Pre-hydrate saved words so the shelf renders without per-card flicker.
   useEffect(() => {
     if (saved.saved.size === 0) return;
     void dict.ensureCached([...saved.saved]);
-  }, [saved.saved, dict]);
+    // Same stability story as the search effect — depend on the
+    // ensureCached function ref only, not the whole dict object.
+  }, [saved.saved, dict.ensureCached]);
 
   // Deep-link via hash on first (cold) load.
   const deepLinkRunRef = useRef(false);
