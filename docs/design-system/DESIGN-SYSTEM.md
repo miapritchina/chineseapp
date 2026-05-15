@@ -314,7 +314,7 @@ The app respects iOS safe areas throughout: `env(safe-area-inset-top)` on `.topb
 
 ### 5.3 Motion principles
 
-From DESIGN.md: **No auto-advance timers in drills.** All progression is user-initiated (tap-anywhere-to-advance). The "tap to continue" hint uses a subtle pulse animation (`drill-tap-hint-pulse`) rather than a static label — **design preference: hints should be transient** (fade after ~1.5–2 s or first-occurrence-only), not permanent on-screen text.
+Per [ADR-0007](../decisions/0007-tap-anywhere-to-advance.md): **No auto-advance timers in drills.** All progression is user-initiated (tap-anywhere-to-advance). The "tap to continue" hint uses a subtle pulse animation (`drill-tap-hint-pulse`) rather than a static label — **design preference: hints should be transient** (fade after ~1.5–2 s or first-occurrence-only), not permanent on-screen text.
 
 ---
 
@@ -553,7 +553,7 @@ Every dark-mode override is a hand-written `@media (prefers-color-scheme: dark)`
 
 ### 9.6 Event propagation inconsistency
 
-Some drill buttons stop event propagation (`e.stopPropagation()`) unconditionally; others do so conditionally based on grading state. The v75/v76 bugfix documented in DESIGN.md established the pattern: stop propagation only when `!allGraded`. **Recommendation:** Audit all `stopPropagation` calls across drill components for consistency.
+Some drill buttons stop event propagation (`e.stopPropagation()`) unconditionally; others do so conditionally based on grading state. [ADR-0007](../decisions/0007-tap-anywhere-to-advance.md) established the pattern: stop propagation only when `!allGraded`. **Recommendation:** Audit all `stopPropagation` calls across drill components for consistency.
 
 ### 9.7 Font stack declared twice on search input
 
