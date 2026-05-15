@@ -6,14 +6,23 @@ name: Setup Supabase
 # secret value in: Settings → Environments → github-pages → Environment
 # secrets → supabaseapi.
 #
-# To run: github.com/<owner>/<repo>/actions → "Setup Supabase" → Run
-# workflow. The checkboxes default to "all three on"; just click Run.
+# Triggers:
+#   - push to `claude/main` touching `supabase/migrations/**` — auto-applies
+#     new/changed migrations. Skips the heavy seed step (the words table is
+#     already populated; seeding is idempotent but expensive). configure_auth
+#     also runs because it's fast and idempotent.
+#   - workflow_dispatch (manual) — full control via the three checkboxes,
+#     defaults to "all three on" so a fresh project bootstraps in one click.
 #
-# Note: because this job is gated by the `github-pages` environment, the
-# workflow can only be dispatched from a branch the environment allows
-# (typically the repo's default branch).
+# Because the job is gated by the `github-pages` environment, the workflow
+# can only run from a branch the environment allows (typically the default
+# branch).
 
 on:
+  push:
+    branches: [claude/main]
+    paths:
+      - 'supabase/migrations/**'
   workflow_dispatch:
     inputs:
       apply_migrations:
@@ -57,7 +66,7 @@ jobs:
           echo "Project: $(jq -r '.name' /tmp/proj.json) (region: $(jq -r '.region' /tmp/proj.json))"
 
       - name: Apply migrations via Management API
-        if: ${{ inputs.apply_migrations }}
+        if: ${{ github.event_name == 'push' || inputs.apply_migrations }}
         env:
           SUPABASE_PAT: ${{ secrets.supabaseapi }}
         run: |
@@ -81,7 +90,7 @@ jobs:
           done
 
       - name: Configure auth redirect URLs
-        if: ${{ inputs.configure_auth }}
+        if: ${{ github.event_name == 'push' || inputs.configure_auth }}
         env:
           SUPABASE_PAT: ${{ secrets.supabaseapi }}
         run: |
@@ -103,7 +112,7 @@ jobs:
           echo "Auth redirect URLs configured: $SITE_URL"
 
       - name: Fetch service_role key
-        if: ${{ inputs.run_seed }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_seed }}
         id: keys
         env:
           SUPABASE_PAT: ${{ secrets.supabaseapi }}
@@ -122,18 +131,18 @@ jobs:
           echo "sr_key=$SR_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node
-        if: ${{ inputs.run_seed }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_seed }}
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install
-        if: ${{ inputs.run_seed }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_seed }}
         run: npm ci
 
       - name: Seed dictionary
-        if: ${{ inputs.run_seed }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_seed }}
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ steps.keys.outputs.sr_key }}
         run: node scripts/seed-supabase.mjs

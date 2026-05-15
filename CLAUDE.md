@@ -474,13 +474,17 @@ done yet.
   allow the current default branch. If deployment shows success but the
   site doesn't update, check Actions → deploy job for "environment
   protection rules" rejection.
-- After a Supabase migration lands (e.g. `0007_fsrs_state.sql`), re-run the
-  Setup Supabase workflow so the new schema applies. The workflow reads
+- After a Supabase migration lands, the Setup Supabase workflow applies it
+  **automatically** on the next push to `claude/main` that touches
+  `supabase/migrations/**` — no click needed. It applies migrations +
+  refreshes auth config but skips the heavy seed step (re-seeding the
+  ~91k-row `words` table is reserved for the manual `workflow_dispatch`
+  path, with the "Upsert all ~91k words" checkbox). The workflow reads
   the Supabase PAT from the `github-pages` environment secret `supabaseapi`
-  (Settings → Environments → github-pages → Environment secrets) — no
-  prompt, just click Run. Rotate by updating the secret value and revoking
-  the old PAT. The app degrades gracefully when a new column/table is
-  missing — sync errors are silently downgraded.
+  (Settings → Environments → github-pages → Environment secrets). Rotate
+  by updating that secret value and revoking the old PAT. The app
+  degrades gracefully when a new column/table is missing — sync errors
+  are silently downgraded.
 
 ## Development tips
 
