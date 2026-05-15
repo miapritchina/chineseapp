@@ -17,7 +17,7 @@ existing behavior — none of these stages added features.
    npm install
    npm run dev
    ```
-3. Open the dev URL (default `http://localhost:5173/Ai-/`) in a real
+3. Open the dev URL (default `http://localhost:5173/chineseapp/`) in a real
    browser. Keep the devtools Console open — **any red error or
    `useXxxCtx used outside <AppStateProvider>` throw is a regression**.
 4. Run the automated suites first:
@@ -104,7 +104,7 @@ regression the refactor was supposed to avoid.
 
 | Action | Expected |
 |---|---|
-| Open `?import=/Ai-/sample-saved.json` (host a small JSON `{ "saved": ["你好","谢谢"] }` somewhere same-origin) | Confirm dialog → words land in saved set → URL strips `?import=` |
+| Open `?import=/chineseapp/sample-saved.json` (host a small JSON `{ "saved": ["你好","谢谢"] }` somewhere same-origin) | Confirm dialog → words land in saved set → URL strips `?import=` |
 | Open a share link generated from the hamburger "Share my words" | Confirm dialog → words land → URL strips `?share=` |
 | Open `?clear=1` | Confirm dialog → saved set cleared → URL strips `?clear=` |
 | Reload the same `?import=` URL | Effect must NOT re-fire (URL was already stripped) |

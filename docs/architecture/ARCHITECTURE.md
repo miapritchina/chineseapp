@@ -14,7 +14,7 @@ For developer workflow (commit style, version bumps, test rules), see
 
 **One Chinese-character learning web app**, deployed as static files
 to GitHub Pages with one Supabase project behind it. The app surfaces
-in three places under `/Ai-/`:
+in three places under `/chineseapp/`:
 
 | Path | Tech | What it does |
 |---|---|---|

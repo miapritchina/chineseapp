@@ -16,7 +16,7 @@ For deeper context:
 ## 1. What the project is
 
 One Chinese-character learning web app, deployed to GitHub Pages at
-https://decobots.github.io/Ai-/. Mobile-first; iPhone Safari in
+https://decobots.github.io/chineseapp/. Mobile-first; iPhone Safari in
 3–7 minute sessions.
 
 The app deploys as **one product, three surfaces**:
