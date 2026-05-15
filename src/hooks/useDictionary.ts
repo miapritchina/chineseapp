@@ -21,6 +21,17 @@ function hydrate(row: any): Word {
 
 const SEARCH_CACHE_LIMIT = 50;
 
+// Supabase's auth client uses navigator.locks to serialize token refresh
+// across tabs / concurrent requests. When two flows race (focus reconcile
+// + an in-flight RPC, or two tabs sharing the same session), one's lock
+// is "stolen" and the request rejects with this message. It's transient:
+// the next user action retries cleanly. Silence it so the red error
+// banner doesn't flash on every multi-tab focus.
+const TRANSIENT_RE = /lock (was stolen|acquire timed out|timeout)/i;
+function isTransient(msg: string | undefined): boolean {
+  return !!msg && TRANSIENT_RE.test(msg);
+}
+
 export function useDictionary() {
   // State-backed cache so consumers re-render when missing words arrive.
   const [cache, setCache] = useState<Map<string, Word>>(new Map());
@@ -59,7 +70,7 @@ export function useDictionary() {
       const { data, error: rpcErr } = await supabase.rpc("search_words", { q: trimmed });
       if (rpcErr) {
         console.error("search_words RPC failed:", rpcErr);
-        setError(rpcErr.message);
+        if (!isTransient(rpcErr.message)) setError(rpcErr.message);
         return [];
       }
       const rows = (data || []) as any[];
@@ -81,13 +92,11 @@ export function useDictionary() {
           .in("word", need);
         if (rowsErr) {
           console.error("search hydrate failed:", rowsErr);
-          setError(rowsErr.message);
+          if (!isTransient(rowsErr.message)) setError(rowsErr.message);
           return [];
         }
         const byWord = new Map((full || []).map((r) => [r.word, hydrate(r)]));
-        hydrated = rows
-          .map((r) => byWord.get(r.word))
-          .filter((w): w is Word => !!w);
+        hydrated = rows.map((r) => byWord.get(r.word)).filter((w): w is Word => !!w);
       }
 
       // An exact-hanzi hit always outranks substring/compound matches —
@@ -119,13 +128,10 @@ export function useDictionary() {
     async (keys: string[]): Promise<void> => {
       const missing = keys.filter((k) => !cache.has(k));
       if (missing.length === 0) return;
-      const { data, error: err } = await supabase
-        .from("words")
-        .select("*")
-        .in("word", missing);
+      const { data, error: err } = await supabase.from("words").select("*").in("word", missing);
       if (err) {
         console.error("ensureCached failed:", err);
-        setError(err.message);
+        if (!isTransient(err.message)) setError(err.message);
         return;
       }
       ingest((data || []).map(hydrate));
