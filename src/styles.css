@@ -19,6 +19,28 @@
   --role-unknown: #6b7280;
   --role-word: #1d1b18;
 
+  /* Hanzi / type scale */
+  --hanzi-hero: 120px;    /* Review drill focal character */
+  --hanzi-large: 52px;    /* EntitySheet header, shelf cards */
+  --hanzi-medium: 36px;   /* Search results, word bank, component preview */
+  --hanzi-small: 22px;    /* Phonetics preview, inline refs */
+  --heading-1: 20px;      /* Section headers */
+  --heading-2: 16px;      /* Sub-headers, POS labels */
+  --body: 15px;           /* English glosses, pinyin, descriptions */
+  --caption: 12px;        /* Metadata, timestamps */
+
+  /* Status tiers */
+  --status-saved: #d97706;
+  --status-learned: #2e7d32;
+  --status-wrote: #7a3aa8;
+  --status-review: #c2410c;
+
+  /* Grade buttons */
+  --grade-again: #b91c1c;
+  --grade-hard: #d97706;
+  --grade-good: #15803d;
+  --grade-easy: #1d4ed8;
+
   /* Part-of-speech hues (Sentence Studio chips / EntitySheet POS tag).
      Single source of truth — src/lib/pos.ts POS_COLOR references these. */
   --pos-pron: #6b3a8a;
@@ -40,6 +62,7 @@
     --muted: #a39c8f;
     --accent: #e07070;
     --border: #2a2620;
+    /* Role colors lightened ~20% for dark-mode contrast (UX-10). */
     --role-iconic: #60a5fa;
     --role-meaning: #4ade80;
     --role-sound: #f87171;
@@ -47,6 +70,14 @@
     --role-deleted: #9ca3af;
     --role-unknown: #9ca3af;
     --role-word: #ece7dc;
+    --grade-again: #f87171;
+    --grade-hard: #fbbf24;
+    --grade-good: #4ade80;
+    --grade-easy: #60a5fa;
+    --status-saved: #f59e0b;
+    --status-learned: #6dba84;
+    --status-wrote: #b07ad8;
+    --status-review: #fb923c;
   }
 }
 
@@ -104,6 +135,25 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* Hidden by default — toggled via .is-open. Using visibility/opacity/
+     transform (not display:none) keeps the box out of the tab order and
+     avoids any layout reflow when Escape closes it. */
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  transform-origin: top left;
+  pointer-events: none;
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s linear 0.14s;
+}
+.hamburger-menu.is-open {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hamburger-menu, .hamburger-menu.is-open { transition: none; }
 }
 .hamburger-item {
   display: flex;
@@ -189,8 +239,23 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 28px 24px;
   overflow: auto;
+}
+
+/* Review progress bar — thin fill under the review header, grows
+   left-to-right as cards are completed. */
+.review-progress-bar {
+  height: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.review-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 0 999px 999px 0;
+  transition: width 0.25s ease;
 }
 .review-card {
   width: 100%;
@@ -212,9 +277,10 @@ body {
 .review-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .review-hanzi {
   font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
-  font-size: 110px;
+  font-size: calc(var(--hanzi-hero) * var(--hanzi-scale, 1));
   line-height: 1.1;
   font-weight: 500;
+  max-width: 100%;
 }
 .review-tap-hint {
   font-size: 13px;
@@ -259,15 +325,11 @@ body {
   color: #fff;
   border-color: var(--accent);
 }
-.review-btn-again  { color: #b91c1c; }
-.review-btn-good   { color: #15803d; }
-.review-btn-easy   { color: #1d4ed8; }
+.review-btn-again  { color: var(--grade-again); --grade-color: var(--grade-again); }
+.review-btn-hard   { color: var(--grade-hard);  --grade-color: var(--grade-hard); }
+.review-btn-good   { color: var(--grade-good);  --grade-color: var(--grade-good); }
+.review-btn-easy   { color: var(--grade-easy);  --grade-color: var(--grade-easy); }
 .review-btn-skip   { color: var(--muted); flex: 0.6; }
-@media (prefers-color-scheme: dark) {
-  .review-btn-again { color: #f87171; }
-  .review-btn-good  { color: #4ade80; }
-  .review-btn-easy  { color: #60a5fa; }
-}
 .review-empty {
   margin: auto;
   text-align: center;
@@ -417,7 +479,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 20px;
   width: 100%;
   max-width: 440px;
 }
@@ -573,7 +635,7 @@ body {
 }
 .phonetics-row {
   display: grid;
-  grid-template-columns: 56px 56px 1fr auto;
+  grid-template-columns: 64px 56px 1fr auto;
   grid-template-rows: auto auto;
   align-items: center;
   gap: 4px 12px;
@@ -583,16 +645,17 @@ body {
 .phonetics-row-char {
   grid-row: 1 / span 2;
   font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
-  font-size: 30px;
+  font-size: 44px;
+  line-height: 1;
   text-align: center;
 }
-.phonetics-row-pinyin { font-size: 14px; color: var(--text); }
-.phonetics-row-count  { font-size: 12px; color: var(--muted); }
+.phonetics-row-pinyin { font-size: var(--body); color: var(--text); }
+.phonetics-row-count  { font-size: var(--caption); color: var(--muted); }
 .phonetics-row-family {
   grid-column: 2 / span 2;
   grid-row: 2;
   font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
-  font-size: 18px;
+  font-size: var(--hanzi-small);
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -821,7 +884,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 18px;
   width: 100%;
   max-width: 460px;
   text-align: center;
@@ -858,7 +921,7 @@ body {
 .combined-grade-row .review-btn { flex: 1; padding: 12px 8px; }
 .combined-grade-row .review-btn.is-picked {
   background: var(--surface-2);
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--grade-color, var(--accent));
   outline-offset: -2px;
 }
 /* Drill Skip — small, muted, pushed to the bottom of the card stack
@@ -1324,17 +1387,19 @@ body {
   position: relative;
   font: inherit;
   color: inherit;
+  overflow: hidden;
 }
 .card:hover, .card:focus-visible {
   outline: none;
 }
 
 .card .char {
-  font-size: 48px;
-  line-height: 1;
+  font-size: calc(var(--hanzi-large) * var(--hanzi-scale, 1));
+  line-height: 1.1;
   font-weight: 400;
   letter-spacing: 1px;
   margin-bottom: 6px;
+  white-space: nowrap;
 }
 .card .pinyin {
   font-size: 14px;
@@ -1375,10 +1440,11 @@ body {
   outline: none;
 }
 .result-row .r-hanzi {
-  font-size: 36px;
-  line-height: 1;
+  font-size: calc(var(--hanzi-medium) * var(--hanzi-scale, 1));
+  line-height: 1.1;
   font-weight: 400;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
+  white-space: nowrap;
 }
 .result-row .r-mid {
   display: flex;
@@ -1461,16 +1527,10 @@ body {
 }
 .status-btn:hover, .status-btn:focus-visible,
 .status-btn.is-open { background: var(--surface-2); outline: none; }
-.status-btn.status-saved   { color: #d97706; }
-.status-btn.status-learned { color: #2e7d32; }
-.status-btn.status-wrote   { color: #7a3aa8; }
-.status-btn.status-review  { color: #c2410c; }
-@media (prefers-color-scheme: dark) {
-  .status-btn.status-saved   { color: #f59e0b; }
-  .status-btn.status-learned { color: #6dba84; }
-  .status-btn.status-wrote   { color: #b07ad8; }
-  .status-btn.status-review  { color: #fb923c; }
-}
+.status-btn.status-saved   { color: var(--status-saved); }
+.status-btn.status-learned { color: var(--status-learned); }
+.status-btn.status-wrote   { color: var(--status-wrote); }
+.status-btn.status-review  { color: var(--status-review); }
 .status-icon-saved   { color: inherit; }
 .status-icon-learned { color: inherit; }
 .status-icon-wrote   { color: inherit; }
@@ -1512,20 +1572,14 @@ body {
   outline: none;
 }
 .status-menu-icon { display: inline-flex; line-height: 0; }
-.status-menu-item.status-saved   .status-menu-icon { color: #d97706; }
-.status-menu-item.status-learned .status-menu-icon { color: #2e7d32; }
-.status-menu-item.status-wrote   .status-menu-icon { color: #7a3aa8; }
-.status-menu-item.status-review  .status-menu-icon { color: #c2410c; }
+.status-menu-item.status-saved   .status-menu-icon { color: var(--status-saved); }
+.status-menu-item.status-learned .status-menu-icon { color: var(--status-learned); }
+.status-menu-item.status-wrote   .status-menu-icon { color: var(--status-wrote); }
+.status-menu-item.status-review  .status-menu-icon { color: var(--status-review); }
 .status-menu-item.status-remove  { color: var(--muted); }
 .status-menu-item.is-current {
   background: var(--surface-2);
   font-weight: 500;
-}
-@media (prefers-color-scheme: dark) {
-  .status-menu-item.status-saved   .status-menu-icon { color: #f59e0b; }
-  .status-menu-item.status-learned .status-menu-icon { color: #6dba84; }
-  .status-menu-item.status-wrote   .status-menu-icon { color: #b07ad8; }
-  .status-menu-item.status-review  .status-menu-icon { color: #fb923c; }
 }
 
 .header-star,
@@ -1895,27 +1949,21 @@ body {
     padding: 4px 4px 14px;
   }
   .card { padding: 10px 6px 8px; }
-  .card .char { font-size: 42px; }
+  .card .char { font-size: calc(42px * var(--hanzi-scale, 1)); }
   .modal-body { padding: 0 4px 80px; }
-  .result-row .r-hanzi { font-size: 28px; }
+  .result-row .r-hanzi { font-size: calc(30px * var(--hanzi-scale, 1)); }
 }
 
 /* Sentence Studio (E2) — pulls from saved words; tap a chip to append,
    tap a composer token to remove. POS color (`--pos-c`) is set inline
-   per chip/token. Reuses the review-page header + back button shell. */
-.sentence-root {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: var(--bg);
-  /* Plain block scroll container — NOT a flex column. As a fixed-height
-     flex column it would squeeze the scrollable .pos-tabs strip down to
-     ~0 (an overflow:auto flex item has automatic minimum size 0), which
-     clipped the tab labels. */
+   per chip/token. Rendered inline as the "Sentence" home tab — a plain
+   block (NOT a flex column: a fixed-height flex column would squeeze the
+   scrollable .pos-tabs strip down to ~0 and clip the tab labels). */
+.sentence-studio {
   display: block;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-top: env(safe-area-inset-top);
+}
+.sentence-studio-empty {
+  padding: 40px 18px 60px;
 }
 
 .composer {
@@ -2124,10 +2172,11 @@ body {
 .bank-chip-c {
   grid-row: 1 / span 2;
   font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
-  font-size: 34px;
+  font-size: calc(var(--hanzi-medium) * var(--hanzi-scale, 1));
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.1;
   color: var(--text);
+  white-space: nowrap;
 }
 .bank-chip-meta {
   display: flex;
@@ -2146,20 +2195,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.bank-chip-pos {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 3px;
-  color: #fff;
-  background: var(--pos-c, var(--muted));
-  opacity: 0.85;
 }
 
 .sentence-cta-wrap {
@@ -2397,8 +2432,8 @@ body {
 }
 .sheet-glyph-text {
   font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
-  font-size: clamp(40px, 13vw, 60px);
-  line-height: 1.05;
+  font-size: calc(var(--hanzi-large) * var(--hanzi-scale, 1));
+  line-height: 1.1;
   font-weight: 500;
   color: var(--text);
   word-break: break-word;
@@ -2479,7 +2514,7 @@ body {
 .sheet-etym-piece { display: inline-flex; align-items: center; gap: 6px; }
 .sheet-etym-glyph {
   font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
-  font-size: 30px;
+  font-size: var(--hanzi-medium);
   line-height: 1;
   color: var(--text);
 }
@@ -2498,22 +2533,24 @@ body {
   outline: none;
 }
 .sheet-etym-result { font-weight: 500; padding: 0 4px; }
-.sheet-etym-op { font-size: 16px; color: var(--muted); }
+.sheet-etym-op { font-size: 18px; color: var(--muted); }
 .sheet-etym-expand {
   margin-left: auto;
-  background: transparent;
+  background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  width: 30px;
-  height: 30px;
-  font-size: 14px;
-  color: var(--muted);
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 .sheet-etym-expand:hover, .sheet-etym-expand:focus-visible {
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
   outline: none;
 }
 .sheet-etym-note {

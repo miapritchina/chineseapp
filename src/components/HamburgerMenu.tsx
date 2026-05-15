@@ -6,7 +6,6 @@ interface Props {
   reviewHref?: string | null;
   reviewBadge?: number;
   phoneticsHref?: string | null;
-  sentenceHref?: string | null;
   onShareWords?: () => void;
   wordCount?: number;
 }
@@ -19,7 +18,6 @@ export function HamburgerMenu({
   reviewHref = null,
   reviewBadge = 0,
   phoneticsHref = null,
-  sentenceHref = null,
   onShareWords,
   wordCount = 0,
 }: Props) {
@@ -47,8 +45,13 @@ export function HamburgerMenu({
           />
         </svg>
       </button>
-      {open && (
-        <div className="hamburger-menu" role="menu">
+      {/* Always rendered; toggled via .is-open (visibility/opacity/
+          transform) so dismissing doesn't yank a box out of layout. */}
+      <div
+        className={`hamburger-menu${open ? " is-open" : ""}`}
+        role="menu"
+        aria-hidden={!open}
+      >
           {reviewHref ? (
             <a
               role="menuitem"
@@ -80,16 +83,6 @@ export function HamburgerMenu({
               <span>Phonetics</span>
             </a>
           )}
-          {sentenceHref && (
-            <a
-              role="menuitem"
-              className="hamburger-item"
-              href={sentenceHref}
-              onClick={() => setOpen(false)}
-            >
-              <span>Sentence</span>
-            </a>
-          )}
           <a role="menuitem" className="hamburger-item" href="./network/">
             <span>Network</span>
           </a>
@@ -112,8 +105,7 @@ export function HamburgerMenu({
           )}
           <div className="hamburger-divider" />
           <div className="hamburger-version">{version}</div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -309,6 +309,7 @@ export function ReviewPage({
             {progressIndex} / {total}
           </span>
         </div>
+        <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <DisambiguationCard
             focus={current.itemKey}
@@ -365,6 +366,7 @@ export function ReviewPage({
             {progressIndex} / {total}
           </span>
         </div>
+        <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <ProductionCard
             key={rid(current)}
@@ -548,6 +550,7 @@ export function ReviewPage({
           {progressIndex} / {total}
         </span>
       </div>
+      <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">
         {attribTarget ? (
           <div className="review-attrib">
@@ -591,6 +594,23 @@ export function ReviewPage({
   );
 }
 
+// Thin fill under the review header — grows left-to-right as cards are
+// completed (4F). `index` is the 1-based position of the current card.
+function ReviewProgressBar({ index, total }: { index: number; total: number }) {
+  const pct = total > 0 ? Math.min(100, Math.max(0, ((index - 1) / total) * 100)) : 0;
+  return (
+    <div
+      className="review-progress-bar"
+      role="progressbar"
+      aria-valuenow={Math.max(0, index - 1)}
+      aria-valuemin={0}
+      aria-valuemax={total}
+    >
+      <div className="review-progress-fill" style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 // Shared chrome for the auto-graded drill facets (phoneticTap +
 // componentSound). One Skip button so the user is never stuck if the
 // drill can't surface a meaningful question.
@@ -614,6 +634,7 @@ function DrillFrame({ tag, onClose, progressIndex, total, onSkip, children }: Dr
           {progressIndex} / {total}
         </span>
       </div>
+      <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">{children}</div>
       <div className="drill-skip-row">
         <button type="button" className="drill-skip" onClick={onSkip}>

@@ -1,6 +1,7 @@
 import type { Word } from "../lib/types";
 import type { Status } from "../hooks/useSaved";
 import { StatusButton } from "./StatusButton";
+import { hanziScaleStyle } from "../lib/hanzi";
 
 interface Props {
   word: Word;
@@ -17,6 +18,7 @@ export function Card({ word, onOpen, getStatus, setStatus }: Props) {
   return (
     <div
       className="card"
+      style={hanziScaleStyle(word.simp)}
       role="button"
       tabIndex={0}
       aria-label={`${word.simp} ${word.pinyin}`}

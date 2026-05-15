@@ -7,6 +7,7 @@ import { buildStarterMnemonic, buildStarterWordMnemonic } from "../lib/mnemonics
 import { toneLabel } from "../lib/pinyin";
 import { detectPos, POS_LABEL, POS_COLOR } from "../lib/pos";
 import { speak } from "../lib/speech";
+import { hanziScaleStyle } from "../lib/hanzi";
 
 interface Props {
   // Exactly one of these identifies the entity. `word` wins when both
@@ -268,7 +269,7 @@ export function EntitySheet({
         </div>
 
         {isMultiCharWord ? (
-          <div className="sheet-glyph sheet-glyph-word">
+          <div className="sheet-glyph sheet-glyph-word" style={hanziScaleStyle(word!.word)}>
             <span className="sheet-glyph-text">{word!.word}</span>
             <button
               type="button"

@@ -28,7 +28,7 @@ import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
 import { decodeWords, encodeWords, looksLikeShareToken, makeShareToken, shareUrl } from "./lib/share";
 
-import type { Word } from "./lib/types";
+import type { Word, ModalEntry } from "./lib/types";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -60,9 +60,6 @@ export function App() {
   const [showPhonetics, setShowPhonetics] = useState(
     typeof window !== "undefined" && window.location.hash === "#/phonetics",
   );
-  const [showSentence, setShowSentence] = useState(
-    typeof window !== "undefined" && window.location.hash === "#/sentence",
-  );
 
   // Every saved word is queued for review — the user's stated goal is to
   // learn all of them, and the four statuses are about progression
@@ -91,24 +88,57 @@ export function App() {
     wakeUp();
   }, []);
 
+  // --- Deep links: #/c/:char and #/w/:word open the EntitySheet. ---
+  // stackRef gives the hashchange handler a fresh view of the modal
+  // stack without re-subscribing the listener every render.
+  const stackRef = useRef(stack);
+  stackRef.current = stack;
+  const deepLinkDepsRef = useRef({ ensureCached: dict.ensureCached, push });
+  deepLinkDepsRef.current = { ensureCached: dict.ensureCached, push };
+  // Open an entry parsed from the URL hash. Strips the deep-link hash
+  // first (replaceState) so a later history.back() lands on a hash-free
+  // entry instead of re-triggering this handler in a loop.
+  const openFromHash = useRef((entry: ModalEntry) => {
+    history.replaceState(history.state, "", location.pathname + location.search);
+    const { ensureCached, push: pushEntry } = deepLinkDepsRef.current;
+    if (entry.kind === "word") void ensureCached([entry.key]).then(() => pushEntry(entry));
+    else pushEntry(entry);
+  }).current;
+
   // Track full-screen pages via URL hash. Same pattern as the modal stack
   // (in useModalStack); kept inline here because these pages are
-  // top-level, not nested.
+  // top-level, not nested. Also routes the #/c/ and #/w/ entity deep
+  // links on in-page hashchange events.
   useEffect(() => {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
       setShowPhonetics(window.location.hash === "#/phonetics");
-      setShowSentence(window.location.hash === "#/sentence");
+      // Sentence Studio used to live at #/sentence; it's now a home tab.
+      // Honor an old link by switching to that tab and dropping the hash.
+      if (window.location.hash === "#/sentence") {
+        setSearchMode("sentence");
+        history.replaceState(history.state, "", location.pathname + location.search);
+      }
       // Reset the launched-flag so re-opening Review goes back to the
       // launch screen first.
       if (window.location.hash !== "#/review") {
         setReviewLaunched(null);
         setClusterActive(false);
       }
+      const entry = parseHash();
+      if (entry) {
+        // Only open if this entry isn't already somewhere in the stack —
+        // a hashchange fired by history.back() is just a back-navigation
+        // to an entry useModalStack's popstate handler already manages.
+        const inStack = stackRef.current.some(
+          (e) => e.kind === entry.kind && e.key === entry.key && e.view !== "tree",
+        );
+        if (!inStack) openFromHash(entry);
+      }
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, []);
+  }, [openFromHash]);
   const closeHashPage = (target: string) => {
     if (window.location.hash === target) history.back();
     else {
@@ -116,7 +146,6 @@ export function App() {
       // the page after the user closes it before hashchange fires.
       if (target === "#/review") setShowReview(false);
       if (target === "#/phonetics") setShowPhonetics(false);
-      if (target === "#/sentence") setShowSentence(false);
     }
   };
 
@@ -147,7 +176,9 @@ export function App() {
   // Run search when the debounced query (or mode) changes.
   useEffect(() => {
     let cancelled = false;
-    if (!debouncedQuery.trim()) {
+    // The Sentence tab consumes the query directly (it filters the word
+    // bank), so there's no dictionary lookup to run here.
+    if (searchMode === "sentence" || !debouncedQuery.trim()) {
       setSearchResults([]);
       setSearching(false);
       return;
@@ -193,19 +224,14 @@ export function App() {
     void dict.ensureCached([...saved]);
   }, [saved, dict.ensureCached]);
 
-  // Deep-link via hash on first load.
+  // Deep-link via hash on first (cold) load.
   const deepLinkRunRef = useRef(false);
   useEffect(() => {
     if (deepLinkRunRef.current) return;
     deepLinkRunRef.current = true;
     const initial = parseHash();
-    if (!initial) return;
-    if (initial.kind === "word") {
-      void dict.ensureCached([initial.key]).then(() => push(initial));
-    } else if (initial.kind === "char") {
-      push(initial);
-    }
-  }, [dict.ensureCached, push]);
+    if (initial) openFromHash(initial);
+  }, [openFromHash]);
 
   // Auto-import via ?import=<url> on first load. Same-origin only; the user
   // confirms before anything writes. Useful for one-tap "save these N words"
@@ -348,6 +374,7 @@ export function App() {
   }, [auth.loading, clearAll]);
 
   const handleEnter = () => {
+    if (searchMode === "sentence") return;
     if (searchResults.length > 0) {
       void openWord(searchResults[0].word);
     }
@@ -418,11 +445,10 @@ export function App() {
     <>
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v89"
+          version="chinese v90"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
-          sentenceHref="#/sentence"
           onShareWords={shareMyWords}
           wordCount={savedList.length}
         />
@@ -490,16 +516,6 @@ export function App() {
         />
       )}
 
-      {showSentence && (
-        <SentenceStudio
-          savedWords={savedList.map((s) => s.word)}
-          findWord={dict.findWord}
-          ensureCached={dict.ensureCached}
-          userId={auth.user?.id ?? null}
-          onClose={() => closeHashPage("#/sentence")}
-        />
-      )}
-
       {showSignIn && (
         <SignInModal
           onClose={() => setShowSignIn(false)}
@@ -515,7 +531,17 @@ export function App() {
         onModeChange={setSearchMode}
       />
 
-      {debouncedQuery.trim() ? (
+      {searchMode === "sentence" ? (
+        <main className="home" aria-label="Sentence">
+          <SentenceStudio
+            savedWords={savedList.map((s) => s.word)}
+            findWord={dict.findWord}
+            ensureCached={dict.ensureCached}
+            userId={auth.user?.id ?? null}
+            externalQuery={debouncedQuery}
+          />
+        </main>
+      ) : debouncedQuery.trim() ? (
         searching && searchResults.length === 0 ? (
           <div className="empty-state">Searching…</div>
         ) : (

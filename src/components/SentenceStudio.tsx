@@ -5,6 +5,7 @@ import { normalizePinyin, HAN_RE } from "../lib/pinyin";
 import { useSentenceDraft } from "../hooks/useSentenceDraft";
 import { useSavedSentences } from "../hooks/useSavedSentences";
 import { speak } from "../lib/speech";
+import { hanziScaleStyle } from "../lib/hanzi";
 
 interface Props {
   // Saved-word keys (newest-first order from useSaved).
@@ -18,7 +19,8 @@ interface Props {
   // Signed-in user id (null = signed out) — so the draft + saved
   // sentences sync to Supabase.
   userId: string | null;
-  onClose: () => void;
+  // Query from the shared (tab) search bar — narrows the word bank.
+  externalQuery?: string;
 }
 
 const TABS: { id: Pos | "all"; label: string }[] = [
@@ -54,7 +56,7 @@ function matchesQuery(w: Word, rawQuery: string): boolean {
 // Visual notes: uses the app palette (--bg / --surface-2 / --accent),
 // not the handoff's vermillion / Fraunces stack. POS color stripe on
 // each chip + token keeps the handoff's functional color hint.
-export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onClose }: Props) {
+export function SentenceStudio({ savedWords, findWord, ensureCached, userId, externalQuery = "" }: Props) {
   const { keys, append, removeAt, clear, replace } = useSentenceDraft({ userId });
   const sentences = useSavedSentences({ userId });
   const [tab, setTab] = useState<Pos | "all">("all");
@@ -89,13 +91,18 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
   }, [bank]);
 
   const q = query.trim();
-  const searching = q.length > 0;
-  // When the user is typing pinyin, the bank shows matches across ALL
-  // saved words (the POS tab is ignored — "search through everything").
+  const eq = externalQuery.trim();
+  const anyQuery = q.length > 0 || eq.length > 0;
+  const searching = anyQuery;
+  // When the user is typing (here or in the tab search bar) the bank shows
+  // matches across ALL saved words — the POS tab is ignored ("search
+  // through everything"). Both queries narrow the bank when both are set.
   const visible = useMemo(() => {
-    if (searching) return bank.filter(({ word }) => matchesQuery(word, q));
-    return tab === "all" ? bank : bank.filter((b) => b.pos === tab);
-  }, [bank, tab, searching, q]);
+    let rows = anyQuery || tab === "all" ? bank : bank.filter((b) => b.pos === tab);
+    if (eq) rows = rows.filter(({ word }) => matchesQuery(word, eq));
+    if (q) rows = rows.filter(({ word }) => matchesQuery(word, q));
+    return rows;
+  }, [bank, tab, q, eq, anyQuery]);
 
   // Composer tokens = the draft keys resolved through findWord.
   const tokens = useMemo(
@@ -156,21 +163,13 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
   };
 
   return (
-    <div className="sentence-root">
-      <div className="review-header">
-        <button className="back-btn" type="button" onClick={onClose}>
-          ← Done
-        </button>
-        <span className="review-kind-tag">Sentence</span>
-        <span className="review-progress">{bank.length} saved</span>
-      </div>
-
+    <div className="sentence-studio">
       {savedWords.length === 0 ? (
-        <div className="review-empty">
+        <div className="review-empty sentence-studio-empty">
           <div className="review-empty-title">Save 5 words to start composing.</div>
           <div className="review-empty-hint">
             The Sentence Studio pulls from your saved set. Find a word
-            via Search, save it, then come back.
+            via the Dictionary tab, save it, then come back.
           </div>
         </div>
       ) : (
@@ -297,7 +296,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
             {visible.length === 0 ? (
               <div className="review-empty-hint" style={{ padding: "20px 16px" }}>
                 {searching
-                  ? `No saved word matches “${q}”.`
+                  ? `No saved word matches “${q || eq}”.`
                   : `No saved ${tab === "all" ? "words" : POS_LABEL[tab]} yet.`}
               </div>
             ) : (
@@ -306,7 +305,8 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
                   key={word.word}
                   type="button"
                   className="bank-chip"
-                  style={{ ["--pos-c" as never]: POS_COLOR[pos] }}
+                  title={POS_LABEL[pos]}
+                  style={{ ...hanziScaleStyle(word.word), ["--pos-c" as never]: POS_COLOR[pos] }}
                   onClick={() => addWord(word.word)}
                 >
                   <span className="bank-chip-c">{word.word}</span>
@@ -316,7 +316,6 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
                       {(word.definitions?.[0] || "").slice(0, 40)}
                     </span>
                   </span>
-                  <span className="bank-chip-pos">{POS_LABEL[pos]}</span>
                 </button>
               ))
             )}
@@ -325,7 +324,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
           <div className="sentence-cta-wrap">
             <button
               type="button"
-              className="sentence-cta sentence-cta-2nd"
+              className="sentence-cta"
               onClick={handleSave}
               disabled={empty}
             >
@@ -333,7 +332,7 @@ export function SentenceStudio({ savedWords, findWord, ensureCached, userId, onC
             </button>
             <button
               type="button"
-              className="sentence-cta"
+              className="sentence-cta sentence-cta-2nd"
               onClick={handleCopy}
               disabled={empty}
             >
