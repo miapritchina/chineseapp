@@ -277,7 +277,6 @@ export function ReviewPage({
           <DisambiguationCard
             focus={current.itemKey}
             neighbors={cluster.filter((c) => c !== current.itemKey)}
-            chars={chars ?? {}}
             onContinue={() => {
               const k = current.itemKey;
               setDisambigSeen((prev) => {
