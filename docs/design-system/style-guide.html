@@ -8,7 +8,7 @@
 /* ── Tokens (inline copy of design-tokens.css) ─────────────────── */
 :root {
   color-scheme: light dark;
-  --bg: #faf8f4; --card-bg: #ffffff; --surface-2: #f0ece4;
+  --bg: #faf8f4; --surface: #fefdfb; --card-bg: #ffffff; --surface-2: #f0ece4;
   --text: #1d1b18; --muted: #6b6359; --accent: #b12a2a; --border: #e4dfd5;
   --role-iconic: #2563eb; --role-meaning: #16a34a; --role-sound: #dc2626;
   --role-simplified: #9333ea; --role-deleted: #6b7280; --role-unknown: #6b7280;
@@ -17,7 +17,7 @@
   --pos-adj: #4f7d3a; --pos-adv: #8a6a26; --pos-part: #8a8273; --pos-conj: #7a6a8a;
   --status-saved: #d97706; --status-review: #c2410c;
   --status-learned: #2e7d32; --status-wrote: #7a3aa8;
-  --grade-again: #b91c1c; --grade-good: #15803d; --grade-easy: #1d4ed8;
+  --grade-again: #b91c1c; --grade-hard: #d97706; --grade-good: #15803d; --grade-easy: #1d4ed8;
   --feedback-correct: #2e7d32; --feedback-wrong: #b91c1c;
   --error-bg: #b03a2e; --error-text: #ffffff;
   --backdrop-sheet: rgba(0,0,0,0.34); --backdrop-popup: rgba(20,18,14,0.42);
@@ -27,28 +27,28 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #16140f; --card-bg: #211e15; --surface-2: #272319;
+    --bg: #16140f; --surface: #1d1a13; --card-bg: #211e15; --surface-2: #272319;
     --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
     --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
     --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
     --role-word: #ece7dc;
     --status-saved: #f59e0b; --status-review: #fb923c;
     --status-learned: #6dba84; --status-wrote: #b07ad8;
-    --grade-again: #f87171; --grade-good: #4ade80; --grade-easy: #60a5fa;
+    --grade-again: #f87171; --grade-hard: #fbbf24; --grade-good: #4ade80; --grade-easy: #60a5fa;
     --feedback-correct: #6dba84; --feedback-wrong: #f87171;
     --backdrop-popup: rgba(0,0,0,0.6);
   }
 }
 /* Force-dark class for side-by-side preview */
 .force-dark {
-  --bg: #16140f; --card-bg: #211e15; --surface-2: #272319;
+  --bg: #16140f; --surface: #1d1a13; --card-bg: #211e15; --surface-2: #272319;
   --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
   --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
   --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
   --role-word: #ece7dc;
   --status-saved: #f59e0b; --status-review: #fb923c;
   --status-learned: #6dba84; --status-wrote: #b07ad8;
-  --grade-again: #f87171; --grade-good: #4ade80; --grade-easy: #60a5fa;
+  --grade-again: #f87171; --grade-hard: #fbbf24; --grade-good: #4ade80; --grade-easy: #60a5fa;
   --feedback-correct: #6dba84; --feedback-wrong: #f87171;
 }
 /* ── Page layout ─────────────────────────────────────────────────── */

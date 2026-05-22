@@ -1,6 +1,8 @@
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import { StatusButton } from "./StatusButton";
 import { useSavedCtx } from "../state/contexts";
+import { PageHeader } from "./ui/PageHeader";
+import { EmptyState } from "./ui/EmptyState";
 
 interface Props {
   components: PhoneticComponent[];
@@ -17,15 +19,9 @@ export function PhoneticsPage({ components, ready, onClose }: Props) {
   const { getStatus, setStatus } = useSavedCtx();
   return (
     <div className="phonetics-root">
-      <div className="review-header">
-        <button className="back-btn" type="button" onClick={onClose}>
-          ← Done
-        </button>
-        <span className="review-kind-tag">Phonetic components</span>
-        <span className="review-progress">{components.length}</span>
-      </div>
+      <PageHeader onBack={onClose} tag="Phonetic components" progress={components.length} />
       {!ready ? (
-        <div className="empty-state">Loading…</div>
+        <EmptyState title="Loading…" />
       ) : components.length === 0 ? (
         <div className="empty-state">
           phonetic-components.json missing. Run{" "}

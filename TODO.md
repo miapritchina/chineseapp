@@ -10,30 +10,31 @@ Priority: **P0** (do now) · **P1** (next) · **P2** (planned) ·
 
 ## P0 — now
 
+Component-architecture refactor (approved plan: `<Entity>` + shared UI components).
+Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entries.
+
 | Item | Notes |
 |---|---|
-| **Refactor stage 4 — QuizCardShell + useSpeech** | Extract the shared header / Again-Hard-Good-Easy footer / speak-on-mount logic from the 5 drill cards (`CombinedRecognitionCard`, `PhoneticTapCard`, `ComponentSoundCard`, `FamilyTransferCard`, `ProductionCard`, `DisambiguationCard`). Adopt the new `GradeHandler` signature from `lib/types.ts`. Tests per drill via React Testing Library. |
-| **Refactor stage 5 — split EntitySheet** | 494-line `EntitySheet.tsx` into ≤5 sub-components: `SheetHeader`, `SheetMeta` (pinyin + tone + freq + POS), `EtymologySection`, `RelatedSection`, `MnemonicSection`. Same context dependencies. Snapshot tests for each. |
-| **Refactor stage 6 — CSS reorg** | 2,620-line `styles.css` split into `tokens.css` + per-feature files (`shell.css`, `home.css`, `sheet.css`, `review.css`, `sentence.css`, `phonetics.css`). Imported through a single `styles.css` to preserve cascade order. Visual diff check before merging. |
+| **Stage A — small primitives** | `<EmptyState>`, `<SectionHeader>`, `<Eyebrow>`, `<SpeakButton>` (wraps `lib/speech.ts`), `<PageHeader back tag progress actions?>`. Migrate the duplicated review-header / empty-state blocks. Establishes the first `*.test.tsx` RTL convention. |
+| **Stage B — drill chrome** | Export the inline `DrillFrame` from `ReviewPage.tsx` as `<DrillShell>`; extract `<GradeButtons onGrade>` and `<HanziGlyph char animate?>` (consolidates HanziWriter mount+fallback from `EntitySheet` + `ProductionCard`). Migrate the 5 drill cards. (= old "stage 4".) |
+| **Stage C — `<Entity>` core (tiny/sm/md)** | New `src/components/Entity.tsx` per [redesign §0](docs/product/chinese-app-ux-redesign.md#0-core-design-primitive--the-entity-component) M→P mapping ([card-type catalog](docs/product/card-type-catalog.html)). Migrate M8/M10/M7/M13/M14/M1. |
+| **Stage D — Entity hero + drill pick** | `size="hero"` (white bg) + correct/wrong pick flash. Migrate M11 review hanzi, M12 pick buttons. |
+| **Stage E — Entity lg + split EntitySheet** | `size="lg"` w/ recursive breakdown; split `EntitySheet.tsx` into `SheetHeader`/`SheetMeta`/`EtymologySection`/`RelatedSection`/`MnemonicSection` (+ `<MnemonicEditor>`). (= old "stage 5".) |
+| **Stage F — `<PillTabs>`** | Unify `search-mode-tabs` + sort-bar + Sentence POS tabs. Independent; any time after A. |
 
 ## P1 — next
 
 | Item | Notes |
 |---|---|
-| Fix [BUG-5](BUGS.md) (Easy grade red border) | Quick fix, high annoyance. Priority #1 in [redesign spec](docs/product/chinese-app-ux-redesign.md). |
-| Typography overhaul | Implement the type scale from [redesign spec §3](docs/product/chinese-app-ux-redesign.md#3-typography-overhaul). Present to owner first; biggest visual impact. |
-| Fix [BUG-1](BUGS.md) (deep link routes) | Wire `#/c/:char` and `#/w/:word` into the hash router. Cold-load + hashchange. |
+| Confirm [BUG-1](BUGS.md) (deep links) live | Code is wired (`App.tsx` `parseHash`/`openFromHash` on cold-load + hashchange). Needs one browser pass to close. |
+| **Refactor stage 6 — CSS reorg** | 2,620-line `styles.css` → `tokens.css` + per-feature files imported through one `styles.css` to preserve cascade order. Visual diff before merge. Best done after the Entity migration settles the class surface. |
 
 ## P2 — planned
 
 | Item | Notes |
 |---|---|
-| **Home page merge** — kill Dictionary / My Words split | [Redesign spec §1A](docs/product/chinese-app-ux-redesign.md#1a-merge-home-page--kill-the-dictionarymy-words-split). Three tabs: Dictionary / My Words by Component / Sentence. |
-| **Sentence as a tab** (not a separate page) | [Redesign spec §1B](docs/product/chinese-app-ux-redesign.md#1b-sentence-studio-becomes-a-tab-not-a-separate-page). |
-| **Drop 2 drill types** — `phoneticTap` + `componentSound` | [Redesign spec §1C](docs/product/chinese-app-ux-redesign.md#1c-review-drills--drop-2-keep-4). Reduces to 4 recognition + 1 production. |
-| Fix [BUG-3](BUGS.md) (search exact-match ranking) | Boost exact hanzi matches above substring. |
+| **Drop 2 drill types** — `phoneticTap` + `componentSound` | [Redesign spec §1C](docs/product/chinese-app-ux-redesign.md#1c-review-drills--drop-2-keep-4). Deferred by owner; reduces to 4 recognition + 1 production when picked up. |
 | **Graph performance + usability** | [Redesign spec §4G](docs/product/chinese-app-ux-redesign.md#4g-graph-pages--performance--usability). Reduce node count by default; larger tap targets; WebGL renderer if available. |
-| **`<Entity>` component unification** (M→P mapping) | [Redesign spec §0](docs/product/chinese-app-ux-redesign.md#0-core-design-primitive--the-entity-component). One component, 5 sizes. Replaces ~13 of the 16 current card types per [card-type catalog](docs/product/card-type-catalog.html). |
 | Cross-device deletion propagation | Tombstone column or "wholesale replace" pass. [Open work in ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | Fix [BUG-4](BUGS.md) (hamburger dismiss) | Cosmetic; touchstart listener + non-reflow close. |
 
@@ -41,15 +42,10 @@ Priority: **P0** (do now) · **P1** (next) · **P2** (planned) ·
 
 | Item | Notes |
 |---|---|
-| Status tier icon consistency | [Redesign spec §4K](docs/product/chinese-app-ux-redesign.md#4k-status-tier-icons--consistency). Distinct colors/icons per tier everywhere. |
-| Dark-mode role colors lighter (~20%) | [Redesign spec §4I](docs/product/chinese-app-ux-redesign.md#4i-dark-mode-role-colors). |
-| Review progress bar | [Redesign spec §4F](docs/product/chinese-app-ux-redesign.md#4f-review-progress-bar). |
 | Phonetics page visual refresh | [Redesign spec §4H](docs/product/chinese-app-ux-redesign.md#4h-phonetics-page--needs-visual-refresh). |
-| EntitySheet etymology section more prominent | [Redesign spec §4E](docs/product/chinese-app-ux-redesign.md#4e-entitysheet--make-componentsetymology-more-prominent). |
+| EntitySheet etymology section more prominent | [Redesign spec §4E](docs/product/chinese-app-ux-redesign.md#4e-entitysheet--make-componentsetymology-more-prominent). Fold into Stage E. |
 | "Save sentence" button contrast | [Redesign spec §4J](docs/product/chinese-app-ux-redesign.md#4j-save-sentence-button-contrast). |
-| Swipe-to-grade in review | [Redesign spec §2B](docs/product/chinese-app-ux-redesign.md#2b-reduce-taps-in-review-flow). |
-| More whitespace on drill cards | [Redesign spec §2C](docs/product/chinese-app-ux-redesign.md#2c-more-whitespace-on-drill-cards). |
-| Transient hint text (fade after first occurrence) | Drill "tap to continue" hint, sentence composer placeholder. [QA fix UX-2](docs/product/qa-fix-prompt.md). |
+| More whitespace on drill cards | [Redesign spec §2C](docs/product/chinese-app-ux-redesign.md#2c-more-whitespace-on-drill-cards). Fold into Stage B. |
 | Reading-tap incidental review | Tap a char in a reading view → soft Again. Needs a reading surface first. |
 | Multi-char production drill | Chain Hanzi Writer quizzes across all chars of a saved word at ✒ Wrote tier. |
 | Stats dashboard | v66 separated sound + meaning into distinct FSRS Cards; data is there, no UI shows it side-by-side. |

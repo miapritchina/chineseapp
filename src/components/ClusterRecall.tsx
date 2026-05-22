@@ -7,6 +7,9 @@ import { speak } from "../lib/speech";
 import { firstReading } from "../lib/speech";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 import { usePhoneticComponents } from "../hooks/usePhoneticComponents";
+import { PageHeader } from "./ui/PageHeader";
+import { EmptyState } from "./ui/EmptyState";
+import { GradeButtons } from "./ui/GradeButtons";
 
 interface Props {
   // Apply a grade to every word in the cluster at once. Usually
@@ -104,19 +107,12 @@ export function ClusterRecall({ onGrade, onClose }: Props) {
   if (!cluster) {
     return (
       <div className="review-root">
-        <div className="review-header">
-          <button className="back-btn" type="button" onClick={onClose}>
-            ← Done
-          </button>
-          <span className="review-kind-tag">Cluster recall</span>
-          <span className="review-progress" />
-        </div>
-        <div className="review-empty">
-          <div className="review-empty-title">Save a few more words first.</div>
-          <div className="review-empty-hint">
-            Cluster recall needs at least {MIN_SIZE} saved words to surface a related group.
-          </div>
-        </div>
+        <PageHeader onBack={onClose} tag="Cluster recall" progress="" />
+        <EmptyState
+          variant="review"
+          title="Save a few more words first."
+          hint={`Cluster recall needs at least ${MIN_SIZE} saved words to surface a related group.`}
+        />
       </div>
     );
   }
@@ -138,15 +134,11 @@ export function ClusterRecall({ onGrade, onClose }: Props) {
 
   return (
     <div className="review-root">
-      <div className="review-header">
-        <button className="back-btn" type="button" onClick={onClose}>
-          ← Done
-        </button>
-        <span className="review-kind-tag">Cluster recall</span>
-        <span className="review-progress">
-          {revealed.size} / {cluster.length}
-        </span>
-      </div>
+      <PageHeader
+        onBack={onClose}
+        tag="Cluster recall"
+        progress={`${revealed.size} / ${cluster.length}`}
+      />
       <div className="review-body cluster-body">
         <div className="cluster-prompt">
           Read each one. Try to recall its meaning and sound before tapping.
@@ -186,30 +178,10 @@ export function ClusterRecall({ onGrade, onClose }: Props) {
       </div>
       <div className="review-actions">
         {allRevealed && !graded ? (
-          <>
-            <button
-              type="button"
-              className="review-btn review-btn-again"
-              onClick={() => grade("Again")}
-              title="Apply Again to every card in the cluster"
-            >
-              Need work
-            </button>
-            <button
-              type="button"
-              className="review-btn review-btn-good"
-              onClick={() => grade("Good")}
-            >
-              Knew most
-            </button>
-            <button
-              type="button"
-              className="review-btn review-btn-easy"
-              onClick={() => grade("Easy")}
-            >
-              Knew all
-            </button>
-          </>
+          <GradeButtons
+            onPick={grade}
+            labels={{ Again: "Need work", Good: "Knew most", Easy: "Knew all" }}
+          />
         ) : graded ? (
           <div className="review-empty-hint">Logged for all {cluster.length}.</div>
         ) : (

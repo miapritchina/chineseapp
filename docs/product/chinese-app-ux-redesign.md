@@ -4,6 +4,34 @@ Owner interview + QA findings, May 12 2026. Paste sections into Claude Code as n
 
 ---
 
+## ✅ Shipped (as of v90)
+
+A UX implementation pass landed most of this spec before the v90 baseline (tagged
+`UX-2`, `UX-10`, … in `styles.css`/components) but was never recorded here. Verified
+against the code on this branch:
+
+| Spec item | Status | Evidence |
+|---|---|---|
+| 1A — 3-tab home (Dictionary / My Words by Component / Sentence) | ✅ | `SearchBar.tsx` `TABS` |
+| 1B — Sentence is a tab (also reachable via `#/sentence`) | ✅ | `App.tsx` `searchMode === "sentence"` |
+| 2A — four grade colors, Easy ≠ red | ✅ | `--grade-again/hard/good/easy` tokens; `.review-btn-*` |
+| 2B — swipe-to-grade (right = Good, left = Again) | ✅ | `CombinedRecognitionCard.tsx` `onTouchStart/End` |
+| 2C / "transient hints" | ✅ | `UX-2` once-per-session continue hint |
+| 3 — type scale | ✅ | `--hanzi-hero|large|medium|small`, `--heading-1/2`, `--body`, `--caption` in `styles.css :root` |
+| 4F — review progress bar | ✅ | `ReviewProgressBar` in `ReviewPage.tsx` |
+| 4I — dark-mode role colors lightened | ✅ | `UX-10`, dark `:root` block |
+| 4K — distinct status-tier icons/colors | ✅ | `--status-saved/learned/wrote/review`; `StatusButton` icons |
+| BUG-2 — Supabase persistence | ✅ | cloud-first hooks ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)) |
+| BUG-3 — search exact-match ranking | ✅ | `useDictionary.ts` exact-match partition |
+| BUG-5 — Easy grade red border | ✅ | per-grade `--grade-color` outline |
+| 9.2 — role hues single-sourced (no hex in `roleColor()`) | ✅ | `EntitySheet.tsx` uses `var(--role-*)` |
+
+**Still pending** (the real backlog): §0 unified `<Entity>`, §8 shared UI components,
+1C drop-2-drills (deferred by owner), 4G graph performance. BUG-1 (deep links) appears
+wired in `App.tsx` but awaits a live browser confirmation.
+
+---
+
 ## 0. Core Design Primitive — The `<Entity>` Component
 
 ### The Problem

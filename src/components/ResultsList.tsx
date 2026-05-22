@@ -2,6 +2,7 @@ import type { Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
 import { hanziScaleStyle } from "../lib/hanzi";
 import { useSavedCtx } from "../state/contexts";
+import { EmptyState } from "./ui/EmptyState";
 
 interface Props {
   matches: Word[];
@@ -11,7 +12,7 @@ interface Props {
 export function ResultsList({ matches, onOpen }: Props) {
   const { saved, getStatus, setStatus } = useSavedCtx();
   if (matches.length === 0) {
-    return <div className="empty-state">No matches.</div>;
+    return <EmptyState title="No matches." />;
   }
   // Saved words first, then the rest. Within each group the RPC's tier
   // ordering is preserved (Array.prototype.sort is stable in ES2019+).

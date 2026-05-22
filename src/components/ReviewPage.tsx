@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReviewCard } from "../hooks/useReview";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
+import { PageHeader } from "./ui/PageHeader";
+import { EmptyState } from "./ui/EmptyState";
+import { DrillShell } from "./ui/DrillShell";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
@@ -244,16 +247,12 @@ export function ReviewPage({
   if (!current) {
     return (
       <div className="review-root">
-        <div className="review-header">
-          <button className="back-btn" type="button" onClick={onClose}>
-            ← Done
-          </button>
-          <span className="review-progress" />
-        </div>
-        <div className="review-empty">
-          <div className="review-empty-title">All caught up.</div>
-          <div className="review-empty-hint">Save a new word to add it to the review queue.</div>
-        </div>
+        <PageHeader onBack={onClose} progress="" />
+        <EmptyState
+          variant="review"
+          title="All caught up."
+          hint="Save a new word to add it to the review queue."
+        />
       </div>
     );
   }
@@ -272,15 +271,7 @@ export function ReviewPage({
   if (cluster && (current.card.lapses ?? 0) >= LEECH_LAPSES && !disambigSeen.has(current.itemKey)) {
     return (
       <div className="review-root">
-        <div className="review-header">
-          <button className="back-btn" type="button" onClick={onClose}>
-            ← Done
-          </button>
-          <span className="review-kind-tag">Confusable</span>
-          <span className="review-progress">
-            {progressIndex} / {total}
-          </span>
-        </div>
+        <PageHeader onBack={onClose} tag="Confusable" progress={`${progressIndex} / ${total}`} />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <DisambiguationCard
@@ -316,7 +307,7 @@ export function ReviewPage({
     const cd = chars?.[current.itemKey];
     if (!cd) {
       return (
-        <DrillFrame
+        <DrillShell
           tag="Write"
           onClose={onClose}
           progressIndex={progressIndex}
@@ -324,20 +315,12 @@ export function ReviewPage({
           onSkip={handleSkipCurrent}
         >
           <div className="review-empty-hint">Loading character data…</div>
-        </DrillFrame>
+        </DrillShell>
       );
     }
     return (
       <div className="review-root">
-        <div className="review-header">
-          <button className="back-btn" type="button" onClick={onClose}>
-            ← Done
-          </button>
-          <span className="review-kind-tag">Write</span>
-          <span className="review-progress">
-            {progressIndex} / {total}
-          </span>
-        </div>
+        <PageHeader onBack={onClose} tag="Write" progress={`${progressIndex} / ${total}`} />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <ProductionCard
@@ -359,7 +342,7 @@ export function ReviewPage({
     const cd = chars?.[current.itemKey];
     if (!phoneticComponents || !phoneticComponentsByChar || !cd) {
       return (
-        <DrillFrame
+        <DrillShell
           tag="Family"
           onClose={onClose}
           progressIndex={progressIndex}
@@ -367,14 +350,14 @@ export function ReviewPage({
           onSkip={handleSkipCurrent}
         >
           <div className="review-empty-hint">Loading family data…</div>
-        </DrillFrame>
+        </DrillShell>
       );
     }
     const componentEntry =
       phoneticComponents.find((p) => p.family.includes(current.itemKey)) ?? null;
     if (!componentEntry) {
       return (
-        <DrillFrame
+        <DrillShell
           tag="Family"
           onClose={onClose}
           progressIndex={progressIndex}
@@ -384,11 +367,11 @@ export function ReviewPage({
           <div className="review-empty-hint">
             No phonetic component found for {current.itemKey}. Tap Skip.
           </div>
-        </DrillFrame>
+        </DrillShell>
       );
     }
     return (
-      <DrillFrame
+      <DrillShell
         tag="Family"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -403,7 +386,7 @@ export function ReviewPage({
           pool={phoneticComponents}
           onGrade={handlePhoneticTapGrade}
         />
-      </DrillFrame>
+      </DrillShell>
     );
   }
 
@@ -414,7 +397,7 @@ export function ReviewPage({
     const entry = phoneticComponentsByChar?.get(current.itemKey);
     if (!entry || !phoneticComponents) {
       return (
-        <DrillFrame
+        <DrillShell
           tag="Sound · pick"
           onClose={onClose}
           progressIndex={progressIndex}
@@ -422,11 +405,11 @@ export function ReviewPage({
           onSkip={handleSkipCurrent}
         >
           <div className="review-empty-hint">Loading phonetic-components data…</div>
-        </DrillFrame>
+        </DrillShell>
       );
     }
     return (
-      <DrillFrame
+      <DrillShell
         tag="Sound · pick"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -439,7 +422,7 @@ export function ReviewPage({
           pool={phoneticComponents}
           onGrade={handlePhoneticTapGrade}
         />
-      </DrillFrame>
+      </DrillShell>
     );
   }
 
@@ -448,7 +431,7 @@ export function ReviewPage({
     const cd = chars?.[current.itemKey];
     const hasSoundComponent = !!cd?.components?.some((c) => c.type === "sound" && c.char);
     return (
-      <DrillFrame
+      <DrillShell
         tag="Sound · tap"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -469,7 +452,7 @@ export function ReviewPage({
             onGrade={handlePhoneticTapGrade}
           />
         )}
-      </DrillFrame>
+      </DrillShell>
     );
   }
 
@@ -505,17 +488,11 @@ export function ReviewPage({
 
   return (
     <div className="review-root">
-      <div className="review-header">
-        <button className="back-btn" type="button" onClick={onClose}>
-          ← Done
-        </button>
-        <span className="review-kind-tag">
-          {current.itemKind === "word" ? "Word" : "Character"}
-        </span>
-        <span className="review-progress">
-          {progressIndex} / {total}
-        </span>
-      </div>
+      <PageHeader
+        onBack={onClose}
+        tag={current.itemKind === "word" ? "Word" : "Character"}
+        progress={`${progressIndex} / ${total}`}
+      />
       <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">
         {attribTarget ? (
@@ -569,40 +546,6 @@ function ReviewProgressBar({ index, total }: { index: number; total: number }) {
       aria-valuemax={total}
     >
       <div className="review-progress-fill" style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
-// Shared chrome for the auto-graded drill facets (phoneticTap +
-// componentSound). One Skip button so the user is never stuck if the
-// drill can't surface a meaningful question.
-interface DrillFrameProps {
-  tag: string;
-  onClose: () => void;
-  progressIndex: number;
-  total: number;
-  onSkip: () => void;
-  children: React.ReactNode;
-}
-function DrillFrame({ tag, onClose, progressIndex, total, onSkip, children }: DrillFrameProps) {
-  return (
-    <div className="review-root">
-      <div className="review-header">
-        <button className="back-btn" type="button" onClick={onClose}>
-          ← Done
-        </button>
-        <span className="review-kind-tag">{tag}</span>
-        <span className="review-progress">
-          {progressIndex} / {total}
-        </span>
-      </div>
-      <ReviewProgressBar index={progressIndex} total={total} />
-      <div className="review-body">{children}</div>
-      <div className="drill-skip-row">
-        <button type="button" className="drill-skip" onClick={onSkip}>
-          Skip
-        </button>
-      </div>
     </div>
   );
 }
