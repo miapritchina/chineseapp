@@ -13,6 +13,27 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 *Next change lands here.*
 
+## [v92]
+
+### Changed
+- **`<Entity>` component wired into 7 call sites** (refactor stages C + D, browser-verified per migration):
+  - M1 saved-shelf card → `<Entity size="md">` (deletes `Card.tsx` / `CharOnlyCard`).
+  - M10 ComponentTable chip → `<Entity size="tiny" showPinyin>` with count via `trailing`.
+  - M7 SentenceStudio bank chip → `<Entity size="sm">` with `roleColor={POS_COLOR[pos]}`.
+  - M8 SentenceStudio composer token → `<Entity size="tiny" showPinyin>` with POS color border.
+  - M13 ClusterRecall cell → `<Entity size="sm">` with reveal-state disclosure (hidden = hanzi only; revealed = pinyin + meaning + accent border).
+  - M14 DisambiguationCard cell → `<Entity size="sm">` with `var(--accent)` border on the focus cell.
+  - M11 CombinedRecognitionCard's focal `.review-hanzi` → `<Entity size="hero">` (white-bg card, 120px hero hanzi).
+  - M12 PhoneticTapCard hanzi picks → `<Entity size="tiny">` with `.is-correct` / `.is-wrong` / `.is-reveal` flash modifiers (CSS added).
+- `EntitySheet` glyph + ProductionCard tracer already consume `<HanziGlyph>` from stage B; no new sheet-header migration (M3 → P4 is deferred — would lose HanziWriter stroke animation; needs owner sign-off).
+- FamilyTransferCard + ComponentSoundCard pick buttons stay as-is — their choices are pinyin syllables, not entities.
+
+### Removed
+- `src/components/Card.tsx` (and `CharOnlyCard`) — fully replaced by Entity md in `SavedShelf`.
+
+### Notes
+- All migrations browser-verified at `http://localhost:5173/chineseapp/` via Chrome DevTools MCP (clicks, taps, navigation snapshots). Zero console errors after each commit.
+
 ## [v91]
 
 ### Added
