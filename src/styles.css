@@ -1716,6 +1716,31 @@ body {
   gap: 6px;
   background: #fff;
 }
+/* Drill-pick flash modifiers (M12). Applied to Entity tiny/sm in drills
+   to flag correct/wrong/reveal answers. Color tokens mirror the
+   feedback colors from the old .phonetic-tap-pick.is-* rules. */
+.entity.is-correct {
+  border-color: var(--feedback-correct, #2e7d32);
+  background: var(--feedback-correct-bg, rgba(46, 125, 50, 0.12));
+}
+.entity.is-wrong {
+  border-color: var(--feedback-wrong, #b91c1c);
+  background: var(--feedback-wrong-bg, rgba(185, 28, 28, 0.12));
+}
+.entity.is-reveal {
+  border-color: var(--feedback-correct, #2e7d32);
+  border-style: dashed;
+}
+@media (prefers-color-scheme: dark) {
+  .entity.is-correct {
+    border-color: #6dba84;
+    background: rgba(109, 186, 132, 0.15);
+  }
+  .entity.is-wrong {
+    border-color: #f87171;
+    background: rgba(248, 113, 113, 0.15);
+  }
+}
 
 /* Search results */
 .results {
