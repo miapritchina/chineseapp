@@ -9,6 +9,7 @@ import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 import { usePhoneticComponents } from "../hooks/usePhoneticComponents";
 import { PageHeader } from "./ui/PageHeader";
 import { EmptyState } from "./ui/EmptyState";
+import { GradeButtons } from "./ui/GradeButtons";
 
 interface Props {
   // Apply a grade to every word in the cluster at once. Usually
@@ -177,30 +178,10 @@ export function ClusterRecall({ onGrade, onClose }: Props) {
       </div>
       <div className="review-actions">
         {allRevealed && !graded ? (
-          <>
-            <button
-              type="button"
-              className="review-btn review-btn-again"
-              onClick={() => grade("Again")}
-              title="Apply Again to every card in the cluster"
-            >
-              Need work
-            </button>
-            <button
-              type="button"
-              className="review-btn review-btn-good"
-              onClick={() => grade("Good")}
-            >
-              Knew most
-            </button>
-            <button
-              type="button"
-              className="review-btn review-btn-easy"
-              onClick={() => grade("Easy")}
-            >
-              Knew all
-            </button>
-          </>
+          <GradeButtons
+            onPick={grade}
+            labels={{ Again: "Need work", Good: "Knew most", Easy: "Knew all" }}
+          />
         ) : graded ? (
           <div className="review-empty-hint">Logged for all {cluster.length}.</div>
         ) : (

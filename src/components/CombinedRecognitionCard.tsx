@@ -3,6 +3,7 @@ import type { Word, Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
 import { speak, stopSpeech } from "../lib/speech";
 import { hanziScaleStyle } from "../lib/hanzi";
+import { GradeButtons } from "./ui/GradeButtons";
 
 const CONTINUE_HINT_KEY = "hint.seen.review-continue";
 function hintAlreadySeen(): boolean {
@@ -24,20 +25,6 @@ interface Props {
   hasMeaningCard: boolean;
   hasSoundCard: boolean;
 }
-
-const RATINGS: RatingName[] = ["Again", "Good", "Easy"];
-const RATING_LABEL: Record<RatingName, string> = {
-  Again: "Again",
-  Good: "Good",
-  Easy: "Easy",
-  Hard: "Hard",
-};
-const RATING_CLS: Record<RatingName, string> = {
-  Again: "review-btn-again",
-  Good: "review-btn-good",
-  Easy: "review-btn-easy",
-  Hard: "review-btn-skip",
-};
 
 // Combined recognition card. Replaces the v66 split (separate meaning +
 // sound cards). Tap-anywhere-on-screen to reveal. After reveal, audio
@@ -83,8 +70,7 @@ export function CombinedRecognitionCard({
   useEffect(() => () => stopSpeech(), []);
 
   const allGraded =
-    (!meaningRequired || meaningGrade !== null) &&
-    (!soundRequired || soundGrade !== null);
+    (!meaningRequired || meaningGrade !== null) && (!soundRequired || soundGrade !== null);
 
   useEffect(() => {
     if (!revealed || !allGraded || hideContinueHint) return;
@@ -154,16 +140,14 @@ export function CombinedRecognitionCard({
       aria-label={revealed ? "Card revealed" : "Tap anywhere to reveal"}
     >
       <div className="combined-card-stack">
-        <div className="review-hanzi" style={hanziScaleStyle(itemKey)}>{itemKey}</div>
-        {!revealed && (
-          <div className="review-tap-hint">Tap anywhere to reveal</div>
-        )}
+        <div className="review-hanzi" style={hanziScaleStyle(itemKey)}>
+          {itemKey}
+        </div>
+        {!revealed && <div className="review-tap-hint">Tap anywhere to reveal</div>}
         {revealed && (
           <>
             <div className="review-pinyin review-pinyin-lg">{pinyin}</div>
-            <div className="review-gloss">
-              {gloss || "(no dictionary entry)"}
-            </div>
+            <div className="review-gloss">{gloss || "(no dictionary entry)"}</div>
             <button
               type="button"
               className="review-tap-replay combined-replay"
@@ -180,24 +164,10 @@ export function CombinedRecognitionCard({
           <div className="combined-grade-block">
             <div className="combined-grade-label">Meaning</div>
             <div className="combined-grade-row">
-              {RATINGS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`review-btn ${RATING_CLS[r]}${meaningGrade === r ? " is-picked" : ""}`}
-                  onClick={(e) => {
-                    // Once both grades are picked, ANY click should
-                    // advance the queue — let propagation bubble up to
-                    // the outer surface. Otherwise eat the click and
-                    // record the grade.
-                    if (allGraded) return;
-                    e.stopPropagation();
-                    setMeaningGrade(r);
-                  }}
-                >
-                  {RATING_LABEL[r]}
-                </button>
-              ))}
+              {/* locked once both facets are graded: clicks then bubble
+                  to the tap-anywhere-to-advance surface instead of
+                  re-recording a grade. */}
+              <GradeButtons picked={meaningGrade} locked={allGraded} onPick={setMeaningGrade} />
             </div>
           </div>
         )}
@@ -205,20 +175,7 @@ export function CombinedRecognitionCard({
           <div className="combined-grade-block">
             <div className="combined-grade-label">Sound</div>
             <div className="combined-grade-row">
-              {RATINGS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`review-btn ${RATING_CLS[r]}${soundGrade === r ? " is-picked" : ""}`}
-                  onClick={(e) => {
-                    if (allGraded) return;
-                    e.stopPropagation();
-                    setSoundGrade(r);
-                  }}
-                >
-                  {RATING_LABEL[r]}
-                </button>
-              ))}
+              <GradeButtons picked={soundGrade} locked={allGraded} onPick={setSoundGrade} />
             </div>
           </div>
         )}

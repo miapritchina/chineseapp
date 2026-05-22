@@ -4,9 +4,10 @@ import { StatusButton } from "./StatusButton";
 import { buildStarterMnemonic, buildStarterWordMnemonic } from "../lib/mnemonics";
 import { toneLabel } from "../lib/pinyin";
 import { detectPos, POS_LABEL, POS_COLOR } from "../lib/pos";
-import { speak } from "../lib/speech";
 import { hanziScaleStyle } from "../lib/hanzi";
 import { useCharsCtx, useDictCtx, useMnemonicsCtx, useSavedCtx } from "../state/contexts";
+import { HanziGlyph, type HanziGlyphHandle } from "./ui/HanziGlyph";
+import { SpeakButton } from "./ui/SpeakButton";
 
 interface Props {
   // Exactly one of these identifies the entity. `word` wins when both
@@ -57,8 +58,7 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
   const pos = defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
 
   // ── Refs ───────────────────────────────────────────────────────
-  const writerRef = useRef<HTMLDivElement>(null);
-  const writerInstanceRef = useRef<{ animateCharacter: () => void } | null>(null);
+  const glyphRef = useRef<HanziGlyphHandle>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // ── Drag-to-dismiss (mobile only) ──────────────────────────────
@@ -127,50 +127,9 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
     setMnemonicEditing(false);
   };
 
-  // ── Stroke animation (single-char entities only) ───────────────
-  useEffect(() => {
-    if (isMultiCharWord) return;
-    const el = writerRef.current;
-    if (!el) return;
-    el.innerHTML = "";
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const HW = (window as any).HanziWriter;
-    const fallback = () => {
-      el.innerHTML = "";
-      const fb = document.createElement("div");
-      fb.className = "sheet-glyph-fallback";
-      fb.textContent = key;
-      el.appendChild(fb);
-    };
-    if (typeof HW === "undefined") {
-      fallback();
-      return;
-    }
-    try {
-      const size = Math.min(220, el.clientWidth || 220);
-      const writer = HW.create(el, key, {
-        width: size,
-        height: size,
-        padding: 4,
-        showOutline: true,
-        strokeAnimationSpeed: 1,
-        delayBetweenStrokes: 110,
-        strokeColor:
-          getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#222",
-        outlineColor:
-          getComputedStyle(document.documentElement).getPropertyValue("--border").trim() || "#ddd",
-        onLoadCharDataError: fallback,
-      });
-      writerInstanceRef.current = writer;
-      writer.animateCharacter();
-    } catch {
-      fallback();
-    }
-    return () => {
-      writerInstanceRef.current = null;
-    };
-  }, [key, isMultiCharWord]);
-  const replay = () => writerInstanceRef.current?.animateCharacter();
+  // Stroke animation lives in <HanziGlyph mode="animate"> (single-char
+  // entities only); replay is fired imperatively from the glyph box tap.
+  const replay = () => glyphRef.current?.replay();
 
   // ── Etymology / "made of" pieces ───────────────────────────────
   // For a word: the characters it's spelled with. For a character:
@@ -243,18 +202,10 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
         {isMultiCharWord ? (
           <div className="sheet-glyph sheet-glyph-word" style={hanziScaleStyle(word!.word)}>
             <span className="sheet-glyph-text">{word!.word}</span>
-            <button
-              type="button"
-              className="sheet-speak"
-              aria-label={`Play ${word!.word}`}
-              onClick={() => speak(word!.word)}
-            >
-              🔊
-            </button>
+            <SpeakButton text={word!.word} className="sheet-speak" />
           </div>
         ) : (
           <div
-            ref={writerRef}
             className="sheet-glyph"
             role="button"
             tabIndex={0}
@@ -266,7 +217,9 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
                 replay();
               }
             }}
-          />
+          >
+            <HanziGlyph ref={glyphRef} char={key} mode="animate" />
+          </div>
         )}
 
         <div className="sheet-defs">
