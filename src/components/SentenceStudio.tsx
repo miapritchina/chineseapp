@@ -5,9 +5,9 @@ import { normalizePinyin, HAN_RE } from "../lib/pinyin";
 import { useSentenceDraft } from "../hooks/useSentenceDraft";
 import { useSavedSentences } from "../hooks/useSavedSentences";
 import { speak } from "../lib/speech";
-import { hanziScaleStyle } from "../lib/hanzi";
 
 import { useDictCtx, useSavedCtx } from "../state/contexts";
+import { Entity } from "./Entity";
 
 interface Props {
   // Signed-in user id (null = signed out) — so the draft + saved
@@ -190,17 +190,15 @@ export function SentenceStudio({ userId, externalQuery = "" }: Props) {
             <div className="composer-canvas" role="group" aria-label="Sentence in progress">
               <div className="composer-tokens">
                 {tokens.map((t, i) => (
-                  <button
+                  <Entity
                     key={`${t.word.word}-${i}`}
-                    type="button"
-                    className="composer-token"
-                    style={{ ["--pos-c" as never]: POS_COLOR[t.pos] }}
-                    onClick={() => removeAt(i)}
-                    aria-label={`Remove ${t.word.word}`}
-                  >
-                    <span className="composer-token-c">{t.word.word}</span>
-                    <span className="composer-token-p">{t.word.pinyin}</span>
-                  </button>
+                    word={t.word}
+                    size="tiny"
+                    showPinyin
+                    roleColor={POS_COLOR[t.pos]}
+                    ariaLabel={`Remove ${t.word.word}`}
+                    onTap={() => removeAt(i)}
+                  />
                 ))}
                 <input
                   ref={inputRef}
@@ -300,22 +298,14 @@ export function SentenceStudio({ userId, externalQuery = "" }: Props) {
               </div>
             ) : (
               visible.map(({ word, pos }) => (
-                <button
+                <Entity
                   key={word.word}
-                  type="button"
-                  className="bank-chip"
-                  title={POS_LABEL[pos]}
-                  style={{ ...hanziScaleStyle(word.word), ["--pos-c" as never]: POS_COLOR[pos] }}
-                  onClick={() => addWord(word.word)}
-                >
-                  <span className="bank-chip-c">{word.word}</span>
-                  <span className="bank-chip-meta">
-                    <span className="bank-chip-p">{word.pinyin}</span>
-                    <span className="bank-chip-g">
-                      {(word.definitions?.[0] || "").slice(0, 40)}
-                    </span>
-                  </span>
-                </button>
+                  word={word}
+                  size="sm"
+                  roleColor={POS_COLOR[pos]}
+                  ariaLabel={`${word.word} — ${POS_LABEL[pos]}`}
+                  onTap={() => addWord(word.word)}
+                />
               ))
             )}
           </div>
