@@ -46,6 +46,9 @@ android/app/build/
 .cache/
 .temp/
 
+# Claude Code per-machine overrides (personal; don't commit)
+.claude/settings.local.json
+
 # Test screenshots
 mobile-*.png
 replay-screenshot.png

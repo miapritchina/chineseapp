@@ -1679,9 +1679,15 @@ body {
 }
 .entity-status {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
   z-index: 2;
+}
+.entity-status .status-btn {
+  padding: 4px;
+}
+.entity-status .status-menu {
+  right: 0;
 }
 
 .entity-tiny {
