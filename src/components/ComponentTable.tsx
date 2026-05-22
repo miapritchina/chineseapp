@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Char } from "../lib/types";
 import { componentFrequencies } from "../lib/componentSearch";
+import { Entity } from "./Entity";
 
 interface Props {
   savedWords: string[];
@@ -22,9 +23,7 @@ export function ComponentTable({ savedWords, chars, onPick }: Props) {
 
   if (sorted.length === 0) {
     return (
-      <div className="empty-state">
-        No component data yet — save a few words and come back.
-      </div>
+      <div className="empty-state">No component data yet — save a few words and come back.</div>
     );
   }
 
@@ -32,23 +31,20 @@ export function ComponentTable({ savedWords, chars, onPick }: Props) {
     <main className="home" aria-label="Components in your saved words">
       <div className="component-table-header">
         <div className="component-table-title">Components in your words</div>
-        <div className="component-table-hint">
-          Tap to find every saved word containing it
-        </div>
+        <div className="component-table-hint">Tap to find every saved word containing it</div>
       </div>
       <div className="component-table">
-        {sorted.map(({ c, count, pinyin }) => (
-          <button
+        {sorted.map(({ c, count }) => (
+          <Entity
             key={c}
-            type="button"
+            itemKey={c}
+            size="tiny"
+            showPinyin
+            onTap={onPick}
             className="component-chip"
-            onClick={() => onPick(c)}
-            title={`In ${count} saved word${count === 1 ? "" : "s"}`}
-          >
-            <span className="component-chip-char">{c}</span>
-            {pinyin && <span className="component-chip-pinyin">{pinyin}</span>}
-            <span className="component-chip-count">{count}</span>
-          </button>
+            ariaLabel={`${c} — in ${count} saved word${count === 1 ? "" : "s"}`}
+            trailing={<span className="component-chip-count">{count}</span>}
+          />
         ))}
       </div>
     </main>
