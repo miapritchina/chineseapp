@@ -1,7 +1,7 @@
 # Design System — Chinese-Character Learning App
 
 > For import into Claude Design or as a reference when designing new screens.
-> All values are extracted verbatim from the codebase (`src/styles.css`, `src/lib/pos.ts`, `src/lib/tree.ts`, `src/lib/types.ts`, component source files). See also `design-tokens.css` for a machine-usable token file and `style-guide.html` for a living visual reference.
+> Hand-maintained reference, current as of the v90 UX pass. Values mirror the codebase (`src/styles.css`, `src/lib/pos.ts`, `src/lib/tree.ts`, `src/lib/types.ts`, component source files) — re-verify against `src/styles.css :root` when it changes. See also `design-tokens.css` for a token file and `style-guide.html` for a visual reference.
 
 ---
 
@@ -19,13 +19,14 @@ A warm "paper and ink" palette: off-white background, near-black ink, a single m
 |---|---|---|---|
 | `--bg` | `#faf8f4` | `#16140f` | Page background |
 | `--card-bg` | `#ffffff` | `#211e15` | Card surfaces in the saved grid |
+| `--surface` | `#fefdfb` | `#1d1a13` | Elevated panel (hamburger, review card, status menu, composer, bank chip, sheet) |
 | `--surface-2` | `#f0ece4` | `#272319` | Hover fills, active pill backgrounds, subtle elevation |
 | `--text` | `#1d1b18` | `#ece7dc` | Primary ink / body text |
 | `--muted` | `#6b6359` | `#a39c8f` | Secondary text, captions, hints |
 | `--accent` | `#b12a2a` | `#e07070` | Vermillion — CTAs, active states, error links |
 | `--border` | `#e4dfd5` | `#2a2620` | Dividers, card outlines, input borders |
 
-> **Note:** `--surface` is referenced as `var(--surface, var(--bg))` in many CSS rules (hamburger menu, review card, status menu, composer, bank chip, entity sheet, etc.) but is **not defined in `:root`**. The fallback to `--bg` makes it work today. Recommend defining `--surface` explicitly (perhaps as an alias of `--bg` in light, or a slightly elevated value for a three-tier surface system).
+> **Note:** `--surface` is now **defined in `:root`** (`#fefdfb` light, `#1d1a13` dark) — a slightly elevated tier between `--bg` and `--card-bg`. The `var(--surface, var(--bg))` fallbacks in the rules are now redundant but harmless.
 
 ### 2.2 Decomposition role colors
 
@@ -70,11 +71,14 @@ Used in `StatusButton` (`.status-btn`, `.status-menu-item`), the result-row star
 
 ### 2.5 Grade button colors
 
-| Grade | Light | Dark |
-|---|---|---|
-| Again | `#b91c1c` | `#f87171` |
-| Good | `#15803d` | `#4ade80` |
-| Easy | `#1d4ed8` | `#60a5fa` |
+| Grade | Token | Light | Dark |
+|---|---|---|---|
+| Again | `--grade-again` | `#b91c1c` | `#f87171` |
+| Hard | `--grade-hard` | `#d97706` | `#fbbf24` |
+| Good | `--grade-good` | `#15803d` | `#4ade80` |
+| Easy | `--grade-easy` | `#1d4ed8` | `#60a5fa` |
+
+Each `.review-btn-*` sets `--grade-color` to its tier color; the picked button takes `outline: 2px solid var(--grade-color)` (this is the BUG-5 fix — Easy reads blue, not red).
 
 ### 2.6 Feedback / drill result colors
 
@@ -150,6 +154,21 @@ Dark overrides: Correct → `#6dba84` / `rgba(109,186,132,0.15)` / `#6dba84`; Wr
 | **Mono** | `ui-monospace, SFMono-Regular, Menlo, monospace` | Eyebrow labels (Nº 01 · ETYMOLOGY), POS tags, section numbers, sheet-pos |
 
 ### 3.2 Type scale
+
+**Canonical scale tokens** (defined in `styles.css :root`, added in the v90 UX pass — prefer these over raw px in new work):
+
+| Token | Value | Role |
+|---|---|---|
+| `--hanzi-hero` | `120px` | review drill focal character |
+| `--hanzi-large` | `52px` | EntitySheet header, shelf cards |
+| `--hanzi-medium` | `36px` | search results, word bank, component preview |
+| `--hanzi-small` | `22px` | phonetics preview, inline refs |
+| `--heading-1` | `20px` | section headers |
+| `--heading-2` | `16px` | sub-headers, POS labels |
+| `--body` | `15px` | glosses, pinyin, descriptions |
+| `--caption` | `12px` | metadata, timestamps |
+
+The detailed per-class tables below are the historical/raw inventory; where a class predates the tokens it still uses literal px. New components should consume the tokens.
 
 #### Display hanzi (hero glyphs)
 
@@ -531,13 +550,13 @@ Ordered by leverage (most-duplicated / most-impactful first).
 
 ## 9. Known Inconsistencies & Cleanup Recommendations
 
-### 9.1 `--surface` undefined
+### 9.1 `--surface` undefined — ✅ RESOLVED
 
-`var(--surface, var(--bg))` is used in ~12 rules but `--surface` is never declared in `:root`. **Recommendation:** Define `--surface: var(--bg)` in both light and dark `:root` blocks, or (better) give it a distinct elevated value to enable a three-tier surface hierarchy.
+`--surface` is now defined in both `:root` blocks (`#fefdfb` light, `#1d1a13` dark) as a distinct elevated tier. The `var(--surface, var(--bg))` fallbacks are now redundant but harmless.
 
-### 9.2 Role / POS hues duplicated in three places
+### 9.2 Role / POS hues duplicated — ✅ MOSTLY RESOLVED
 
-The role colors exist as CSS custom properties (`--role-*` in `styles.css`), as the `roleColor()` function in `EntitySheet.tsx` (hardcoded hex: `#b14430`, `#4f7d3a`, `#2f5a8e`), and the POS colors live only in `pos.ts` `POS_COLOR` (injected inline as `--pos-c`). **Recommendation:** Define all role and POS colors as CSS custom properties in `:root`. Have `roleColor()` read from `getComputedStyle` or just use `var(--role-*)` directly. Import POS colors from the CSS rather than hardcoding in TypeScript.
+`roleColor()` in `EntitySheet.tsx` now returns `var(--role-*)` references (no hardcoded hex). POS colors are single-sourced: `--pos-*` live in `:root` and `pos.ts` `POS_COLOR` references them. Remaining debt: the `*-etym` duplicate-hue block documented in `design-tokens.css` is dead and should be deleted.
 
 ### 9.3 Breakpoint inconsistency
 

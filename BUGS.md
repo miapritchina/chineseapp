@@ -18,15 +18,20 @@ feature broken) · **Medium** (annoying but workarounds exist) ·
 | ID | Severity | Title | Source |
 |---|---|---|---|
 | BUG-1 | Medium | Deep links `#/c/<char>` and `#/w/<word>` don't open EntitySheet | v84 QA |
-| BUG-3 | Low | Search "中国" ranks "发展中国家" above "中国" | v84 QA |
 | BUG-4 | Cosmetic | Hamburger menu dismiss: Escape causes layout shift; outside-click occasionally misses on first tap | v84 QA |
-| BUG-5 | Medium | Review: grading "Easy" flashes red border (should be blue/green) | v84 QA |
+
+> **BUG-1 note:** the routing now appears wired — `App.tsx` parses
+> `location.hash` on cold load (`parseHash` + `openFromHash`) and on
+> `hashchange`. Kept Open pending a live browser confirmation (cold-load
+> `#/c/好` and in-page hashchange both opening the sheet).
 
 ## Fixed
 
 | ID | Severity | Title | Fixed in |
 |---|---|---|---|
 | BUG-2 | Medium | All user data persisted to localStorage instead of Supabase | (cloud-first hooks rework) — see [ADR-0001](docs/decisions/0001-supabase-source-of-truth.md). Cross-device deletion propagation remains [open work](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
+| BUG-3 | Low | Search "中国" ranks "发展中国家" above "中国" | v90 — client-side exact-match partition in `useDictionary.ts` (`search()`) surfaces an exact hanzi hit ahead of substring/compound matches. |
+| BUG-5 | Medium | Review: grading "Easy" flashes red border (should be blue/green) | v90 — the picked grade button now takes an `outline` in its own `--grade-color` (`.combined-grade-row .review-btn.is-picked`, `styles.css`); Easy → `--grade-easy` blue. No card-surface red flash. |
 
 ## Withdrawn / not-a-bug
 
@@ -64,6 +69,11 @@ preferred over exact ones in the current ranking.
 **Fix direction:** Add an `is_exact` tier above the existing prefix /
 substring / pinyin / gloss tiers. Exact hanzi match → rank first.
 
+**✅ Fixed (v90):** Resolved client-side instead — `useDictionary.ts`
+`search()` partitions an exact-hanzi match to the front of the
+hydrated results (stable), so it surfaces first regardless of the
+RPC's tiering.
+
 ---
 
 ### BUG-4 · Cosmetic · Hamburger dismiss quirks
@@ -95,3 +105,9 @@ pressed:
 - Hard  → orange (no token yet)
 - Good  → `var(--grade-good)` (green)
 - Easy  → `var(--grade-easy)` (blue)
+
+**✅ Fixed (v90):** Each grade button now sets `--grade-color` to its
+own tier color (`.review-btn-again/-good/-easy` in `styles.css`), and
+the picked button takes `outline: 2px solid var(--grade-color)`. There
+is no card-surface red flash bound to grading — Easy reads blue
+(`--grade-easy`). The `--grade-hard` orange token now exists too.

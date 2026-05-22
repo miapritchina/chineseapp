@@ -23,7 +23,9 @@ in three places under `/chineseapp/`:
 | `/components/` | Cytoscape.js + plain HTML | Vocabulary-structure view (words → chars → components) |
 
 The two Cytoscape views are part of the same app — they share the
-saved set (read via `localStorage` for now, see [ADR-0001](../decisions/0001-supabase-source-of-truth.md))
+saved set (read from the `localStorage` offline cache that the
+React hooks keep in sync with Supabase, the source of truth — see
+[ADR-0001](../decisions/0001-supabase-source-of-truth.md))
 and link back into the main UI. They live outside React for
 implementation simplicity, not because they're separate products.
 The coupling is one line in `.github/workflows/pages.yml` (a `cp`)

@@ -8,18 +8,13 @@
 
   /* ── Core palette ──────────────────────────────────────────────── */
   --bg:        #faf8f4;   /* Page background — warm off-white         */
+  --surface:   #fefdfb;   /* Elevated panel (sheet, menus, cards)     */
   --card-bg:   #ffffff;   /* Card surfaces (SavedShelf grid)          */
   --surface-2: #f0ece4;   /* Hover fills, active pill fills, chip bg  */
   --text:      #1d1b18;   /* Primary ink                              */
   --muted:     #6b6359;   /* Secondary / caption text                 */
   --accent:    #b12a2a;   /* Vermillion — CTA, active tab, error link */
   --border:    #e4dfd5;   /* Dividers, card strokes, input borders    */
-
-  /* NOTE: --surface is referenced as var(--surface, var(--bg)) in
-     many rules but is never explicitly defined in :root. The fallback
-     makes it work today, but it should be defined here. Recommended:
-     --surface: #faf8f4;  (alias of --bg in light, or a distinct
-     elevated value if a three-tier surface system is desired). */
 
   /* ── Decomposition role colors ─────────────────────────────────── */
   --role-iconic:      #2563eb;  /* Blue  — pictographic / iconic comp  */
@@ -48,9 +43,10 @@
   --status-wrote:   #7a3aa8;  /* ✒ Wrote — violet               */
 
   /* ── Grade button colors (light mode) ──────────────────────────── */
-  --grade-again: #b91c1c;  /* Red — Again   */
-  --grade-good:  #15803d;  /* Green — Good  */
-  --grade-easy:  #1d4ed8;  /* Blue — Easy   */
+  --grade-again: #b91c1c;  /* Red — Again    */
+  --grade-hard:  #d97706;  /* Orange — Hard  */
+  --grade-good:  #15803d;  /* Green — Good   */
+  --grade-easy:  #1d4ed8;  /* Blue — Easy    */
 
   /* ── Feedback / result colors (light mode) ─────────────────────── */
   --feedback-correct:       #2e7d32;
@@ -68,11 +64,10 @@
   --backdrop-sheet: rgba(0, 0, 0, 0.34);
   --backdrop-popup: rgba(20, 18, 14, 0.42);
 
-  /* ── EntitySheet hardcoded role hues (roleColor() in EntitySheet.tsx)
-     These duplicate the --role-* tokens above and should be unified.  */
-  --role-sound-etym:   #b14430;  /* sound in etymology row    */
-  --role-meaning-etym: #4f7d3a;  /* meaning in etymology row  */
-  --role-iconic-etym:  #2f5a8e;  /* iconic in etymology row   */
+  /* ── (removed) EntitySheet *-etym duplicate hues ────────────────────
+     roleColor() in EntitySheet.tsx now returns var(--role-*) directly,
+     so the old --role-sound-etym / --role-meaning-etym / --role-iconic-etym
+     duplicates are gone. Use the --role-* tokens above. */
 
   /* ── Typography ────────────────────────────────────────────────── */
   --font-body:  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -175,6 +170,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg:        #16140f;
+    --surface:   #1d1a13;
     --card-bg:   #211e15;
     --surface-2: #272319;
     --text:      #ece7dc;
@@ -196,6 +192,7 @@
     --status-wrote:   #b07ad8;
 
     --grade-again: #f87171;
+    --grade-hard:  #fbbf24;
     --grade-good:  #4ade80;
     --grade-easy:  #60a5fa;
 
