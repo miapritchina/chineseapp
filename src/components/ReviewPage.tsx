@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReviewCard } from "../hooks/useReview";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
+import { PageHeader } from "./ui/PageHeader";
+import { EmptyState } from "./ui/EmptyState";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
@@ -244,16 +246,12 @@ export function ReviewPage({
   if (!current) {
     return (
       <div className="review-root">
-        <div className="review-header">
-          <button className="back-btn" type="button" onClick={onClose}>
-            ← Done
-          </button>
-          <span className="review-progress" />
-        </div>
-        <div className="review-empty">
-          <div className="review-empty-title">All caught up.</div>
-          <div className="review-empty-hint">Save a new word to add it to the review queue.</div>
-        </div>
+        <PageHeader onBack={onClose} progress="" />
+        <EmptyState
+          variant="review"
+          title="All caught up."
+          hint="Save a new word to add it to the review queue."
+        />
       </div>
     );
   }
@@ -272,15 +270,7 @@ export function ReviewPage({
   if (cluster && (current.card.lapses ?? 0) >= LEECH_LAPSES && !disambigSeen.has(current.itemKey)) {
     return (
       <div className="review-root">
-        <div className="review-header">
-          <button className="back-btn" type="button" onClick={onClose}>
-            ← Done
-          </button>
-          <span className="review-kind-tag">Confusable</span>
-          <span className="review-progress">
-            {progressIndex} / {total}
-          </span>
-        </div>
+        <PageHeader onBack={onClose} tag="Confusable" progress={`${progressIndex} / ${total}`} />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <DisambiguationCard
@@ -329,15 +319,7 @@ export function ReviewPage({
     }
     return (
       <div className="review-root">
-        <div className="review-header">
-          <button className="back-btn" type="button" onClick={onClose}>
-            ← Done
-          </button>
-          <span className="review-kind-tag">Write</span>
-          <span className="review-progress">
-            {progressIndex} / {total}
-          </span>
-        </div>
+        <PageHeader onBack={onClose} tag="Write" progress={`${progressIndex} / ${total}`} />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <ProductionCard
@@ -505,17 +487,11 @@ export function ReviewPage({
 
   return (
     <div className="review-root">
-      <div className="review-header">
-        <button className="back-btn" type="button" onClick={onClose}>
-          ← Done
-        </button>
-        <span className="review-kind-tag">
-          {current.itemKind === "word" ? "Word" : "Character"}
-        </span>
-        <span className="review-progress">
-          {progressIndex} / {total}
-        </span>
-      </div>
+      <PageHeader
+        onBack={onClose}
+        tag={current.itemKind === "word" ? "Word" : "Character"}
+        progress={`${progressIndex} / ${total}`}
+      />
       <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">
         {attribTarget ? (
@@ -587,15 +563,7 @@ interface DrillFrameProps {
 function DrillFrame({ tag, onClose, progressIndex, total, onSkip, children }: DrillFrameProps) {
   return (
     <div className="review-root">
-      <div className="review-header">
-        <button className="back-btn" type="button" onClick={onClose}>
-          ← Done
-        </button>
-        <span className="review-kind-tag">{tag}</span>
-        <span className="review-progress">
-          {progressIndex} / {total}
-        </span>
-      </div>
+      <PageHeader onBack={onClose} tag={tag} progress={`${progressIndex} / ${total}`} />
       <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">{children}</div>
       <div className="drill-skip-row">
