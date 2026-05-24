@@ -4,12 +4,12 @@ import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import { speak } from "../lib/speech";
-import { firstReading } from "../lib/speech";
-import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
+import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { usePhoneticComponents } from "../hooks/usePhoneticComponents";
 import { PageHeader } from "./ui/PageHeader";
 import { EmptyState } from "./ui/EmptyState";
 import { GradeButtons } from "./ui/GradeButtons";
+import { Entity } from "./Entity";
 
 interface Props {
   // Apply a grade to every word in the cluster at once. Usually
@@ -84,7 +84,6 @@ export function pickCluster(
 // flow for the "weekly consolidation" use case.
 export function ClusterRecall({ onGrade, onClose }: Props) {
   const { savedList } = useSavedCtx();
-  const { findWord } = useDictCtx();
   const { chars } = useCharsCtx();
   const { byChar: phoneticComponentsByChar } = usePhoneticComponents();
   const cluster = useMemo(
@@ -145,14 +144,17 @@ export function ClusterRecall({ onGrade, onClose }: Props) {
         </div>
         <div className="cluster-grid">
           {cluster.map((w) => {
-            const word = findWord(w);
             const isRevealed = revealed.has(w);
             return (
-              <button
+              <Entity
                 key={w}
-                type="button"
-                className={`cluster-cell${isRevealed ? " is-revealed" : ""}`}
-                onClick={() => {
+                itemKey={w}
+                size="sm"
+                showPinyin={isRevealed}
+                showMeaning={isRevealed}
+                roleColor={isRevealed ? "var(--accent)" : undefined}
+                ariaLabel={isRevealed ? `Revealed: ${w}` : `Tap to reveal ${w}`}
+                onTap={() => {
                   setRevealed((prev) => {
                     if (prev.has(w)) return prev;
                     const n = new Set(prev);
@@ -161,17 +163,7 @@ export function ClusterRecall({ onGrade, onClose }: Props) {
                   });
                   speak(w);
                 }}
-              >
-                <span className="cluster-cell-hanzi">{w}</span>
-                {isRevealed && (
-                  <>
-                    <span className="cluster-cell-pinyin">{firstReading(word?.pinyin || "")}</span>
-                    <span className="cluster-cell-gloss">
-                      {(word?.definitions || []).slice(0, 2).join("; ")}
-                    </span>
-                  </>
-                )}
-              </button>
+              />
             );
           })}
         </div>

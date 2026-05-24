@@ -13,6 +13,42 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 *Next change lands here.*
 
+## [v93]
+
+### Added
+- `<Entity hanziSlot>` prop — opt-in escape hatch that replaces Entity's default key-as-text content inside `.entity-hanzi`. Lets callers (e.g. a future M3 sheet-header migration) embed `<HanziGlyph mode="animate">` inside Entity's pinyin → hanzi → meaning DNA without losing stroke animation. Unused so far.
+
+### Changed
+- **EntitySheet split (refactor stage E):** 417 → 214 lines. Four content blocks pulled into focused sub-components under `src/components/sheet/`:
+  - `SheetHeader.tsx` — eyebrow + glyph (HanziGlyph stroke-anim for single chars; plain + 🔊 for multi-char words) + POS · defs row.
+  - `EtymologySection.tsx` — "Nº NN · ETYMOLOGY / MADE OF" + role-colored decomposition equation + etym note.
+  - `RelatedSection.tsx` — "Nº NN · CHARACTERS / IN YOUR SAVED WORDS" list; resolves chars + word lookups from context.
+  - `MnemonicSection.tsx` — "Nº NN · 💡 MAKE IT STICK" with the edit/reset/persist lifecycle (extracted `MnemonicEditor`-equivalent).
+  - `helpers.ts` — `commonnessLabel` + `roleColor` (were inline in EntitySheet).
+
+  EntitySheet.tsx is now the shell: identity resolution, drag-to-dismiss, Escape handler, status corner, section numbering, and slots in the four sub-components. Browser-verified — multi-char + single-char sheets render identically to v92 (stroke animation, etym role colors, related rows, mnemonic editor all work).
+
+## [v92]
+
+### Changed
+- **`<Entity>` component wired into 7 call sites** (refactor stages C + D, browser-verified per migration):
+  - M1 saved-shelf card → `<Entity size="md">` (deletes `Card.tsx` / `CharOnlyCard`).
+  - M10 ComponentTable chip → `<Entity size="tiny" showPinyin>` with count via `trailing`.
+  - M7 SentenceStudio bank chip → `<Entity size="sm">` with `roleColor={POS_COLOR[pos]}`.
+  - M8 SentenceStudio composer token → `<Entity size="tiny" showPinyin>` with POS color border.
+  - M13 ClusterRecall cell → `<Entity size="sm">` with reveal-state disclosure (hidden = hanzi only; revealed = pinyin + meaning + accent border).
+  - M14 DisambiguationCard cell → `<Entity size="sm">` with `var(--accent)` border on the focus cell.
+  - M11 CombinedRecognitionCard's focal `.review-hanzi` → `<Entity size="hero">` (white-bg card, 120px hero hanzi).
+  - M12 PhoneticTapCard hanzi picks → `<Entity size="tiny">` with `.is-correct` / `.is-wrong` / `.is-reveal` flash modifiers (CSS added).
+- `EntitySheet` glyph + ProductionCard tracer already consume `<HanziGlyph>` from stage B; no new sheet-header migration (M3 → P4 is deferred — would lose HanziWriter stroke animation; needs owner sign-off).
+- FamilyTransferCard + ComponentSoundCard pick buttons stay as-is — their choices are pinyin syllables, not entities.
+
+### Removed
+- `src/components/Card.tsx` (and `CharOnlyCard`) — fully replaced by Entity md in `SavedShelf`.
+
+### Notes
+- All migrations browser-verified at `http://localhost:5173/chineseapp/` via Chrome DevTools MCP (clicks, taps, navigation snapshots). Zero console errors after each commit.
+
 ## [v91]
 
 ### Added

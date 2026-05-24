@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Char, Word } from "../lib/types";
 import type { SavedEntry } from "../hooks/useSaved";
-import { Card, CharOnlyCard } from "./Card";
+import { Entity } from "./Entity";
 import { normalizePinyin } from "../lib/pinyin";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 
@@ -42,33 +42,16 @@ function renderCard(
   const key = entry.word;
   const w = findWord(key);
   if (w) {
-    return <Card key={key} word={w} onOpen={onOpenWord} />;
+    return <Entity key={key} word={w} size="md" onTap={onOpenWord} />;
   }
   const c = chars[key];
   if (c) {
-    return (
-      <CharOnlyCard
-        key={key}
-        charKey={key}
-        pinyin={c.pinyin || ""}
-        gloss={c.definitions?.[0] || ""}
-        onOpen={onOpenChar}
-      />
-    );
+    return <Entity key={key} itemKey={key} size="md" onTap={onOpenChar} />;
   }
-  // Cache miss (network in flight) — render a minimal placeholder so the grid
-  // doesn't reflow when ensureCached resolves.
-  return (
-    <button
-      key={key}
-      className="card card-pending"
-      type="button"
-      onClick={() => onOpenWord(key)}
-      aria-label={key}
-    >
-      <div className="char">{key}</div>
-    </button>
-  );
+  // Cache miss (network in flight) — Entity will still render the hanzi
+  // alone; the pending class fades it so the grid doesn't reflow when
+  // ensureCached resolves and pinyin/gloss arrive.
+  return <Entity key={key} itemKey={key} size="md" onTap={onOpenWord} className="card-pending" />;
 }
 
 export function SavedShelf({ onOpenWord, onOpenChar }: Props) {

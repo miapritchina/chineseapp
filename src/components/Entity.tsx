@@ -35,6 +35,13 @@ interface Props {
   trailing?: ReactNode;
   className?: string;
   ariaLabel?: string;
+  // Override the hanzi-slot rendering. Lets callers embed a richer
+  // hanzi treatment (e.g. <HanziGlyph mode="animate"> for the
+  // EntitySheet header) inside Entity's pinyin → hanzi → meaning DNA
+  // without giving up the surrounding layout. The slot replaces the
+  // default key-as-text content of the `.entity-hanzi` wrapper, so size
+  // tokens still apply if the child opts in.
+  hanziSlot?: ReactNode;
 }
 
 export function Entity({
@@ -49,6 +56,7 @@ export function Entity({
   trailing,
   className,
   ariaLabel,
+  hanziSlot,
 }: Props) {
   const { getStatus, setStatus } = useSavedCtx();
   const { findWord } = useDictCtx();
@@ -106,7 +114,7 @@ export function Entity({
         </div>
       )}
       {wantPinyin && pinyin && <div className="entity-pinyin">{pinyin}</div>}
-      <div className="entity-hanzi">{key}</div>
+      <div className="entity-hanzi">{hanziSlot ?? key}</div>
       {wantMeaning && meaning && (
         <div className="entity-meaning">
           {meaning}

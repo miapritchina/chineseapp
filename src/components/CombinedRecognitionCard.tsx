@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Word, Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
 import { speak, stopSpeech } from "../lib/speech";
-import { hanziScaleStyle } from "../lib/hanzi";
 import { GradeButtons } from "./ui/GradeButtons";
+import { Entity } from "./Entity";
 
 const CONTINUE_HINT_KEY = "hint.seen.review-continue";
 function hintAlreadySeen(): boolean {
@@ -140,9 +140,13 @@ export function CombinedRecognitionCard({
       aria-label={revealed ? "Card revealed" : "Tap anywhere to reveal"}
     >
       <div className="combined-card-stack">
-        <div className="review-hanzi" style={hanziScaleStyle(itemKey)}>
-          {itemKey}
-        </div>
+        <Entity
+          itemKey={itemKey}
+          size="hero"
+          showPinyin={false}
+          showMeaning={false}
+          ariaLabel={itemKey}
+        />
         {!revealed && <div className="review-tap-hint">Tap anywhere to reveal</div>}
         {revealed && (
           <>

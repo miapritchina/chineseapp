@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
 import { speak, stopSpeech } from "../lib/speech";
+import { Entity } from "./Entity";
 
 interface Props {
   char: string;
@@ -91,62 +92,61 @@ export function PhoneticTapCard({ char, charData, onGrade }: Props) {
       className={`phonetic-tap${picked !== null ? " is-tappable" : ""}`}
       onClick={picked !== null ? advanceWithGrade : undefined}
     >
-     <div className="phonetic-tap-inner">
-      <div className="phonetic-tap-prompt">Tap the part that gives the sound.</div>
-      <button
-        type="button"
-        className="phonetic-tap-glyph-btn"
-        aria-label={`Play ${char}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          speak(char);
-        }}
-      >
-        <span className="phonetic-tap-glyph">{char}</span>
-        <span className="phonetic-tap-speaker" aria-hidden="true">🔊</span>
-      </button>
-      {charData.pinyin && (
-        <div className="phonetic-tap-pinyin">{charData.pinyin}</div>
-      )}
-      <div className="phonetic-tap-row">
-        {components.map((c) => {
-          const isThisCorrect = c.char === correctChar;
-          const isPicked = picked === c.char;
-          const cls = ["phonetic-tap-pick"];
-          if (isPicked && isCorrect) cls.push("is-correct");
-          if (isPicked && isWrong) cls.push("is-wrong");
-          if (isWrong && isThisCorrect) cls.push("is-reveal");
-          return (
-            <button
-              key={c.char}
-              type="button"
-              className={cls.join(" ")}
-              disabled={picked !== null}
-              onClick={(e) => {
-                e.stopPropagation();
-                setPicked(c.char);
-              }}
-            >
-              <span className="phonetic-tap-pick-char">{c.char}</span>
-              {(isPicked || (isWrong && isThisCorrect)) && c.pinyin && (
-                <span className="phonetic-tap-pick-pinyin">{c.pinyin}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-      {/* Wrong-answer feedback only — the chip's green border is enough on
+      <div className="phonetic-tap-inner">
+        <div className="phonetic-tap-prompt">Tap the part that gives the sound.</div>
+        <button
+          type="button"
+          className="phonetic-tap-glyph-btn"
+          aria-label={`Play ${char}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            speak(char);
+          }}
+        >
+          <span className="phonetic-tap-glyph">{char}</span>
+          <span className="phonetic-tap-speaker" aria-hidden="true">
+            🔊
+          </span>
+        </button>
+        {charData.pinyin && <div className="phonetic-tap-pinyin">{charData.pinyin}</div>}
+        <div className="phonetic-tap-row">
+          {components.map((c) => {
+            const isThisCorrect = c.char === correctChar;
+            const isPicked = picked === c.char;
+            const showReveal = isWrong && isThisCorrect;
+            const flash =
+              isPicked && isCorrect
+                ? "is-correct"
+                : isPicked && isWrong
+                  ? "is-wrong"
+                  : showReveal
+                    ? "is-reveal"
+                    : "";
+            return (
+              <Entity
+                key={c.char}
+                itemKey={c.char}
+                size="tiny"
+                showPinyin={isPicked || showReveal}
+                showMeaning={false}
+                ariaLabel={c.char}
+                className={`phonetic-tap-pick ${flash}`.trim()}
+                onTap={picked === null ? () => setPicked(c.char) : undefined}
+              />
+            );
+          })}
+        </div>
+        {/* Wrong-answer feedback only — the chip's green border is enough on
           its own when the user got it right (the redundant "Right —"
           line was distracting). */}
-      {isWrong && correct && (
-        <div className="phonetic-tap-feedback is-wrong">
-          Sound: {correctChar}{correct.pinyin ? ` · ${correct.pinyin}` : ""}
-        </div>
-      )}
-      {picked !== null && (
-        <div className="drill-tap-hint">Tap anywhere to continue →</div>
-      )}
-     </div>
+        {isWrong && correct && (
+          <div className="phonetic-tap-feedback is-wrong">
+            Sound: {correctChar}
+            {correct.pinyin ? ` · ${correct.pinyin}` : ""}
+          </div>
+        )}
+        {picked !== null && <div className="drill-tap-hint">Tap anywhere to continue →</div>}
+      </div>
     </div>
   );
 }
