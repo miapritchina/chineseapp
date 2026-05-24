@@ -55,9 +55,8 @@ describe("Eyebrow", () => {
 });
 
 describe("SectionHeader", () => {
-  it("zero-pads the number", () => {
-    const { container } = render(<SectionHeader num={1} name="ETYMOLOGY" />);
-    expect(container.querySelector(".sheet-section-num")?.textContent).toBe("Nº 01");
+  it("renders the section name", () => {
+    const { container } = render(<SectionHeader name="ETYMOLOGY" />);
     expect(container.querySelector(".sheet-section-name")?.textContent).toBe("ETYMOLOGY");
   });
 });

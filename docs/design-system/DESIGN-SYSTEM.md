@@ -231,7 +231,7 @@ The detailed per-class tables below are the historical/raw inventory; where a cl
 | Size | Weight | Letter-spacing | Where |
 |---|---|---|---|
 | 12 px | — | 2.5 px | `.sheet-eyebrow` |
-| 11 px | 600 | 2 px | `.sheet-section-num`, `.sheet-section-name` |
+| 11 px | 600 | 2 px | `.sheet-section-name` |
 | 11 px | 600 | 1.6 px | `.sheet-pos` |
 | 11 px | — | 1 px | `.shelf-title`, `.sort-pill`, `.search-mode-tab`, `.shelf-action`, `.hamburger-soon`, `.composer-clear` |
 | 10 px | 500 | 1 px | `.review-kind-tag`, `.modal-title .title-hsk` |
@@ -492,10 +492,10 @@ Ordered by leverage (most-duplicated / most-impactful first).
 **Props:** `options: { key: string; label: string; count?: number }[]`, `active: string`, `onChange: (key: string) => void`.
 **Effort:** **S**
 
-### 8.6 `<SectionHeader num name>` — Numbered section header
+### 8.6 `<SectionHeader name>` — Section header
 
-**Absorbs:** `.sheet-section-head`, `.sheet-section-num`, `.sheet-section-name` — the `Nº 01 · ETYMOLOGY` / `Nº 02 · …` pattern in EntitySheet.
-**Props:** `num: number`, `name: string`.
+**Absorbs:** `.sheet-section-head`, `.sheet-section-name` — the `ETYMOLOGY` / `IN YOUR SAVED WORDS` pattern in EntitySheet.
+**Props:** `name: string`.
 **Effort:** **S** — trivial extraction.
 
 ### 8.7 `<Eyebrow>` — Mono uppercase micro-label

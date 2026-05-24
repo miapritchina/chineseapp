@@ -219,6 +219,45 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
   font-family: var(--font-hanzi); font-size: 48px; line-height: 1;
   display: inline-block; margin: 0 8px;
 }
+
+/* ── <Entity> primitive (§0) ─────────────────────────────────────── */
+.ex-entity {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--entity-role, var(--border));
+  border-radius: 12px;
+  position: relative;
+}
+.ex-entity-hanzi {
+  font-family: var(--font-hanzi);
+  font-size: var(--entity-hanzi-size, var(--hanzi-medium, 36px));
+  line-height: 1.1;
+}
+.ex-entity-pinyin { font-size: 15px; color: var(--muted); }
+.ex-entity-meaning { font-size: 12px; color: var(--muted); }
+.ex-entity-status {
+  position: absolute; top: 4px; right: 6px;
+  font-size: 13px; color: var(--status-saved, #d97706);
+}
+.ex-entity-tiny  { --entity-hanzi-size: 22px; padding: 8px;       gap: 1px; }
+.ex-entity-sm    { --entity-hanzi-size: 22px; padding: 12px;      gap: 2px; }
+.ex-entity-md    { --entity-hanzi-size: 52px; padding: 16px 12px; gap: 3px; min-width: 110px; }
+.ex-entity-lg    { --entity-hanzi-size: 52px; padding: 20px;      gap: 4px; min-width: 130px; }
+.ex-entity-hero  { --entity-hanzi-size: 120px; padding: 20px; gap: 6px; background: #fff; }
+
+.ex-entity.is-correct {
+  border-color: #2e7d32;
+  background: rgba(46,125,50,0.12);
+}
+.ex-entity.is-wrong {
+  border-color: #b91c1c;
+  background: rgba(185,28,28,0.12);
+}
+.ex-entity.is-reveal {
+  border-color: #2e7d32;
+  border-style: dashed;
+}
 </style>
 </head>
 <body>
@@ -267,11 +306,61 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
 <!-- ════════════════════════════════════════════════════════════════ -->
 <h2>Component Examples</h2>
 
-<h3>Card (Saved Grid)</h3>
+<h3>Entity Component (§0) — five sizes</h3>
+<p style="font-size:13px;color:var(--muted);margin:-4px 0 8px;max-width:560px;line-height:1.5;">
+  One component, five sizes. Shared visual DNA: pinyin (top) → hanzi (center) → meaning + POS (bottom). Status corner at <code>md</code>+; role-color border via <code>--entity-role</code> when supplied.
+  Live source: <code>src/components/Entity.tsx</code>.
+</p>
+
+<div class="example-row" style="align-items:flex-end">
+  <!-- tiny -->
+  <div class="ex-entity ex-entity-tiny">
+    <div class="ex-entity-pinyin">hǎo</div>
+    <div class="ex-entity-hanzi">好</div>
+  </div>
+  <!-- sm with role-color border -->
+  <div class="ex-entity ex-entity-sm" style="--entity-role:var(--pos-adj)">
+    <div class="ex-entity-pinyin">hǎo</div>
+    <div class="ex-entity-hanzi">好</div>
+    <div class="ex-entity-meaning">good <span style="color:var(--pos-adj);font-weight:500">adj</span></div>
+  </div>
+  <!-- md with status corner -->
+  <div class="ex-entity ex-entity-md">
+    <span class="ex-entity-status">★</span>
+    <div class="ex-entity-pinyin">hǎo</div>
+    <div class="ex-entity-hanzi">好</div>
+    <div class="ex-entity-meaning">good <span style="color:var(--pos-adj);font-weight:500">adj</span></div>
+  </div>
+  <!-- lg with status corner + bigger -->
+  <div class="ex-entity ex-entity-lg">
+    <span class="ex-entity-status">★</span>
+    <div class="ex-entity-pinyin">hǎo</div>
+    <div class="ex-entity-hanzi">好</div>
+    <div class="ex-entity-meaning">good <span style="color:var(--pos-adj);font-weight:500">adj</span></div>
+  </div>
+  <!-- hero (white-bg, drill focal) -->
+  <div class="ex-entity ex-entity-hero">
+    <div class="ex-entity-hanzi">好</div>
+  </div>
+</div>
+
+<h3>Drill Pick Flash (M12)</h3>
+<p style="font-size:13px;color:var(--muted);margin:-4px 0 8px;">
+  Entity tiny with <code>.is-correct</code> / <code>.is-wrong</code> / <code>.is-reveal</code> modifiers — used by PhoneticTap picks.
+</p>
 <div class="example-row">
-  <div class="ex-card"><div class="ex-card-char">学</div><div class="ex-card-pinyin">xué</div><div class="ex-card-gloss">to learn; to study</div></div>
-  <div class="ex-card"><div class="ex-card-char">好</div><div class="ex-card-pinyin">hǎo</div><div class="ex-card-gloss">good; well</div></div>
-  <div class="ex-card" style="opacity:0.55"><div class="ex-card-char">中</div><div class="ex-card-pinyin">zhōng</div><div class="ex-card-gloss">middle (syncing…)</div></div>
+  <div class="ex-entity ex-entity-tiny">
+    <div class="ex-entity-hanzi">宀</div>
+  </div>
+  <div class="ex-entity ex-entity-tiny is-correct">
+    <div class="ex-entity-hanzi">豕</div>
+  </div>
+  <div class="ex-entity ex-entity-tiny is-wrong">
+    <div class="ex-entity-hanzi">氵</div>
+  </div>
+  <div class="ex-entity ex-entity-tiny is-reveal">
+    <div class="ex-entity-hanzi">豕</div>
+  </div>
 </div>
 
 <h3>Status Button + Open Menu</h3>
@@ -296,23 +385,15 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
 
 <h3>Section Header</h3>
 <div class="example-row">
-  <div class="ex-section-head"><span class="ex-section-num">Nº 01</span><span class="ex-section-name">· Etymology</span></div>
+  <div class="ex-section-head"><span class="ex-section-name">Etymology</span></div>
 </div>
 <div class="example-row" style="margin-top:4px">
-  <div class="ex-section-head"><span class="ex-section-num">Nº 02</span><span class="ex-section-name">· In your saved words</span></div>
+  <div class="ex-section-head"><span class="ex-section-name">In your saved words</span></div>
 </div>
 
 <h3>Eyebrow Label</h3>
 <div class="example-row">
-  <span class="ex-eyebrow">Character · hàn zì</span>
-</div>
-
-<h3>Component Chip Row</h3>
-<div class="ex-chip-row">
-  <div class="ex-chip"><span class="ex-chip-char">木</span><span class="ex-chip-pinyin">mù</span></div>
-  <div class="ex-chip"><span class="ex-chip-char">口</span><span class="ex-chip-pinyin">kǒu</span></div>
-  <div class="ex-chip"><span class="ex-chip-char">心</span><span class="ex-chip-pinyin">xīn</span></div>
-  <div class="ex-chip"><span class="ex-chip-char">水</span><span class="ex-chip-pinyin">shuǐ</span></div>
+  <span class="ex-eyebrow">HǍO</span>
 </div>
 
 <h3>Grade Buttons</h3>
@@ -327,11 +408,11 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
   <div class="ex-sheet-demo">
     <div class="ex-sheet-handle"></div>
     <button class="ex-sheet-dismiss">↓</button>
-    <div class="ex-eyebrow" style="margin-top:8px">Character · xué</div>
+    <div class="ex-eyebrow" style="margin-top:8px">XUÉ</div>
     <div style="font-family:var(--font-hanzi);font-size:80px;line-height:1;margin:8px 0 4px;">学</div>
     <div style="font-size:16px;line-height:1.4;margin-bottom:12px;">to learn; to study; school; learning</div>
     <div style="border-top:1px solid var(--border);padding-top:12px;">
-      <div class="ex-section-head"><span class="ex-section-num">Nº 01</span><span class="ex-section-name">· Etymology</span></div>
+      <div class="ex-section-head"><span class="ex-section-name">Etymology</span></div>
     </div>
   </div>
 </div>
@@ -416,7 +497,7 @@ STATUS.forEach(([name, hex]) => {
 });
 
 // Grade swatches
-const GRADES = [['Again','#b91c1c'],['Good','#15803d'],['Easy','#1d4ed8']];
+const GRADES = [['Again','#b91c1c'],['Hard','#d97706'],['Good','#15803d'],['Easy','#1d4ed8']];
 const gradeEl = document.getElementById('grade-swatches');
 GRADES.forEach(([name, hex]) => {
   gradeEl.innerHTML += `<div class="swatch" style="width:100px"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-info"><div class="swatch-name">${name}</div><div class="swatch-hex">${hex}</div></div></div>`;

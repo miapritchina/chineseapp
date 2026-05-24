@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
-import { toneLabel } from "../lib/pinyin";
 import { detectPos } from "../lib/pos";
 import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { SheetHeader } from "./sheet/SheetHeader";
 import { EtymologySection } from "./sheet/EtymologySection";
 import { RelatedSection } from "./sheet/RelatedSection";
 import { MnemonicSection } from "./sheet/MnemonicSection";
-import { commonnessLabel, roleColor } from "./sheet/helpers";
+import { roleColor } from "./sheet/helpers";
 
 interface Props {
   // Exactly one of these identifies the entity. `word` wins when both
@@ -30,11 +29,10 @@ interface Props {
 // chips all land on the same chrome.
 //
 // This file is the shell — identity resolution, drag-to-dismiss, the
-// status corner, section numbering. The four content blocks live in
-// src/components/sheet/:
+// status corner. The four content blocks live in src/components/sheet/:
 //   ── (header)                — SheetHeader (eyebrow + glyph + defs)
-//   ── Nº 01 · ETYMOLOGY / MADE OF      — EtymologySection
-//   ── Nº 02 · IN YOUR SAVED WORDS / CHARACTERS — RelatedSection
+//   ── ETYMOLOGY / MADE OF     — EtymologySection
+//   ── IN YOUR SAVED WORDS / CHARACTERS — RelatedSection
 //   ── 💡 Make it stick        — MnemonicSection
 export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, onOpenTree }: Props) {
   const { chars } = useCharsCtx();
@@ -51,8 +49,6 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
       ? word.definitions
       : (charData?.definitions ?? []);
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
-  const tone = toneLabel(pinyin);
-  const freq = commonnessLabel(word?.rank);
   const pos = defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
 
   // ── Refs + dismiss state ───────────────────────────────────────
@@ -110,13 +106,6 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
 
   const matches = isMultiCharWord ? [] : [...saved].filter((w) => w !== key && w.includes(key));
 
-  // Section numbering: ETYMOLOGY is Nº 01 only when it renders.
-  let sectionNo = 0;
-  const nextNo = () => String(++sectionNo).padStart(2, "0");
-  const etymNo = hasEtym ? nextNo() : null;
-  const peopleNo = isMultiCharWord || matches.length > 0 ? nextNo() : null;
-  const mnemonicNo = nextNo();
-
   return (
     <div className="sheet-root" role="dialog" aria-modal="true" aria-label={`Details for ${key}`}>
       <div className="sheet-backdrop" onClick={onClose} />
@@ -160,15 +149,12 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
           word={word}
           isMultiCharWord={isMultiCharWord}
           pinyin={pinyin}
-          tone={tone}
-          freq={freq}
           pos={pos}
           defs={defs}
         />
 
-        {hasEtym && etymNo && (
+        {hasEtym && (
           <EtymologySection
-            num={etymNo}
             itemKey={key}
             isMultiCharWord={isMultiCharWord}
             pieces={pieces}
@@ -178,9 +164,8 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
           />
         )}
 
-        {(isMultiCharWord || matches.length > 0) && peopleNo && (
+        {(isMultiCharWord || matches.length > 0) && (
           <RelatedSection
-            num={peopleNo}
             isMultiCharWord={isMultiCharWord}
             word={word}
             matches={matches}
@@ -190,7 +175,6 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
         )}
 
         <MnemonicSection
-          num={mnemonicNo}
           itemKey={key}
           isMultiCharWord={isMultiCharWord}
           pinyin={pinyin}

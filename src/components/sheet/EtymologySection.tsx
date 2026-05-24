@@ -1,8 +1,8 @@
 import type { Char } from "../../lib/types";
 
-// "Nº NN · ETYMOLOGY / MADE OF" section: role-colored decomposition
-// equation + the etymological note (if any). Each piece is tappable and
-// opens its own EntitySheet.
+// "ETYMOLOGY / MADE OF" section: role-colored decomposition equation +
+// the etymological note (if any). Each piece is tappable and opens its
+// own EntitySheet.
 
 interface Piece {
   char: string;
@@ -10,7 +10,6 @@ interface Piece {
 }
 
 interface Props {
-  num: string;
   itemKey: string;
   isMultiCharWord: boolean;
   pieces: Piece[];
@@ -20,7 +19,6 @@ interface Props {
 }
 
 export function EtymologySection({
-  num,
   itemKey,
   isMultiCharWord,
   pieces,
@@ -31,7 +29,6 @@ export function EtymologySection({
   return (
     <section className="sheet-section">
       <div className="sheet-section-head">
-        <span className="sheet-section-num">Nº {num}</span>
         <span className="sheet-section-name">{isMultiCharWord ? "MADE OF" : "ETYMOLOGY"}</span>
       </div>
       {pieces.length > 0 && (

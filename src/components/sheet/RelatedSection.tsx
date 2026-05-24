@@ -1,12 +1,11 @@
 import type { Word } from "../../lib/types";
 import { useCharsCtx, useDictCtx } from "../../state/contexts";
 
-// "Nº NN · CHARACTERS / IN YOUR SAVED WORDS" section: lists the chars
-// inside a multi-char word, or — for a char — other saved words that
-// contain it. Each row taps into its own EntitySheet.
+// "CHARACTERS / IN YOUR SAVED WORDS" section: lists the chars inside a
+// multi-char word, or — for a char — other saved words that contain it.
+// Each row taps into its own EntitySheet.
 
 interface Props {
-  num: string;
   isMultiCharWord: boolean;
   word: Word | null | undefined;
   matches: string[];
@@ -14,21 +13,13 @@ interface Props {
   onOpenChar: (char: string) => void;
 }
 
-export function RelatedSection({
-  num,
-  isMultiCharWord,
-  word,
-  matches,
-  onOpenWord,
-  onOpenChar,
-}: Props) {
+export function RelatedSection({ isMultiCharWord, word, matches, onOpenWord, onOpenChar }: Props) {
   const { chars } = useCharsCtx();
   const { findWord } = useDictCtx();
 
   return (
     <section className="sheet-section">
       <div className="sheet-section-head">
-        <span className="sheet-section-num">Nº {num}</span>
         <span className="sheet-section-name">
           {isMultiCharWord ? "CHARACTERS" : "IN YOUR SAVED WORDS"}
         </span>

@@ -82,7 +82,7 @@ export function Entity({
     wantMeaning && defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
 
   const style = {
-    ...hanziScaleStyle(key),
+    ...(size !== "md" ? hanziScaleStyle(key) : {}),
     ...(roleColor ? ({ ["--entity-role"]: roleColor } as Record<string, string>) : {}),
   };
 
@@ -113,8 +113,10 @@ export function Entity({
           <StatusButton status={getStatus(key)} onChange={(next) => setStatus(key, next)} />
         </div>
       )}
-      {wantPinyin && pinyin && <div className="entity-pinyin">{pinyin}</div>}
-      <div className="entity-hanzi">{hanziSlot ?? key}</div>
+      <div className="entity-primary">
+        {wantPinyin && pinyin && <div className="entity-pinyin">{pinyin}</div>}
+        <div className="entity-hanzi">{hanziSlot ?? key}</div>
+      </div>
       {wantMeaning && meaning && (
         <div className="entity-meaning">
           {meaning}

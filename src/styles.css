@@ -1566,10 +1566,29 @@ body {
 }
 
 .saved-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 8px 12px 18px;
+}
+.saved-grid .entity {
+  display: inline-block;
+  flex: 0 1 auto;
+  max-width: 100%;
+  vertical-align: top;
+}
+/* Width follows entity-primary only; meaning is out of flow and truncates. */
+.saved-grid .entity-md {
+  padding-bottom: calc(16px + var(--entity-stack-gap, 3px) + 1.25em);
+}
+.saved-grid .entity-meaning {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 16px;
+  width: auto;
+  min-width: 0;
+  text-align: center;
 }
 
 .saved-empty {
@@ -1666,12 +1685,19 @@ body {
   font-size: var(--body);
   color: var(--muted);
 }
+.entity-primary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--entity-stack-gap, 3px);
+}
 .entity-meaning {
   font-size: var(--caption);
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
   max-width: 100%;
 }
 .entity-pos {
@@ -1692,26 +1718,31 @@ body {
 
 .entity-tiny {
   --entity-hanzi-size: var(--hanzi-small);
+  --entity-stack-gap: 1px;
   padding: 8px;
   gap: 1px;
 }
 .entity-sm {
   --entity-hanzi-size: var(--hanzi-small);
+  --entity-stack-gap: 2px;
   padding: 12px;
   gap: 2px;
 }
 .entity-md {
   --entity-hanzi-size: var(--hanzi-large);
-  padding: 16px 12px;
+  --entity-stack-gap: 3px;
+  padding: 16px 32px;
   gap: 3px;
 }
 .entity-lg {
   --entity-hanzi-size: var(--hanzi-large);
+  --entity-stack-gap: 4px;
   padding: 20px;
   gap: 4px;
 }
 .entity-hero {
   --entity-hanzi-size: var(--hanzi-hero);
+  --entity-stack-gap: 6px;
   padding: 20px;
   gap: 6px;
   background: #fff;
@@ -2410,7 +2441,6 @@ body {
 
 @media (max-width: 480px) {
   .saved-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     padding: 4px 4px 14px;
   }
   .card {
@@ -2926,12 +2956,6 @@ body {
 .sheet-eyebrow > span {
   white-space: nowrap;
 }
-.sheet-eyebrow-dim {
-  opacity: 0.7;
-}
-.sheet-eyebrow-tone {
-  opacity: 0.8;
-}
 .sheet-glyph {
   margin: 4px 0 2px;
   min-height: 120px;
@@ -3018,16 +3042,12 @@ body {
   gap: 8px;
   margin-bottom: 12px;
 }
-.sheet-section-num,
 .sheet-section-name {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--muted);
-}
-.sheet-section-num {
-  opacity: 0.75;
 }
 .sheet-mnemonic-title {
   font-family: inherit;
