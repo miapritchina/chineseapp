@@ -1,6 +1,17 @@
 // Shared types — mirror the data shape produced by scripts/extract-chinese.mjs.
 
-export type Role = "iconic" | "meaning" | "sound" | "simplified" | "deleted" | "unknown";
+// Dong Chinese component-role taxonomy — see
+// https://www.dong-chinese.com/wiki/home#components and the --role-*
+// tokens in styles.css :root for the color mapping.
+export type Role =
+  | "iconic"
+  | "meaning"
+  | "sound"
+  | "remnant"
+  | "simplified"
+  | "deleted"
+  | "distinguishing"
+  | "unknown";
 
 export interface Word {
   word: string;

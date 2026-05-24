@@ -11,11 +11,17 @@
   --accent: #b12a2a;
   --border: #e4dfd5;
 
-  --role-iconic: #2563eb;
-  --role-meaning: #16a34a;
-  --role-sound: #dc2626;
-  --role-simplified: #9333ea;
+  /* Decomposition role palette — Dong Chinese convention.
+     iconic = green · meaning = red · sound = blue
+     remnant = chartreuse · simplified = teal
+     distinguishing = purple · deleted/unknown = gray */
+  --role-iconic: #16a34a;
+  --role-meaning: #dc2626;
+  --role-sound: #2563eb;
+  --role-remnant: #84cc16;
+  --role-simplified: #0d9488;
   --role-deleted: #6b7280;
+  --role-distinguishing: #9333ea;
   --role-unknown: #6b7280;
   --role-word: #1d1b18;
 
@@ -62,12 +68,15 @@
     --muted: #a39c8f;
     --accent: #e07070;
     --border: #2a2620;
-    /* Role colors lightened ~20% for dark-mode contrast (UX-10). */
-    --role-iconic: #60a5fa;
-    --role-meaning: #4ade80;
-    --role-sound: #f87171;
-    --role-simplified: #c084fc;
+    /* Role colors lightened ~20% for dark-mode contrast (UX-10).
+       Dong Chinese convention — see :root block for the mapping. */
+    --role-iconic: #4ade80;
+    --role-meaning: #f87171;
+    --role-sound: #60a5fa;
+    --role-remnant: #bef264;
+    --role-simplified: #5eead4;
     --role-deleted: #9ca3af;
+    --role-distinguishing: #c084fc;
     --role-unknown: #9ca3af;
     --role-word: #ece7dc;
     --grade-again: #f87171;

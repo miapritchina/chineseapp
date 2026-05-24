@@ -17,13 +17,17 @@
   --border:    #e4dfd5;   /* Dividers, card strokes, input borders    */
 
   /* ── Decomposition role colors ─────────────────────────────────── */
-  --role-iconic:      #2563eb;  /* Blue  — pictographic / iconic comp  */
-  --role-meaning:     #16a34a;  /* Green — semantic / meaning comp     */
-  --role-sound:       #dc2626;  /* Red   — phonetic / sound comp       */
-  --role-simplified:  #9333ea;  /* Purple — simplification artifact    */
-  --role-deleted:     #6b7280;  /* Gray  — historically deleted comp   */
-  --role-unknown:     #6b7280;  /* Gray  — role not determined         */
-  --role-word:        #1d1b18;  /* Ink   — word-root node in the tree  */
+  /* Decomposition role palette — Dong Chinese convention
+     (https://www.dong-chinese.com/wiki/home#components).         */
+  --role-iconic:         #16a34a;  /* Green     — pictographic / form         */
+  --role-meaning:        #dc2626;  /* Red       — semantic                    */
+  --role-sound:          #2563eb;  /* Blue      — phonetic                    */
+  --role-remnant:        #84cc16;  /* Chartreuse — derived from another char  */
+  --role-simplified:     #0d9488;  /* Teal      — simplification artifact     */
+  --role-deleted:        #6b7280;  /* Gray      — removed in simplification   */
+  --role-distinguishing: #9333ea;  /* Purple    — added to disambiguate       */
+  --role-unknown:        #6b7280;  /* Gray      — role undetermined           */
+  --role-word:           #1d1b18;  /* Ink       — word-root node in the tree  */
 
   /* ── Part-of-speech colors (Sentence Studio) ───────────────────
      Set inline as --pos-c per chip/token; these named tokens promote
@@ -178,13 +182,15 @@
     --accent:    #e07070;
     --border:    #2a2620;
 
-    --role-iconic:     #60a5fa;
-    --role-meaning:    #4ade80;
-    --role-sound:      #f87171;
-    --role-simplified: #c084fc;
-    --role-deleted:    #9ca3af;
-    --role-unknown:    #9ca3af;
-    --role-word:       #ece7dc;
+    --role-iconic:         #4ade80;
+    --role-meaning:        #f87171;
+    --role-sound:          #60a5fa;
+    --role-remnant:        #bef264;
+    --role-simplified:     #5eead4;
+    --role-deleted:        #9ca3af;
+    --role-distinguishing: #c084fc;
+    --role-unknown:        #9ca3af;
+    --role-word:           #ece7dc;
 
     --status-saved:   #f59e0b;
     --status-review:  #fb923c;

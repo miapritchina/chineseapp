@@ -34,13 +34,17 @@ Used to tint tree-node cards, SVG link strokes, role badges, and etymology-row g
 
 | Token | Light | Dark | Role |
 |---|---|---|---|
-| `--role-iconic` | `#2563eb` | `#60a5fa` | Pictographic / iconic component |
-| `--role-meaning` | `#16a34a` | `#4ade80` | Semantic / meaning component |
-| `--role-sound` | `#dc2626` | `#f87171` | Phonetic / sound component |
-| `--role-simplified` | `#9333ea` | `#c084fc` | Simplification artifact |
-| `--role-deleted` | `#6b7280` | `#9ca3af` | Historically deleted component |
+| `--role-iconic` | `#16a34a` | `#4ade80` | Pictographic / form (Dong Chinese: green) |
+| `--role-meaning` | `#dc2626` | `#f87171` | Semantic (Dong Chinese: red) |
+| `--role-sound` | `#2563eb` | `#60a5fa` | Phonetic (Dong Chinese: blue) |
+| `--role-remnant` | `#84cc16` | `#bef264` | Derived from part of another character (chartreuse) |
+| `--role-simplified` | `#0d9488` | `#5eead4` | Component changed during simplification (teal) |
+| `--role-deleted` | `#6b7280` | `#9ca3af` | Component removed during simplification |
+| `--role-distinguishing` | `#9333ea` | `#c084fc` | Added to distinguish a similar character (purple) |
 | `--role-unknown` | `#6b7280` | `#9ca3af` | Role undetermined |
 | `--role-word` | `#1d1b18` | `#ece7dc` | Word-root node (matches `--text`) |
+
+The eight component categories follow the [Dong Chinese taxonomy](https://www.dong-chinese.com/wiki/home#components): _meaning_, _sound_, _iconic_, _remnant_, _simplified_, _deleted_, _distinguishing_, _unknown_.
 
 ### 2.3 Part-of-speech colors (Sentence Studio)
 
@@ -111,13 +115,15 @@ Dark overrides: Correct → `#6dba84` / `rgba(109,186,132,0.15)` / `#6dba84`; Wr
   --accent: #b12a2a;
   --border: #e4dfd5;
 
-  --role-iconic: #2563eb;
-  --role-meaning: #16a34a;
-  --role-sound: #dc2626;
-  --role-simplified: #9333ea;
-  --role-deleted: #6b7280;
-  --role-unknown: #6b7280;
-  --role-word: #1d1b18;
+  --role-iconic:         #16a34a;
+  --role-meaning:        #dc2626;
+  --role-sound:          #2563eb;
+  --role-remnant:        #84cc16;
+  --role-simplified:     #0d9488;
+  --role-deleted:        #6b7280;
+  --role-distinguishing: #9333ea;
+  --role-unknown:        #6b7280;
+  --role-word:           #1d1b18;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -130,13 +136,15 @@ Dark overrides: Correct → `#6dba84` / `rgba(109,186,132,0.15)` / `#6dba84`; Wr
     --accent: #e07070;
     --border: #2a2620;
 
-    --role-iconic: #60a5fa;
-    --role-meaning: #4ade80;
-    --role-sound: #f87171;
-    --role-simplified: #c084fc;
-    --role-deleted: #9ca3af;
-    --role-unknown: #9ca3af;
-    --role-word: #ece7dc;
+    --role-iconic:         #4ade80;
+    --role-meaning:        #f87171;
+    --role-sound:          #60a5fa;
+    --role-remnant:        #bef264;
+    --role-simplified:     #5eead4;
+    --role-deleted:        #9ca3af;
+    --role-distinguishing: #c084fc;
+    --role-unknown:        #9ca3af;
+    --role-word:           #ece7dc;
   }
 }
 ```

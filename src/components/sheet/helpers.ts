@@ -11,7 +11,9 @@ export function commonnessLabel(rank: number | null | undefined): string | null 
 
 // Reads the role palette from CSS (--role-* in :root / styles.css) so
 // there's one source of truth — keep in step with the .role-* /
-// .node-card.role-* rules and design-tokens.css.
+// .node-card.role-* rules and design-tokens.css. Dong Chinese
+// component-role taxonomy: meaning · sound · iconic · remnant ·
+// simplified · deleted · distinguishing · unknown.
 export function roleColor(type: string | undefined): string | undefined {
   switch (type) {
     case "sound":
@@ -20,6 +22,16 @@ export function roleColor(type: string | undefined): string | undefined {
       return "var(--role-meaning)";
     case "iconic":
       return "var(--role-iconic)";
+    case "remnant":
+      return "var(--role-remnant)";
+    case "simplified":
+      return "var(--role-simplified)";
+    case "distinguishing":
+      return "var(--role-distinguishing)";
+    case "deleted":
+      return "var(--role-deleted)";
+    case "unknown":
+      return "var(--role-unknown)";
     default:
       return undefined;
   }

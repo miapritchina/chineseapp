@@ -10,8 +10,10 @@
   color-scheme: light dark;
   --bg: #faf8f4; --surface: #fefdfb; --card-bg: #ffffff; --surface-2: #f0ece4;
   --text: #1d1b18; --muted: #6b6359; --accent: #b12a2a; --border: #e4dfd5;
-  --role-iconic: #2563eb; --role-meaning: #16a34a; --role-sound: #dc2626;
-  --role-simplified: #9333ea; --role-deleted: #6b7280; --role-unknown: #6b7280;
+  /* Dong Chinese role palette */
+  --role-iconic: #16a34a; --role-meaning: #dc2626; --role-sound: #2563eb;
+  --role-remnant: #84cc16; --role-simplified: #0d9488; --role-deleted: #6b7280;
+  --role-distinguishing: #9333ea; --role-unknown: #6b7280;
   --role-word: #1d1b18;
   --pos-pron: #6b3a8a; --pos-v: #b14430; --pos-n: #2f5a8e;
   --pos-adj: #4f7d3a; --pos-adv: #8a6a26; --pos-part: #8a8273; --pos-conj: #7a6a8a;
@@ -29,8 +31,9 @@
   :root {
     --bg: #16140f; --surface: #1d1a13; --card-bg: #211e15; --surface-2: #272319;
     --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
-    --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
-    --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
+    --role-iconic: #4ade80; --role-meaning: #f87171; --role-sound: #60a5fa;
+    --role-remnant: #bef264; --role-simplified: #5eead4; --role-deleted: #9ca3af;
+    --role-distinguishing: #c084fc; --role-unknown: #9ca3af;
     --role-word: #ece7dc;
     --status-saved: #f59e0b; --status-review: #fb923c;
     --status-learned: #6dba84; --status-wrote: #b07ad8;
@@ -43,8 +46,9 @@
 .force-dark {
   --bg: #16140f; --surface: #1d1a13; --card-bg: #211e15; --surface-2: #272319;
   --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
-  --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
-  --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
+  --role-iconic: #4ade80; --role-meaning: #f87171; --role-sound: #60a5fa;
+  --role-remnant: #bef264; --role-simplified: #5eead4; --role-deleted: #9ca3af;
+  --role-distinguishing: #c084fc; --role-unknown: #9ca3af;
   --role-word: #ece7dc;
   --status-saved: #f59e0b; --status-review: #fb923c;
   --status-learned: #6dba84; --status-wrote: #b07ad8;
@@ -453,13 +457,13 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
   <span class="ex-role-glyph">
     <span class="ex-role-glyph-pinyin">rì</span>
     <span class="ex-role-glyph-char" style="color:var(--role-iconic)">日</span>
-    <span class="ex-role-glyph-meaning">sun</span>
+    <span class="ex-role-glyph-meaning">sun (iconic)</span>
   </span>
   <span style="font-size:16px;color:var(--muted)">+</span>
   <span class="ex-role-glyph">
     <span class="ex-role-glyph-pinyin">yuè</span>
-    <span class="ex-role-glyph-char" style="color:var(--role-meaning)">月</span>
-    <span class="ex-role-glyph-meaning">moon</span>
+    <span class="ex-role-glyph-char" style="color:var(--role-iconic)">月</span>
+    <span class="ex-role-glyph-meaning">moon (iconic)</span>
   </span>
   <span style="font-size:16px;color:var(--muted)">=</span>
   <span class="ex-role-glyph">
@@ -468,12 +472,55 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
     <span class="ex-role-glyph-meaning">bright</span>
   </span>
 </div>
-<div style="font-size:12px;color:var(--muted);margin-top:4px;">
-  <span style="color:var(--role-iconic)">■</span> Iconic &nbsp;
-  <span style="color:var(--role-meaning)">■</span> Meaning &nbsp;
-  <span style="color:var(--role-sound)">■</span> Sound &nbsp;
-  <span style="color:var(--role-simplified)">■</span> Simplified &nbsp;
-  <span style="color:var(--role-deleted)">■</span> Deleted
+
+<p style="font-size:12px;color:var(--muted);margin:12px 0 8px;max-width:620px;line-height:1.5;">
+  Eight component categories — Dong Chinese taxonomy
+  (<a href="https://www.dong-chinese.com/wiki/home#components" style="color:inherit;text-decoration:underline;">reference</a>).
+  Live source: <code>src/styles.css :root</code> → <code>--role-*</code>.
+</p>
+<div style="display:flex;flex-wrap:wrap;gap:14px 18px;font-size:12px;color:var(--muted);max-width:620px;">
+  <span><span style="color:var(--role-meaning)">■</span> Meaning — semantic hint</span>
+  <span><span style="color:var(--role-sound)">■</span> Sound — phonetic hint</span>
+  <span><span style="color:var(--role-iconic)">■</span> Iconic — pictograph / form</span>
+  <span><span style="color:var(--role-remnant)">■</span> Remnant — taken from another char</span>
+  <span><span style="color:var(--role-simplified)">■</span> Simplified — changed to fewer strokes</span>
+  <span><span style="color:var(--role-deleted)">■</span> Deleted — removed during simplification</span>
+  <span><span style="color:var(--role-distinguishing)">■</span> Distinguishing — added to disambiguate</span>
+  <span><span style="color:var(--role-unknown)">■</span> Unknown — undetermined</span>
+</div>
+
+<h3>Role examples (Dong Chinese)</h3>
+<div class="example-row" style="align-items:center;flex-wrap:wrap;gap:18px;">
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">mā</span>
+    <span class="ex-role-glyph-char">妈</span>
+    <span class="ex-role-glyph-meaning">"mother" with <span style="color:var(--role-meaning)">女</span> meaning</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">mā</span>
+    <span class="ex-role-glyph-char">妈</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-sound)">马</span> mǎ as sound</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">xiào</span>
+    <span class="ex-role-glyph-char">孝</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-remnant)">耂</span> remnant of 老</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">nán</span>
+    <span class="ex-role-glyph-char">难</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-simplified)">又</span> simplified</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">kāi</span>
+    <span class="ex-role-glyph-char">开</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-deleted)">门</span> deleted from 開</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">yù</span>
+    <span class="ex-role-glyph-char">玉</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-distinguishing)">、</span> distinguishes from 王</span>
+  </span>
 </div>
 
 <h3>Error Banner</h3>
@@ -500,10 +547,11 @@ function renderSwatches(list, lightEl, darkEl) {
 }
 renderSwatches(CORE, document.getElementById('light-swatches'), document.getElementById('dark-swatches'));
 
-// Role swatches
+// Role swatches — Dong Chinese taxonomy + colors
 const ROLES = [
-  ['iconic','#2563eb'],['meaning','#16a34a'],['sound','#dc2626'],
-  ['simplified','#9333ea'],['deleted','#6b7280'],['unknown','#6b7280'],['word','#1d1b18']
+  ['meaning','#dc2626'],['sound','#2563eb'],['iconic','#16a34a'],
+  ['remnant','#84cc16'],['simplified','#0d9488'],['deleted','#6b7280'],
+  ['distinguishing','#9333ea'],['unknown','#6b7280'],['word','#1d1b18']
 ];
 const roleEl = document.getElementById('role-swatches');
 ROLES.forEach(([name, hex]) => {
