@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
-import { buildStarterMnemonic, buildStarterWordMnemonic } from "../lib/mnemonics";
 import { toneLabel } from "../lib/pinyin";
-import { detectPos, POS_LABEL, POS_COLOR } from "../lib/pos";
-import { hanziScaleStyle } from "../lib/hanzi";
-import { useCharsCtx, useDictCtx, useMnemonicsCtx, useSavedCtx } from "../state/contexts";
-import { HanziGlyph, type HanziGlyphHandle } from "./ui/HanziGlyph";
-import { SpeakButton } from "./ui/SpeakButton";
+import { detectPos } from "../lib/pos";
+import { useCharsCtx, useSavedCtx } from "../state/contexts";
+import { SheetHeader } from "./sheet/SheetHeader";
+import { EtymologySection } from "./sheet/EtymologySection";
+import { RelatedSection } from "./sheet/RelatedSection";
+import { MnemonicSection } from "./sheet/MnemonicSection";
+import { commonnessLabel, roleColor } from "./sheet/helpers";
 
 interface Props {
   // Exactly one of these identifies the entity. `word` wins when both
@@ -28,20 +29,17 @@ interface Props {
 // results, decomposition-tree nodes and the sheet's own sub-entity
 // chips all land on the same chrome.
 //
-// Layout (from the design handoff):
-//   PINYIN · TONE n · TOP n
-//   大字 / 词        (single chars: tap to replay the stroke animation;
-//                     words: tap 🔊 to hear it)
-//   POS • gloss · gloss · gloss
-//   ── Nº 01 · ETYMOLOGY / MADE OF   (one level; each piece taps into
-//                                     its own sheet; ⤢ → full tree)
-//   ── Nº 02 · IN YOUR SAVED WORDS / CHARACTERS
-//   ── 💡 Make it stick              (editable mnemonic)
+// This file is the shell — identity resolution, drag-to-dismiss, the
+// status corner, section numbering. The four content blocks live in
+// src/components/sheet/:
+//   ── (header)                — SheetHeader (eyebrow + glyph + defs)
+//   ── Nº 01 · ETYMOLOGY / MADE OF      — EtymologySection
+//   ── Nº 02 · IN YOUR SAVED WORDS / CHARACTERS — RelatedSection
+//   ── 💡 Make it stick        — MnemonicSection
 export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, onOpenTree }: Props) {
   const { chars } = useCharsCtx();
   const { saved, getStatus, setStatus } = useSavedCtx();
-  const { get: getMnemonic, save: saveMnemonic, clear: clearMnemonic } = useMnemonicsCtx();
-  const { findWord } = useDictCtx();
+
   // ── Identity ───────────────────────────────────────────────────
   const key = word?.word ?? charKey ?? "";
   const isMultiCharWord = !!word && [...word.word].length > 1;
@@ -57,11 +55,8 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
   const freq = commonnessLabel(word?.rank);
   const pos = defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
 
-  // ── Refs ───────────────────────────────────────────────────────
-  const glyphRef = useRef<HanziGlyphHandle>(null);
+  // ── Refs + dismiss state ───────────────────────────────────────
   const panelRef = useRef<HTMLDivElement>(null);
-
-  // ── Drag-to-dismiss (mobile only) ──────────────────────────────
   const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 699px)").matches;
   const dragStartY = useRef<number | null>(null);
   const [dragDy, setDragDy] = useState(0);
@@ -83,6 +78,12 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
     else setDragDy(0);
   };
 
+  // Reset drag offset on entity change so the panel doesn't stay
+  // translated when the user drills into a sub-entity mid-drag.
+  useEffect(() => {
+    setDragDy(0);
+  }, [key]);
+
   // ── Escape closes ──────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -91,45 +92,6 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  // ── Mnemonic ("💡 Make it stick") ──────────────────────────────
-  const starter = isMultiCharWord
-    ? buildStarterWordMnemonic(word!.word, pinyin, defs[0] ?? "", chars)
-    : buildStarterMnemonic(key, charData);
-  const stored = getMnemonic(key);
-  const [mnemonic, setMnemonic] = useState<string>(() => stored?.text ?? starter);
-  const [editedFlag, setEditedFlag] = useState<boolean>(() => !!stored?.edited);
-  const [mnemonicEditing, setMnemonicEditing] = useState(false);
-  useEffect(() => {
-    const s = getMnemonic(key);
-    setMnemonic(s?.text ?? starter);
-    setEditedFlag(!!s?.edited);
-    setMnemonicEditing(false);
-    setDragDy(0);
-    // Re-derive when the entity key changes (the component instance is
-    // reused as the user drills around). `starter` / `getMnemonic` are
-    // referentially unstable; the effect intentionally doesn't re-fire
-    // on those.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-  const persistMnemonic = (text: string) => {
-    if (text === starter && !editedFlag) {
-      clearMnemonic(key);
-      return;
-    }
-    saveMnemonic(key, text);
-    setEditedFlag(true);
-  };
-  const resetMnemonic = () => {
-    clearMnemonic(key);
-    setMnemonic(starter);
-    setEditedFlag(false);
-    setMnemonicEditing(false);
-  };
-
-  // Stroke animation lives in <HanziGlyph mode="animate"> (single-char
-  // entities only); replay is fired imperatively from the glyph box tap.
-  const replay = () => glyphRef.current?.replay();
 
   // ── Etymology / "made of" pieces ───────────────────────────────
   // For a word: the characters it's spelled with. For a character:
@@ -193,188 +155,50 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
           />
         </div>
 
-        <div className="sheet-eyebrow">
-          <span>{pinyin ? pinyin.toUpperCase() : key}</span>
-          {tone && <span className="sheet-eyebrow-dim"> · {tone}</span>}
-          {freq && <span className="sheet-eyebrow-dim"> · {freq.toUpperCase()}</span>}
-        </div>
+        <SheetHeader
+          itemKey={key}
+          word={word}
+          isMultiCharWord={isMultiCharWord}
+          pinyin={pinyin}
+          tone={tone}
+          freq={freq}
+          pos={pos}
+          defs={defs}
+        />
 
-        {isMultiCharWord ? (
-          <div className="sheet-glyph sheet-glyph-word" style={hanziScaleStyle(word!.word)}>
-            <span className="sheet-glyph-text">{word!.word}</span>
-            <SpeakButton text={word!.word} className="sheet-speak" />
-          </div>
-        ) : (
-          <div
-            className="sheet-glyph"
-            role="button"
-            tabIndex={0}
-            aria-label={`Replay stroke animation for ${key}`}
-            onClick={replay}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                replay();
-              }
-            }}
-          >
-            <HanziGlyph ref={glyphRef} char={key} mode="animate" />
-          </div>
+        {hasEtym && etymNo && (
+          <EtymologySection
+            num={etymNo}
+            itemKey={key}
+            isMultiCharWord={isMultiCharWord}
+            pieces={pieces}
+            charData={charData}
+            onOpenChar={onOpenChar}
+            onOpenTree={onOpenTree}
+          />
         )}
 
-        <div className="sheet-defs">
-          {pos && (
-            <span className="sheet-pos" style={{ color: POS_COLOR[pos] }}>
-              {POS_LABEL[pos].toUpperCase()}
-            </span>
-          )}
-          {pos && <span className="sheet-defs-sep"> • </span>}
-          {defs.length ? (
-            <span className="sheet-defs-text">{defs.join(" · ")}</span>
-          ) : (
-            <span className="sheet-defs-text sheet-muted">No dictionary entry.</span>
-          )}
-        </div>
-
-        {hasEtym && (
-          <section className="sheet-section">
-            <div className="sheet-section-head">
-              <span className="sheet-section-num">Nº {etymNo}</span>
-              <span className="sheet-section-name">
-                {isMultiCharWord ? "MADE OF" : "ETYMOLOGY"}
-              </span>
-            </div>
-            {pieces.length > 0 && (
-              <div className="sheet-etym-row">
-                {pieces.map((p, i) => (
-                  <span key={`${p.char}-${i}`} className="sheet-etym-piece">
-                    {i > 0 && <span className="sheet-etym-op">+</span>}
-                    <button
-                      type="button"
-                      className="sheet-etym-glyph sheet-etym-glyph-btn"
-                      style={p.color ? { color: p.color } : undefined}
-                      onClick={() => onOpenChar(p.char)}
-                      title={`Open ${p.char}`}
-                    >
-                      {p.char}
-                    </button>
-                  </span>
-                ))}
-                <span className="sheet-etym-op">=</span>
-                <span className="sheet-etym-glyph sheet-etym-result">{key}</span>
-                <button
-                  type="button"
-                  className="sheet-etym-expand"
-                  aria-label="Open the full decomposition tree"
-                  title="Full decomposition tree"
-                  onClick={onOpenTree}
-                >
-                  ⤢
-                </button>
-              </div>
-            )}
-            {!isMultiCharWord &&
-              charData?.originalMeaning &&
-              charData.originalMeaning !== "characterless component" && (
-                <div className="sheet-etym-note">Originally: {charData.originalMeaning}</div>
-              )}
-            {!isMultiCharWord && charData?.notes && (
-              <div className="sheet-etym-note sheet-etym-note-em">{charData.notes}</div>
-            )}
-          </section>
+        {(isMultiCharWord || matches.length > 0) && peopleNo && (
+          <RelatedSection
+            num={peopleNo}
+            isMultiCharWord={isMultiCharWord}
+            word={word}
+            matches={matches}
+            onOpenWord={onOpenWord}
+            onOpenChar={onOpenChar}
+          />
         )}
 
-        {(isMultiCharWord || matches.length > 0) && (
-          <section className="sheet-section">
-            <div className="sheet-section-head">
-              <span className="sheet-section-num">Nº {peopleNo}</span>
-              <span className="sheet-section-name">
-                {isMultiCharWord ? "CHARACTERS" : "IN YOUR SAVED WORDS"}
-              </span>
-            </div>
-            <div className="sheet-saved-list">
-              {isMultiCharWord
-                ? [...word!.word].map((c, i) => {
-                    const cd = chars[c];
-                    const gloss = cd?.definitions?.[0] ?? "";
-                    return (
-                      <button
-                        key={`${c}-${i}`}
-                        className="sheet-saved-row"
-                        type="button"
-                        onClick={() => onOpenChar(c)}
-                      >
-                        <span className="sheet-saved-hanzi">{c}</span>
-                        {cd?.pinyin && <span className="sheet-saved-pinyin">{cd.pinyin}</span>}
-                        {gloss && <span className="sheet-saved-gloss">{gloss}</span>}
-                      </button>
-                    );
-                  })
-                : matches.map((w) => {
-                    const wd = findWord(w);
-                    const gloss = wd?.definitions?.[0] ?? "";
-                    return (
-                      <button
-                        key={w}
-                        className="sheet-saved-row"
-                        type="button"
-                        onClick={() => onOpenWord(w)}
-                      >
-                        <span className="sheet-saved-hanzi">{w}</span>
-                        {wd?.pinyin && <span className="sheet-saved-pinyin">{wd.pinyin}</span>}
-                        {gloss && <span className="sheet-saved-gloss">{gloss}</span>}
-                      </button>
-                    );
-                  })}
-            </div>
-          </section>
-        )}
-
-        <section className="sheet-section">
-          <div className="sheet-section-head">
-            <span className="sheet-section-num">Nº {mnemonicNo}</span>
-            <span className="sheet-section-name sheet-mnemonic-title">
-              💡 MAKE IT STICK
-              {editedFlag && <span className="mnemonic-saved-tag">your version</span>}
-            </span>
-            {editedFlag && (
-              <button
-                type="button"
-                className="mnemonic-reset"
-                onClick={resetMnemonic}
-                title="Reset to the auto-suggested mnemonic"
-              >
-                reset
-              </button>
-            )}
-          </div>
-          {mnemonicEditing ? (
-            <textarea
-              className="mnemonic-textarea"
-              value={mnemonic}
-              autoFocus
-              onChange={(e) => setMnemonic(e.target.value)}
-              onBlur={() => {
-                persistMnemonic(mnemonic);
-                setMnemonicEditing(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") setMnemonicEditing(false);
-              }}
-              rows={3}
-              placeholder="Write a story, image, or hook that makes this stick…"
-            />
-          ) : (
-            <button
-              type="button"
-              className={`mnemonic-display${editedFlag ? " is-edited" : " is-default"}`}
-              onClick={() => setMnemonicEditing(true)}
-              title="Tap to edit"
-            >
-              {mnemonic || starter}
-            </button>
-          )}
-        </section>
+        <MnemonicSection
+          num={mnemonicNo}
+          itemKey={key}
+          isMultiCharWord={isMultiCharWord}
+          pinyin={pinyin}
+          defs={defs}
+          charData={charData}
+          word={word}
+          chars={chars}
+        />
 
         <a
           className="sheet-network-link"
@@ -387,31 +211,4 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
       </div>
     </div>
   );
-}
-
-// One-line frequency band for the corpus rank. The user asked: no HSK,
-// but keep a hint. Ranges loosely follow the chinese-lexicon rank
-// distribution. Mirrors the helper that used to live in WordDetail.
-function commonnessLabel(rank: number | null | undefined): string | null {
-  if (rank == null) return null;
-  if (rank < 1000) return "Top 1 000";
-  if (rank < 3000) return "Top 3 000";
-  if (rank < 10000) return "Top 10 000";
-  return "Less common";
-}
-
-// Reads the role palette from CSS (--role-* in :root / styles.css) so there's
-// one source of truth — keep in step with the .role-* / .node-card.role-*
-// rules and design-tokens.css.
-function roleColor(type: string | undefined): string | undefined {
-  switch (type) {
-    case "sound":
-      return "var(--role-sound)";
-    case "meaning":
-      return "var(--role-meaning)";
-    case "iconic":
-      return "var(--role-iconic)";
-    default:
-      return undefined;
-  }
 }
