@@ -328,39 +328,54 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
 
 <h3>Entity Component (§0) — five sizes</h3>
 <p style="font-size:13px;color:var(--muted);margin:-4px 0 8px;max-width:560px;line-height:1.5;">
-  One component, five sizes. Shared visual DNA: pinyin (top) → hanzi (center) → meaning + POS (bottom). Status corner at <code>md</code>+; role-color border via <code>--entity-role</code> when supplied.
+  One component, five sizes. Shared visual DNA: pinyin (top) → hanzi (center) → meaning (bottom). Status corner at <code>md</code>+; role-color border via <code>--entity-role</code> when supplied. POS (adj / noun …) is <strong>off by default</strong> — opt in per call site with <code>showPos</code>.
   Live source: <code>src/components/Entity.tsx</code>.
 </p>
 
-<div class="example-row" style="align-items:flex-end">
+<div class="example-row" style="align-items:flex-end;gap:14px">
   <!-- tiny -->
-  <div class="ex-entity ex-entity-tiny">
-    <div class="ex-entity-pinyin">hǎo</div>
-    <div class="ex-entity-hanzi">好</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-tiny">
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">tiny</code>
   </div>
   <!-- sm with role-color border -->
-  <div class="ex-entity ex-entity-sm" style="--entity-role:var(--pos-adj)">
-    <div class="ex-entity-pinyin">hǎo</div>
-    <div class="ex-entity-hanzi">好</div>
-    <div class="ex-entity-meaning">good <span style="color:var(--pos-adj);font-weight:500">adj</span></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-sm" style="--entity-role:var(--pos-adj)">
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+      <div class="ex-entity-meaning">good</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">sm</code>
   </div>
   <!-- md with status corner -->
-  <div class="ex-entity ex-entity-md">
-    <span class="ex-entity-status">★</span>
-    <div class="ex-entity-pinyin">hǎo</div>
-    <div class="ex-entity-hanzi">好</div>
-    <div class="ex-entity-meaning">good <span style="color:var(--pos-adj);font-weight:500">adj</span></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-md">
+      <span class="ex-entity-status">★</span>
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+      <div class="ex-entity-meaning">good</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">md</code>
   </div>
   <!-- lg with status corner + bigger -->
-  <div class="ex-entity ex-entity-lg">
-    <span class="ex-entity-status">★</span>
-    <div class="ex-entity-pinyin">hǎo</div>
-    <div class="ex-entity-hanzi">好</div>
-    <div class="ex-entity-meaning">good <span style="color:var(--pos-adj);font-weight:500">adj</span></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-lg">
+      <span class="ex-entity-status">★</span>
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+      <div class="ex-entity-meaning">good</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">lg</code>
   </div>
   <!-- hero (white-bg, drill focal) -->
-  <div class="ex-entity ex-entity-hero">
-    <div class="ex-entity-hanzi">好</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-hero">
+      <div class="ex-entity-hanzi">好</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">hero</code>
   </div>
 </div>
 

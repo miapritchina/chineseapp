@@ -71,11 +71,70 @@
         pointer-events: none;
       }
       .topbar > * { pointer-events: auto; }
-      .topbar a {
-        color: var(--accent); text-decoration: none; font-size: 14px;
-        padding: 4px 8px; border-radius: 6px;
+      .hamburger {
+        background: transparent; border: none;
+        width: 36px; height: 36px;
+        display: inline-flex; flex-direction: column;
+        justify-content: center; gap: 4px;
+        padding: 0 6px; cursor: pointer; border-radius: 8px;
+        -webkit-tap-highlight-color: transparent;
       }
-      .topbar a:hover { background: var(--surface-2); }
+      .hamburger:hover { background: var(--surface-2); }
+      .hamburger span {
+        display: block; height: 2px; background: var(--text);
+        border-radius: 2px;
+      }
+      .drawer { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
+      .drawer[aria-hidden="false"] { pointer-events: auto; }
+      .drawer-backdrop {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.32);
+        opacity: 0; transition: opacity 0.18s;
+      }
+      .drawer[aria-hidden="false"] .drawer-backdrop { opacity: 1; }
+      .drawer-panel {
+        position: absolute; top: 0; left: 0; bottom: 0;
+        width: min(260px, 80vw);
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 56px 16px 16px;
+        display: flex; flex-direction: column; gap: 4px;
+        transform: translateX(-100%); transition: transform 0.2s ease;
+        box-shadow: 4px 0 16px rgba(0,0,0,0.12);
+        overflow-y: auto;
+      }
+      .drawer[aria-hidden="false"] .drawer-panel { transform: translateX(0); }
+      .drawer-panel a {
+        color: var(--text); padding: 10px 12px; border-radius: 8px;
+        font-size: 15px; text-decoration: none;
+      }
+      .drawer-panel a:hover { background: var(--surface-2); }
+      .drawer-panel a.is-active { color: var(--accent); font-weight: 500; }
+      .drawer-close {
+        position: absolute; top: 10px; right: 10px;
+        width: 32px; height: 32px;
+        background: transparent; border: none; cursor: pointer;
+        font-size: 18px; color: var(--muted); border-radius: 8px;
+      }
+      .drawer-close:hover { background: var(--surface-2); color: var(--text); }
+      .drawer-legend {
+        margin-top: 18px; padding-top: 14px;
+        border-top: 1px solid var(--border);
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      .drawer-legend-title {
+        font-size: 10px; letter-spacing: 0.6px;
+        text-transform: uppercase; color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .drawer-legend-row {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 13px; color: var(--text);
+      }
+      .drawer-legend-row i {
+        display: inline-block; width: 10px; height: 10px;
+        border-radius: 50%; flex-shrink: 0;
+      }
       .topbar h1 {
         font-size: 16px; font-weight: 500; margin: 0;
         color: var(--text); letter-spacing: 0.5px;
@@ -120,19 +179,6 @@
         text-align: center; color: var(--muted);
       }
       .empty a { color: var(--accent); }
-      .tooltip {
-        position: fixed;
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 8px; padding: 6px 10px;
-        font-size: 13px; color: var(--text);
-        pointer-events: none; z-index: 20;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-        max-width: 240px; line-height: 1.3;
-        opacity: 0; transition: opacity 0.1s;
-      }
-      .tooltip.show { opacity: 1; }
-      .tooltip .pinyin { color: var(--muted); margin-left: 4px; }
-      .tooltip .gloss { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
       .gesture-hint {
         position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%);
         background: var(--surface); border: 1px solid var(--border);
@@ -147,11 +193,87 @@
         position: fixed; bottom: 6px; right: 10px;
         font-size: 10px; color: var(--muted); opacity: 0.6;
       }
+      /* In-page entity sheet — mirrors the main app's EntitySheet
+         shape. Opens on second-tap; closes on backdrop / ✕ / Escape. */
+      .sheet-overlay { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
+      .sheet-overlay[aria-hidden="false"] { pointer-events: auto; }
+      .sheet-overlay-backdrop {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.36);
+        opacity: 0; transition: opacity 0.18s;
+      }
+      .sheet-overlay[aria-hidden="false"] .sheet-overlay-backdrop { opacity: 1; }
+      .sheet-overlay-panel {
+        position: absolute; left: 50%; top: 50%;
+        transform: translate(-50%, calc(-50% + 12px));
+        opacity: 0;
+        width: min(420px, calc(100vw - 28px));
+        max-height: calc(100vh - 80px);
+        overflow: auto;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 26px 22px 22px;
+        box-shadow: 0 14px 36px rgba(0,0,0,0.22);
+        transition: opacity 0.18s ease, transform 0.2s ease;
+      }
+      .sheet-overlay[aria-hidden="false"] .sheet-overlay-panel {
+        transform: translate(-50%, -50%); opacity: 1;
+      }
+      .sheet-overlay-close {
+        position: absolute; top: 8px; right: 8px;
+        width: 32px; height: 32px;
+        background: transparent; border: none; cursor: pointer;
+        font-size: 16px; color: var(--muted); border-radius: 8px;
+      }
+      .sheet-overlay-close:hover { background: var(--surface-2); color: var(--text); }
+      .sheet-overlay-pinyin {
+        font-size: 11px; letter-spacing: 0.8px;
+        color: var(--muted); text-transform: uppercase;
+      }
+      .sheet-overlay-hanzi {
+        font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+        font-size: 48px; line-height: 1.1;
+        margin: 2px 0 8px;
+      }
+      .sheet-overlay-meaning { font-size: 15px; color: var(--text); line-height: 1.4; }
+      .sheet-overlay-section {
+        margin-top: 16px; padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+      .sheet-overlay-section-head {
+        font-size: 10px; letter-spacing: 0.6px;
+        color: var(--muted); text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .sheet-overlay-pieces { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+      .sheet-overlay-piece {
+        display: grid; grid-template-rows: 14px auto 14px;
+        align-items: center; justify-items: center; row-gap: 2px;
+      }
+      .sheet-overlay-piece-pinyin,
+      .sheet-overlay-piece-meaning {
+        font-size: 10px; color: var(--muted);
+        max-width: 12ch; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap;
+      }
+      .sheet-overlay-piece-glyph {
+        font-family: "PingFang SC","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+        font-size: 26px; color: var(--text); padding: 0 4px;
+      }
+      .sheet-overlay-op { font-size: 16px; color: var(--muted); padding: 0 2px; }
+      .sheet-overlay-open {
+        display: inline-block; margin-top: 14px;
+        color: var(--accent); text-decoration: none; font-size: 13px;
+      }
+      .sheet-overlay-open:hover { text-decoration: underline; }
     </style>
   </head>
   <body>
     <div class="topbar">
-      <a href="../">← 中文</a>
+      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
       <h1>Components</h1>
       <div class="toolbar" id="toolbar">
         <input class="search" id="search" type="search" placeholder="char or pinyin" autocomplete="off" />
@@ -160,19 +282,48 @@
         <button class="pill" data-layout="grid">Grid</button>
       </div>
     </div>
+    <nav class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-backdrop" data-close></div>
+      <div class="drawer-panel" role="dialog" aria-label="Menu">
+        <button class="drawer-close" data-close aria-label="Close menu">✕</button>
+        <a href="../">中文 · Home</a>
+        <a href="../#/review">Review</a>
+        <a href="../#/phonetics">Phonetics</a>
+        <a href="../network/">Network</a>
+        <a href="./" class="is-active">Components</a>
+        <div class="drawer-legend">
+          <div class="drawer-legend-title">Component roles</div>
+          <div class="drawer-legend-row"><i style="background: var(--role-meaning)"></i>Meaning</div>
+          <div class="drawer-legend-row"><i style="background: var(--role-sound)"></i>Sound</div>
+          <div class="drawer-legend-row"><i style="background: var(--role-iconic)"></i>Iconic</div>
+          <div class="drawer-legend-row"><i style="background: var(--role-simplified)"></i>Simplified</div>
+          <div class="drawer-legend-row"><i style="background: var(--role-deleted)"></i>Deleted</div>
+        </div>
+        <div class="drawer-legend">
+          <div class="drawer-legend-title">Word tiers</div>
+          <div class="drawer-legend-row"><i style="background: var(--word)"></i>Saved</div>
+          <div class="drawer-legend-row"><i style="background: var(--word-learned)"></i>Learned</div>
+          <div class="drawer-legend-row"><i style="background: var(--word-wrote)"></i>Wrote</div>
+        </div>
+      </div>
+    </nav>
     <div id="cy"></div>
-    <div class="gesture-hint" id="gestureHint">Long-press for translation · Double-tap to open</div>
-    <div class="legend">
-      <span><span class="legend-square" style="background: var(--word)"></span>Word</span>
-      <span><span class="legend-square" style="background: var(--word-learned)"></span>Learned</span>
-      <span><span class="legend-square" style="background: var(--word-wrote)"></span>Wrote</span>
-      <span><span class="legend-dot" style="background: var(--char)"></span>Char (in word)</span>
-      <span><span class="legend-dot" style="background: var(--role-iconic)"></span>Iconic</span>
-      <span><span class="legend-dot" style="background: var(--role-meaning)"></span>Meaning</span>
-      <span><span class="legend-dot" style="background: var(--role-sound)"></span>Sound</span>
+    <div class="sheet-overlay" id="entitySheet" aria-hidden="true">
+      <div class="sheet-overlay-backdrop" data-close-sheet></div>
+      <div class="sheet-overlay-panel" role="dialog" aria-label="Entity details">
+        <button class="sheet-overlay-close" data-close-sheet aria-label="Close">✕</button>
+        <div class="sheet-overlay-pinyin" id="sheetPinyin"></div>
+        <div class="sheet-overlay-hanzi" id="sheetHanzi"></div>
+        <div class="sheet-overlay-meaning" id="sheetMeaning"></div>
+        <div class="sheet-overlay-section" id="sheetMadeOfSec" hidden>
+          <div class="sheet-overlay-section-head" id="sheetMadeOfHead">MADE OF</div>
+          <div class="sheet-overlay-pieces" id="sheetMadeOf"></div>
+        </div>
+        <a class="sheet-overlay-open" id="sheetOpenInApp" href="#">Open in main app →</a>
+      </div>
     </div>
-    <div class="tooltip" id="tip"></div>
-    <div class="page-id">components v3</div>
+    <div class="gesture-hint" id="gestureHint">Tap once to focus · tap again to open</div>
+    <div class="page-id">components v4</div>
 
     <script type="module">
       import { buildGraph } from "./graph-data.mjs";
@@ -198,15 +349,6 @@
           return j.chars || {};
         } catch (_) { return {}; }
       }
-
-      const tip = document.getElementById("tip");
-      function showTip(html, x, y) {
-        tip.innerHTML = html;
-        tip.style.left = (x + 12) + "px";
-        tip.style.top  = (y + 12) + "px";
-        tip.classList.add("show");
-      }
-      function hideTip() { tip.classList.remove("show"); }
 
       function layoutFor(name) {
         if (name === "concentric") {
@@ -234,6 +376,94 @@
 
       let cy = null;
       let charsData = {};
+
+      // --- In-page entity sheet (no main-app redirect) -----------------
+      const SUPABASE_URL = "https://oigbbgtzzqiceetasayy.supabase.co";
+      const SUPABASE_ANON_KEY = "sb_publishable_YTd6bXMqUddNj4aFf1YRwA_T320qu3c";
+      const wordDefCache = new Map();
+      async function fetchWordDef(word) {
+        if (wordDefCache.has(word)) return wordDefCache.get(word);
+        try {
+          const r = await fetch(
+            `${SUPABASE_URL}/rest/v1/words?word=eq.${encodeURIComponent(word)}&select=pinyin,definitions`,
+            { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
+          );
+          if (!r.ok) { wordDefCache.set(word, null); return null; }
+          const rows = await r.json();
+          const row = rows[0] || null;
+          wordDefCache.set(word, row);
+          return row;
+        } catch (_) { wordDefCache.set(word, null); return null; }
+      }
+
+      const sheetEl = document.getElementById("entitySheet");
+      const sheetPinyin = document.getElementById("sheetPinyin");
+      const sheetHanzi = document.getElementById("sheetHanzi");
+      const sheetMeaning = document.getElementById("sheetMeaning");
+      const sheetMadeOfSec = document.getElementById("sheetMadeOfSec");
+      const sheetMadeOfHead = document.getElementById("sheetMadeOfHead");
+      const sheetMadeOf = document.getElementById("sheetMadeOf");
+      const sheetOpenInApp = document.getElementById("sheetOpenInApp");
+      function closeSheet() { sheetEl.setAttribute("aria-hidden", "true"); }
+      sheetEl.addEventListener("click", (e) => {
+        if (e.target.dataset.closeSheet !== undefined) closeSheet();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && sheetEl.getAttribute("aria-hidden") === "false") closeSheet();
+      });
+      function pieceMarkup(label, pinyin, meaning) {
+        return (
+          `<span class="sheet-overlay-piece">` +
+            `<span class="sheet-overlay-piece-pinyin">${pinyin || ""}</span>` +
+            `<span class="sheet-overlay-piece-glyph">${label}</span>` +
+            `<span class="sheet-overlay-piece-meaning">${meaning || ""}</span>` +
+          `</span>`
+        );
+      }
+      function setSheetMadeOf(label, kind, resultPinyin, resultMeaning) {
+        sheetMadeOfHead.textContent = kind === "word" ? "MADE OF" : "ETYMOLOGY";
+        const pieces = kind === "word"
+          ? [...label].map((c) => ({ char: c }))
+          : ((charsData[label]?.components || [])
+              .filter((c) => c && c.char && c.char !== "◎")
+              .map((c) => ({ char: c.char })));
+        if (pieces.length === 0) { sheetMadeOfSec.hidden = true; return; }
+        const inner = [];
+        pieces.forEach((p, i) => {
+          if (i > 0) inner.push(`<span class="sheet-overlay-op">+</span>`);
+          const cd = charsData[p.char];
+          inner.push(pieceMarkup(p.char, cd?.pinyin || "", cd?.definitions?.[0] || ""));
+        });
+        inner.push(`<span class="sheet-overlay-op">=</span>`);
+        inner.push(pieceMarkup(label, resultPinyin || "", resultMeaning || ""));
+        sheetMadeOf.innerHTML = inner.join("");
+        sheetMadeOfSec.hidden = false;
+      }
+      async function openSheet(node) {
+        const d = node.data();
+        const label = d.label;
+        const kind = d.kind;
+        if (kind === "word") {
+          const row = await fetchWordDef(label);
+          const pinyin = row?.pinyin || "";
+          const defs = Array.isArray(row?.definitions) ? row.definitions : [];
+          sheetPinyin.textContent = pinyin;
+          sheetHanzi.textContent = label;
+          sheetMeaning.textContent = defs.join(" · ");
+          setSheetMadeOf(label, "word", pinyin, defs[0] || "");
+          sheetOpenInApp.href = `../#/w/${encodeURIComponent(label)}`;
+        } else {
+          // char + component: same shape (component is just a char).
+          const cd = charsData[label];
+          sheetPinyin.textContent = cd?.pinyin || "";
+          sheetHanzi.textContent = label;
+          sheetMeaning.textContent = (cd?.definitions || []).slice(0, 4).join(" · ");
+          setSheetMadeOf(label, "char", cd?.pinyin || "", cd?.definitions?.[0] || "");
+          sheetOpenInApp.href = `../#/c/${encodeURIComponent(label)}`;
+        }
+        sheetEl.setAttribute("aria-hidden", "false");
+      }
+      // -------------------------------------------------------------------
 
       async function render() {
         const savedSet = loadSavedV2("chinese.saved");
@@ -300,7 +530,10 @@
               "curve-style": "bezier",
               "opacity": 0.55,
             }},
-            { selector: '.faded', style: { "opacity": 0.12 } },
+            { selector: 'node.active', style: {
+              "border-width": 3, "border-color": cssVar("--accent"),
+            }},
+            { selector: '.faded', style: { "opacity": 0.55 } },
             { selector: '.highlight', style: { "opacity": 1 } },
             { selector: '.match', style: {
               "border-width": 3,
@@ -328,51 +561,51 @@
           cy.one('tap dbltap taphold', hide);
         })();
 
-        // Tap any node → highlight closed neighborhood; tap blank to clear.
+        // Two-step interaction: first tap on a card activates it (highlights
+        // the neighborhood while keeping the rest legible); second tap on
+        // the SAME card opens the bottom-sheet in the main app via the
+        // deep-link hash. Tap blank to clear.
+        let activeNodeId = null;
+        function deepLink(node) {
+          const kind = node.data("kind");
+          const label = node.data("label");
+          // Components don't have their own sheet — open as a char.
+          const prefix = kind === "word" ? "w" : "c";
+          window.location.href = `../#/${prefix}/${encodeURIComponent(label)}`;
+        }
         cy.on("tap", "node", (e) => {
           const node = e.target;
+          if (activeNodeId === node.id()) {
+            deepLink(node);
+            return;
+          }
+          activeNodeId = node.id();
+          cy.nodes().removeClass("active");
+          node.addClass("active");
           cy.elements().addClass("faded").removeClass("highlight");
           node.closedNeighborhood().removeClass("faded").addClass("highlight");
-          // For words specifically, also offer a deep-link via dblclick.
         });
         cy.on("tap", (e) => {
           if (e.target === cy) {
-            cy.elements().removeClass("faded highlight match");
+            activeNodeId = null;
+            cy.elements().removeClass("faded highlight match active");
           }
         });
-        // Double-tap a word → open in main app.
-        cy.on("dbltap", 'node[kind="word"]', (e) => {
-          const w = e.target.data("label");
-          window.location.href = `../#/w/${encodeURIComponent(w)}`;
-        });
-        cy.on("dbltap", 'node[kind="char"]', (e) => {
-          const c = e.target.data("label");
-          window.location.href = `../#/c/${encodeURIComponent(c)}`;
-        });
-
-        cy.on("mouseover tapstart", "node", (e) => {
-          const d = e.target.data();
-          const pos = e.target.renderedPosition();
-          if (d.kind === "word") {
-            const cs = [...d.label]
-              .map((c) => `<b>${c}</b>${charsData[c]?.pinyin ? ` <span class="pinyin">${charsData[c].pinyin}</span>` : ""}`)
-              .join(" · ");
-            const gloss = [...d.label].map((c) => charsData[c]?.definitions?.[0]).filter(Boolean).join("; ");
-            showTip(cs + (gloss ? `<span class="gloss">${gloss}</span>` : "") + '<span class="gloss">double-tap to open</span>', pos.x, pos.y);
-          } else if (d.kind === "char") {
-            const cd = charsData[d.label];
-            const gloss = cd?.definitions?.slice(0, 2).join("; ") || "";
-            showTip(`<b>${d.label}</b><span class="pinyin">${cd?.pinyin || ""}</span>${gloss ? `<span class="gloss">${gloss}</span>` : ""}<span class="gloss">double-tap to open</span>`, pos.x, pos.y);
-          } else {
-            const cd = charsData[d.label];
-            const gloss = cd?.definitions?.[0] || "";
-            const role = d.role ? ` · <span class="pinyin">${d.role}</span>` : "";
-            showTip(`<b>${d.label}</b>${cd?.pinyin ? ` <span class="pinyin">${cd.pinyin}</span>` : ""}${role}${gloss ? `<span class="gloss">${gloss}</span>` : ""}`, pos.x, pos.y);
-          }
-        });
-        cy.on("mouseout tapend", "node", hideTip);
-        cy.on("viewport", hideTip);
       }
+
+      // Hamburger drawer.
+      const drawer = document.getElementById("drawer");
+      const hamburger = document.getElementById("hamburger");
+      function setDrawer(open) {
+        drawer.setAttribute("aria-hidden", open ? "false" : "true");
+        hamburger.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      hamburger.addEventListener("click", () =>
+        setDrawer(drawer.getAttribute("aria-hidden") !== "false"),
+      );
+      drawer.addEventListener("click", (e) => {
+        if (e.target.dataset.close !== undefined) setDrawer(false);
+      });
 
       // Toolbar
       const toolbar = document.getElementById("toolbar");

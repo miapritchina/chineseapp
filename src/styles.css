@@ -1502,7 +1502,7 @@ body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding-right: 14px;
+  padding-right: 18px;
 }
 .shelf-header .shelf-title {
   padding-right: 8px;
@@ -1544,7 +1544,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 4px 0 10px;
+  padding: 4px 18px 10px;
 }
 .sort-pill {
   background: transparent;
@@ -1578,7 +1578,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 8px 12px 18px;
+  padding: 8px 18px 18px;
 }
 .saved-grid .entity {
   display: inline-block;
@@ -2926,10 +2926,10 @@ body {
   background: var(--border);
   margin: 0 auto;
 }
-.sheet-dismiss {
+.sheet-dismiss,
+.sheet-back {
   position: absolute;
   top: 16px;
-  right: 18px;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -2943,8 +2943,16 @@ body {
   z-index: 3;
   -webkit-tap-highlight-color: transparent;
 }
+.sheet-dismiss {
+  right: 18px;
+}
+.sheet-back {
+  left: 18px;
+}
 .sheet-dismiss:hover,
-.sheet-dismiss:focus-visible {
+.sheet-dismiss:focus-visible,
+.sheet-back:hover,
+.sheet-back:focus-visible {
   color: var(--text);
   outline: none;
 }
@@ -3078,11 +3086,15 @@ body {
   border-radius: 14px;
   padding: 12px 14px;
 }
+/* Each piece is a 3-row grid (pinyin / hanzi / meaning) with fixed
+   top + bottom row heights, so the hanzi sits on a shared baseline
+   across pieces regardless of whether any one has pinyin or a gloss. */
 .sheet-etym-piece {
-  display: inline-flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 16px auto 16px;
   align-items: center;
-  gap: 2px;
+  justify-items: center;
+  row-gap: 2px;
   min-width: 0;
 }
 .sheet-etym-piece-pinyin,
@@ -3103,7 +3115,6 @@ body {
   line-height: 1;
   color: var(--text);
 }
-/* Each component / character in the row is its own tap target. */
 .sheet-etym-glyph-btn {
   background: transparent;
   border: none;
@@ -3118,18 +3129,19 @@ body {
   background: var(--surface-2);
   outline: none;
 }
+/* Operator sits as a row-level sibling of the pieces. align-items:
+   center on the parent row centers it vertically — and since each
+   piece is symmetric (16px / hanzi / 16px), the row center == the
+   hanzi center, so + / = land on the hanzi baseline. */
 .sheet-etym-op {
-  align-self: center;
+  font-size: 18px;
   color: var(--muted);
-  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
 }
 .sheet-etym-result {
   font-weight: 500;
   padding: 0 4px;
-}
-.sheet-etym-op {
-  font-size: 18px;
-  color: var(--muted);
 }
 .sheet-etym-expand {
   margin-left: auto;
@@ -3160,6 +3172,53 @@ body {
 .sheet-etym-note-em {
   font-style: italic;
   color: var(--text);
+}
+
+/* RELATED WORDS columns (multi-char-word sheet) — one column per
+   character of the word; each column lists the user's other saved
+   words containing that char. */
+.sheet-related-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.sheet-related-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+/* Inside each column, the related-word tiles sit in a fixed 2-column
+   grid (each card takes half the column width). Predictable rows
+   beat content-driven flow once there are 3+ related words. */
+.sheet-related-col-items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.sheet-related-col-head {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", system-ui, sans-serif;
+  font-size: 18px;
+  color: var(--text);
+  text-align: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+/* Empty placeholder card — same chrome as an Entity sm tile, with
+   ellipsis instead of a hanzi so empty columns still feel "card-shaped". */
+.sheet-related-empty-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 12px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  background: transparent;
 }
 
 .sheet-saved-list {

@@ -5,7 +5,7 @@ import { detectPos } from "../lib/pos";
 import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { SheetHeader } from "./sheet/SheetHeader";
 import { EtymologySection } from "./sheet/EtymologySection";
-import { RelatedSection } from "./sheet/RelatedSection";
+import { RelatedWordsColumns } from "./sheet/RelatedWordsColumns";
 import { roleColor } from "./sheet/helpers";
 
 interface Props {
@@ -14,7 +14,13 @@ interface Props {
   // character ("a character can be a word — don't model them apart").
   word?: Word | null;
   charKey?: string;
+  // Close the sheet entirely (empty the stack).
   onClose: () => void;
+  // Pop one level (back to the previous sheet, if any).
+  onBack?: () => void;
+  // Whether the back button should be visible. When false, only the
+  // close (✕) button renders.
+  canGoBack?: boolean;
   onOpenWord: (word: string) => void;
   onOpenChar: (charKey: string) => void;
   // Open the full recursive d3 decomposition tree for THIS entity.
@@ -31,11 +37,22 @@ interface Props {
 // status corner. The content blocks live in src/components/sheet/:
 //   ── (header)                — SheetHeader (eyebrow + glyph + defs)
 //   ── ETYMOLOGY / MADE OF     — EtymologySection
-//   ── IN YOUR SAVED WORDS / CHARACTERS — RelatedSection
+//   ── RELATED WORDS           — RelatedWordsColumns (one column per
+//                                unique char in the key; renders both
+//                                multi-char-word and single-char views)
 // (The "Make it stick" mnemonic editor is currently disabled — the
 // MnemonicSection component still lives in src/components/sheet/ and
 // can be re-mounted here when needed.)
-export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, onOpenTree }: Props) {
+export function EntitySheet({
+  word,
+  charKey,
+  onClose,
+  onBack,
+  canGoBack,
+  onOpenWord,
+  onOpenChar,
+  onOpenTree,
+}: Props) {
   const { chars } = useCharsCtx();
   const { saved, getStatus, setStatus } = useSavedCtx();
 
@@ -125,10 +142,24 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
           <div className="sheet-handle" aria-hidden="true" />
         </div>
 
+        {canGoBack && onBack && (
+          <button className="sheet-back" type="button" aria-label="Back" onClick={onBack}>
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M15 18l-6-6 6-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
         <button className="sheet-dismiss" type="button" aria-label="Close" onClick={onClose}>
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
             <path
-              d="M6 9l6 6 6-6"
+              d="M6 6l12 12M18 6L6 18"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.2"
@@ -168,13 +199,7 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
         )}
 
         {(isMultiCharWord || matches.length > 0) && (
-          <RelatedSection
-            isMultiCharWord={isMultiCharWord}
-            word={word}
-            matches={matches}
-            onOpenWord={onOpenWord}
-            onOpenChar={onOpenChar}
-          />
+          <RelatedWordsColumns wordKey={key} onOpenWord={onOpenWord} />
         )}
 
         <a

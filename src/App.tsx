@@ -42,7 +42,7 @@ export function App() {
   const charsData = useChars();
   const auth = useAuth();
   const saved = useSaved({ userId: auth.user?.id ?? null });
-  const { stack, push, pop } = useModalStack();
+  const { stack, push, pop, close } = useModalStack();
 
   const query = useUIStore((s) => s.query);
   const setQuery = useUIStore((s) => s.setQuery);
@@ -315,7 +315,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v93"
+          version="chinese v94"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -427,7 +427,9 @@ export function App() {
         <EntitySheet
           word={top.kind === "word" ? topWord : null}
           charKey={top.key}
-          onClose={pop}
+          onClose={close}
+          onBack={pop}
+          canGoBack={stack.length > 1}
           onOpenWord={(w) => void openWord(w)}
           onOpenChar={openChar}
           onOpenTree={() => push({ ...top, view: "tree" })}
