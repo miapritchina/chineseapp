@@ -3,13 +3,12 @@ import type { Char } from "../../lib/types";
 import { buildStarterMnemonic, buildStarterWordMnemonic } from "../../lib/mnemonics";
 import { useMnemonicsCtx } from "../../state/contexts";
 
-// "Nº NN · 💡 MAKE IT STICK" — editable mnemonic. Stores user-edited
-// text via useMnemonicsCtx; falls back to a starter generated from the
-// entity's pinyin/meaning. "Reset" clears the user override and shows
-// the starter again.
+// "💡 MAKE IT STICK" — editable mnemonic. Stores user-edited text via
+// useMnemonicsCtx; falls back to a starter generated from the entity's
+// pinyin/meaning. "Reset" clears the user override and shows the starter
+// again.
 
 interface Props {
-  num: string;
   itemKey: string;
   isMultiCharWord: boolean;
   pinyin: string;
@@ -21,7 +20,6 @@ interface Props {
 }
 
 export function MnemonicSection({
-  num,
   itemKey,
   isMultiCharWord,
   pinyin,
@@ -73,7 +71,6 @@ export function MnemonicSection({
   return (
     <section className="sheet-section">
       <div className="sheet-section-head">
-        <span className="sheet-section-num">Nº {num}</span>
         <span className="sheet-section-name sheet-mnemonic-title">
           💡 MAKE IT STICK
           {editedFlag && <span className="mnemonic-saved-tag">your version</span>}

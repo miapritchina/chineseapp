@@ -59,11 +59,17 @@ describe("Entity", () => {
     expect(container.querySelector(".entity-status")).toBeNull();
   });
 
-  it("sm: shows pinyin + meaning + POS, no status corner", () => {
+  it("sm: shows pinyin + meaning, no POS by default, no status corner", () => {
     const { container } = wrap(<Entity word={HAO} size="sm" />);
     expect(container.querySelector(".entity-pinyin")?.textContent).toBe("hǎo");
     expect(container.querySelector(".entity-meaning")?.textContent).toContain("good");
+    expect(container.querySelector(".entity-pos")).toBeNull();
     expect(container.querySelector(".entity-status")).toBeNull();
+  });
+
+  it("renders the POS pill only when showPos is true", () => {
+    const { container } = wrap(<Entity word={HAO} size="sm" showPos />);
+    expect(container.querySelector(".entity-pos")).not.toBeNull();
   });
 
   it("md: adds the status corner", () => {

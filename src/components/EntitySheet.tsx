@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
-import { toneLabel } from "../lib/pinyin";
 import { detectPos } from "../lib/pos";
 import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { SheetHeader } from "./sheet/SheetHeader";
 import { EtymologySection } from "./sheet/EtymologySection";
-import { RelatedSection } from "./sheet/RelatedSection";
-import { MnemonicSection } from "./sheet/MnemonicSection";
-import { commonnessLabel, roleColor } from "./sheet/helpers";
+import { RelatedWordsColumns } from "./sheet/RelatedWordsColumns";
+import { roleColor } from "./sheet/helpers";
 
 interface Props {
   // Exactly one of these identifies the entity. `word` wins when both
@@ -16,7 +14,13 @@ interface Props {
   // character ("a character can be a word — don't model them apart").
   word?: Word | null;
   charKey?: string;
+  // Close the sheet entirely (empty the stack).
   onClose: () => void;
+  // Pop one level (back to the previous sheet, if any).
+  onBack?: () => void;
+  // Whether the back button should be visible. When false, only the
+  // close (✕) button renders.
+  canGoBack?: boolean;
   onOpenWord: (word: string) => void;
   onOpenChar: (charKey: string) => void;
   // Open the full recursive d3 decomposition tree for THIS entity.
@@ -30,13 +34,25 @@ interface Props {
 // chips all land on the same chrome.
 //
 // This file is the shell — identity resolution, drag-to-dismiss, the
-// status corner, section numbering. The four content blocks live in
-// src/components/sheet/:
+// status corner. The content blocks live in src/components/sheet/:
 //   ── (header)                — SheetHeader (eyebrow + glyph + defs)
-//   ── Nº 01 · ETYMOLOGY / MADE OF      — EtymologySection
-//   ── Nº 02 · IN YOUR SAVED WORDS / CHARACTERS — RelatedSection
-//   ── 💡 Make it stick        — MnemonicSection
-export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, onOpenTree }: Props) {
+//   ── ETYMOLOGY / MADE OF     — EtymologySection
+//   ── RELATED WORDS           — RelatedWordsColumns (one column per
+//                                unique char in the key; renders both
+//                                multi-char-word and single-char views)
+// (The "Make it stick" mnemonic editor is currently disabled — the
+// MnemonicSection component still lives in src/components/sheet/ and
+// can be re-mounted here when needed.)
+export function EntitySheet({
+  word,
+  charKey,
+  onClose,
+  onBack,
+  canGoBack,
+  onOpenWord,
+  onOpenChar,
+  onOpenTree,
+}: Props) {
   const { chars } = useCharsCtx();
   const { saved, getStatus, setStatus } = useSavedCtx();
 
@@ -51,8 +67,6 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
       ? word.definitions
       : (charData?.definitions ?? []);
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
-  const tone = toneLabel(pinyin);
-  const freq = commonnessLabel(word?.rank);
   const pos = defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
 
   // ── Refs + dismiss state ───────────────────────────────────────
@@ -110,13 +124,6 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
 
   const matches = isMultiCharWord ? [] : [...saved].filter((w) => w !== key && w.includes(key));
 
-  // Section numbering: ETYMOLOGY is Nº 01 only when it renders.
-  let sectionNo = 0;
-  const nextNo = () => String(++sectionNo).padStart(2, "0");
-  const etymNo = hasEtym ? nextNo() : null;
-  const peopleNo = isMultiCharWord || matches.length > 0 ? nextNo() : null;
-  const mnemonicNo = nextNo();
-
   return (
     <div className="sheet-root" role="dialog" aria-modal="true" aria-label={`Details for ${key}`}>
       <div className="sheet-backdrop" onClick={onClose} />
@@ -135,10 +142,24 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
           <div className="sheet-handle" aria-hidden="true" />
         </div>
 
+        {canGoBack && onBack && (
+          <button className="sheet-back" type="button" aria-label="Back" onClick={onBack}>
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M15 18l-6-6 6-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
         <button className="sheet-dismiss" type="button" aria-label="Close" onClick={onClose}>
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
             <path
-              d="M6 9l6 6 6-6"
+              d="M6 6l12 12M18 6L6 18"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.2"
@@ -160,45 +181,26 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
           word={word}
           isMultiCharWord={isMultiCharWord}
           pinyin={pinyin}
-          tone={tone}
-          freq={freq}
           pos={pos}
           defs={defs}
         />
 
-        {hasEtym && etymNo && (
+        {hasEtym && (
           <EtymologySection
-            num={etymNo}
             itemKey={key}
             isMultiCharWord={isMultiCharWord}
             pieces={pieces}
             charData={charData}
+            resultPinyin={pinyin}
+            resultMeaning={defs[0] ?? ""}
             onOpenChar={onOpenChar}
             onOpenTree={onOpenTree}
           />
         )}
 
-        {(isMultiCharWord || matches.length > 0) && peopleNo && (
-          <RelatedSection
-            num={peopleNo}
-            isMultiCharWord={isMultiCharWord}
-            word={word}
-            matches={matches}
-            onOpenWord={onOpenWord}
-            onOpenChar={onOpenChar}
-          />
+        {(isMultiCharWord || matches.length > 0) && (
+          <RelatedWordsColumns wordKey={key} onOpenWord={onOpenWord} />
         )}
-
-        <MnemonicSection
-          num={mnemonicNo}
-          itemKey={key}
-          isMultiCharWord={isMultiCharWord}
-          pinyin={pinyin}
-          defs={defs}
-          charData={charData}
-          word={word}
-          chars={chars}
-        />
 
         <a
           className="sheet-network-link"

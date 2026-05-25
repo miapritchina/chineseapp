@@ -13,6 +13,50 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 *Next change lands here.*
 
+## [v94]
+
+### Added
+- **EntitySheet stack-aware controls:** the dismiss control is now two
+  buttons — a back arrow (←) on the left, only shown when the modal
+  stack has more than one entry, and a close (✕) on the right that
+  empties the stack. Replaces the old single down-chevron.
+- **"RELATED WORDS" columns** in the EntitySheet — one column per
+  unique character in the key (multi-char-word OR single-char view),
+  each listing the user's saved words containing that character via
+  `<Entity size="sm">`. Empty columns show a dashed `…` placeholder
+  card. Used for both multi-char words and single chars; replaces the
+  old "CHARACTERS" / "IN YOUR SAVED WORDS" lists in one component.
+- **`<Entity showPos>` opt-in** — POS pill (adj / noun / pronoun …)
+  is now off by default. Callers that want it pass `showPos`.
+- **Hamburger drawer + in-page entity popup** on `network/` and
+  `components/` static pages: replaces the `← 中文` back link with a
+  slide-in nav drawer; tap-once-to-focus, tap-again-to-open a popup
+  that mirrors the EntitySheet shape (pinyin / hanzi / meaning + MADE
+  OF / ETYMOLOGY row) — no redirect to the main app. The components
+  page drawer also embeds the role-color legend and word-tier legend
+  that previously lived in the bottom-left corner.
+
+### Changed
+- **Etymology row** in the EntitySheet is now a true equation: each
+  piece (and the result) renders as a pinyin / hanzi / meaning stack,
+  pieces sit on a shared hanzi baseline (3-row CSS grid per piece),
+  `+` and `=` operators are siblings of the pieces (centered on the
+  hanzi row, not on the pinyin row). For multi-char-word "MADE OF"
+  the hanzi are plain text — only character → component decomposition
+  ("ETYMOLOGY") carries role color.
+- **Main-page section alignment:** sort pills and the saved-grid now
+  use the same 18px page inset as the search bar interior and the
+  `SAVED · N` label — every section starts at the same x.
+- **"Make it stick" section removed** from the EntitySheet for now.
+  The `MnemonicSection` file still lives under `src/components/sheet/`
+  and can be re-mounted when needed.
+
+### Removed
+- `src/components/sheet/RelatedSection.tsx` — superseded by
+  `RelatedWordsColumns.tsx`. Both `CHARACTERS` (multi-char) and
+  `IN YOUR SAVED WORDS` (single-char) presentations are now unified
+  into one component.
+
 ## [v93]
 
 ### Added

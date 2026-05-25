@@ -5,31 +5,20 @@ import { hanziScaleStyle } from "../../lib/hanzi";
 import { HanziGlyph, type HanziGlyphHandle } from "../ui/HanziGlyph";
 import { SpeakButton } from "../ui/SpeakButton";
 
-// Header block of the EntitySheet: eyebrow (pinyin · tone · freq), the
-// hanzi glyph (stroke-animated for single chars, plain + 🔊 for
-// multi-char words), and the POS + glosses row.
+// Header block of the EntitySheet: eyebrow (pinyin), the hanzi glyph
+// (stroke-animated for single chars, plain + 🔊 for multi-char words),
+// and the POS + glosses row.
 
 interface Props {
   itemKey: string;
   word: Word | null | undefined;
   isMultiCharWord: boolean;
   pinyin: string;
-  tone: string | null;
-  freq: string | null;
   pos: Pos | null;
   defs: string[];
 }
 
-export function SheetHeader({
-  itemKey,
-  word,
-  isMultiCharWord,
-  pinyin,
-  tone,
-  freq,
-  pos,
-  defs,
-}: Props) {
+export function SheetHeader({ itemKey, word, isMultiCharWord, pinyin, pos, defs }: Props) {
   const glyphRef = useRef<HanziGlyphHandle>(null);
   const replay = () => glyphRef.current?.replay();
 
@@ -37,8 +26,6 @@ export function SheetHeader({
     <>
       <div className="sheet-eyebrow">
         <span>{pinyin ? pinyin.toUpperCase() : itemKey}</span>
-        {tone && <span className="sheet-eyebrow-dim"> · {tone}</span>}
-        {freq && <span className="sheet-eyebrow-dim"> · {freq.toUpperCase()}</span>}
       </div>
 
       {isMultiCharWord && word ? (

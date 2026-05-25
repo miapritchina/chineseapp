@@ -6,20 +6,22 @@ import { StatusButton } from "./StatusButton";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 
 // Unified character/word tile (redesign §0). One component, five sizes,
-// consistent visual DNA: pinyin (top) → hanzi (center) → meaning + POS
+// consistent visual DNA: pinyin (top) → hanzi (center) → meaning
 // (bottom), status ★ in the corner at md+. Resolves its own data from
 // context given an identity, so call sites pass an id, not pre-resolved
 // props.
 //
 // Progressive disclosure by size (overridable):
 //   tiny  hanzi (+pinyin)              — graph nodes, drill picks, chips
-//   sm    + pinyin + meaning + POS     — bank chips, cluster/disambig cells
+//   sm    + pinyin + meaning           — bank chips, cluster/disambig cells
 //   md    + status corner              — shelf cards, the workhorse
 //   lg    (handled in a later stage — component breakdown)
 //   hero  (handled in a later stage — review focal glyph)
 //
-// `breakdown` not yet implemented (lg); `trailing` is an escape hatch for
-// per-site extras (e.g. the component chip's "N words" count).
+// POS (adj / noun / pronoun …) is an optional element — off by default,
+// opt in per call site with `showPos`. `breakdown` not yet implemented
+// (lg); `trailing` is an escape hatch for per-site extras (e.g. the
+// component chip's "N words" count).
 
 export type EntitySize = "tiny" | "sm" | "md" | "lg" | "hero";
 
@@ -31,6 +33,7 @@ interface Props {
   showStatus?: boolean;
   showPinyin?: boolean;
   showMeaning?: boolean;
+  showPos?: boolean;
   roleColor?: string;
   trailing?: ReactNode;
   className?: string;
@@ -52,6 +55,7 @@ export function Entity({
   showStatus,
   showPinyin,
   showMeaning,
+  showPos,
   roleColor,
   trailing,
   className,
@@ -77,12 +81,15 @@ export function Entity({
   const wantPinyin = showPinyin ?? size !== "tiny";
   const wantMeaning = showMeaning ?? (size === "sm" || size === "md" || size === "lg");
   const wantStatus = showStatus ?? (size === "md" || size === "lg");
+  const wantPos = showPos ?? false;
 
   const pos =
-    wantMeaning && defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
+    wantPos && wantMeaning && defs.length > 0
+      ? detectPos({ word: key, definitions: defs } as Word)
+      : null;
 
   const style = {
-    ...hanziScaleStyle(key),
+    ...(size !== "md" ? hanziScaleStyle(key) : {}),
     ...(roleColor ? ({ ["--entity-role"]: roleColor } as Record<string, string>) : {}),
   };
 
@@ -113,8 +120,10 @@ export function Entity({
           <StatusButton status={getStatus(key)} onChange={(next) => setStatus(key, next)} />
         </div>
       )}
-      {wantPinyin && pinyin && <div className="entity-pinyin">{pinyin}</div>}
-      <div className="entity-hanzi">{hanziSlot ?? key}</div>
+      <div className="entity-primary">
+        {wantPinyin && pinyin && <div className="entity-pinyin">{pinyin}</div>}
+        <div className="entity-hanzi">{hanziSlot ?? key}</div>
+      </div>
       {wantMeaning && meaning && (
         <div className="entity-meaning">
           {meaning}

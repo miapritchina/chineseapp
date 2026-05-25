@@ -10,8 +10,10 @@
   color-scheme: light dark;
   --bg: #faf8f4; --surface: #fefdfb; --card-bg: #ffffff; --surface-2: #f0ece4;
   --text: #1d1b18; --muted: #6b6359; --accent: #b12a2a; --border: #e4dfd5;
-  --role-iconic: #2563eb; --role-meaning: #16a34a; --role-sound: #dc2626;
-  --role-simplified: #9333ea; --role-deleted: #6b7280; --role-unknown: #6b7280;
+  /* Dong Chinese role palette */
+  --role-iconic: #16a34a; --role-meaning: #dc2626; --role-sound: #2563eb;
+  --role-remnant: #84cc16; --role-simplified: #0d9488; --role-deleted: #6b7280;
+  --role-distinguishing: #9333ea; --role-unknown: #6b7280;
   --role-word: #1d1b18;
   --pos-pron: #6b3a8a; --pos-v: #b14430; --pos-n: #2f5a8e;
   --pos-adj: #4f7d3a; --pos-adv: #8a6a26; --pos-part: #8a8273; --pos-conj: #7a6a8a;
@@ -29,8 +31,9 @@
   :root {
     --bg: #16140f; --surface: #1d1a13; --card-bg: #211e15; --surface-2: #272319;
     --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
-    --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
-    --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
+    --role-iconic: #4ade80; --role-meaning: #f87171; --role-sound: #60a5fa;
+    --role-remnant: #bef264; --role-simplified: #5eead4; --role-deleted: #9ca3af;
+    --role-distinguishing: #c084fc; --role-unknown: #9ca3af;
     --role-word: #ece7dc;
     --status-saved: #f59e0b; --status-review: #fb923c;
     --status-learned: #6dba84; --status-wrote: #b07ad8;
@@ -43,8 +46,9 @@
 .force-dark {
   --bg: #16140f; --surface: #1d1a13; --card-bg: #211e15; --surface-2: #272319;
   --text: #ece7dc; --muted: #a39c8f; --accent: #e07070; --border: #2a2620;
-  --role-iconic: #60a5fa; --role-meaning: #4ade80; --role-sound: #f87171;
-  --role-simplified: #c084fc; --role-deleted: #9ca3af; --role-unknown: #9ca3af;
+  --role-iconic: #4ade80; --role-meaning: #f87171; --role-sound: #60a5fa;
+  --role-remnant: #bef264; --role-simplified: #5eead4; --role-deleted: #9ca3af;
+  --role-distinguishing: #c084fc; --role-unknown: #9ca3af;
   --role-word: #ece7dc;
   --status-saved: #f59e0b; --status-review: #fb923c;
   --status-learned: #6dba84; --status-wrote: #b07ad8;
@@ -216,8 +220,63 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
 
 /* Role-tinted glyph */
 .ex-role-glyph {
-  font-family: var(--font-hanzi); font-size: 48px; line-height: 1;
-  display: inline-block; margin: 0 8px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0 8px;
+  text-align: center;
+}
+.ex-role-glyph-char {
+  font-family: var(--font-hanzi);
+  font-size: 48px;
+  line-height: 1;
+}
+.ex-role-glyph-pinyin,
+.ex-role-glyph-meaning {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+/* ── <Entity> primitive (§0) ─────────────────────────────────────── */
+.ex-entity {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--entity-role, var(--border));
+  border-radius: 12px;
+  position: relative;
+}
+.ex-entity-hanzi {
+  font-family: var(--font-hanzi);
+  font-size: var(--entity-hanzi-size, var(--hanzi-medium, 36px));
+  line-height: 1.1;
+}
+.ex-entity-pinyin { font-size: 15px; color: var(--muted); }
+.ex-entity-meaning { font-size: 12px; color: var(--muted); }
+.ex-entity-status {
+  position: absolute; top: 4px; right: 6px;
+  font-size: 13px; color: var(--status-saved, #d97706);
+}
+.ex-entity-tiny  { --entity-hanzi-size: 22px; padding: 8px;       gap: 1px; }
+.ex-entity-sm    { --entity-hanzi-size: 22px; padding: 12px;      gap: 2px; }
+.ex-entity-md    { --entity-hanzi-size: 52px; padding: 16px 12px; gap: 3px; min-width: 110px; }
+.ex-entity-lg    { --entity-hanzi-size: 52px; padding: 20px;      gap: 4px; min-width: 130px; }
+.ex-entity-hero  { --entity-hanzi-size: 120px; padding: 20px; gap: 6px; background: #fff; }
+
+.ex-entity.is-correct {
+  border-color: #2e7d32;
+  background: rgba(46,125,50,0.12);
+}
+.ex-entity.is-wrong {
+  border-color: #b91c1c;
+  background: rgba(185,28,28,0.12);
+}
+.ex-entity.is-reveal {
+  border-color: #2e7d32;
+  border-style: dashed;
 }
 </style>
 </head>
@@ -267,11 +326,76 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
 <!-- ════════════════════════════════════════════════════════════════ -->
 <h2>Component Examples</h2>
 
-<h3>Card (Saved Grid)</h3>
+<h3>Entity Component (§0) — five sizes</h3>
+<p style="font-size:13px;color:var(--muted);margin:-4px 0 8px;max-width:560px;line-height:1.5;">
+  One component, five sizes. Shared visual DNA: pinyin (top) → hanzi (center) → meaning (bottom). Status corner at <code>md</code>+; role-color border via <code>--entity-role</code> when supplied. POS (adj / noun …) is <strong>off by default</strong> — opt in per call site with <code>showPos</code>.
+  Live source: <code>src/components/Entity.tsx</code>.
+</p>
+
+<div class="example-row" style="align-items:flex-end;gap:14px">
+  <!-- tiny -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-tiny">
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">tiny</code>
+  </div>
+  <!-- sm with role-color border -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-sm" style="--entity-role:var(--pos-adj)">
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+      <div class="ex-entity-meaning">good</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">sm</code>
+  </div>
+  <!-- md with status corner -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-md">
+      <span class="ex-entity-status">★</span>
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+      <div class="ex-entity-meaning">good</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">md</code>
+  </div>
+  <!-- lg with status corner + bigger -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-lg">
+      <span class="ex-entity-status">★</span>
+      <div class="ex-entity-pinyin">hǎo</div>
+      <div class="ex-entity-hanzi">好</div>
+      <div class="ex-entity-meaning">good</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">lg</code>
+  </div>
+  <!-- hero (white-bg, drill focal) -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <div class="ex-entity ex-entity-hero">
+      <div class="ex-entity-hanzi">好</div>
+    </div>
+    <code style="font-size:11px;color:var(--muted)">hero</code>
+  </div>
+</div>
+
+<h3>Drill Pick Flash (M12)</h3>
+<p style="font-size:13px;color:var(--muted);margin:-4px 0 8px;">
+  Entity tiny with <code>.is-correct</code> / <code>.is-wrong</code> / <code>.is-reveal</code> modifiers — used by PhoneticTap picks.
+</p>
 <div class="example-row">
-  <div class="ex-card"><div class="ex-card-char">学</div><div class="ex-card-pinyin">xué</div><div class="ex-card-gloss">to learn; to study</div></div>
-  <div class="ex-card"><div class="ex-card-char">好</div><div class="ex-card-pinyin">hǎo</div><div class="ex-card-gloss">good; well</div></div>
-  <div class="ex-card" style="opacity:0.55"><div class="ex-card-char">中</div><div class="ex-card-pinyin">zhōng</div><div class="ex-card-gloss">middle (syncing…)</div></div>
+  <div class="ex-entity ex-entity-tiny">
+    <div class="ex-entity-hanzi">宀</div>
+  </div>
+  <div class="ex-entity ex-entity-tiny is-correct">
+    <div class="ex-entity-hanzi">豕</div>
+  </div>
+  <div class="ex-entity ex-entity-tiny is-wrong">
+    <div class="ex-entity-hanzi">氵</div>
+  </div>
+  <div class="ex-entity ex-entity-tiny is-reveal">
+    <div class="ex-entity-hanzi">豕</div>
+  </div>
 </div>
 
 <h3>Status Button + Open Menu</h3>
@@ -296,23 +420,15 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
 
 <h3>Section Header</h3>
 <div class="example-row">
-  <div class="ex-section-head"><span class="ex-section-num">Nº 01</span><span class="ex-section-name">· Etymology</span></div>
+  <div class="ex-section-head"><span class="ex-section-name">Etymology</span></div>
 </div>
 <div class="example-row" style="margin-top:4px">
-  <div class="ex-section-head"><span class="ex-section-num">Nº 02</span><span class="ex-section-name">· In your saved words</span></div>
+  <div class="ex-section-head"><span class="ex-section-name">In your saved words</span></div>
 </div>
 
 <h3>Eyebrow Label</h3>
 <div class="example-row">
-  <span class="ex-eyebrow">Character · hàn zì</span>
-</div>
-
-<h3>Component Chip Row</h3>
-<div class="ex-chip-row">
-  <div class="ex-chip"><span class="ex-chip-char">木</span><span class="ex-chip-pinyin">mù</span></div>
-  <div class="ex-chip"><span class="ex-chip-char">口</span><span class="ex-chip-pinyin">kǒu</span></div>
-  <div class="ex-chip"><span class="ex-chip-char">心</span><span class="ex-chip-pinyin">xīn</span></div>
-  <div class="ex-chip"><span class="ex-chip-char">水</span><span class="ex-chip-pinyin">shuǐ</span></div>
+  <span class="ex-eyebrow">HǍO</span>
 </div>
 
 <h3>Grade Buttons</h3>
@@ -327,11 +443,11 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
   <div class="ex-sheet-demo">
     <div class="ex-sheet-handle"></div>
     <button class="ex-sheet-dismiss">↓</button>
-    <div class="ex-eyebrow" style="margin-top:8px">Character · xué</div>
+    <div class="ex-eyebrow" style="margin-top:8px">XUÉ</div>
     <div style="font-family:var(--font-hanzi);font-size:80px;line-height:1;margin:8px 0 4px;">学</div>
     <div style="font-size:16px;line-height:1.4;margin-bottom:12px;">to learn; to study; school; learning</div>
     <div style="border-top:1px solid var(--border);padding-top:12px;">
-      <div class="ex-section-head"><span class="ex-section-num">Nº 01</span><span class="ex-section-name">· Etymology</span></div>
+      <div class="ex-section-head"><span class="ex-section-name">Etymology</span></div>
     </div>
   </div>
 </div>
@@ -353,18 +469,73 @@ h3 { font-size: 14px; font-weight: 500; margin: 24px 0 10px; color: var(--text);
 
 <h3>Role-Tinted Glyphs</h3>
 <div class="example-row" style="align-items:center">
-  <span class="ex-role-glyph" style="color:var(--role-iconic)">日</span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">rì</span>
+    <span class="ex-role-glyph-char" style="color:var(--role-iconic)">日</span>
+    <span class="ex-role-glyph-meaning">sun (iconic)</span>
+  </span>
   <span style="font-size:16px;color:var(--muted)">+</span>
-  <span class="ex-role-glyph" style="color:var(--role-meaning)">月</span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">yuè</span>
+    <span class="ex-role-glyph-char" style="color:var(--role-iconic)">月</span>
+    <span class="ex-role-glyph-meaning">moon (iconic)</span>
+  </span>
   <span style="font-size:16px;color:var(--muted)">=</span>
-  <span class="ex-role-glyph" style="color:var(--text);font-weight:500">明</span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">míng</span>
+    <span class="ex-role-glyph-char" style="color:var(--text);font-weight:500">明</span>
+    <span class="ex-role-glyph-meaning">bright</span>
+  </span>
 </div>
-<div style="font-size:12px;color:var(--muted);margin-top:4px;">
-  <span style="color:var(--role-iconic)">■</span> Iconic &nbsp;
-  <span style="color:var(--role-meaning)">■</span> Meaning &nbsp;
-  <span style="color:var(--role-sound)">■</span> Sound &nbsp;
-  <span style="color:var(--role-simplified)">■</span> Simplified &nbsp;
-  <span style="color:var(--role-deleted)">■</span> Deleted
+
+<p style="font-size:12px;color:var(--muted);margin:12px 0 8px;max-width:620px;line-height:1.5;">
+  Eight component categories — Dong Chinese taxonomy
+  (<a href="https://www.dong-chinese.com/wiki/home#components" style="color:inherit;text-decoration:underline;">reference</a>).
+  Live source: <code>src/styles.css :root</code> → <code>--role-*</code>.
+</p>
+<div style="display:flex;flex-wrap:wrap;gap:14px 18px;font-size:12px;color:var(--muted);max-width:620px;">
+  <span><span style="color:var(--role-meaning)">■</span> Meaning — semantic hint</span>
+  <span><span style="color:var(--role-sound)">■</span> Sound — phonetic hint</span>
+  <span><span style="color:var(--role-iconic)">■</span> Iconic — pictograph / form</span>
+  <span><span style="color:var(--role-remnant)">■</span> Remnant — taken from another char</span>
+  <span><span style="color:var(--role-simplified)">■</span> Simplified — changed to fewer strokes</span>
+  <span><span style="color:var(--role-deleted)">■</span> Deleted — removed during simplification</span>
+  <span><span style="color:var(--role-distinguishing)">■</span> Distinguishing — added to disambiguate</span>
+  <span><span style="color:var(--role-unknown)">■</span> Unknown — undetermined</span>
+</div>
+
+<h3>Role examples (Dong Chinese)</h3>
+<div class="example-row" style="align-items:center;flex-wrap:wrap;gap:18px;">
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">mā</span>
+    <span class="ex-role-glyph-char">妈</span>
+    <span class="ex-role-glyph-meaning">"mother" with <span style="color:var(--role-meaning)">女</span> meaning</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">mā</span>
+    <span class="ex-role-glyph-char">妈</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-sound)">马</span> mǎ as sound</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">xiào</span>
+    <span class="ex-role-glyph-char">孝</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-remnant)">耂</span> remnant of 老</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">nán</span>
+    <span class="ex-role-glyph-char">难</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-simplified)">又</span> simplified</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">kāi</span>
+    <span class="ex-role-glyph-char">开</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-deleted)">门</span> deleted from 開</span>
+  </span>
+  <span class="ex-role-glyph">
+    <span class="ex-role-glyph-pinyin">yù</span>
+    <span class="ex-role-glyph-char">玉</span>
+    <span class="ex-role-glyph-meaning"><span style="color:var(--role-distinguishing)">、</span> distinguishes from 王</span>
+  </span>
 </div>
 
 <h3>Error Banner</h3>
@@ -391,10 +562,11 @@ function renderSwatches(list, lightEl, darkEl) {
 }
 renderSwatches(CORE, document.getElementById('light-swatches'), document.getElementById('dark-swatches'));
 
-// Role swatches
+// Role swatches — Dong Chinese taxonomy + colors
 const ROLES = [
-  ['iconic','#2563eb'],['meaning','#16a34a'],['sound','#dc2626'],
-  ['simplified','#9333ea'],['deleted','#6b7280'],['unknown','#6b7280'],['word','#1d1b18']
+  ['meaning','#dc2626'],['sound','#2563eb'],['iconic','#16a34a'],
+  ['remnant','#84cc16'],['simplified','#0d9488'],['deleted','#6b7280'],
+  ['distinguishing','#9333ea'],['unknown','#6b7280'],['word','#1d1b18']
 ];
 const roleEl = document.getElementById('role-swatches');
 ROLES.forEach(([name, hex]) => {
@@ -416,7 +588,7 @@ STATUS.forEach(([name, hex]) => {
 });
 
 // Grade swatches
-const GRADES = [['Again','#b91c1c'],['Good','#15803d'],['Easy','#1d4ed8']];
+const GRADES = [['Again','#b91c1c'],['Hard','#d97706'],['Good','#15803d'],['Easy','#1d4ed8']];
 const gradeEl = document.getElementById('grade-swatches');
 GRADES.forEach(([name, hex]) => {
   gradeEl.innerHTML += `<div class="swatch" style="width:100px"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-info"><div class="swatch-name">${name}</div><div class="swatch-hex">${hex}</div></div></div>`;
