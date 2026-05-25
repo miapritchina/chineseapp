@@ -3080,8 +3080,22 @@ body {
 }
 .sheet-etym-piece {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
+  min-width: 0;
+}
+.sheet-etym-piece-pinyin,
+.sheet-etym-piece-meaning {
+  font-family: var(--font-body, inherit);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.2;
+  text-align: center;
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sheet-etym-glyph {
   font-family: "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", system-ui, sans-serif;
@@ -3103,6 +3117,11 @@ body {
 .sheet-etym-glyph-btn:focus-visible {
   background: var(--surface-2);
   outline: none;
+}
+.sheet-etym-op {
+  align-self: center;
+  color: var(--muted);
+  font-size: 14px;
 }
 .sheet-etym-result {
   font-weight: 500;

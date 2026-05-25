@@ -6,7 +6,6 @@ import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { SheetHeader } from "./sheet/SheetHeader";
 import { EtymologySection } from "./sheet/EtymologySection";
 import { RelatedSection } from "./sheet/RelatedSection";
-import { MnemonicSection } from "./sheet/MnemonicSection";
 import { roleColor } from "./sheet/helpers";
 
 interface Props {
@@ -29,11 +28,13 @@ interface Props {
 // chips all land on the same chrome.
 //
 // This file is the shell — identity resolution, drag-to-dismiss, the
-// status corner. The four content blocks live in src/components/sheet/:
+// status corner. The content blocks live in src/components/sheet/:
 //   ── (header)                — SheetHeader (eyebrow + glyph + defs)
 //   ── ETYMOLOGY / MADE OF     — EtymologySection
 //   ── IN YOUR SAVED WORDS / CHARACTERS — RelatedSection
-//   ── 💡 Make it stick        — MnemonicSection
+// (The "Make it stick" mnemonic editor is currently disabled — the
+// MnemonicSection component still lives in src/components/sheet/ and
+// can be re-mounted here when needed.)
 export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, onOpenTree }: Props) {
   const { chars } = useCharsCtx();
   const { saved, getStatus, setStatus } = useSavedCtx();
@@ -159,6 +160,8 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
             isMultiCharWord={isMultiCharWord}
             pieces={pieces}
             charData={charData}
+            resultPinyin={pinyin}
+            resultMeaning={defs[0] ?? ""}
             onOpenChar={onOpenChar}
             onOpenTree={onOpenTree}
           />
@@ -173,16 +176,6 @@ export function EntitySheet({ word, charKey, onClose, onOpenWord, onOpenChar, on
             onOpenChar={onOpenChar}
           />
         )}
-
-        <MnemonicSection
-          itemKey={key}
-          isMultiCharWord={isMultiCharWord}
-          pinyin={pinyin}
-          defs={defs}
-          charData={charData}
-          word={word}
-          chars={chars}
-        />
 
         <a
           className="sheet-network-link"

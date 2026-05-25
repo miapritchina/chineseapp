@@ -1,8 +1,11 @@
 import type { Char } from "../../lib/types";
+import { useCharsCtx } from "../../state/contexts";
 
 // "ETYMOLOGY / MADE OF" section: role-colored decomposition equation +
 // the etymological note (if any). Each piece is tappable and opens its
-// own EntitySheet.
+// own EntitySheet. Each piece (and the result) renders as a small
+// pinyin → hanzi → meaning stack, mirroring the role-glyph pattern in
+// the design-system style-guide.
 
 interface Piece {
   char: string;
@@ -14,6 +17,8 @@ interface Props {
   isMultiCharWord: boolean;
   pieces: Piece[];
   charData: Char | undefined;
+  resultPinyin?: string;
+  resultMeaning?: string;
   onOpenChar: (char: string) => void;
   onOpenTree: () => void;
 }
@@ -23,9 +28,13 @@ export function EtymologySection({
   isMultiCharWord,
   pieces,
   charData,
+  resultPinyin,
+  resultMeaning,
   onOpenChar,
   onOpenTree,
 }: Props) {
+  const { chars } = useCharsCtx();
+
   return (
     <section className="sheet-section">
       <div className="sheet-section-head">
@@ -33,22 +42,33 @@ export function EtymologySection({
       </div>
       {pieces.length > 0 && (
         <div className="sheet-etym-row">
-          {pieces.map((p, i) => (
-            <span key={`${p.char}-${i}`} className="sheet-etym-piece">
-              {i > 0 && <span className="sheet-etym-op">+</span>}
-              <button
-                type="button"
-                className="sheet-etym-glyph sheet-etym-glyph-btn"
-                style={p.color ? { color: p.color } : undefined}
-                onClick={() => onOpenChar(p.char)}
-                title={`Open ${p.char}`}
-              >
-                {p.char}
-              </button>
-            </span>
-          ))}
+          {pieces.map((p, i) => {
+            const cd = chars[p.char];
+            const pinyin = cd?.pinyin ?? "";
+            const meaning = cd?.definitions?.[0] ?? "";
+            return (
+              <span key={`${p.char}-${i}`} className="sheet-etym-piece">
+                {i > 0 && <span className="sheet-etym-op">+</span>}
+                {pinyin && <span className="sheet-etym-piece-pinyin">{pinyin}</span>}
+                <button
+                  type="button"
+                  className="sheet-etym-glyph sheet-etym-glyph-btn"
+                  style={p.color ? { color: p.color } : undefined}
+                  onClick={() => onOpenChar(p.char)}
+                  title={`Open ${p.char}`}
+                >
+                  {p.char}
+                </button>
+                {meaning && <span className="sheet-etym-piece-meaning">{meaning}</span>}
+              </span>
+            );
+          })}
           <span className="sheet-etym-op">=</span>
-          <span className="sheet-etym-glyph sheet-etym-result">{itemKey}</span>
+          <span className="sheet-etym-piece">
+            {resultPinyin && <span className="sheet-etym-piece-pinyin">{resultPinyin}</span>}
+            <span className="sheet-etym-glyph sheet-etym-result">{itemKey}</span>
+            {resultMeaning && <span className="sheet-etym-piece-meaning">{resultMeaning}</span>}
+          </span>
           <button
             type="button"
             className="sheet-etym-expand"
