@@ -26,6 +26,26 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
     hint: "How is it pronounced? Audio + tone-marked pinyin.",
   },
   {
+    facet: "wordInference",
+    label: "New words",
+    hint: "A real word you have NOT saved, built from characters you know — guess its meaning. Correct guesses credit the characters.",
+  },
+  {
+    facet: "reverseRecognition",
+    label: "Reverse",
+    hint: "See the meaning, pick the right hanzi among your saved words.",
+  },
+  {
+    facet: "clozeChar",
+    label: "Fill the gap",
+    hint: "One character of a saved word is masked (你▢) — pick it among confusables.",
+  },
+  {
+    facet: "familySweep",
+    label: "Family sweep",
+    hint: "Tap every character that takes its sound from a component you saved — decoys included.",
+  },
+  {
     facet: "familyTransfer",
     label: "Family transfer",
     hint: '"You know 青 = qīng — what about 情?" Tests the youbian-dubian skill on un-saved family members.',
@@ -52,9 +72,7 @@ export function loadSettings(): ReviewSettings {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ReviewSettings>;
       if (Array.isArray(parsed.enabledFacets)) {
-        const cleaned = (parsed.enabledFacets as Facet[]).filter((f) =>
-          KNOWN_FACETS.has(f),
-        );
+        const cleaned = (parsed.enabledFacets as Facet[]).filter((f) => KNOWN_FACETS.has(f));
         return {
           enabledFacets: cleaned.length > 0 ? cleaned : DEFAULT_FACETS,
           randomOrder: !!parsed.randomOrder,
@@ -103,12 +121,8 @@ export function ReviewLaunch({
   onStartCluster,
   onClose,
 }: Props) {
-  const [enabled, setEnabled] = useState<Set<Facet>>(
-    () => new Set(loadSettings().enabledFacets),
-  );
-  const [randomOrder, setRandomOrder] = useState<boolean>(
-    () => loadSettings().randomOrder,
-  );
+  const [enabled, setEnabled] = useState<Set<Facet>>(() => new Set(loadSettings().enabledFacets));
+  const [randomOrder, setRandomOrder] = useState<boolean>(() => loadSettings().randomOrder);
   const [includeSubchars, setIncludeSubchars] = useState<boolean>(
     () => loadSettings().includeSubchars,
   );
@@ -188,8 +202,8 @@ export function ReviewLaunch({
               <span className="launch-option-label">Shuffle within session</span>
             </span>
             <span className="launch-option-hint">
-              Off: char/component cards before words, oldest-due first.
-              On: random order across all enabled drill types.
+              Off: char/component cards before words, oldest-due first. On: random order across all
+              enabled drill types.
             </span>
           </button>
         </div>
@@ -202,17 +216,13 @@ export function ReviewLaunch({
             aria-pressed={includeSubchars}
           >
             <span className="launch-option-row">
-              <span className="launch-option-check">
-                {includeSubchars ? "●" : "○"}
-              </span>
-              <span className="launch-option-label">
-                Include cascaded sub-characters
-              </span>
+              <span className="launch-option-check">{includeSubchars ? "●" : "○"}</span>
+              <span className="launch-option-label">Include cascaded sub-characters</span>
             </span>
             <span className="launch-option-hint">
-              Off (default): only the words you saved + drills on their
-              direct components surface. On: cascaded sub-character
-              recognition cards (e.g. 豕 from saving 家) join the queue too.
+              Off (default): only the words you saved + drills on their direct components surface.
+              On: cascaded sub-character recognition cards (e.g. 豕 from saving 家) join the queue
+              too.
             </span>
           </button>
         </div>

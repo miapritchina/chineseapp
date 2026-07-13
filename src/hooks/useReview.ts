@@ -177,6 +177,36 @@ export function useReview({
         itemKind: "word",
         facet: "soundRecognition",
       });
+      // v98 drills. Reverse (gloss → hanzi) for every saved word; cloze
+      // (masked char) only makes sense with ≥2 characters.
+      out.set(rowId(key, "word", "reverseRecognition"), {
+        itemKey: key,
+        itemKind: "word",
+        facet: "reverseRecognition",
+      });
+      if ([...key].length >= 2) {
+        out.set(rowId(key, "word", "clozeChar"), {
+          itemKey: key,
+          itemKind: "word",
+          facet: "clozeChar",
+        });
+      }
+    }
+    // familySweep: one card per saved phonetic component with ≥3
+    // family members that exist in data-chars.
+    if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0) {
+      for (const key of scheduledKeys) {
+        if ([...key].length !== 1) continue;
+        const comp = phoneticComponentsByChar.get(key);
+        if (!comp?.family) continue;
+        const usable = comp.family.filter((f) => f && f !== comp.char && chars[f]);
+        if (usable.length < 3) continue;
+        out.set(rowId(key, "component", "familySweep"), {
+          itemKey: key,
+          itemKind: "component",
+          facet: "familySweep",
+        });
+      }
     }
     // familyTransfer: for each saved phonetic component, take up to two
     // family members the user hasn't saved yet and seed transfer cards
@@ -217,7 +247,7 @@ export function useReview({
       }
     }
     return out;
-  }, [scheduledKeys, phoneticComponentsByChar, wroteKeys]);
+  }, [scheduledKeys, chars, phoneticComponentsByChar, wroteKeys]);
 
   // Reconcile: ensure every expected card exists; drop any auto-seeded
   // facet card whose key is no longer expected. Cascaded char recognition
@@ -266,12 +296,16 @@ export function useReview({
     for (const [id, row] of next) {
       const isAutoFacet =
         (row.itemKind === "word" &&
-          (row.facet === "meaningRecognition" || row.facet === "soundRecognition")) ||
+          (row.facet === "meaningRecognition" ||
+            row.facet === "soundRecognition" ||
+            row.facet === "reverseRecognition" ||
+            row.facet === "clozeChar")) ||
         (row.itemKind === "char" &&
           (row.facet === "phoneticTap" ||
             row.facet === "familyTransfer" ||
             row.facet === "production")) ||
-        (row.itemKind === "component" && row.facet === "componentSound");
+        (row.itemKind === "component" &&
+          (row.facet === "componentSound" || row.facet === "familySweep"));
       if (isAutoFacet && !expectedCards.has(id)) {
         next.delete(id);
         changed = true;
@@ -397,12 +431,21 @@ export function useReview({
   // freshly-saved words.
   const dueCards = useMemo<ReviewCard[]>(() => {
     const now = new Date();
+    // Within word kind, meaning/sound sort before the v98 extras
+    // (reverse, cloze) so the extras only take daily-new slots after
+    // the primary recognition cards have taken theirs — a low-priority
+    // facet must never starve the main queue (BUG-6 lesson).
+    const facetTier = (row: ReviewCard) =>
+      row.facet === "reverseRecognition" || row.facet === "clozeChar" ? 1 : 0;
     const ordered = [...cards.values()]
       .filter((row) => isDue(row.card, now))
       .sort((a, b) => {
         const ka = a.itemKind === "word" ? 1 : 0;
         const kb = b.itemKind === "word" ? 1 : 0;
         if (ka !== kb) return ka - kb;
+        const ta = facetTier(a);
+        const tb = facetTier(b);
+        if (ta !== tb) return ta - tb;
         return a.dueAt - b.dueAt;
       });
     // Already-introduced new cards count toward today's cap. Anything
@@ -439,6 +482,64 @@ export function useReview({
         }
       });
   };
+
+  // Damped Good credit for every char/component reachable from
+  // itemKey. Mutates `next` in place; returns the changed rows. Shared
+  // by grade() (word Good/Easy) and creditInference() (correct guess
+  // on an unsaved inference word).
+  const cascadeToClosure = (itemKey: string, next: Map<string, ReviewCard>, now: Date) => {
+    const changed: ReviewCard[] = [];
+    const closure = componentClosure(itemKey, chars);
+    closure.delete(itemKey);
+    for (const childKey of closure) {
+      const childKind: ItemKind = "char";
+      const childId = rowId(childKey, childKind, MEANING_FACET);
+      let childRow = next.get(childId);
+      if (!childRow) {
+        const seeded = seedCard(now);
+        childRow = {
+          itemKey: childKey,
+          itemKind: childKind,
+          facet: MEANING_FACET,
+          card: seeded,
+          dueAt: new Date(seeded.due).getTime(),
+          lastReviewAt: null,
+          directReviews: 0,
+          cascadeReviews: 0,
+        };
+      }
+      const isDirect = (childRow.directReviews ?? 0) > 0;
+      const newChildCard = applyCascadeCredit(
+        childRow.card,
+        isDirect ? null : CASCADE_CAP_DAYS,
+        now,
+      );
+      const newChild: ReviewCard = {
+        ...childRow,
+        card: newChildCard,
+        dueAt: new Date(newChildCard.due).getTime(),
+        cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
+      };
+      next.set(childId, newChild);
+      changed.push(newChild);
+    }
+    return changed;
+  };
+
+  // "Got it" on a new-word inference card: the word has no FSRS row of
+  // its own — credit the constituent chars, exactly like a word Good.
+  const creditInference = useCallback(
+    (itemKey: string) => {
+      const now = new Date();
+      const next = new Map(cardsRef.current);
+      const changed = cascadeToClosure(itemKey, next, now);
+      if (changed.length === 0) return;
+      applyCards(next);
+      remoteUpsert(changed);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, chars, applyCards],
+  );
 
   // Apply a grade to one card. On Good/Easy on the MEANING facet, also
   // walk the parent's component closure and apply a damped Good cascade
@@ -482,40 +583,7 @@ export function useReview({
       const cascade =
         kind === FIRST_KIND && facet === MEANING_FACET && (rating === "Good" || rating === "Easy");
       if (cascade) {
-        const closure = componentClosure(itemKey, chars);
-        closure.delete(itemKey);
-        for (const childKey of closure) {
-          const childKind: ItemKind = "char";
-          const childId = rowId(childKey, childKind, MEANING_FACET);
-          let childRow = next.get(childId);
-          if (!childRow) {
-            const seeded = seedCard(now);
-            childRow = {
-              itemKey: childKey,
-              itemKind: childKind,
-              facet: MEANING_FACET,
-              card: seeded,
-              dueAt: new Date(seeded.due).getTime(),
-              lastReviewAt: null,
-              directReviews: 0,
-              cascadeReviews: 0,
-            };
-          }
-          const isDirect = (childRow.directReviews ?? 0) > 0;
-          const newChildCard = applyCascadeCredit(
-            childRow.card,
-            isDirect ? null : CASCADE_CAP_DAYS,
-            now,
-          );
-          const newChild: ReviewCard = {
-            ...childRow,
-            card: newChildCard,
-            dueAt: new Date(newChildCard.due).getTime(),
-            cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
-          };
-          next.set(childId, newChild);
-          changed.push(newChild);
-        }
+        changed.push(...cascadeToClosure(itemKey, next, now));
       }
 
       applyCards(next);
@@ -579,6 +647,7 @@ export function useReview({
     dueCards,
     grade,
     attributeFailure,
+    creditInference,
     syncing,
   };
 }

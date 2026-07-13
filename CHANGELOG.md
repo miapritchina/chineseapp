@@ -11,6 +11,27 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Four new recognition drills** (v98 — [spec](docs/product/recognition-drills.md)),
+  all opt-in toggles on the review launch screen:
+  - **New words** (`wordInference`, owner's idea): a real word you
+    have *not* saved, built entirely from characters inside your saved
+    words (电话 + 大脑 → 电脑) — guess the meaning, reveal, self-grade.
+    Session-only (no FSRS row); "Got it" cascade-credits the
+    constituent characters' cards. Material discovered per session by
+    probing known-char pairs against the dictionary
+    (`useWordInference` + `lib/drillGen`).
+  - **Reverse** (`reverseRecognition`): gloss → pick the hanzi among
+    saved-word tiles; distractors prefer words sharing a character.
+  - **Fill the gap** (`clozeChar`): a saved word with one character
+    masked (你▢) — pick it among confusion-cluster distractors.
+  - **Family sweep** (`familySweep`): tap every character that takes
+    its sound from a saved phonetic component, decoys mixed in; exact
+    set → Good.
+  New word-kind facets sit in a lower daily-new-cap tier so they can
+  never starve the meaning/sound queue (BUG-6 lesson, enforced by a
+  seeding test).
+
 ### Fixed
 - **Sign-in code input rejected codes longer than 6 digits** (BUG-8):
   Supabase's OTP length is a project setting (6–10 digits; this project

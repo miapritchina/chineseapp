@@ -470,6 +470,10 @@ Retired drill (facet = componentSound); same story as 7.14.
 
 **What:** The extracted stage-A/B primitives: `PageHeader` (back + tag + progress), `EmptyState` (title + hint variants), `Eyebrow` (mono uppercase micro-label), `SectionHeader` (numbered sheet section head), `SpeakButton` (wraps `lib/speech.ts`), `DrillShell` (drill chrome: header + body slot + skip row), `GradeButtons` (Again/Good/Easy trio with `--grade-color` outline), `HanziGlyph` (HanziWriter animate/quiz mount + fallback). Each emits the pre-existing classNames, so their CSS is documented under the consuming surfaces above.
 
+### 7.25 v98 drill cards *(WordInferenceCard, ReverseRecognitionCard, ClozeCharCard, FamilySweepCard)*
+
+**What:** The four recognition drills from [recognition-drills.md](../product/recognition-drills.md). All reuse the `.phonetic-tap*` surface (tap-anywhere post-answer) and `<Entity>` picks with `.is-correct/.is-wrong/.is-reveal/.is-selected` flashes. **New classes:** `.inference-grade-row`, `.reverse-gloss`, `.reverse-row`, `.reverse-pick`, `.cloze-word`, `.cloze-blank`, `.cloze-solved`, `.sweep-grid`, `.sweep-confirm`, `.entity.is-selected`. Pure material generation in `src/lib/drillGen.ts`.
+
 ---
 
 ## 8. Componentization Proposals

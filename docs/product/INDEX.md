@@ -9,6 +9,11 @@ others are reference snapshots.
 These describe work the project intends to do. Treat as authoritative
 until superseded.
 
+- **[`recognition-drills.md`](recognition-drills.md)** — July 2026
+  drill candidates; drills 1–4 (new-word inference, reverse
+  recognition, masked-char cloze, family sweep) shipped in v98,
+  5–6 remain backlog.
+
 - **[`chinese-app-ux-redesign.md`](chinese-app-ux-redesign.md)** —
   Owner interview + QA-driven redesign, May 12 2026. Introduces the
   `<Entity>` component primitive (one component, four sizes), the

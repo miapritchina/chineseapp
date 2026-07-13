@@ -115,15 +115,24 @@ not an enum: [ADR-0003](../decisions/0003-four-status-tier-model.md).
 
 ### Item kind × facet
 
-Each scheduled "thing" is a tuple `(item_kind, item_key, facet)`. Two
-kinds, four facets:
+Each scheduled "thing" is a tuple `(item_kind, item_key, facet)`. Three
+kinds, seven scheduled facets (plus one session-only drill):
 
 | Kind | Facet | Surface | Seed rule |
 |---|---|---|---|
 | word | `meaningRecognition` | combined recognition card | every saved word |
 | word | `soundRecognition` | combined recognition card (same surface) | every saved word |
+| word | `reverseRecognition` | gloss → pick the hanzi (v98) | every saved word |
+| word | `clozeChar` | masked-char pick (v98) | saved words with ≥2 chars |
+| component | `familySweep` | tap-all-family-members grid (v98) | saved phonetic components with ≥3 usable family members |
 | char | `familyTransfer` | "you know 青, what about 情?" multi-choice | up to 2 family members per saved phonetic component, picked from chars the user hasn't saved |
 | char | `production` | Hanzi Writer trace quiz | single-char saved items at ✒ Wrote tier |
+
+`wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
+is session-only: unsaved words built from known chars, no FSRS row —
+a correct guess cascade-credits the constituent char cards. Word-kind
+facets beyond meaning/sound sit in a lower daily-cap tier so they can
+never starve the primary queue.
 
 `recognition` is a legacy facet name from pre-v66 cards; the load path
 renames them to `meaningRecognition` in memory. `phoneticTap` and
