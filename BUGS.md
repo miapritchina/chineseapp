@@ -32,6 +32,7 @@ feature broken) · **Medium** (annoying but workarounds exist) ·
 | BUG-2 | Medium | All user data persisted to localStorage instead of Supabase | (cloud-first hooks rework) — see [ADR-0001](docs/decisions/0001-supabase-source-of-truth.md). Cross-device deletion propagation remains [open work](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | BUG-6 | High | Retired phoneticTap/componentSound cards clog the review queue and starve word reviews | v95 — seeding removed in `useReview`; legacy rows ignored on load/sync + scrubbed locally; daily-new cap now counts word cards only. |
 | BUG-7 | Medium | Sound-facet grade of the combined card never syncs to Supabase | v95 — ref-mirrored cards map ([ADR-0010](docs/decisions/0010-ref-mirrored-cards-map-in-usereview.md)); both same-tick grades upsert. |
+| BUG-8 | High | Sign-in code input capped at 6 digits; Supabase issues 8-digit codes | v97 — `maxLength` 10, submit enabled from 6; copy no longer says "6-digit". Reported live by owner. |
 | BUG-3 | Low | Search "中国" ranks "发展中国家" above "中国" | v90 — client-side exact-match partition in `useDictionary.ts` (`search()`) surfaces an exact hanzi hit ahead of substring/compound matches. |
 | BUG-5 | Medium | Review: grading "Easy" flashes red border (should be blue/green) | v90 — the picked grade button now takes an `outline` in its own `--grade-color` (`.combined-grade-row .review-btn.is-picked`, `styles.css`); Easy → `--grade-easy` blue. No card-surface red flash. |
 
