@@ -50,18 +50,20 @@ export function SignInModal({ onClose, onSignIn, onVerifyCode }: Props) {
           <form className="signin-form" onSubmit={verify}>
             <div className="signin-title">Enter your code</div>
             <div className="signin-body">
-              We emailed a 6-digit code to <strong>{email}</strong>. Type it here to finish signing
+              We emailed a sign-in code to <strong>{email}</strong>. Type it here to finish signing
               in.
             </div>
+            {/* Supabase OTP length is a project setting (6–10 digits) —
+                don't assume 6. */}
             <input
               type="text"
               autoFocus
               required
               inputMode="numeric"
               pattern="[0-9]*"
-              maxLength={6}
+              maxLength={10}
               autoComplete="one-time-code"
-              placeholder="123456"
+              placeholder="12345678"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               disabled={submitting}
@@ -86,7 +88,7 @@ export function SignInModal({ onClose, onSignIn, onVerifyCode }: Props) {
         ) : (
           <form className="signin-form" onSubmit={send}>
             <div className="signin-title">Sign in</div>
-            <div className="signin-body">We&rsquo;ll email you a 6-digit code. No password.</div>
+            <div className="signin-body">We&rsquo;ll email you a sign-in code. No password.</div>
             <input
               type="email"
               autoFocus

@@ -11,6 +11,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **Sign-in code input rejected codes longer than 6 digits** (BUG-8):
+  Supabase's OTP length is a project setting (6–10 digits; this project
+  issues 8), but the input hard-capped at `maxLength=6` so the code
+  could not be typed at all. Now accepts up to 10 digits; copy no
+  longer promises "6-digit".
+
+## [v96]
+
 ### Added
 - **PWA (v96):** the app is installable and works offline across all
   three surfaces. `vite-plugin-pwa` service worker (auto-update,
