@@ -7,8 +7,6 @@ import { DrillShell } from "./ui/DrillShell";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
-import { PhoneticTapCard } from "./PhoneticTapCard";
-import { ComponentSoundCard } from "./ComponentSoundCard";
 import { FamilyTransferCard } from "./FamilyTransferCard";
 import { ProductionCard } from "./ProductionCard";
 import { DisambiguationCard } from "./DisambiguationCard";
@@ -38,7 +36,7 @@ function rid(c: ReviewCard) {
   return `${c.itemKind}|${c.facet}|${c.itemKey}`;
 }
 
-// Recognition / Phonetic-tap / Component-sound surface. Drains the queue
+// Recognition / family-transfer / production surface. Drains the queue
 // in dueCards[0] order; the just-graded card drops out naturally via
 // useReview's dueCards memo (its due_at moves into the future). Per-
 // session state — disambig-shown set, manual-skip set — is local.
@@ -136,7 +134,7 @@ export function ReviewPage({
       if (!promotedCluster.has(row.itemKey)) continue;
       if (seen.has(rid(row))) continue;
       // Only word-level recognition cards make sense for cluster
-      // contrast — phoneticTap etc. are about a single-char skill, not
+      // contrast — drill facets are about a single-char skill, not
       // the disambig point.
       if (
         row.facet !== "meaningRecognition" &&
@@ -230,7 +228,7 @@ export function ReviewPage({
     [onAttributeFailure, onGradedAdvance],
   );
 
-  const handlePhoneticTapGrade = useCallback(
+  const handleDrillGrade = useCallback(
     (rating: RatingName) => {
       if (!current) return;
       const cur = current;
@@ -259,10 +257,6 @@ export function ReviewPage({
 
   const word = current.itemKind === "word" ? findWord(current.itemKey) : null;
   const charData = chars?.[current.itemKey];
-  const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
-  const gloss = word
-    ? (word.definitions || []).slice(0, 3).join("; ")
-    : (charData?.definitions || []).slice(0, 3).join("; ");
   const progressIndex = total - queue.length + 1;
 
   // Leech-cluster disambiguation. One-shot per key per session.
@@ -326,7 +320,7 @@ export function ReviewPage({
             key={rid(current)}
             char={current.itemKey}
             charData={cd}
-            onGrade={handlePhoneticTapGrade}
+            onGrade={handleDrillGrade}
             onSkip={handleSkipCurrent}
           />
         </div>
@@ -383,74 +377,8 @@ export function ReviewPage({
           charData={cd}
           componentEntry={componentEntry}
           pool={phoneticComponents}
-          onGrade={handlePhoneticTapGrade}
+          onGrade={handleDrillGrade}
         />
-      </DrillShell>
-    );
-  }
-
-  // Component-sound drill. If supporting data isn't loaded yet, render a
-  // loading placeholder rather than auto-skipping (auto-skip in render
-  // was the source of the queue-flipping bug).
-  if (current.facet === "componentSound") {
-    const entry = phoneticComponentsByChar?.get(current.itemKey);
-    if (!entry || !phoneticComponents) {
-      return (
-        <DrillShell
-          tag="Sound · pick"
-          onClose={onClose}
-          progressIndex={progressIndex}
-          total={total}
-          onSkip={handleSkipCurrent}
-        >
-          <div className="review-empty-hint">Loading phonetic-components data…</div>
-        </DrillShell>
-      );
-    }
-    return (
-      <DrillShell
-        tag="Sound · pick"
-        onClose={onClose}
-        progressIndex={progressIndex}
-        total={total}
-        onSkip={handleSkipCurrent}
-      >
-        <ComponentSoundCard
-          key={rid(current)}
-          entry={entry}
-          pool={phoneticComponents}
-          onGrade={handlePhoneticTapGrade}
-        />
-      </DrillShell>
-    );
-  }
-
-  // Phonetic-tap drill. Same loading-vs-skip treatment.
-  if (current.facet === "phoneticTap") {
-    const cd = chars?.[current.itemKey];
-    const hasSoundComponent = !!cd?.components?.some((c) => c.type === "sound" && c.char);
-    return (
-      <DrillShell
-        tag="Sound · tap"
-        onClose={onClose}
-        progressIndex={progressIndex}
-        total={total}
-        onSkip={handleSkipCurrent}
-      >
-        {!cd ? (
-          <div className="review-empty-hint">Loading character data…</div>
-        ) : !hasSoundComponent ? (
-          <div className="review-empty-hint">
-            No sound component data for {current.itemKey}. Tap Skip to move on.
-          </div>
-        ) : (
-          <PhoneticTapCard
-            key={rid(current)}
-            char={current.itemKey}
-            charData={cd}
-            onGrade={handlePhoneticTapGrade}
-          />
-        )}
       </DrillShell>
     );
   }

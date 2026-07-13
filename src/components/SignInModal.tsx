@@ -3,11 +3,13 @@ import { useState } from "react";
 interface Props {
   onClose: () => void;
   onSignIn: (email: string) => Promise<{ error: string | null }>;
+  onVerifyCode: (email: string, code: string) => Promise<{ error: string | null }>;
 }
 
-export function SignInModal({ onClose, onSignIn }: Props) {
+export function SignInModal({ onClose, onSignIn, onVerifyCode }: Props) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -19,7 +21,21 @@ export function SignInModal({ onClose, onSignIn }: Props) {
     const { error: err } = await onSignIn(email.trim());
     setSubmitting(false);
     if (err) setError(err);
-    else setSent(true);
+    else {
+      setSent(true);
+      setCode("");
+    }
+  };
+
+  const verify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setSubmitting(true);
+    setError(null);
+    const { error: err } = await onVerifyCode(email.trim(), code);
+    setSubmitting(false);
+    // On success the auth state change closes the modal from App.
+    if (err) setError(err);
   };
 
   return (
@@ -31,19 +47,46 @@ export function SignInModal({ onClose, onSignIn }: Props) {
         </button>
 
         {sent ? (
-          <div className="signin-sent">
-            <div className="signin-title">Check your email</div>
+          <form className="signin-form" onSubmit={verify}>
+            <div className="signin-title">Enter your code</div>
             <div className="signin-body">
-              We sent a sign-in link to <strong>{email}</strong>. Open it on this
-              device to finish signing in.
+              We emailed a 6-digit code to <strong>{email}</strong>. Type it here to finish signing
+              in.
             </div>
-          </div>
+            <input
+              type="text"
+              autoFocus
+              required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              autoComplete="one-time-code"
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              disabled={submitting}
+            />
+            <button
+              className="signin-submit"
+              type="submit"
+              disabled={submitting || code.trim().length < 6}
+            >
+              {submitting ? "Checking…" : "Sign in"}
+            </button>
+            {error && <div className="signin-error">{error}</div>}
+            <button
+              type="button"
+              className="signin-resend"
+              disabled={submitting}
+              onClick={(e) => void send(e)}
+            >
+              Resend code
+            </button>
+          </form>
         ) : (
           <form className="signin-form" onSubmit={send}>
             <div className="signin-title">Sign in</div>
-            <div className="signin-body">
-              We'll email you a one-tap link. No password.
-            </div>
+            <div className="signin-body">We&rsquo;ll email you a 6-digit code. No password.</div>
             <input
               type="email"
               autoFocus
@@ -55,7 +98,7 @@ export function SignInModal({ onClose, onSignIn }: Props) {
               disabled={submitting}
             />
             <button className="signin-submit" type="submit" disabled={submitting || !email.trim()}>
-              {submitting ? "Sending…" : "Send link"}
+              {submitting ? "Sending…" : "Send code"}
             </button>
             {error && <div className="signin-error">{error}</div>}
           </form>

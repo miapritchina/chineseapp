@@ -7,6 +7,13 @@ documentation. The authoritative copy of every token still lives in
 
 ## Files
 
+- **Storybook** (`npm run storybook`, deployed at
+  `/chineseapp/storybook/`) — the *living* component documentation:
+  real components rendered against fixture data, prop tables generated
+  from TypeScript (autodocs), and a token gallery that reads the
+  shipped `src/styles.css` custom properties at runtime, so it cannot
+  drift. Stories live next to their components (`src/**/*.stories.tsx`);
+  shared fixtures + provider decorator in `.storybook/`.
 - **[`DESIGN-SYSTEM.md`](DESIGN-SYSTEM.md)** — full system reference.
   Colors, typography + type scale, spacing/radii/shadows/breakpoints/
   z-index, motion, layout patterns, component inventory, and

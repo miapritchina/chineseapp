@@ -24,14 +24,23 @@ export function useAuth() {
     };
   }, []);
 
-  const signInWithEmail = useCallback(
-    async (email: string): Promise<{ error: string | null }> => {
-      const { error } = await supabase.auth.signInWithOtp({
+  const signInWithEmail = useCallback(async (email: string): Promise<{ error: string | null }> => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // Land back on the same path the user came from.
+        emailRedirectTo: window.location.origin + window.location.pathname,
+      },
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const verifyEmailCode = useCallback(
+    async (email: string, code: string): Promise<{ error: string | null }> => {
+      const { error } = await supabase.auth.verifyOtp({
         email,
-        options: {
-          // Land back on the same path the user came from.
-          emailRedirectTo: window.location.origin + window.location.pathname,
-        },
+        token: code.trim(),
+        type: "email",
       });
       return { error: error?.message ?? null };
     },
@@ -44,5 +53,5 @@ export function useAuth() {
 
   const user: User | null = session?.user ?? null;
 
-  return { session, user, loading, signInWithEmail, signOut };
+  return { session, user, loading, signInWithEmail, verifyEmailCode, signOut };
 }

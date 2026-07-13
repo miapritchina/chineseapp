@@ -1,0 +1,26 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Design System/Overview" />
+
+# 中文 · Chinese — component library
+
+Living documentation for the app's shared UI. Every story under
+**Primitives** renders the real component against fixture data, and the
+**Docs** tab of each is generated automatically from the TypeScript
+props (autodocs) — it cannot drift from the code.
+
+- **Design System / Tokens** — color + type-scale swatches read live
+  from `src/styles.css` custom properties.
+- **Primitives / Entity** — the unified character/word tile (five
+  sizes); the core design primitive.
+- **Primitives / GradeButtons, StatusButton, PageHeader, EmptyState…**
+  — the shared `src/components/ui/` building blocks.
+- **Review / CombinedRecognitionCard** — the main drill surface,
+  interactive (tap to reveal, grade both facets).
+- **Auth / SignInModal** — the email one-time-code sign-in flow.
+
+The narrative design reference (rationale, class inventory, layout
+patterns, motion) lives in
+[`docs/design-system/DESIGN-SYSTEM.md`](https://github.com/decobots/chineseapp/blob/main/docs/design-system/DESIGN-SYSTEM.md).
+Stories render in your OS light/dark preference — the app's dark theme
+comes from the same tokens via `prefers-color-scheme`.

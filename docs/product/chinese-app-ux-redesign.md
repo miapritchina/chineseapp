@@ -27,7 +27,7 @@ against the code on this branch:
 | 9.2 — role hues single-sourced (no hex in `roleColor()`) | ✅ | `EntitySheet.tsx` uses `var(--role-*)` |
 
 **Still pending** (the real backlog): §0 unified `<Entity>`, §8 shared UI components,
-1C drop-2-drills (deferred by owner), 4G graph performance. BUG-1 (deep links) appears
+4G graph performance (1C drop-2-drills shipped in v95). BUG-1 (deep links) appears
 wired in `App.tsx` but awaits a live browser confirmation.
 
 ---
@@ -157,7 +157,7 @@ The hamburger menu link to "Sentence" should be removed (or redirect to the main
 
 The Sentence page's current functionality stays the same — composer area, token chips, POS-colored word bank, pinyin output, save/copy. It just lives in a tab instead of a separate route.
 
-### 1C. Review Drills — Drop 2, Keep 4
+### 1C. Review Drills — Drop 2, Keep 4 ✅ *(shipped v95: seeding removed, components deleted, legacy rows scrubbed)*
 
 **Drop:**
 - ~~Tap the sound component~~ (asks user to tap which component gives the sound — too granular)

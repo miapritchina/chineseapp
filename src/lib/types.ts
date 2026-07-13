@@ -91,8 +91,8 @@ export type Facet =
   | "recognition" // legacy pre-v66 — migrated to meaningRecognition on load
   | "meaningRecognition"
   | "soundRecognition"
-  | "phoneticTap"
-  | "componentSound"
+  | "phoneticTap" // retired v95 — kept only so legacy rows can be scrubbed
+  | "componentSound" // retired v95 — same
   | "familyTransfer"
   | "production";
 

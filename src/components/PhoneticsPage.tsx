@@ -12,9 +12,9 @@ interface Props {
 
 // Browse the top ~250 productive sound components ranked by how many
 // other characters they appear in. Tap a row's status button to save it
-// (or change its tier) — once saved, the componentSound drill auto-seeds
-// for it via the useReview reconcile rule. The list is read-only static
-// data (public/phonetic-components.json).
+// (or change its tier) — once saved, familyTransfer drills auto-seed on
+// its unsaved family members via the useReview reconcile rule. The list
+// is read-only static data (public/phonetic-components.json).
 export function PhoneticsPage({ components, ready, onClose }: Props) {
   const { getStatus, setStatus } = useSavedCtx();
   return (

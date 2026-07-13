@@ -1,6 +1,6 @@
 # ADR-0008 — Functional setState in useReview to survive concurrent grades
 
-**Status:** Accepted · **Date:** 2025-Q4 (v76)
+**Status:** Superseded by ADR-0010 · **Date:** 2025-Q4 (v76)
 
 ## Context
 

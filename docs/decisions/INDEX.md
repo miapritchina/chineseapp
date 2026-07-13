@@ -17,8 +17,9 @@ number never changes, even if the ADR is superseded.
 | 0005 | [Additive-only migrations; widest-shape-first queries](0005-additive-migrations-and-shape-fallback.md) | Accepted |
 | 0006 | [Daily new-card cap (25) + active leech interleaving](0006-daily-cap-and-leech-interleave.md) | Accepted |
 | 0007 | [Tap-anywhere-to-advance, no auto-advance timers](0007-tap-anywhere-to-advance.md) | Accepted |
-| 0008 | [Functional setState in `useReview` for concurrent grades](0008-functional-setstate-for-concurrent-grade.md) | Accepted |
+| 0008 | [Functional setState in `useReview` for concurrent grades](0008-functional-setstate-for-concurrent-grade.md) | Superseded by ADR-0010 |
 | 0009 | [Char data static, word data in DB](0009-chars-static-words-in-db.md) | Accepted |
+| 0010 | [Ref-mirrored cards map in `useReview`](0010-ref-mirrored-cards-map-in-usereview.md) | Accepted |
 
 ## Writing a new ADR
 

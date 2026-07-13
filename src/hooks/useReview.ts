@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   applyCascadeCredit,
@@ -14,6 +14,10 @@ import { componentClosure } from "../lib/componentSearch";
 import { useReconcileTriggers } from "./useReconcileTriggers";
 
 const FSRS_KEY = "chinese.fsrs.v1";
+// Drills dropped from the launch screen (v85) — they can never be
+// enabled, so their rows must not load, seed, or sync back in. Legacy
+// rows may still exist in localStorage / Supabase from before the drop.
+const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound"]);
 const INTRODUCED_KEY = "chinese.fsrs.introducedToday";
 const CASCADE_CAP_DAYS = 7;
 // Re-fetch from Supabase on tab focus, but at most once per this window.
@@ -77,10 +81,6 @@ interface UseReviewOpts {
   // data-chars.json content; needed for the cascade walk down to
   // constituent chars and components.
   chars: Record<string, Char>;
-  // Subset of single-character saved items that are known phonetic
-  // components (from public/phonetic-components.json). Members get an
-  // extra componentSound card on top of the standard recognition one.
-  phoneticComponentKeys?: Set<string>;
   // Full phonetic-components map keyed by char. Used by the
   // familyTransfer seeding rule (need to walk family[]).
   phoneticComponentsByChar?: Map<string, { char: string; pinyin: string; family: string[] }>;
@@ -98,6 +98,7 @@ function loadLocalCards(): Map<string, ReviewCard> {
     const map = new Map<string, ReviewCard>();
     for (const it of parsed.items as ReviewCard[]) {
       if (it && it.itemKey && it.card && typeof it.dueAt === "number") {
+        if (RETIRED_FACETS.has(it.facet)) continue;
         map.set(rowId(it.itemKey, it.itemKind, it.facet), it);
       }
     }
@@ -126,13 +127,26 @@ export function useReview({
   userId,
   scheduledKeys,
   chars,
-  phoneticComponentKeys,
   phoneticComponentsByChar,
   wroteKeys,
 }: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
   const [introducedToday, setIntroducedToday] = useState<Set<string>>(() => loadIntroducedToday());
+
+  // Synchronous mirror of `cards`. Every write goes through applyCards so
+  // two grade() calls in the same tick (the combined recognition card
+  // fires meaning + sound back-to-back) each see the other's result —
+  // the old functional-setState approach computed inside the updater,
+  // which React defers for the second dispatch, so the second grade's
+  // remote upsert read an empty change-list and the sound facet never
+  // reached Supabase.
+  const cardsRef = useRef<Map<string, ReviewCard>>(cards);
+  const applyCards = useCallback((next: Map<string, ReviewCard>) => {
+    cardsRef.current = next;
+    persistLocalCards(next);
+    setCards(next);
+  }, []);
 
   // Build payload for one Supabase upsert row.
   const toRemoteRow = (row: ReviewCard) => ({
@@ -146,9 +160,10 @@ export function useReview({
   });
 
   // What facets to seed for a given saved set. Word recognition is
-  // unconditional. PhoneticTap is seeded for any character (saved as a word
-  // OR appearing inside a saved word) that has at least one direct
-  // component with role "sound" — that's the drill's correct answer.
+  // unconditional. The retired phoneticTap / componentSound drills are
+  // no longer seeded — they were dropped from the launch screen but kept
+  // seeding cards, which inflated the due badge and ate the daily new-
+  // card cap with rows that could never surface.
   const expectedCards = useMemo(() => {
     const out = new Map<string, { itemKey: string; itemKind: ItemKind; facet: Facet }>();
     for (const key of scheduledKeys) {
@@ -163,38 +178,11 @@ export function useReview({
         facet: "soundRecognition",
       });
     }
-    for (const key of scheduledKeys) {
-      for (const c of key) {
-        const cd = chars[c];
-        if (!cd?.components) continue;
-        if (cd.components.some((x) => x?.type === "sound" && x.char)) {
-          out.set(rowId(c, "char", "phoneticTap"), {
-            itemKey: c,
-            itemKind: "char",
-            facet: "phoneticTap",
-          });
-        }
-      }
-    }
-    // componentSound: any saved single-char item that's listed in the
-    // productive phonetic-components data file. Only seeds if data has
-    // loaded; if not, this just doesn't seed (no harm).
-    if (phoneticComponentKeys && phoneticComponentKeys.size > 0) {
-      for (const key of scheduledKeys) {
-        if ([...key].length !== 1) continue;
-        if (!phoneticComponentKeys.has(key)) continue;
-        out.set(rowId(key, "component", "componentSound"), {
-          itemKey: key,
-          itemKind: "component",
-          facet: "componentSound",
-        });
-      }
-    }
     // familyTransfer: for each saved phonetic component, take up to two
     // family members the user hasn't saved yet and seed transfer cards
     // on them. Surfaces "you know 青, what's 情?" prompts. Cap is to
     // avoid drowning the queue when the user has saved many components.
-    if (phoneticComponentsByChar && phoneticComponentKeys && phoneticComponentKeys.size > 0) {
+    if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0) {
       const FAMILY_PER_COMPONENT = 2;
       for (const key of scheduledKeys) {
         if ([...key].length !== 1) continue;
@@ -229,80 +217,78 @@ export function useReview({
       }
     }
     return out;
-  }, [scheduledKeys, chars, phoneticComponentKeys, phoneticComponentsByChar, wroteKeys]);
+  }, [scheduledKeys, phoneticComponentsByChar, wroteKeys]);
 
   // Reconcile: ensure every expected card exists; drop any auto-seeded
   // facet card whose key is no longer expected. Cascaded char recognition
   // cards (kind=char, facet=recognition) are independent and survive —
   // they may still belong to other saved words via the cascade.
   useEffect(() => {
-    setCards((prev) => {
-      let changed = false;
-      const next = new Map(prev);
-      // Legacy migration: pre-v66 rows used facet "recognition" for the
-      // single combined card. Rename them to "meaningRecognition" so the
-      // user's existing FSRS state isn't lost.
-      for (const [id, row] of next) {
-        if (row.facet === "recognition") {
-          const newRow: ReviewCard = { ...row, facet: "meaningRecognition" };
-          const newId = rowId(newRow.itemKey, newRow.itemKind, newRow.facet);
-          next.delete(id);
-          if (!next.has(newId)) {
-            next.set(newId, newRow);
-            changed = true;
-          }
+    let changed = false;
+    const next = new Map(cardsRef.current);
+    // Legacy migration: pre-v66 rows used facet "recognition" for the
+    // single combined card. Rename them to "meaningRecognition" so the
+    // user's existing FSRS state isn't lost.
+    for (const [id, row] of next) {
+      if (row.facet === "recognition") {
+        const newRow: ReviewCard = { ...row, facet: "meaningRecognition" };
+        const newId = rowId(newRow.itemKey, newRow.itemKind, newRow.facet);
+        next.delete(id);
+        if (!next.has(newId)) {
+          next.set(newId, newRow);
+          changed = true;
         }
       }
+    }
 
-      const newSeeds: ReviewCard[] = [];
-      for (const [id, target] of expectedCards) {
-        if (!next.has(id)) {
-          const seeded = seedCard();
-          const row: ReviewCard = {
-            itemKey: target.itemKey,
-            itemKind: target.itemKind,
-            facet: target.facet,
-            card: seeded,
-            dueAt: new Date(seeded.due).getTime(),
-            lastReviewAt: null,
-            directReviews: 0,
-            cascadeReviews: 0,
-          };
-          next.set(id, row);
-          newSeeds.push(row);
-          changed = true;
-        }
+    const newSeeds: ReviewCard[] = [];
+    for (const [id, target] of expectedCards) {
+      if (!next.has(id)) {
+        const seeded = seedCard();
+        const row: ReviewCard = {
+          itemKey: target.itemKey,
+          itemKind: target.itemKind,
+          facet: target.facet,
+          card: seeded,
+          dueAt: new Date(seeded.due).getTime(),
+          lastReviewAt: null,
+          directReviews: 0,
+          cascadeReviews: 0,
+        };
+        next.set(id, row);
+        newSeeds.push(row);
+        changed = true;
       }
-      // Drop auto-seeded facet rows that aren't expected anymore.
-      // Cascade-seeded char/recognition cards are independent and survive.
-      for (const [id, row] of next) {
-        const isAutoFacet =
-          (row.itemKind === "word" &&
-            (row.facet === "meaningRecognition" || row.facet === "soundRecognition")) ||
-          (row.itemKind === "char" &&
-            (row.facet === "phoneticTap" ||
-              row.facet === "familyTransfer" ||
-              row.facet === "production")) ||
-          (row.itemKind === "component" && row.facet === "componentSound");
-        if (isAutoFacet && !expectedCards.has(id)) {
-          next.delete(id);
-          changed = true;
-        }
+    }
+    // Drop auto-seeded facet rows that aren't expected anymore (incl.
+    // legacy rows for the retired phoneticTap / componentSound drills).
+    // Cascade-seeded char/recognition cards are independent and survive.
+    for (const [id, row] of next) {
+      const isAutoFacet =
+        (row.itemKind === "word" &&
+          (row.facet === "meaningRecognition" || row.facet === "soundRecognition")) ||
+        (row.itemKind === "char" &&
+          (row.facet === "phoneticTap" ||
+            row.facet === "familyTransfer" ||
+            row.facet === "production")) ||
+        (row.itemKind === "component" && row.facet === "componentSound");
+      if (isAutoFacet && !expectedCards.has(id)) {
+        next.delete(id);
+        changed = true;
       }
-      if (!changed) return prev;
-      persistLocalCards(next);
-      if (userId && newSeeds.length > 0) {
-        void supabase
-          .from("user_fsrs_state")
-          .upsert(newSeeds.map(toRemoteRow), { onConflict: "user_id,item_key,item_kind,facet" })
-          .then(({ error }) => {
-            if (error && !/relation .*user_fsrs_state.*does not exist/i.test(error.message || "")) {
-              console.warn("fsrs upsert (seed) failed:", error);
-            }
-          });
-      }
-      return next;
-    });
+    }
+    if (!changed) return;
+    applyCards(next);
+    if (userId && newSeeds.length > 0) {
+      void supabase
+        .from("user_fsrs_state")
+        .upsert(newSeeds.map(toRemoteRow), { onConflict: "user_id,item_key,item_kind,facet" })
+        .then(({ error }) => {
+          if (error && !/relation .*user_fsrs_state.*does not exist/i.test(error.message || "")) {
+            console.warn("fsrs upsert (seed) failed:", error);
+          }
+        });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expectedCards, userId]);
 
@@ -328,6 +314,7 @@ export function useReview({
     }
     const remote = new Map<string, ReviewCard>();
     for (const r of data || []) {
+      if (RETIRED_FACETS.has(r.facet)) continue;
       // Migrate legacy "recognition" rows from the DB into the new
       // "meaningRecognition" facet on the way in (one-time, in-memory).
       const facet =
@@ -342,44 +329,40 @@ export function useReview({
       };
       remote.set(rowId(row.itemKey, row.itemKind, row.facet), row);
     }
-    let localBefore: Map<string, ReviewCard> = new Map();
-    setCards((prev) => {
-      localBefore = prev;
-      const merged = new Map(prev);
-      for (const [id, r] of remote) {
-        const p = merged.get(id);
-        if (!p) {
-          merged.set(id, r);
-          continue;
-        }
-        const pReps = p.card.reps ?? 0;
-        const rReps = r.card.reps ?? 0;
-        if (rReps > pReps) {
-          // Remote saw a grade we don't have — take it, but keep our
-          // local-only bookkeeping fields (not stored in the schema).
+    const localBefore = cardsRef.current;
+    const merged = new Map(localBefore);
+    for (const [id, r] of remote) {
+      const p = merged.get(id);
+      if (!p) {
+        merged.set(id, r);
+        continue;
+      }
+      const pReps = p.card.reps ?? 0;
+      const rReps = r.card.reps ?? 0;
+      if (rReps > pReps) {
+        // Remote saw a grade we don't have — take it, but keep our
+        // local-only bookkeeping fields (not stored in the schema).
+        merged.set(id, {
+          ...r,
+          directReviews: p.directReviews,
+          cascadeReviews: p.cascadeReviews,
+        });
+      } else if (rReps === pReps) {
+        const pT = p.lastReviewAt ?? 0;
+        const rT = r.lastReviewAt ?? 0;
+        if (rT >= pT) {
           merged.set(id, {
             ...r,
             directReviews: p.directReviews,
             cascadeReviews: p.cascadeReviews,
           });
-        } else if (rReps === pReps) {
-          const pT = p.lastReviewAt ?? 0;
-          const rT = r.lastReviewAt ?? 0;
-          if (rT >= pT) {
-            merged.set(id, {
-              ...r,
-              directReviews: p.directReviews,
-              cascadeReviews: p.cascadeReviews,
-            });
-          }
-          // else: local was reviewed more recently than the remote row
-          // records — keep local; the pending write will catch the DB up.
         }
-        // rReps < pReps → keep local (it has a grade the DB hasn't stored).
+        // else: local was reviewed more recently than the remote row
+        // records — keep local; the pending write will catch the DB up.
       }
-      persistLocalCards(merged);
-      return merged;
-    });
+      // rReps < pReps → keep local (it has a grade the DB hasn't stored).
+    }
+    applyCards(merged);
     // Upload any local rows the remote didn't have.
     const toUpload: ReviewCard[] = [];
     for (const [id, row] of localBefore) {
@@ -403,7 +386,7 @@ export function useReview({
       }
     }
     setSyncing(false);
-  }, [userId]);
+  }, [userId, applyCards]);
 
   useReconcileTriggers(userId, reconcile);
 
@@ -423,12 +406,17 @@ export function useReview({
         return a.dueAt - b.dueAt;
       });
     // Already-introduced new cards count toward today's cap. Anything
-    // beyond the cap drops off; older / non-new cards stay.
+    // beyond the cap drops off; older / non-new cards stay. The cap only
+    // applies to word cards — its purpose is limiting new-WORD intros.
+    // Char/component drill cards sort ahead of words, so counting them
+    // here let never-reviewable seeds eat every slot and starve the
+    // actual word queue.
     let newSlotsLeft = Math.max(0, DAILY_NEW_CAP - introducedToday.size);
     const out: ReviewCard[] = [];
     for (const row of ordered) {
       const id = rowId(row.itemKey, row.itemKind, row.facet);
-      const isNew = (row.directReviews ?? 0) === 0 && (row.card.reps ?? 0) === 0;
+      const isNew =
+        row.itemKind === "word" && (row.directReviews ?? 0) === 0 && (row.card.reps ?? 0) === 0;
       const alreadyIntroduced = introducedToday.has(id);
       if (isNew && !alreadyIntroduced) {
         if (newSlotsLeft <= 0) continue;
@@ -452,11 +440,13 @@ export function useReview({
       });
   };
 
-  // Apply a grade to one card. On Good/Easy, also walk the parent's
-  // component closure and apply a damped Good cascade to every char and
-  // component reachable from it (per the cascade rule in the rollout
-  // plan). On Again, no cascade — the user can attribute the failure to
-  // a specific child via attributeFailure().
+  // Apply a grade to one card. On Good/Easy on the MEANING facet, also
+  // walk the parent's component closure and apply a damped Good cascade
+  // to every char and component reachable from it (per the cascade rule
+  // in the rollout plan). The combined card grades meaning + sound in
+  // the same tick — cascading on both would double the credit, so only
+  // the meaning grade cascades. On Again, no cascade — the user can
+  // attribute the failure to a specific child via attributeFailure().
   const grade = useCallback(
     (
       itemKey: string,
@@ -466,94 +456,83 @@ export function useReview({
     ) => {
       const now = new Date();
       const parentId = rowId(itemKey, kind, facet);
-      // BUG FIX (v76): use the functional-setState form so two grade()
-      // calls in the same tick (combined recognition card fires
-      // meaning + sound back-to-back) don't both read a stale `cards`
-      // snapshot and lose one of the two updates. Re-set `changed`
-      // inside the updater so StrictMode's double-invoke doesn't
-      // duplicate the remote upsert.
-      let changed: ReviewCard[] = [];
-      let parentWasNew = false;
-      setCards((prev) => {
-        const parentRow = prev.get(parentId);
-        if (!parentRow) {
-          changed = [];
-          return prev;
-        }
-        parentWasNew = (parentRow.directReviews ?? 0) === 0 && (parentRow.card.reps ?? 0) === 0;
-        const next = new Map(prev);
-        const localChanged: ReviewCard[] = [];
+      const prev = cardsRef.current;
+      const parentRow = prev.get(parentId);
+      if (!parentRow) return;
+      const parentWasNew =
+        kind === FIRST_KIND &&
+        (parentRow.directReviews ?? 0) === 0 &&
+        (parentRow.card.reps ?? 0) === 0;
+      const next = new Map(prev);
+      const changed: ReviewCard[] = [];
 
-        // 1. Parent.
-        const newParentCard = gradeCard(parentRow.card, rating, now);
-        const newParent: ReviewCard = {
-          ...parentRow,
-          card: newParentCard,
-          dueAt: new Date(newParentCard.due).getTime(),
-          lastReviewAt: now.getTime(),
-          directReviews: (parentRow.directReviews ?? 0) + 1,
-        };
-        next.set(parentId, newParent);
-        localChanged.push(newParent);
+      // 1. Parent.
+      const newParentCard = gradeCard(parentRow.card, rating, now);
+      const newParent: ReviewCard = {
+        ...parentRow,
+        card: newParentCard,
+        dueAt: new Date(newParentCard.due).getTime(),
+        lastReviewAt: now.getTime(),
+        directReviews: (parentRow.directReviews ?? 0) + 1,
+      };
+      next.set(parentId, newParent);
+      changed.push(newParent);
 
-        // 2. Cascade to component closure (only for word kinds + Good/Easy).
-        const cascade = kind === FIRST_KIND && (rating === "Good" || rating === "Easy");
-        if (cascade) {
-          const closure = componentClosure(itemKey, chars);
-          closure.delete(itemKey);
-          for (const childKey of closure) {
-            const childKind: ItemKind = "char";
-            const childId = rowId(childKey, childKind, MEANING_FACET);
-            let childRow = next.get(childId);
-            if (!childRow) {
-              const seeded = seedCard(now);
-              childRow = {
-                itemKey: childKey,
-                itemKind: childKind,
-                facet: MEANING_FACET,
-                card: seeded,
-                dueAt: new Date(seeded.due).getTime(),
-                lastReviewAt: null,
-                directReviews: 0,
-                cascadeReviews: 0,
-              };
-            }
-            const isDirect = (childRow.directReviews ?? 0) > 0;
-            const newChildCard = applyCascadeCredit(
-              childRow.card,
-              isDirect ? null : CASCADE_CAP_DAYS,
-              now,
-            );
-            const newChild: ReviewCard = {
-              ...childRow,
-              card: newChildCard,
-              dueAt: new Date(newChildCard.due).getTime(),
-              cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
+      // 2. Cascade to component closure.
+      const cascade =
+        kind === FIRST_KIND && facet === MEANING_FACET && (rating === "Good" || rating === "Easy");
+      if (cascade) {
+        const closure = componentClosure(itemKey, chars);
+        closure.delete(itemKey);
+        for (const childKey of closure) {
+          const childKind: ItemKind = "char";
+          const childId = rowId(childKey, childKind, MEANING_FACET);
+          let childRow = next.get(childId);
+          if (!childRow) {
+            const seeded = seedCard(now);
+            childRow = {
+              itemKey: childKey,
+              itemKind: childKind,
+              facet: MEANING_FACET,
+              card: seeded,
+              dueAt: new Date(seeded.due).getTime(),
+              lastReviewAt: null,
+              directReviews: 0,
+              cascadeReviews: 0,
             };
-            next.set(childId, newChild);
-            localChanged.push(newChild);
           }
+          const isDirect = (childRow.directReviews ?? 0) > 0;
+          const newChildCard = applyCascadeCredit(
+            childRow.card,
+            isDirect ? null : CASCADE_CAP_DAYS,
+            now,
+          );
+          const newChild: ReviewCard = {
+            ...childRow,
+            card: newChildCard,
+            dueAt: new Date(newChildCard.due).getTime(),
+            cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
+          };
+          next.set(childId, newChild);
+          changed.push(newChild);
         }
+      }
 
-        persistLocalCards(next);
-        changed = localChanged;
-        return next;
-      });
+      applyCards(next);
 
       if (parentWasNew) {
-        setIntroducedToday((prev) => {
-          if (prev.has(parentId)) return prev;
-          const n = new Set(prev);
+        setIntroducedToday((p) => {
+          if (p.has(parentId)) return p;
+          const n = new Set(p);
           n.add(parentId);
           persistIntroducedToday(n);
           return n;
         });
       }
-      if (changed.length > 0) remoteUpsert(changed);
+      remoteUpsert(changed);
     },
-    // `cards` dropped from deps — we now access via setCards's functional form.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [userId, chars],
+    [userId, chars, applyCards],
   );
 
   // Apply a real Again to a specific child of a parent that just failed.
@@ -563,40 +542,36 @@ export function useReview({
       const now = new Date();
       const childKind: ItemKind = "char";
       const childId = rowId(childKey, childKind, MEANING_FACET);
-      let updated: ReviewCard | null = null;
-      setCards((prev) => {
-        let childRow = prev.get(childId);
-        if (!childRow) {
-          const seeded = seedCard(now);
-          childRow = {
-            itemKey: childKey,
-            itemKind: childKind,
-            facet: MEANING_FACET,
-            card: seeded,
-            dueAt: new Date(seeded.due).getTime(),
-            lastReviewAt: null,
-            directReviews: 0,
-            cascadeReviews: 0,
-          };
-        }
-        const newCard = gradeCard(childRow.card, "Again", now);
-        const newRow: ReviewCard = {
-          ...childRow,
-          card: newCard,
-          dueAt: new Date(newCard.due).getTime(),
-          lastReviewAt: now.getTime(),
-          directReviews: (childRow.directReviews ?? 0) + 1,
+      const prev = cardsRef.current;
+      let childRow = prev.get(childId);
+      if (!childRow) {
+        const seeded = seedCard(now);
+        childRow = {
+          itemKey: childKey,
+          itemKind: childKind,
+          facet: MEANING_FACET,
+          card: seeded,
+          dueAt: new Date(seeded.due).getTime(),
+          lastReviewAt: null,
+          directReviews: 0,
+          cascadeReviews: 0,
         };
-        const next = new Map(prev);
-        next.set(childId, newRow);
-        persistLocalCards(next);
-        updated = newRow;
-        return next;
-      });
-      if (updated) remoteUpsert([updated]);
+      }
+      const newCard = gradeCard(childRow.card, "Again", now);
+      const newRow: ReviewCard = {
+        ...childRow,
+        card: newCard,
+        dueAt: new Date(newCard.due).getTime(),
+        lastReviewAt: now.getTime(),
+        directReviews: (childRow.directReviews ?? 0) + 1,
+      };
+      const next = new Map(prev);
+      next.set(childId, newRow);
+      applyCards(next);
+      remoteUpsert([newRow]);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [userId],
+    [userId, applyCards],
   );
 
   return {
