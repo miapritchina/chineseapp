@@ -311,7 +311,6 @@
           <div class="drawer-legend-title">Word tiers</div>
           <div class="drawer-legend-row"><i style="background: var(--word)"></i>Saved</div>
           <div class="drawer-legend-row"><i style="background: var(--word-learned)"></i>Learned</div>
-          <div class="drawer-legend-row"><i style="background: var(--word-wrote)"></i>Wrote</div>
         </div>
       </div>
     </nav>
@@ -484,7 +483,10 @@
           return;
         }
         const learnedSet = loadSavedV2("chinese.learned");
-        const wroteSet = loadSavedV2("chinese.wrote");
+        // v99 (ADR-0011): the ✒ Wrote tier was removed — legacy wrote
+        // items read as learned.
+        const wroteSet = new Set();
+        for (const w of loadSavedV2("chinese.wrote")) learnedSet.add(w);
         charsData = await loadCharsData();
 
         const { nodes, edges } = buildGraph({

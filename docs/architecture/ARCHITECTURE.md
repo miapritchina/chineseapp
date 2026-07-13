@@ -57,6 +57,7 @@ routes is a future option.
 | `public/phonetic-components.json` | Top-250 productive sound components | Static; built via `extract-phonetic-components.mjs` |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
+| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization; never read by the app yet | Live; insert-only from `useReview` |
 
 The split is deliberate — see [ADR-0009](../decisions/0009-chars-static-words-in-db.md).
 The user-data policy is [ADR-0001](../decisions/0001-supabase-source-of-truth.md).
@@ -92,17 +93,17 @@ hours and the app degrades silently rather than 500ing.
 
 ## Status model
 
-Four mutually-exclusive tiers per saved item:
+Two tiers per saved item since v99 ([ADR-0011](../decisions/0011-two-tier-status-model.md)):
 
 | Tier | Column | Surfaces in review |
 |---|---|---|
-| ★ Saved | (row presence) | meaning + sound recognition |
-| ❗ Need to learn | `review_at` | same |
+| ★ Saved | (row presence) | all word drills |
 | 🎓 Learned | `learned_at` | same |
-| ✒ Wrote | `wrote_at` | + production (Hanzi Writer trace) |
 
-Priority is `wrote > learned > review > saved`. Why this shape and
-not an enum: [ADR-0003](../decisions/0003-four-status-tier-model.md).
+Legacy `wrote_at` / `review_at` columns remain (additive policy) and
+map on read: wrote → Learned, review → Saved. The production (trace)
+drill now seeds for every saved single character instead of the
+retired ✒ Wrote tier. Column-shape history: [ADR-0003](../decisions/0003-four-status-tier-model.md) (superseded).
 
 ---
 
@@ -126,7 +127,7 @@ kinds, seven scheduled facets (plus one session-only drill):
 | word | `clozeChar` | masked-char pick (v98) | saved words with ≥2 chars |
 | component | `familySweep` | tap-all-family-members grid (v98) | saved phonetic components with ≥3 usable family members |
 | char | `familyTransfer` | "you know 青, what about 情?" multi-choice | up to 2 family members per saved phonetic component, picked from chars the user hasn't saved |
-| char | `production` | Hanzi Writer trace quiz | single-char saved items at ✒ Wrote tier |
+| char | `production` | Hanzi Writer trace quiz | every saved single character (v99; was ✒ Wrote tier) |
 
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
 is session-only: unsaved words built from known chars, no FSRS row —

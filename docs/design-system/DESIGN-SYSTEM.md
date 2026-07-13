@@ -64,6 +64,10 @@ These are **not overridden for dark mode** — they're used as border-left accen
 
 ### 2.4 Status tier colors
 
+> v99 ([ADR-0011](../decisions/0011-two-tier-status-model.md)): only
+> **saved** and **learned** are selectable; the review/wrote tokens
+> remain for legacy data rendering.
+
 | Status | Emoji | Light | Dark |
 |---|---|---|---|
 | ★ Saved | ★ | `#d97706` | `#f59e0b` |

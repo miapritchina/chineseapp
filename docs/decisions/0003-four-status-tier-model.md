@@ -1,6 +1,6 @@
 # ADR-0003 — Four mutually-exclusive status tiers, separate timestamp columns
 
-**Status:** Accepted · **Date:** 2025-Q3
+**Status:** Superseded by ADR-0011 · **Date:** 2025-Q3
 
 ## Context
 

@@ -84,9 +84,6 @@ interface UseReviewOpts {
   // Full phonetic-components map keyed by char. Used by the
   // familyTransfer seeding rule (need to walk family[]).
   phoneticComponentsByChar?: Map<string, { char: string; pinyin: string; family: string[] }>;
-  // Items at status "wrote" (✒). Triggers the production-drill seed
-  // rule (single-char items at wrote tier get a Hanzi Writer trace card).
-  wroteKeys?: Set<string>;
 }
 
 function loadLocalCards(): Map<string, ReviewCard> {
@@ -128,7 +125,6 @@ export function useReview({
   scheduledKeys,
   chars,
   phoneticComponentsByChar,
-  wroteKeys,
 }: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
@@ -232,22 +228,20 @@ export function useReview({
         }
       }
     }
-    // production: any saved single-character item at "wrote" tier gets a
-    // Hanzi Writer trace drill. Multi-char saved words at wrote tier
-    // don't seed production cards yet (chained-quiz UX is a follow-up).
-    if (wroteKeys && wroteKeys.size > 0) {
-      for (const key of scheduledKeys) {
-        if ([...key].length !== 1) continue;
-        if (!wroteKeys.has(key)) continue;
-        out.set(rowId(key, "char", "production"), {
-          itemKey: key,
-          itemKind: "char",
-          facet: "production",
-        });
-      }
+    // production: any saved single-character item gets a Hanzi Writer
+    // trace drill (opt-in on the launch screen). Was gated on the ✒
+    // Wrote tier until v99 removed that status (ADR-0011). Multi-char
+    // words don't seed production yet (chained-quiz UX is a follow-up).
+    for (const key of scheduledKeys) {
+      if ([...key].length !== 1) continue;
+      out.set(rowId(key, "char", "production"), {
+        itemKey: key,
+        itemKind: "char",
+        facet: "production",
+      });
     }
     return out;
-  }, [scheduledKeys, chars, phoneticComponentsByChar, wroteKeys]);
+  }, [scheduledKeys, chars, phoneticComponentsByChar]);
 
   // Reconcile: ensure every expected card exists; drop any auto-seeded
   // facet card whose key is no longer expected. Cascaded char recognition
@@ -483,6 +477,28 @@ export function useReview({
       });
   };
 
+  // Append one row to the review log — the raw material for future
+  // FSRS parameter optimization (user_fsrs_state only keeps CURRENT
+  // card state). Fire-and-forget; a missing table degrades silently.
+  const logReview = (row: ReviewCard, rating: RatingName) => {
+    if (!userId) return;
+    void supabase
+      .from("user_review_log")
+      .insert({
+        user_id: userId,
+        item_key: row.itemKey,
+        item_kind: row.itemKind,
+        facet: row.facet,
+        rating,
+        prev_card: row.card,
+      })
+      .then(({ error }) => {
+        if (error && !/relation .*user_review_log.*does not exist/i.test(error.message || "")) {
+          console.warn("review log insert failed:", error);
+        }
+      });
+  };
+
   // Damped Good credit for every char/component reachable from
   // itemKey. Mutates `next` in place; returns the changed rows. Shared
   // by grade() (word Good/Easy) and creditInference() (correct guess
@@ -578,6 +594,7 @@ export function useReview({
       };
       next.set(parentId, newParent);
       changed.push(newParent);
+      logReview(parentRow, rating);
 
       // 2. Cascade to component closure.
       const cascade =
@@ -636,6 +653,7 @@ export function useReview({
       const next = new Map(prev);
       next.set(childId, newRow);
       applyCards(next);
+      logReview(childRow, "Again");
       remoteUpsert([newRow]);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

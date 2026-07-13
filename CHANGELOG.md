@@ -11,7 +11,21 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Two-tier status model** ([ADR-0011](docs/decisions/0011-two-tier-status-model.md)):
+  the ❗ Need-to-learn and ✒ Wrote statuses are gone from the UI —
+  the star menu now offers Saved / Learned only, and the shelf has two
+  sections. No data loss: the columns stay and legacy rows map on read
+  (wrote → Learned, review → Saved), including on the graph pages. The
+  Write (trace) drill now seeds for every saved single character
+  instead of the removed Wrote tier (still opt-in).
+
 ### Added
+- **`user_review_log` table (migration 0011) + grade logging:** every
+  direct grade appends `(item, kind, facet, rating, prev_card, time)`.
+  This is the raw material the FSRS optimizer needs — current card
+  state alone can't train per-user parameters. Insert-only, RLS-owner,
+  fire-and-forget; the app never reads it yet.
 - **Four new recognition drills** (v98 — [spec](docs/product/recognition-drills.md)),
   all opt-in toggles on the review launch screen:
   - **New words** (`wordInference`, owner's idea): a real word you

@@ -53,7 +53,7 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
   {
     facet: "production",
     label: "Write",
-    hint: "Trace the character that matches a meaning + sound prompt. Auto-graded by stroke mistakes via Hanzi Writer. Surfaces only for saved chars at ✒ Wrote tier.",
+    hint: "Trace the character that matches a meaning + sound prompt. Auto-graded by stroke mistakes via Hanzi Writer. Surfaces for saved single characters.",
   },
 ];
 // Facets the launch screen knows about — used to scrub stale entries
@@ -61,9 +61,7 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
 const KNOWN_FACETS = new Set<Facet>(ALL_FACET_OPTIONS.map((o) => o.facet));
 
 // Default-on facets: the two reveal-style recognition drills. The combined
-// card grades meaning + sound together. familyTransfer + production are
-// opt-in (familyTransfer targets un-saved chars; production is a heavier
-// trace drill scoped to ✒ Wrote tier items).
+// card grades meaning + sound together. Everything else is opt-in.
 const DEFAULT_FACETS: Facet[] = ["meaningRecognition", "soundRecognition"];
 
 export function loadSettings(): ReviewSettings {

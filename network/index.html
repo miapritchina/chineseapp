@@ -440,7 +440,8 @@
         const charSet = new Set();
         const wordSet = new Set(words);
         const learned = loadStatus('chinese.learned');
-        const wrote = loadStatus('chinese.wrote');
+        const wrote = new Set();
+        for (const w of loadStatus('chinese.wrote')) learned.add(w); // v99: wrote → learned
 
         for (const w of words) {
           const tier = wrote.has(w) ? 'wrote' : learned.has(w) ? 'learned' : 'saved';

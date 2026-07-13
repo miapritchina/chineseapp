@@ -9,7 +9,9 @@ const STATUS_LABEL: Record<Status, string> = {
   review: "Need to learn",
 };
 
-const STATUS_ORDER: Status[] = ["saved", "learned", "wrote", "review"];
+// v99 (ADR-0011): two selectable tiers. "wrote"/"review" remain in the
+// Status type for legacy data mapping but are no longer offered.
+const STATUS_ORDER: Status[] = ["saved", "learned"];
 
 interface IconProps {
   status: Status | null;
@@ -40,7 +42,14 @@ function Star({ filled, size, className }: { filled: boolean; size: number; clas
 
 function Cap({ size, className }: { size: number; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M12 3 L23 9 L12 15 L1 9 Z" />
       <path d="M5 11.4 L5 16 C5 16.9 8.2 18.2 12 18.2 C15.8 18.2 19 16.9 19 16 L19 11.4 L12 14.6 Z" />
       <path d="M21.6 9.4 L21.6 13.5 C21.6 14 22 14.4 22.4 14.4 C22.8 14.4 23.2 14 23.2 13.5 L23.2 9.4 Z" />
@@ -50,7 +59,14 @@ function Cap({ size, className }: { size: number; className?: string }) {
 
 function Brush({ size, className }: { size: number; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M16.6 2.4 L21.6 7.4 L9.6 19.4 L4.6 14.4 Z" />
       <path d="M3 21 L8 16 L8.2 19.8 Z" opacity="0.85" />
     </svg>
@@ -59,7 +75,14 @@ function Brush({ size, className }: { size: number; className?: string }) {
 
 function Bang({ size, className }: { size: number; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M12 2 C12.7 2 13.3 2.6 13.3 3.4 L12.8 14.5 C12.8 15 12.4 15.4 12 15.4 C11.6 15.4 11.2 15 11.2 14.5 L10.7 3.4 C10.7 2.6 11.3 2 12 2 Z" />
       <circle cx="12" cy="19.5" r="1.7" />
     </svg>
@@ -111,12 +134,8 @@ export function StatusButton({
         className={`status-btn status-${status ?? "empty"}${open ? " is-open" : ""}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={
-          status === null ? "Save" : `Status: ${STATUS_LABEL[status]} — tap to change`
-        }
-        title={
-          status === null ? "Save to my words" : `${STATUS_LABEL[status]} · tap to change`
-        }
+        aria-label={status === null ? "Save" : `Status: ${STATUS_LABEL[status]} — tap to change`}
+        title={status === null ? "Save to my words" : `${STATUS_LABEL[status]} · tap to change`}
         onClick={handleTriggerClick}
       >
         <StatusIcon status={status} size={iconSize} />

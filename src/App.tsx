@@ -63,8 +63,8 @@ export function App() {
   const [searchResults, setSearchResults] = useState<Word[]>([]);
 
   // Every saved word is queued for review — the user's stated goal is to
-  // learn all of them, and the four statuses are about progression
-  // (★ → 📕 → 🎓 → ✒), not about what's scheduled.
+  // learn all of them, and the two statuses (★ saved → 🎓 learned,
+  // ADR-0011) are about progression, not about what's scheduled.
   const scheduledKeys = saved.saved;
 
   const phonetics = usePhoneticComponents();
@@ -75,7 +75,6 @@ export function App() {
     scheduledKeys,
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
-    wroteKeys: saved.wrote,
   });
   const { dueCards, grade, attributeFailure, creditInference } = reviewState;
 
@@ -318,7 +317,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v98"
+          version="chinese v99"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
