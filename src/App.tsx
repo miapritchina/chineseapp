@@ -9,6 +9,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
+import { useWordInference } from "./hooks/useWordInference";
 import { useAutoImport } from "./hooks/useAutoImport";
 import { supabase, wakeUp } from "./lib/supabase";
 
@@ -62,8 +63,8 @@ export function App() {
   const [searchResults, setSearchResults] = useState<Word[]>([]);
 
   // Every saved word is queued for review — the user's stated goal is to
-  // learn all of them, and the four statuses are about progression
-  // (★ → 📕 → 🎓 → ✒), not about what's scheduled.
+  // learn all of them, and the two statuses (★ saved → 🎓 learned,
+  // ADR-0011) are about progression, not about what's scheduled.
   const scheduledKeys = saved.saved;
 
   const phonetics = usePhoneticComponents();
@@ -74,9 +75,15 @@ export function App() {
     scheduledKeys,
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
-    wroteKeys: saved.wrote,
   });
-  const { dueCards, grade, attributeFailure } = reviewState;
+  const { dueCards, grade, attributeFailure, creditInference } = reviewState;
+
+  // Drill 1 material: real unsaved words made of the user's known chars.
+  const inferenceWords = useWordInference({
+    savedList: saved.savedList,
+    ensureCached: dict.ensureCached,
+    findWord: dict.findWord,
+  });
 
   // Wake the Supabase project early to mask cold-start latency.
   useEffect(() => {
@@ -310,7 +317,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v97"
+          version="chinese v99"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -331,11 +338,14 @@ export function App() {
       {showReview && !reviewLaunched && !clusterActive && (
         <ReviewLaunch
           totalDue={dueCards.length}
-          facetCounts={dueCards.reduce<Record<string, number>>((acc, c) => {
-            const f = c.facet === "recognition" ? "meaningRecognition" : c.facet;
-            acc[f] = (acc[f] || 0) + 1;
-            return acc;
-          }, {})}
+          facetCounts={{
+            ...dueCards.reduce<Record<string, number>>((acc, c) => {
+              const f = c.facet === "recognition" ? "meaningRecognition" : c.facet;
+              acc[f] = (acc[f] || 0) + 1;
+              return acc;
+            }, {}),
+            wordInference: Math.min(inferenceWords.length, 5),
+          }}
           canCluster={saved.savedList.length >= 3}
           onStart={(s) => setReviewLaunched(s)}
           onStartCluster={() => setClusterActive(true)}
@@ -352,6 +362,8 @@ export function App() {
         <ReviewPage
           dueCards={dueCards}
           cards={reviewState.cards}
+          inferenceWords={inferenceWords}
+          onInferenceCredit={(w) => creditInference(w)}
           phoneticComponents={phonetics.components}
           phoneticComponentsByChar={phonetics.byChar}
           enabledFacets={new Set(reviewLaunched.enabledFacets)}

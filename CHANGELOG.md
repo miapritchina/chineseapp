@@ -11,6 +11,47 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Two-tier status model** ([ADR-0011](docs/decisions/0011-two-tier-status-model.md)):
+  the ❗ Need-to-learn and ✒ Wrote statuses are gone from the UI —
+  the star menu now offers Saved / Learned only, and the shelf has two
+  sections. No data loss: the columns stay and legacy rows map on read
+  (wrote → Learned, review → Saved), including on the graph pages. The
+  Write (trace) drill now seeds for every saved single character
+  instead of the removed Wrote tier (still opt-in).
+
+### Added
+- **Storybook coverage expanded to the full surface:** SearchBar (all
+  modes), ResultsList, ComponentTable, SavedShelf, HamburgerMenu,
+  EntitySheet (word/char/back-stack), ReviewLaunch, the complete drill
+  catalog (inference, reverse, cloze, family sweep, family transfer,
+  production, disambiguation), PhoneticsPage, SentenceStudio,
+  DrillShell/SpeakButton/HanziGlyph — all with autodocs prop tables.
+- **`user_review_log` table (migration 0011) + grade logging:** every
+  direct grade appends `(item, kind, facet, rating, prev_card, time)`.
+  This is the raw material the FSRS optimizer needs — current card
+  state alone can't train per-user parameters. Insert-only, RLS-owner,
+  fire-and-forget; the app never reads it yet.
+- **Four new recognition drills** (v98 — [spec](docs/product/recognition-drills.md)),
+  all opt-in toggles on the review launch screen:
+  - **New words** (`wordInference`, owner's idea): a real word you
+    have *not* saved, built entirely from characters inside your saved
+    words (电话 + 大脑 → 电脑) — guess the meaning, reveal, self-grade.
+    Session-only (no FSRS row); "Got it" cascade-credits the
+    constituent characters' cards. Material discovered per session by
+    probing known-char pairs against the dictionary
+    (`useWordInference` + `lib/drillGen`).
+  - **Reverse** (`reverseRecognition`): gloss → pick the hanzi among
+    saved-word tiles; distractors prefer words sharing a character.
+  - **Fill the gap** (`clozeChar`): a saved word with one character
+    masked (你▢) — pick it among confusion-cluster distractors.
+  - **Family sweep** (`familySweep`): tap every character that takes
+    its sound from a saved phonetic component, decoys mixed in; exact
+    set → Good.
+  New word-kind facets sit in a lower daily-new-cap tier so they can
+  never starve the meaning/sound queue (BUG-6 lesson, enforced by a
+  seeding test).
+
 ### Fixed
 - **Sign-in code input rejected codes longer than 6 digits** (BUG-8):
   Supabase's OTP length is a project setting (6–10 digits; this project

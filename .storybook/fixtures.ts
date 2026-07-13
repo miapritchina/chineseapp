@@ -20,8 +20,21 @@ export const WORDS: Record<string, Word> = {
   你好: word("你好", "nǐ hǎo", ["hello", "hi"]),
   请: word("请", "qǐng", ["please", "to invite"]),
   中国: word("中国", "zhōng guó", ["China"]),
+  学习: word("学习", "xué xí", ["to study", "to learn"]),
+  朋友: word("朋友", "péng yǒu", ["friend"]),
+  青: word("青", "qīng", ["green; blue", "young"]),
   发展中国家: word("发展中国家", "fā zhǎn zhōng guó jiā", ["developing country"]),
 };
+
+const bareChar = (char: string, pinyin: string, defs: string[]): Char => ({
+  char,
+  pinyin,
+  definitions: defs,
+  originalMeaning: "",
+  notes: "",
+  components: [],
+  hasEtymology: false,
+});
 
 export const CHARS: Record<string, Char> = {
   请: {
@@ -60,7 +73,39 @@ export const CHARS: Record<string, Char> = {
       { char: "子", type: "meaning", pinyin: "zǐ", definition: "child", hint: "", fragment: [3] },
     ],
   },
+  青: bareChar("青", "qīng", ["green; blue"]),
+  情: bareChar("情", "qíng", ["feeling; emotion"]),
+  晴: bareChar("晴", "qíng", ["clear weather"]),
+  清: bareChar("清", "qīng", ["clear; pure"]),
+  精: bareChar("精", "jīng", ["essence; refined"]),
+  您: bareChar("您", "nín", ["you (polite)"]),
+  中: bareChar("中", "zhōng", ["middle"]),
+  国: bareChar("国", "guó", ["country"]),
+  女: bareChar("女", "nǚ", ["woman"]),
+  子: bareChar("子", "zǐ", ["child"]),
+  讠: bareChar("讠", "yán", ["speech (radical)"]),
+  尔: bareChar("尔", "ěr", ["you (archaic)"]),
+  亻: bareChar("亻", "rén", ["person (radical)"]),
 };
+
+// Phonetic-component entries in the shape of phonetic-components.json.
+export const PHONETIC_COMPONENTS = [
+  {
+    char: "青",
+    pinyin: "qing",
+    pinyinTones: "qīng",
+    count: 24,
+    family: ["请", "情", "晴", "清", "精"],
+  },
+  {
+    char: "尔",
+    pinyin: "er",
+    pinyinTones: "ěr",
+    count: 8,
+    family: ["你", "您"],
+  },
+];
+export const PHONETIC_BY_CHAR = new Map(PHONETIC_COMPONENTS.map((c) => [c.char, c]));
 
 export const providerProps = {
   saved: {

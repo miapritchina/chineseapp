@@ -55,7 +55,7 @@ function renderCard(
 }
 
 export function SavedShelf({ onOpenWord, onOpenChar }: Props) {
-  const { savedList, learned, wrote, review } = useSavedCtx();
+  const { savedList, learned, wrote } = useSavedCtx();
   const { findWord } = useDictCtx();
   const { chars } = useCharsCtx();
   const isEmpty = savedList.length === 0;
@@ -163,26 +163,17 @@ export function SavedShelf({ onOpenWord, onOpenChar }: Props) {
     return arr;
   }
 
-  // Four mutually-exclusive status buckets. Order matches the dropdown:
-  //   review (❗)   — needs more work
-  //   wrote (✒)    — can write
-  //   learned (🎓) — memorized
-  //   saved (★)    — base / nothing else
-  const reviewList: SavedEntry[] = [];
-  const wroteList: SavedEntry[] = [];
+  // Two status buckets (v99, ADR-0011). Legacy wrote items fold into
+  // learned; legacy review items fold into saved.
   const learnedList: SavedEntry[] = [];
   const savedOnlyList: SavedEntry[] = [];
   for (const e of savedList) {
-    if (wrote.has(e.word)) wroteList.push(e);
-    else if (learned.has(e.word)) learnedList.push(e);
-    else if (review.has(e.word)) reviewList.push(e);
+    if (wrote.has(e.word) || learned.has(e.word)) learnedList.push(e);
     else savedOnlyList.push(e);
   }
 
   const sortedSavedOnly = sortList(savedOnlyList);
-  const sortedReview = sortList(reviewList);
   const sortedLearned = sortList(learnedList);
-  const sortedWrote = sortList(wroteList);
   const sortedAll = sortList(savedList);
 
   // Recent sort: keep things grouped by status section. Any other sort:
@@ -243,20 +234,6 @@ export function SavedShelf({ onOpenWord, onOpenChar }: Props) {
             </div>
           )}
 
-          {reviewList.length > 0 && (
-            <>
-              <div className="shelf-header shelf-header-secondary">
-                <div className="shelf-title">
-                  Need to learn
-                  <span className="shelf-count">· {reviewList.length}</span>
-                </div>
-              </div>
-              <div className="saved-grid">
-                {sortedReview.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
-              </div>
-            </>
-          )}
-
           {learnedList.length > 0 && (
             <>
               <div className="shelf-header shelf-header-secondary">
@@ -267,20 +244,6 @@ export function SavedShelf({ onOpenWord, onOpenChar }: Props) {
               </div>
               <div className="saved-grid">
                 {sortedLearned.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
-              </div>
-            </>
-          )}
-
-          {wroteList.length > 0 && (
-            <>
-              <div className="shelf-header shelf-header-secondary">
-                <div className="shelf-title">
-                  Wrote
-                  <span className="shelf-count">· {wroteList.length}</span>
-                </div>
-              </div>
-              <div className="saved-grid">
-                {sortedWrote.map((e) => renderCard(e, findWord, chars, onOpenWord, onOpenChar))}
               </div>
             </>
           )}

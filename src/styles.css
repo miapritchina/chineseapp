@@ -697,6 +697,50 @@ body {
   font-size: 14px;
   margin-top: 4px;
 }
+
+/* v98 drills */
+.inference-grade-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.reverse-gloss {
+  font-size: var(--heading-2, 17px);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.35;
+}
+.reverse-row {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.reverse-pick {
+  min-width: 72px;
+}
+.cloze-word {
+  font-size: calc(var(--hanzi-large, 56px));
+  line-height: 1.1;
+  display: flex;
+  gap: 4px;
+}
+.cloze-blank {
+  color: var(--muted);
+}
+.cloze-solved {
+  color: var(--accent);
+}
+.sweep-grid {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 340px;
+}
+.sweep-confirm {
+  margin-top: 10px;
+}
+.entity.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
 .phonetic-tap-feedback.is-correct {
   color: #2e7d32;
 }

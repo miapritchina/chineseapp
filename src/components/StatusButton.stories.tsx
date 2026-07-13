@@ -6,7 +6,7 @@ const meta = {
   component: StatusButton,
   args: { status: null, onChange: () => {} },
   argTypes: {
-    status: { control: "radio", options: [null, "saved", "review", "learned", "wrote"] },
+    status: { control: "radio", options: [null, "saved", "learned"] },
   },
 } satisfies Meta<typeof StatusButton>;
 export default meta;
@@ -14,6 +14,4 @@ type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {};
 export const Saved: Story = { args: { status: "saved" } };
-export const NeedToLearn: Story = { args: { status: "review" } };
 export const Learned: Story = { args: { status: "learned" } };
-export const Wrote: Story = { args: { status: "wrote" } };

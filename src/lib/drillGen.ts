@@ -1,0 +1,140 @@
+// Pure material-generation helpers for the v98 recognition drills.
+// No React, no IO — everything takes data in and returns data out so
+// the rules are unit-testable. Callers pass `rand` for deterministic
+// tests; production uses Math.random.
+
+type Rand = () => number;
+
+export function shuffle<T>(arr: T[], rand: Rand = Math.random): T[] {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const t = out[i];
+    out[i] = out[j];
+    out[j] = t;
+  }
+  return out;
+}
+
+// Distinct characters across the saved words, preserving first-seen
+// order (callers pass most-recently-saved first so fresh material
+// wins the cap).
+export function knownChars(savedWords: string[], cap = 36): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const w of savedWords) {
+    for (const c of w) {
+      if (seen.has(c)) continue;
+      seen.add(c);
+      out.push(c);
+      if (out.length >= cap) return out;
+    }
+  }
+  return out;
+}
+
+// Candidate two-char strings for the new-word inference drill: every
+// ordered pair of known characters that is not itself a saved word.
+// The dictionary probe (ensureCached) decides which are real words.
+export function inferencePairs(savedWords: string[], capChars = 36): string[] {
+  const chars = knownChars(savedWords, capChars);
+  const saved = new Set(savedWords);
+  const out: string[] = [];
+  for (const a of chars) {
+    for (const b of chars) {
+      if (a === b) continue;
+      const cand = a + b;
+      if (saved.has(cand)) continue;
+      out.push(cand);
+    }
+  }
+  return out;
+}
+
+// Reverse recognition: the answer plus up to n-1 saved-word
+// distractors, preferring words that share a character with the
+// answer. Returns null when there aren't at least 2 options.
+export function pickReverseOptions(
+  answer: string,
+  savedWords: string[],
+  n = 4,
+  rand: Rand = Math.random,
+): string[] | null {
+  const answerChars = new Set([...answer]);
+  const pool = savedWords.filter((w) => w !== answer);
+  const sharing = pool.filter((w) => [...w].some((c) => answerChars.has(c)));
+  const rest = pool.filter((w) => !sharing.includes(w));
+  const distractors = [...shuffle(sharing, rand), ...shuffle(rest, rand)].slice(0, n - 1);
+  if (distractors.length < 1) return null;
+  return shuffle([answer, ...distractors], rand);
+}
+
+export interface ClozeTask {
+  maskIndex: number;
+  answer: string;
+  options: string[];
+}
+
+// Masked-char cloze: mask one character of a multi-char word; options
+// are the answer plus distractors from its confusion cluster, padded
+// with characters from the user's other saved words.
+export function pickClozeTask(
+  word: string,
+  savedWords: string[],
+  clusterFor: (char: string) => string[] | null,
+  rand: Rand = Math.random,
+): ClozeTask | null {
+  const glyphs = [...word];
+  if (glyphs.length < 2) return null;
+  const maskIndex = Math.floor(rand() * glyphs.length);
+  const answer = glyphs[maskIndex];
+  const inWord = new Set(glyphs);
+  const cluster = (clusterFor(answer) ?? []).filter((c) => c !== answer && !inWord.has(c));
+  const padPool = knownChars(savedWords, 100).filter((c) => !inWord.has(c) && !cluster.includes(c));
+  const distractors = [...shuffle(cluster, rand), ...shuffle(padPool, rand)].slice(0, 3);
+  if (distractors.length < 1) return null;
+  return { maskIndex, answer, options: shuffle([answer, ...distractors], rand) };
+}
+
+export interface FamilySweepTask {
+  component: string;
+  members: string[];
+  grid: string[];
+}
+
+interface FamilyEntry {
+  char: string;
+  family: string[];
+}
+
+// Family sweep: all usable family members of a component (must exist
+// in data-chars so they render meaningfully) mixed with decoys drawn
+// from other components' families. Needs ≥3 members to be worth a
+// card.
+export function buildFamilySweep(
+  component: FamilyEntry,
+  allComponents: FamilyEntry[],
+  charExists: (char: string) => boolean,
+  rand: Rand = Math.random,
+): FamilySweepTask | null {
+  const members = component.family
+    .filter((f) => f && f !== component.char && charExists(f))
+    .slice(0, 6);
+  if (members.length < 3) return null;
+  const memberSet = new Set(members);
+  const decoyPool: string[] = [];
+  for (const other of allComponents) {
+    if (other.char === component.char) continue;
+    for (const f of other.family) {
+      if (!f || f === component.char || memberSet.has(f) || !charExists(f)) continue;
+      decoyPool.push(f);
+    }
+  }
+  const decoys = shuffle([...new Set(decoyPool)], rand).slice(0, Math.min(4, members.length));
+  if (decoys.length < 2) return null;
+  return {
+    component: component.char,
+    members,
+    grid: shuffle([...members, ...decoys], rand),
+  };
+}

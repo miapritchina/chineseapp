@@ -57,16 +57,17 @@ export function useSaved({ userId }: UseSavedOpts) {
     [items],
   );
 
-  // Resolve a word's current status.
+  // Resolve a word's current status. v99 collapsed the UI to two tiers
+  // (ADR-0011): legacy "wrote" rows read as learned, legacy "review"
+  // rows as saved. The underlying columns/sets stay (additive policy)
+  // so nothing is lost if the tiers ever come back.
   const getStatus = useCallback(
     (key: string): Status | null => {
       if (!items.has(key)) return null;
-      if (wroteItems.has(key)) return "wrote";
-      if (learnedItems.has(key)) return "learned";
-      if (reviewItems.has(key)) return "review";
+      if (wroteItems.has(key) || learnedItems.has(key)) return "learned";
       return "saved";
     },
-    [items, wroteItems, learnedItems, reviewItems],
+    [items, wroteItems, learnedItems],
   );
 
   // Pull from Supabase and merge: remote wins on overlap (the DB is the
