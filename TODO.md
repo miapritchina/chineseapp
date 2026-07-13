@@ -33,6 +33,7 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 
 | Item | Notes |
 |---|---|
+| **New recognition drills** (owner to pick) | Candidates proposed 2026-07: (a) **new-word inference** — surface an unsaved real word whose every char comes from the saved set, guess the meaning, reveal, cascade-credit the chars (owner's idea; `searchByComponent` infra fits); (b) **reverse recognition** — gloss or audio prompt → pick the hanzi among saved-word distractors sharing a char; (c) **masked-char cloze** — saved word with one char blanked (你□) → pick the char among confusables; (d) **audio-first** — TTS only, no hanzi, pick the word; (e) **family sweep** — tap every readable family member of a phonetic component; (f) **speed sprint** — timed binary know/don't-know over already-learned cards, no FSRS writes. |
 | **Graph performance + usability** | [Redesign spec §4G](docs/product/chinese-app-ux-redesign.md#4g-graph-pages--performance--usability). Reduce node count by default; larger tap targets; WebGL renderer if available. |
 | Cross-device deletion propagation | Tombstone column or "wholesale replace" pass. [Open work in ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | Fix [BUG-4](BUGS.md) (hamburger dismiss) | Cosmetic; touchstart listener + non-reflow close. |
