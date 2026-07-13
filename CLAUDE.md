@@ -17,7 +17,8 @@ For deeper context:
 
 One Chinese-character learning web app, deployed to GitHub Pages at
 https://decobots.github.io/chineseapp/. Mobile-first; iPhone Safari in
-3–7 minute sessions.
+3–7 minute sessions. Installable PWA (v96): one service worker covers
+all three surfaces — see ARCHITECTURE.md → "PWA / offline".
 
 The app deploys as **one product, three surfaces**:
 
@@ -64,6 +65,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   ├── product/                     UX redesign spec, QA findings, card-type catalog
 │   └── archive/                     Historical one-shot prompts
 ├── index.html                       Vite root entry, drives <App />
+├── .storybook/                      Storybook config + fixture providers
 ├── src/
 │   ├── main.tsx                     ErrorBoundary + on-page diag overlay
 │   ├── App.tsx                      Orchestrates everything
@@ -113,7 +115,8 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 ├── public/
 │   ├── data-chars.json              ~10k chars + components + etymology
 │   ├── phonetic-components.json     Top-250 productive sound components
-│   └── favicon.svg
+│   ├── favicon.svg                  中 glyph (drawn as shapes)
+│   └── pwa-*.png, apple-touch-icon.png, maskable-icon-*.png
 ├── network/index.html               Static word-graph page
 ├── components/                      Static vocab-structure graph page
 │   ├── index.html
@@ -126,7 +129,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 ├── supabase/
 │   └── migrations/                  Idempotent additive migrations
 ├── package.json                     react, d3, ts-fsrs, supabase-js, lz-string
-├── vite.config.ts
+├── vite.config.ts                   base path + vite-plugin-pwa (manifest, SW, caches)
 ├── tsconfig.json
 └── .github/workflows/pages.yml      Builds Vite, copies network/, components/
 ```
@@ -346,6 +349,7 @@ details.** Frame everything that way.
 | Add a new drill type | ARCHITECTURE.md → "Patterns to reuse" |
 | Add a new persisted field | ARCHITECTURE.md → "Patterns to reuse" |
 | Tokens / type scale / component inventory | [`docs/design-system/DESIGN-SYSTEM.md`](docs/design-system/DESIGN-SYSTEM.md) |
+| Living component docs (autodocs + token gallery) | `npm run storybook` (deployed at `/chineseapp/storybook/`) |
 | Current UX redesign goals | [`docs/product/chinese-app-ux-redesign.md`](docs/product/chinese-app-ux-redesign.md) |
 | Outstanding bugs | [`BUGS.md`](BUGS.md) |
 | Active TODO list | [`TODO.md`](TODO.md) |

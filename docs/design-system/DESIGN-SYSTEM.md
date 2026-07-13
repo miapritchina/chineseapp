@@ -369,9 +369,14 @@ The app uses two coexisting routing patterns: a **modal stack** (`useModalStack`
 
 ## 7. Component Inventory
 
-### 7.1 Card
+> **Living version:** `npm run storybook` renders the shared primitives
+> with autodocs prop tables (deployed at `/chineseapp/storybook/`).
+> This inventory stays as the narrative map; Storybook is the
+> always-current reference.
 
-**What:** Saved-word tile in the home grid. **Where:** `SavedShelf`. **Variants:** `Card` (word with pinyin + gloss), `CharOnlyCard` (single char). **Props:** `word`, `onOpen`, `getStatus`, `setStatus`. **Classes:** `.card`, `.card-status-corner`, `.char`, `.pinyin`, `.gloss`. **States:** `.card-pending` (opacity 0.55 for items syncing). Has a `StatusButton` in the top-right corner.
+### 7.1 Entity *(replaces Card, v92)*
+
+**What:** The unified character/word tile (redesign §0) — one component, five sizes, consistent pinyin → hanzi → meaning DNA. Resolves its own data from context given an `itemKey`. **Where:** SavedShelf (md), ComponentTable + SentenceStudio chips (tiny/sm), ClusterRecall + DisambiguationCard cells (sm), review focal glyph (hero). **Props:** `itemKey`/`word`, `size` (`tiny|sm|md|lg|hero`), `showPinyin`, `showMeaning`, `showStatus`, `showPos` (off by default), `roleColor`, `trailing`, `hanziSlot`, `onTap`. **Classes:** `.entity`, `.entity-{tiny,sm,md,lg,hero}`, `.entity-pinyin`, `.entity-hanzi`, `.entity-meaning`, `.entity-pos`, `.entity-status`; drill flash modifiers `.is-correct` / `.is-wrong` / `.is-reveal`. **Tokens:** `--entity-hanzi-size` (per-size hanzi scale, multiplied by `--hanzi-scale`), `--entity-stack-gap`, `--entity-role` (role-tint override).
 
 ### 7.2 NodeCard
 
@@ -461,6 +466,10 @@ Retired drill (facet = componentSound); same story as 7.14.
 
 **What:** Email one-time-code auth flow (v95; was magic-link). **AuthButton classes:** `.auth-button`, `.auth-loading`, `.auth-menu`, `.auth-dropdown`. **SignInModal classes:** `.popup-root`, `.popup-panel`, `.signin-panel`, `.signin-form`, `.signin-sent`.
 
+### 7.24 Shared UI primitives (`src/components/ui/`) *(v91)*
+
+**What:** The extracted stage-A/B primitives: `PageHeader` (back + tag + progress), `EmptyState` (title + hint variants), `Eyebrow` (mono uppercase micro-label), `SectionHeader` (numbered sheet section head), `SpeakButton` (wraps `lib/speech.ts`), `DrillShell` (drill chrome: header + body slot + skip row), `GradeButtons` (Again/Good/Easy trio with `--grade-color` outline), `HanziGlyph` (HanziWriter animate/quiz mount + fallback). Each emits the pre-existing classNames, so their CSS is documented under the consuming surfaces above.
+
 ---
 
 ## 8. Componentization Proposals
@@ -481,14 +490,14 @@ Ordered by leverage (most-duplicated / most-impactful first).
 **Props:** `trigger: ReactNode`, `open`, `onOpenChange`, `align?: "start" | "end"`, `children`.
 **Effort:** **S** — mostly a hook + wrapper div.
 
-### 8.3 `<DrillShell tag progress onClose onSkip>` — Generalized drill frame
+### 8.3 `<DrillShell tag progress onClose onSkip>` — Generalized drill frame ✅ *(shipped v91)*
 
 **Absorbs:** The in-file `DrillFrame` helper in `ReviewPage.tsx` (`.review-root`, `.review-header`, `.review-body`, `.drill-skip-row`). Currently every drill (CombinedRecognition, PhoneticTap, ComponentSound, FamilyTransfer, Production, Disambiguation) shares this chrome but it's an unexported inner component.
 **Props:** `tag: string`, `progress: { current: number; total: number }`, `onClose`, `onSkip?`, `children`.
 **Design note:** The skip button should only appear pre-answer. The "tap to continue" hint (`.drill-tap-hint`) should be **transient** — fade out after ~1.5 s or show only on first occurrence, per the owner's preference against permanent instructional text.
 **Effort:** **S** — just export and parameterize `DrillFrame`.
 
-### 8.4 `<PageHeader back tag progress actions?>` — Shared top bar
+### 8.4 `<PageHeader back tag progress actions?>` — Shared top bar ✅ *(shipped v91)*
 
 **Absorbs:** The header pattern from ReviewPage/DrillFrame (`.review-header`), TreeModal (`.modal-header`), PhoneticsPage, SentenceStudio, ClusterRecall — all use the same back-button + tag + progress layout with minor variations (some have action buttons on the right).
 **Props:** `onBack`, `tag?: string`, `progress?: string`, `actions?: ReactNode`.
@@ -500,13 +509,13 @@ Ordered by leverage (most-duplicated / most-impactful first).
 **Props:** `options: { key: string; label: string; count?: number }[]`, `active: string`, `onChange: (key: string) => void`.
 **Effort:** **S**
 
-### 8.6 `<SectionHeader name>` — Section header
+### 8.6 `<SectionHeader name>` — Section header ✅ *(shipped v91)*
 
 **Absorbs:** `.sheet-section-head`, `.sheet-section-name` — the `ETYMOLOGY` / `IN YOUR SAVED WORDS` pattern in EntitySheet.
 **Props:** `name: string`.
 **Effort:** **S** — trivial extraction.
 
-### 8.7 `<Eyebrow>` — Mono uppercase micro-label
+### 8.7 `<Eyebrow>` — Mono uppercase micro-label ✅ *(shipped v91)*
 
 **Absorbs:** `.sheet-eyebrow`, `.component-table-title`, `.review-kind-tag`, `.launch-section-title`, `.disambig-banner`, `.combined-grade-label`, `.phonetic-tap-prompt`, `.cluster-prompt`, `.composer-label`, `.saved-sentences-head`. All share: mono or body font, uppercase, letter-spaced, `--muted` color.
 **Props:** `children`, `variant?: "mono" | "body"`.
@@ -518,13 +527,13 @@ Ordered by leverage (most-duplicated / most-impactful first).
 **Props:** `hanzi: string`, `pinyin?: string`, `gloss?: string`, `onClick?`, `trailing?: ReactNode`.
 **Effort:** **M** — the three current incarnations have slightly different grid layouts.
 
-### 8.9 `<EmptyState title hint>` — Empty state message
+### 8.9 `<EmptyState title hint>` — Empty state message ✅ *(shipped v91)*
 
 **Absorbs:** `.review-empty` + `.review-empty-title` + `.review-empty-hint` (Review, Sentence, Search), `.saved-empty` + `.saved-empty-hint` (SavedShelf), `.empty-state` (ComponentTable, PhoneticsPage, ResultsList).
 **Props:** `title?: string`, `hint?: string`.
 **Effort:** **S**
 
-### 8.10 `<SpeakButton text>` — TTS button
+### 8.10 `<SpeakButton text>` — TTS button ✅ *(shipped v91)*
 
 **Absorbs:** `.sheet-speak` (EntitySheet), `.composer-speak` (SentenceStudio), the 🔊 button in drill cards. All wrap `src/lib/speech.ts`.
 **Props:** `text: string`, `size?: "sm" | "md"`.

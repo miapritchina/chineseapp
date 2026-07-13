@@ -249,6 +249,34 @@ For functions that are plain JS today (`componentSearch.mjs`,
 
 ---
 
+## PWA / offline (v96)
+
+All three surfaces install and run offline from one service worker
+(`vite-plugin-pwa` / Workbox, `registerType: autoUpdate`, scope
+`/chineseapp/`).
+
+- **Precache** — the Vite app shell only (~600 KB: hashed JS/CSS,
+  index.html, icons). New deploys activate immediately
+  (`skipWaiting` + `clientsClaim`), so the `chinese vNN` label stays
+  trustworthy after one reload.
+- **Runtime caches** — `data-chars.json` + `phonetic-components.json`
+  (StaleWhileRevalidate; ~3 MB, refreshed behind the response);
+  `network/` + `components/` pages (NetworkFirst — they're copied into
+  the site *after* the Vite build, so they can't be precached and are
+  offline only after first visit); `cdn.jsdelivr.net`
+  (CacheFirst 30 days — hanzi-writer, cytoscape, per-char stroke data).
+- **Not cached** — everything Supabase. User data stays cloud-first
+  ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)); offline
+  reads come from the hooks' own localStorage mirrors, not the SW.
+- The SPA navigate-fallback is denylisted for `/network/`,
+  `/components/`, `/storybook/` so the SW never shadows those real
+  files with index.html.
+- The graph pages register the same `../sw.js` and carry the manifest +
+  iOS meta tags, so install works from any surface. Icons are the 中
+  glyph drawn as SVG shapes (`public/favicon.svg` + generated PNGs).
+
+---
+
 ## Performance notes
 
 - `dueCards` is a `useMemo` over the `cards` Map plus today's

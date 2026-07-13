@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="12" fill="#1e1e2e"/>
-  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-        font-family="monospace" font-size="28" font-weight="bold" fill="#89b4fa">R</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 中 drawn as shapes (no font dependency) on the app's parchment/red palette -->
+  <rect width="512" height="512" rx="96" fill="#faf8f4"/>
+  <rect x="120" y="168" width="272" height="160" rx="24" fill="none" stroke="#b12a2a" stroke-width="36"/>
+  <rect x="238" y="72" width="36" height="368" rx="18" fill="#b12a2a"/>
 </svg>

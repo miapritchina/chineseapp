@@ -12,6 +12,31 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **PWA (v96):** the app is installable and works offline across all
+  three surfaces. `vite-plugin-pwa` service worker (auto-update,
+  scope `/chineseapp/`): app shell precached; dictionary JSONs
+  stale-while-revalidate; graph pages network-first; jsdelivr CDN
+  (hanzi-writer, cytoscape, stroke data) cache-first 30 days. Supabase
+  is never SW-cached — user data stays cloud-first. Manifest + iOS
+  meta tags on all three pages; new 中 app icon (favicon + 192/512 +
+  maskable + apple-touch, drawn as SVG shapes and rasterized).
+- **Storybook (v96):** `npm run storybook` /
+  `/chineseapp/storybook/` on Pages. Stories for `<Entity>` (all
+  sizes + drill flash states), GradeButtons, StatusButton, PageHeader,
+  EmptyState, Eyebrow/SectionHeader, CombinedRecognitionCard
+  (interactive), SignInModal — rendered inside `AppStateProvider` with
+  fixture data. Automated documentation: autodocs prop tables generated
+  from TypeScript, plus a token gallery that reads the live
+  `styles.css` custom properties at runtime.
+
+### Changed
+- **Design-system docs reconciled:** DESIGN-SYSTEM.md §7.1 now
+  documents `<Entity>` (the `Card` it described was deleted in v92),
+  new §7.24 covers the `src/components/ui/` primitives, and the six
+  §8 proposals that shipped in v91 (DrillShell, PageHeader,
+  SectionHeader, Eyebrow, EmptyState, SpeakButton) are marked shipped.
+  Token audit: no value drift between `design-tokens.css` and
+  `styles.css`; doc-only tokens remain the known aspirational set.
 - **Sign-in with an emailed 6-digit code** instead of the magic link.
   The modal now has a second step: enter the code
   (`supabase.auth.verifyOtp`, `autocomplete="one-time-code"` so iOS

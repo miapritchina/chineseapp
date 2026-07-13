@@ -52,3 +52,7 @@ android/app/build/
 # Test screenshots
 mobile-*.png
 replay-screenshot.png
+
+# Storybook build output
+storybook-static/
+*storybook.log
