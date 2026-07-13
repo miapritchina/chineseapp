@@ -11,12 +11,20 @@ props (autodocs) — it cannot drift from the code.
 
 - **Design System / Tokens** — color + type-scale swatches read live
   from `src/styles.css` custom properties.
-- **Primitives / Entity** — the unified character/word tile (five
-  sizes); the core design primitive.
-- **Primitives / GradeButtons, StatusButton, PageHeader, EmptyState…**
-  — the shared `src/components/ui/` building blocks.
-- **Review / CombinedRecognitionCard** — the main drill surface,
-  interactive (tap to reveal, grade both facets).
+- **Primitives** — `Entity` (the core tile, five sizes), GradeButtons,
+  StatusButton, PageHeader, EmptyState, DrillShell, SpeakButton,
+  HanziGlyph and the label primitives.
+- **Search** — SearchBar (all three modes), ResultsList rows,
+  ComponentTable chips.
+- **Home** — SavedShelf grid (both status sections), HamburgerMenu
+  drawer (tap ☰ to open).
+- **Sheet / EntitySheet** — the bottom sheet for words and characters
+  (stroke animation falls back to a static glyph here — no CDN).
+- **Review** — the launch screen, CombinedRecognitionCard
+  (interactive: tap to reveal, grade both facets), and the full drill
+  catalog under *Review/Drills* (inference, reverse, cloze, family
+  sweep, family transfer, production, disambiguation).
+- **Pages** — PhoneticsPage rows, SentenceStudio composer + POS bank.
 - **Auth / SignInModal** — the email one-time-code sign-in flow.
 
 The narrative design reference (rationale, class inventory, layout

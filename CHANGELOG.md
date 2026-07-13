@@ -21,6 +21,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   instead of the removed Wrote tier (still opt-in).
 
 ### Added
+- **Storybook coverage expanded to the full surface:** SearchBar (all
+  modes), ResultsList, ComponentTable, SavedShelf, HamburgerMenu,
+  EntitySheet (word/char/back-stack), ReviewLaunch, the complete drill
+  catalog (inference, reverse, cloze, family sweep, family transfer,
+  production, disambiguation), PhoneticsPage, SentenceStudio,
+  DrillShell/SpeakButton/HanziGlyph — all with autodocs prop tables.
 - **`user_review_log` table (migration 0011) + grade logging:** every
   direct grade appends `(item, kind, facet, rating, prev_card, time)`.
   This is the raw material the FSRS optimizer needs — current card
