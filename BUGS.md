@@ -30,6 +30,8 @@ feature broken) · **Medium** (annoying but workarounds exist) ·
 | ID | Severity | Title | Fixed in |
 |---|---|---|---|
 | BUG-2 | Medium | All user data persisted to localStorage instead of Supabase | (cloud-first hooks rework) — see [ADR-0001](docs/decisions/0001-supabase-source-of-truth.md). Cross-device deletion propagation remains [open work](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
+| BUG-6 | High | Retired phoneticTap/componentSound cards clog the review queue and starve word reviews | v95 — seeding removed in `useReview`; legacy rows ignored on load/sync + scrubbed locally; daily-new cap now counts word cards only. |
+| BUG-7 | Medium | Sound-facet grade of the combined card never syncs to Supabase | v95 — ref-mirrored cards map ([ADR-0010](docs/decisions/0010-ref-mirrored-cards-map-in-usereview.md)); both same-tick grades upsert. |
 | BUG-3 | Low | Search "中国" ranks "发展中国家" above "中国" | v90 — client-side exact-match partition in `useDictionary.ts` (`search()`) surfaces an exact hanzi hit ahead of substring/compound matches. |
 | BUG-5 | Medium | Review: grading "Easy" flashes red border (should be blue/green) | v90 — the picked grade button now takes an `outline` in its own `--grade-color` (`.combined-grade-row .review-btn.is-picked`, `styles.css`); Easy → `--grade-easy` blue. No card-surface red flash. |
 
@@ -111,3 +113,38 @@ own tier color (`.review-btn-again/-good/-easy` in `styles.css`), and
 the picked button takes `outline: 2px solid var(--grade-color)`. There
 is no card-surface red flash bound to grading — Easy reads blue
 (`--grade-easy`). The `--grade-hard` orange token now exists too.
+
+---
+
+### BUG-6 · High · Retired drill cards starved the review queue
+
+The phoneticTap + componentSound drills were dropped from the launch
+screen in v85 (they can never be enabled; stale settings are
+scrubbed), but `useReview` kept seeding FSRS cards for them. The rows
+were due-immediately, could never be graded, sorted ahead of word
+cards (char/component kinds first), and counted as "new" — so they
+permanently consumed the 25/day new-card cap. With 25+ such rows, no
+new word ever surfaced in review, and the hamburger badge / "N due"
+counts were inflated by cards the user could never see.
+
+**✅ Fixed (v95):** seeding removed; `RETIRED_FACETS` filtered on
+localStorage load and Supabase reconcile; legacy local rows deleted by
+the expected-cards cleanup; the daily-new cap now applies to word
+cards only.
+
+---
+
+### BUG-7 · Medium · Combined card's second grade never reached Supabase
+
+`grade()` read its changed-rows list from a variable assigned inside
+the `setCards` updater, synchronously after dispatch. React only runs
+an updater eagerly for the first dispatch in a tick, so the combined
+card's second call (sound facet) always saw an empty list — the grade
+persisted to localStorage but the Supabase upsert no-oped, and the
+`introducedToday` bookkeeping was skipped. Cross-device, sound-facet
+progress silently lagged (localStorage-only state, contra ADR-0001).
+
+**✅ Fixed (v95):** all card-map writes go through a ref-mirrored
+`applyCards` helper; see [ADR-0010](docs/decisions/0010-ref-mirrored-cards-map-in-usereview.md).
+Cascade credit also now fires once per combined review (meaning facet
+only) instead of twice.

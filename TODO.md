@@ -33,7 +33,6 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 
 | Item | Notes |
 |---|---|
-| **Drop 2 drill types** — `phoneticTap` + `componentSound` | [Redesign spec §1C](docs/product/chinese-app-ux-redesign.md#1c-review-drills--drop-2-keep-4). Deferred by owner; reduces to 4 recognition + 1 production when picked up. |
 | **Graph performance + usability** | [Redesign spec §4G](docs/product/chinese-app-ux-redesign.md#4g-graph-pages--performance--usability). Reduce node count by default; larger tap targets; WebGL renderer if available. |
 | Cross-device deletion propagation | Tombstone column or "wholesale replace" pass. [Open work in ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | Fix [BUG-4](BUGS.md) (hamburger dismiss) | Cosmetic; touchstart listener + non-reflow close. |

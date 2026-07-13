@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import "./styles.css";
 
 import { useDictionary } from "./hooks/useDictionary";
@@ -68,16 +68,11 @@ export function App() {
 
   const phonetics = usePhoneticComponents();
   const mnemonics = useMnemonics({ userId: auth.user?.id ?? null });
-  const phoneticComponentKeys = useMemo(
-    () => new Set(phonetics.components.map((c) => c.char)),
-    [phonetics.components],
-  );
 
   const reviewState = useReview({
     userId: auth.user?.id ?? null,
     scheduledKeys,
     chars: charsData.chars,
-    phoneticComponentKeys,
     phoneticComponentsByChar: phonetics.byChar,
     wroteKeys: saved.wrote,
   });
@@ -315,7 +310,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v94"
+          version="chinese v95"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -380,6 +375,7 @@ export function App() {
         <SignInModal
           onClose={() => setShowSignIn(false)}
           onSignIn={(email) => auth.signInWithEmail(email)}
+          onVerifyCode={(email, code) => auth.verifyEmailCode(email, code)}
         />
       )}
 

@@ -538,8 +538,8 @@ body {
   padding: 0 4px;
 }
 
-/* Phonetic-tap drill — appears in the Review page when the current card's
-   facet is "phoneticTap". One-tap interaction; auto-grades on pick. */
+/* .phonetic-tap-* — shared drill-surface classes. Named for the retired
+   phonetic-tap drill; still used by FamilyTransferCard. */
 /* Outer tap surface — fills the .review-body so a tap on whitespace
    anywhere in the body advances the queue (post-pick). */
 .phonetic-tap {
@@ -692,11 +692,6 @@ body {
   font-size: 18px;
   color: var(--text);
   letter-spacing: 0.5px;
-}
-.component-sound-tones {
-  font-size: 14px;
-  color: var(--muted);
-  margin-top: -4px;
 }
 .phonetic-tap-feedback {
   font-size: 14px;
@@ -1349,7 +1344,8 @@ body {
   text-align: center;
   line-height: 1.4;
 }
-.signin-form input[type="email"] {
+.signin-form input[type="email"],
+.signin-form input[type="text"] {
   width: 100%;
   padding: 10px 14px;
   font: inherit;
@@ -1362,8 +1358,23 @@ body {
   -webkit-appearance: none;
   appearance: none;
 }
-.signin-form input[type="email"]:focus {
+.signin-form input[type="text"] {
+  text-align: center;
+  font-size: 20px;
+  letter-spacing: 6px;
+}
+.signin-form input[type="email"]:focus,
+.signin-form input[type="text"]:focus {
   border-color: var(--accent);
+}
+.signin-resend {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
 }
 .signin-submit {
   background: var(--accent);

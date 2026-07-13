@@ -421,13 +421,13 @@ The app uses two coexisting routing patterns: a **modal stack** (`useModalStack`
 
 **What:** Dual-facet recognition card (meaning + sound). **Where:** ReviewPage (facet = meaningRecognition/soundRecognition). **Classes:** `.combined-card-surface`, `.combined-card-stack`, `.combined-grade-block`, `.combined-grade-label`, `.combined-grade-row`, `.combined-skip`, `.drill-tap-hint`.
 
-### 7.14 PhoneticTapCard
+### 7.14 PhoneticTapCard *(removed in v95)*
 
-**What:** "Tap the sound part" drill. **Where:** ReviewPage (facet = phoneticTap). **Classes:** `.phonetic-tap`, `.phonetic-tap-inner`, `.phonetic-tap-prompt`, `.phonetic-tap-glyph`, `.phonetic-tap-row`, `.phonetic-tap-pick`, `.phonetic-tap-feedback`.
+Retired drill (facet = phoneticTap; dropped from the launch screen in v85, component deleted in v95). The `.phonetic-tap-*` classes remain in use by FamilyTransferCard.
 
-### 7.15 ComponentSoundCard
+### 7.15 ComponentSoundCard *(removed in v95)*
 
-**What:** "What sound does this give?" multi-choice. **Where:** ReviewPage (facet = componentSound). Shares `.phonetic-tap-*` classes with PhoneticTapCard. Additional: `.component-sound-pinyin`, `.component-sound-tones`.
+Retired drill (facet = componentSound); same story as 7.14.
 
 ### 7.16 FamilyTransferCard
 
@@ -459,7 +459,7 @@ The app uses two coexisting routing patterns: a **modal stack** (`useModalStack`
 
 ### 7.23 AuthButton + SignInModal
 
-**What:** Magic-link auth flow. **AuthButton classes:** `.auth-button`, `.auth-loading`, `.auth-menu`, `.auth-dropdown`. **SignInModal classes:** `.popup-root`, `.popup-panel`, `.signin-panel`, `.signin-form`, `.signin-sent`.
+**What:** Email one-time-code auth flow (v95; was magic-link). **AuthButton classes:** `.auth-button`, `.auth-loading`, `.auth-menu`, `.auth-dropdown`. **SignInModal classes:** `.popup-root`, `.popup-panel`, `.signin-panel`, `.signin-form`, `.signin-sent`.
 
 ---
 

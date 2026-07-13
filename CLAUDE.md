@@ -22,7 +22,7 @@ https://decobots.github.io/chineseapp/. Mobile-first; iPhone Safari in
 The app deploys as **one product, three surfaces**:
 
 - **Main UI** (root) — React + TypeScript + Vite. Search, saved-words
-  shelf, decomposition tree, four-status SRS, ~6 review drill types.
+  shelf, decomposition tree, four-status SRS, 4 review drill types.
 - **Network view** (`network/`) — Cytoscape.js word-graph of the
   user's saved set. Plain HTML, reached from the hamburger menu.
 - **Components view** (`components/`) — Cytoscape.js vocabulary-
@@ -80,14 +80,12 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── HamburgerMenu            Top-bar drawer (Review / Phonetics / Network …)
 │   │   ├── StatusButton             4-tier status dropdown shared by every place
 │   │   ├── ReviewPage               Full-screen SRS surface, routes by facet
-│   │   ├── PhoneticTapCard          Drill: tap the sound component
-│   │   ├── ComponentSoundCard       Drill: pick the pinyin a component gives
 │   │   ├── FamilyTransferCard       Drill: you know 青, what about 情?
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz
 │   │   ├── DisambiguationCard       Leech-cluster side-by-side compare
 │   │   ├── PhoneticsPage            List + save the top-250 productive components
 │   │   ├── SentenceStudio           Build-a-sentence composer + POS bank
-│   │   ├── AuthButton + SignInModal Magic-link auth
+│   │   ├── AuthButton + SignInModal Email one-time-code auth
 │   ├── hooks/                       Cloud-first hooks; see ARCHITECTURE.md "Cloud-first + local cache pattern"
 │   │   ├── useDictionary            Supabase RPC + cache for word lookups
 │   │   ├── useChars                 Fetches public/data-chars.json

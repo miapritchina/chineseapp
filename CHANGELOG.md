@@ -11,7 +11,37 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
-*Next change lands here.*
+### Added
+- **Sign-in with an emailed 6-digit code** instead of the magic link.
+  The modal now has a second step: enter the code
+  (`supabase.auth.verifyOtp`, `autocomplete="one-time-code"` so iOS
+  autofills from Mail), with a Resend button. Requires the Supabase
+  "Magic Link" email template to include `{{ .Token }}`.
+
+### Fixed
+- **Review queue no longer clogged by retired drills** (BUG-6): the
+  phoneticTap / componentSound drills were dropped from the launch
+  screen in v85 but their cards kept seeding — inflating the "N due"
+  badge and permanently consuming the 25/day new-card slots (char
+  cards sort ahead of words), which starved word reviews entirely once
+  enough were queued. Seeding removed; legacy rows are ignored on
+  load/sync and scrubbed locally.
+- **Daily new-card cap now counts word cards only** — familyTransfer /
+  production / cascade char seeds no longer eat intro slots meant for
+  new words.
+- **Sound-facet grades now reach Supabase** (BUG-7): the second of two
+  same-tick grades (combined card fires meaning + sound together) was
+  persisted locally but its remote upsert silently no-oped. `useReview`
+  now mirrors the cards map in a ref ([ADR-0010](docs/decisions/0010-ref-mirrored-cards-map-in-usereview.md),
+  supersedes ADR-0008).
+- **Cascade credit applied once per combined review** — previously both
+  the meaning and sound grade cascaded to constituent chars, doubling
+  the damped credit.
+
+### Removed
+- `PhoneticTapCard` + `ComponentSoundCard` components and their
+  `ReviewPage` branches (unreachable since v85; completes the TODO P2
+  "drop 2 drill types" item — 4 drill types remain).
 
 ## [v94]
 
