@@ -21,6 +21,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   instead of the removed Wrote tier (still opt-in).
 
 ### Added
+- **三字经 reader (v100):** new full-screen page (hamburger → 三字经 ·
+  Classic, `#/classic`). The standard 1068-character edition rendered
+  as one `<Entity>` card per character (pinyin + gloss from
+  data-chars, tap for the full sheet), grouped in couplets with
+  Herbert Giles' public-domain translation. Characters that appear in
+  your saved words are highlighted, and the header tracks coverage
+  ("know N / 513"). Data ships as `public/sanzijing.json` (curated
+  from Wikisource/ctext, simplified) with integrity tests.
 - **Storybook coverage expanded to the full surface:** SearchBar (all
   modes), ResultsList, ComponentTable, SavedShelf, HamburgerMenu,
   EntitySheet (word/char/back-stack), ReviewLaunch, the complete drill

@@ -86,6 +86,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz
 │   │   ├── DisambiguationCard       Leech-cluster side-by-side compare
 │   │   ├── PhoneticsPage            List + save the top-250 productive components
+│   │   ├── ClassicPage              三字经 reader w/ known-char highlighting
 │   │   ├── SentenceStudio           Build-a-sentence composer + POS bank
 │   │   ├── AuthButton + SignInModal Email one-time-code auth
 │   ├── hooks/                       Cloud-first hooks; see ARCHITECTURE.md "Cloud-first + local cache pattern"
@@ -115,6 +116,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 ├── public/
 │   ├── data-chars.json              ~10k chars + components + etymology
 │   ├── phonetic-components.json     Top-250 productive sound components
+│   ├── sanzijing.json               三字经 (1068 chars) + Giles translation
 │   ├── favicon.svg                  中 glyph (drawn as shapes)
 │   └── pwa-*.png, apple-touch-icon.png, maskable-icon-*.png
 ├── network/index.html               Static word-graph page
