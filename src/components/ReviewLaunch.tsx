@@ -11,19 +11,12 @@ export interface ReviewSettings {
 
 const SETTINGS_KEY = "chinese.reviewSettings";
 
-// The five drill types offered on the launch screen. The two granular
-// component-level drills ("Tap the sound component" / "Sound of a
-// component") were dropped — too micro to be worth a card slot.
+// The drill types offered on the launch screen.
 const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
   {
     facet: "meaningRecognition",
-    label: "Meaning",
-    hint: "What does it mean? Reveal-style.",
-  },
-  {
-    facet: "soundRecognition",
-    label: "Sound",
-    hint: "How is it pronounced? Audio + tone-marked pinyin.",
+    label: "Recognition",
+    hint: "See the hanzi, recall sound AND meaning, one grade for both. Reveal-style.",
   },
   {
     facet: "wordInference",
@@ -60,9 +53,17 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
 // (e.g. the retired phoneticTap / componentSound) from saved settings.
 const KNOWN_FACETS = new Set<Facet>(ALL_FACET_OPTIONS.map((o) => o.facet));
 
-// Default-on facets: the two reveal-style recognition drills. The combined
-// card grades meaning + sound together. Everything else is opt-in.
-const DEFAULT_FACETS: Facet[] = ["meaningRecognition", "soundRecognition"];
+// Default-on facet: the recognition card. Everything else is opt-in.
+const DEFAULT_FACETS: Facet[] = ["meaningRecognition"];
+
+// The Recognition toggle is stored as meaningRecognition; the card
+// grades meaning + sound together (v102), so starting a session also
+// enables the sound facet's rows.
+function expandFacets(enabled: Set<Facet>): Facet[] {
+  const out = [...enabled];
+  if (enabled.has("meaningRecognition")) out.push("soundRecognition");
+  return out;
+}
 
 export function loadSettings(): ReviewSettings {
   try {
@@ -149,7 +150,7 @@ export function ReviewLaunch({
   );
 
   const start = () => {
-    onStart({ enabledFacets: [...enabled], randomOrder, includeSubchars });
+    onStart({ enabledFacets: expandFacets(enabled), randomOrder, includeSubchars });
   };
 
   return (
@@ -166,6 +167,8 @@ export function ReviewLaunch({
           <div className="launch-section-title">Drill types</div>
           <div className="launch-options">
             {ALL_FACET_OPTIONS.map((o) => {
+              // Recognition surfaces ONE card per word even when both
+              // facet rows are due — count words, not rows.
               const count = facetCounts[o.facet] || 0;
               const isOn = enabled.has(o.facet);
               return (

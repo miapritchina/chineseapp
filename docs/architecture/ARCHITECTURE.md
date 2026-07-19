@@ -143,9 +143,11 @@ renames them to `meaningRecognition` in memory. `phoneticTap` and
 screen in v85, seeding + rows removed in v95) — legacy rows are
 ignored on load and scrubbed locally.
 
-The combined recognition card grades both `meaningRecognition` and
-`soundRecognition` at once but they're two FSRS Cards under the hood
-— retention numbers stay distinct per-modality. This is what forced
+The combined recognition card takes ONE grade and applies it to both
+the `meaningRecognition` and `soundRecognition` rows (v102,
+[ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —
+two FSRS Cards under the hood, moving together. The two-dispatch
+same-tick write is what forced
 [ADR-0008](../decisions/0008-functional-setstate-for-concurrent-grade.md)
 (since superseded in v95 by a ref-mirrored map — `cardsRef` in
 `useReview` — so both same-tick grades also reach the Supabase upsert).
@@ -155,13 +157,13 @@ The combined recognition card grades both `meaningRecognition` and
 Good/Easy on a word damp-credits every constituent char. Again does
 not cascade. See [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md).
 
-### Daily cap + leech interleaving
+### Queue + leech interleaving
 
-25 new cards/day cap; `lapses ≥ 6` items with cluster entries get
-side-by-side disambig. See [ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md).
-Since v95 the cap counts **word** cards only — char/component seeds
-(familyTransfer, production, cascade subchars) sort ahead of words in
-the queue, so letting them consume slots starved word reviews.
+No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —
+everything due surfaces, ordered char/component → meaning/sound →
+reverse/cloze → oldest first. Cards graded Again re-enter the session
+queue until answered without Again. `lapses ≥ 6` items with cluster
+entries still get side-by-side disambig ([ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md), leech half).
 
 ---
 

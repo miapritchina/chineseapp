@@ -25,6 +25,10 @@ interface Opts {
 export function useWordInference({ savedList, ensureCached, findWord }: Opts) {
   const [probedKeys, setProbedKeys] = useState<string[]>([]);
   const probedForRef = useRef<string>("");
+  // Fresh rotation each app session — a fixed slice showed the same
+  // words every time (owner-reported bug). Ref so the order is stable
+  // WITHIN the session even as the memo recomputes.
+  const rotationRef = useRef(Math.random());
 
   useEffect(() => {
     // Most-recently-saved first so fresh vocabulary wins the char cap.
@@ -62,13 +66,14 @@ export function useWordInference({ savedList, ensureCached, findWord }: Opts) {
     const found = probedKeys
       .map((k) => findWord(k))
       .filter((w): w is Word => !!w && !saved.has(w.word));
-    // Common words first; rotate by day so sessions vary without the
-    // order jumping mid-session (a random shuffle here would reorder
-    // whenever the dictionary cache updates).
+    // Common words first; rotate by a per-session random offset so
+    // each session starts somewhere new without the order jumping
+    // mid-session (a shuffle here would reorder whenever the
+    // dictionary cache updates).
     found.sort((a, b) => (a.rank ?? 1e9) - (b.rank ?? 1e9));
     const capped = found.slice(0, POOL_CAP);
     if (capped.length === 0) return [];
-    const offset = Math.floor(Date.now() / 86400000) % capped.length;
+    const offset = Math.floor(rotationRef.current * capped.length);
     return [...capped.slice(offset), ...capped.slice(0, offset)];
   }, [probedKeys, findWord, savedList]);
 }
