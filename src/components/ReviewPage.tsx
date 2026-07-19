@@ -7,7 +7,7 @@ import { DrillShell } from "./ui/DrillShell";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
-import { FamilyTransferCard } from "./FamilyTransferCard";
+import { ClusterRecallCard } from "./ClusterRecallCard";
 import { ProductionCard } from "./ProductionCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { WordInferenceCard } from "./WordInferenceCard";
@@ -19,7 +19,13 @@ import { interleaveByActivity } from "../lib/drillGen";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
 
-// Placeholder FSRS state for the synthetic (non-FSRS) inference rows.
+// UI-side session size (v107): grading is per-card, so this changes
+// nothing about scheduling — it just gives a session a comfortable
+// visible end. Retries of Again-graded cards stay in regardless.
+const SESSION_LIMIT = 25;
+
+// Placeholder FSRS state for the synthetic (non-FSRS) inference and
+// cluster rows.
 const INFERENCE_CARD = {
   due: new Date(0).toISOString(),
   stability: 0,
@@ -45,6 +51,9 @@ interface Props {
   // marked done so it stays out of the pool across sessions.
   inferenceWords?: Word[];
   onInferenceResult?: (word: string, gotIt: boolean) => void;
+  // Cluster recall (v107): pre-built clusters of related saved words;
+  // each becomes one synthetic card in the queue.
+  clusters?: string[][];
   phoneticComponents?: PhoneticComponent[];
   phoneticComponentsByChar?: Map<string, PhoneticComponent>;
   // From the launch screen. If absent, all facets are enabled.
@@ -60,7 +69,7 @@ function rid(c: ReviewCard) {
   return `${c.itemKind}|${c.facet}|${c.itemKey}`;
 }
 
-// Recognition / family-transfer / production surface. Drains the queue
+// Recognition / drill / production surface. Drains the queue
 // in dueCards[0] order; the just-graded card drops out naturally via
 // useReview's dueCards memo (its due_at moves into the future). Per-
 // session state — disambig-shown set, manual-skip set — is local.
@@ -72,6 +81,7 @@ export function ReviewPage({
   onClose,
   inferenceWords,
   onInferenceResult,
+  clusters,
   phoneticComponents,
   phoneticComponentsByChar,
   enabledFacets,
@@ -194,10 +204,28 @@ export function ReviewPage({
       if (!skipped.has(rid(row))) inferenceRows.push(row);
     }
   }
+  // Cluster recall (v107): one synthetic row per cluster of related
+  // saved words. Grading applies to every member's recognition rows.
+  const clusterRows: ReviewCard[] = [];
+  if ((!enabledFacets || enabledFacets.has("clusterRecall")) && clusters) {
+    for (const cluster of clusters) {
+      const row: ReviewCard = {
+        itemKey: cluster.join("+"),
+        itemKind: "word",
+        facet: "clusterRecall",
+        card: INFERENCE_CARD,
+        dueAt: 0,
+        lastReviewAt: null,
+      };
+      if (!skipped.has(rid(row))) clusterRows.push(row);
+    }
+  }
 
   // Retry copies: Again-graded cards whose FSRS row already left
   // dueCards (due moved out) come back at the end of the session queue.
-  const liveIds = new Set([...promotedRows, ...dedupedFiltered, ...inferenceRows].map(rid));
+  const liveIds = new Set(
+    [...promotedRows, ...dedupedFiltered, ...inferenceRows, ...clusterRows].map(rid),
+  );
   const retryRows = retries.filter((r) => !liveIds.has(rid(r)) && !skipped.has(rid(r)));
 
   // Promoted cards prepend the queue (right after the current leech card).
@@ -205,9 +233,20 @@ export function ReviewPage({
   // groups, most-overdue first within each — NOT a shuffle. The
   // Shuffle toggle still randomizes fully via the position map below.
   const mixed = randomOrder
-    ? [...dedupedFiltered, ...inferenceRows]
-    : interleaveByActivity([...dedupedFiltered, ...inferenceRows]);
-  const combined = [...promotedRows, ...mixed, ...retryRows];
+    ? [...dedupedFiltered, ...inferenceRows, ...clusterRows]
+    : interleaveByActivity([...dedupedFiltered, ...inferenceRows, ...clusterRows]);
+
+  // Freeze the session to the first SESSION_LIMIT cards seen (v107).
+  // Cards that leave the set (graded/skipped) are done; nothing refills
+  // behind them, so the session actually ends. Retries stay eligible.
+  const sessionRidsRef = useRef<Set<string> | null>(null);
+  if (sessionRidsRef.current === null && mixed.length > 0) {
+    sessionRidsRef.current = new Set(mixed.slice(0, SESSION_LIMIT).map(rid));
+  }
+  const sessionRows = sessionRidsRef.current
+    ? mixed.filter((r) => sessionRidsRef.current!.has(rid(r)))
+    : mixed;
+  const combined = [...promotedRows, ...sessionRows, ...retryRows];
 
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
@@ -547,56 +586,28 @@ export function ReviewPage({
     );
   }
 
-  // Family-transfer drill: "you know 青, what about 情?" Picks the
-  // component for the prompt by walking phoneticComponentsByChar to find
-  // any saved component whose family includes this card's itemKey.
-  if (current.facet === "familyTransfer") {
-    const cd = chars?.[current.itemKey];
-    if (!phoneticComponents || !phoneticComponentsByChar || !cd) {
-      return (
-        <DrillShell
-          tag="Family"
-          onClose={onClose}
-          progressIndex={progressIndex}
-          total={total}
-          onSkip={handleSkipCurrent}
-        >
-          <div className="review-empty-hint">Loading family data…</div>
-        </DrillShell>
-      );
-    }
-    const componentEntry =
-      phoneticComponents.find((p) => p.family.includes(current.itemKey)) ?? null;
-    if (!componentEntry) {
-      return (
-        <DrillShell
-          tag="Family"
-          onClose={onClose}
-          progressIndex={progressIndex}
-          total={total}
-          onSkip={handleSkipCurrent}
-        >
-          <div className="review-empty-hint">
-            No phonetic component found for {current.itemKey}. Tap Skip.
-          </div>
-        </DrillShell>
-      );
-    }
+  // Cluster recall (v107): one synthetic card per group of related
+  // saved words; one grade applies to every member's recognition rows.
+  if (current.facet === "clusterRecall") {
+    const clusterWords = current.itemKey.split("+");
     return (
       <DrillShell
-        tag="Family"
+        tag="Cluster"
         onClose={onClose}
         progressIndex={progressIndex}
         total={total}
         onSkip={handleSkipCurrent}
       >
-        <FamilyTransferCard
+        <ClusterRecallCard
           key={rid(current)}
-          familyMember={current.itemKey}
-          charData={cd}
-          componentEntry={componentEntry}
-          pool={phoneticComponents}
-          onGrade={handleDrillGrade}
+          cluster={clusterWords}
+          onGraded={(rating) => {
+            for (const w of clusterWords) {
+              onGrade(w, rating, "word", "meaningRecognition");
+              onGrade(w, rating, "word", "soundRecognition");
+            }
+            advanceWithoutGrading(current);
+          }}
         />
       </DrillShell>
     );

@@ -11,6 +11,32 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Cluster recall is a drill type (v107):** it joins the launch
+  screen toggles and mixes into the session queue (one card per
+  cluster of related saved words) instead of being a separate button
+  at the bottom.
+- **Sessions are 25 cards (v107):** a comfortable visible end — the
+  launch button says "25 of N", the progress shows /25, and the
+  session actually finishes. Purely UI: every card still grades and
+  syncs individually; Again-retries stay in past the cap.
+- **Exiting a session returns to the workout chooser (v107)**, not
+  the home page.
+- **Family sweep reworded (v107):** the prompt now says "tap every
+  character that contains 青" — the decoys never contain the
+  component, so it's a component-spotting task; the old "takes its
+  sound from" framing oversold it.
+- **Writing counts distinct wrong strokes (v107, BUG-16):** repeated
+  misses on the same stroke cost ONE mistake — the recognizer often
+  rejects a correct second attempt, and that shouldn't read as two
+  errors. Grade thresholds unchanged (0 → Easy, ≤2 → Good, >2 →
+  Again), now over distinct strokes.
+
+### Removed
+- **Family transfer drill (v107):** owner saw no value in it. The
+  facet is retired like phoneticTap/componentSound — legacy rows are
+  scrubbed on load and never seed again.
+
 ### Fixed
 - **Writing card took seconds to show the character (v106, BUG-15):**
   stroke data was fetched from the CDN only when the card appeared.

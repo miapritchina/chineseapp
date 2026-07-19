@@ -68,13 +68,15 @@ characters; the masked position is randomized per surfacing.
 
 ### 4 · Family sweep — facet `familySweep` (component kind, FSRS)
 
-For a saved phonetic component (青 qīng): a grid mixing its true
-family members (请 情 晴 …) with decoys from other components'
-families. Tap **all** members, then confirm. Exact set → Good,
-any miss/false pick → Again + reveal (missed = outlined, wrong pick =
-red). Widens the existing familyTransfer drill from 2 members to the
-whole family. Seeds one row per saved phonetic component whose family
-has ≥ 3 usable members.
+For a saved component (青): a grid mixing the characters built with
+it (请 情 晴 …) with decoys from other components' families. Tap
+**all** of them, then confirm. Exact set → Good, any miss/false pick
+→ Again + reveal (missed = outlined, wrong pick = red). Seeds one row
+per saved phonetic component whose family has ≥ 3 usable members.
+v107 wording note: the prompt says "contains 青" — the decoys never
+contain the component, so the task is visual component-spotting, and
+framing it as a sound drill oversold it. (The familyTransfer drill
+this once extended was retired in v107 — owner saw no value in it.)
 
 ## Backlog (in TODO.md)
 

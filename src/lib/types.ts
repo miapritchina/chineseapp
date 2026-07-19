@@ -93,12 +93,13 @@ export type Facet =
   | "soundRecognition"
   | "phoneticTap" // retired v95 — kept only so legacy rows can be scrubbed
   | "componentSound" // retired v95 — same
-  | "familyTransfer"
+  | "familyTransfer" // retired v107 — owner saw no value; legacy rows scrubbed
   | "production"
   | "reverseRecognition" // v98: gloss → pick the hanzi
   | "clozeChar" // v98: word with a masked char → pick the char
-  | "familySweep" // v98: tap all family members of a component
-  | "wordInference"; // v98: session-only, no FSRS row — see recognition-drills.md
+  | "familySweep" // v98: tap all characters containing a component
+  | "wordInference" // v98: synthetic, no FSRS row — see recognition-drills.md
+  | "clusterRecall"; // v107: synthetic, one card per saved-word cluster
 
 // Unified grade event emitted by every drill component. Centralizes the
 // signature so drill callbacks don't all reinvent it.

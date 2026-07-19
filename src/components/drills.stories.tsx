@@ -4,11 +4,11 @@ import { WordInferenceCard } from "./WordInferenceCard";
 import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
-import { FamilyTransferCard } from "./FamilyTransferCard";
+import { ClusterRecallCard } from "./ClusterRecallCard";
 import { ProductionCard } from "./ProductionCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { DrillShell } from "./ui/DrillShell";
-import { WORDS, CHARS, PHONETIC_COMPONENTS, PHONETIC_BY_CHAR } from "../../.storybook/fixtures";
+import { WORDS, CHARS, PHONETIC_COMPONENTS } from "../../.storybook/fixtures";
 
 // Every drill rendered inside the real DrillShell chrome, against the
 // fixture provider. One file so the "Review/Drills" section reads as a
@@ -79,16 +79,10 @@ export const FamilySweep: StoryObj = {
   ),
 };
 
-export const FamilyTransfer: StoryObj = {
+export const ClusterRecall: StoryObj = {
   render: () => (
-    <Shell tag="Family">
-      <FamilyTransferCard
-        familyMember="情"
-        charData={CHARS["情"]}
-        componentEntry={PHONETIC_BY_CHAR.get("青")!}
-        pool={PHONETIC_COMPONENTS}
-        onGrade={() => {}}
-      />
+    <Shell tag="Cluster">
+      <ClusterRecallCard cluster={["请", "情", "清"]} onGraded={() => {}} />
     </Shell>
   ),
 };

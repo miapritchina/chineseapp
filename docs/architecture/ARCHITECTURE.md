@@ -127,8 +127,7 @@ kinds, seven scheduled facets (plus one session-only drill):
 | word | `soundRecognition` | combined recognition card (same surface) | every saved word |
 | word | `reverseRecognition` | gloss → pick the hanzi (v98) | every saved word |
 | word | `clozeChar` | masked-char pick (v98) | saved words with ≥2 chars |
-| component | `familySweep` | tap-all-family-members grid (v98) | saved phonetic components with ≥3 usable family members |
-| char | `familyTransfer` | "you know 青, what about 情?" multi-choice | up to 2 family members per saved phonetic component, picked from chars the user hasn't saved |
+| component | `familySweep` | spot-the-component grid (v98; reworded v107 — tap every character containing the component) | saved phonetic components with ≥3 usable family members |
 | char | `production` | Hanzi Writer trace quiz | every saved single character (v99; was ✒ Wrote tier) |
 
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
@@ -141,11 +140,17 @@ devices read back so the rest-period follows the account. Word-kind
 facets beyond meaning/sound sort after meaning/sound in the due queue
 (there is no daily cap since v102).
 
+`clusterRecall` (v107) is the second synthetic facet: one card per
+cluster of related saved words (`buildClusters` in drillGen, computed
+in App), no FSRS row of its own — the single group grade is applied
+to every member's meaning+sound rows. It replaced the standalone
+Cluster recall page/button.
+
 `recognition` is a legacy facet name from pre-v66 cards; the load path
-renames them to `meaningRecognition` in memory. `phoneticTap` and
-`componentSound` are retired facets (drills dropped from the launch
-screen in v85, seeding + rows removed in v95) — legacy rows are
-ignored on load and scrubbed locally.
+renames them to `meaningRecognition` in memory. `phoneticTap`,
+`componentSound` (dropped v85, scrubbed v95) and `familyTransfer`
+(dropped v107 — owner saw no value) are retired facets — legacy rows
+are ignored on load and scrubbed locally.
 
 The combined recognition card asks for TWO grades on one reveal —
 Meaning and Sound rows, each applied to its own FSRS row; a swipe
@@ -172,7 +177,11 @@ activity **interleave**, not a grouped run: `interleaveByActivity`
 most-overdue first within each group, the neediest group leading each
 cycle; `wordInference` rotates last (synthetic dueAt). The Shuffle
 toggle replaces this with a full random order. Cards graded Again
-re-enter the session queue until answered without Again. `lapses ≥ 6` items with cluster
+re-enter the session queue until answered without Again. Sessions are
+capped at 25 cards UI-side (v107, `SESSION_LIMIT` in ReviewPage — a
+frozen first-25 set, so the session genuinely ends; scheduling is
+untouched since every card grades individually), and exiting a
+session returns to the launch screen, not the home page. `lapses ≥ 6` items with cluster
 entries still get side-by-side disambig ([ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md), leech half).
 
 ---

@@ -200,8 +200,11 @@ export function buildClusters(
 // groups so a session mixes drills instead of running each type to
 // exhaustion (owner request, v106). NOT a shuffle: within each group
 // the most overdue card stays first, and the rotation leads with the
-// group holding the most overdue card overall. wordInference rows are
-// synthetic (dueAt 0), so they always rotate last.
+// group holding the most overdue card overall. wordInference and
+// clusterRecall rows are synthetic (dueAt 0), so they always rotate
+// last.
+const SYNTHETIC_FACETS = new Set(["wordInference", "clusterRecall"]);
+
 export function interleaveByActivity<T extends { facet: string; dueAt: number }>(rows: T[]): T[] {
   const keyOf = (f: string) =>
     f === "meaningRecognition" || f === "soundRecognition" || f === "recognition"
@@ -215,7 +218,7 @@ export function interleaveByActivity<T extends { facet: string; dueAt: number }>
     else groups.set(k, [r]);
   }
   for (const g of groups.values()) g.sort((a, b) => a.dueAt - b.dueAt);
-  const urgency = (k: string) => (k === "wordInference" ? Infinity : groups.get(k)![0].dueAt);
+  const urgency = (k: string) => (SYNTHETIC_FACETS.has(k) ? Infinity : groups.get(k)![0].dueAt);
   const order = [...groups.keys()].sort((a, b) => urgency(a) - urgency(b));
   const out: T[] = [];
   for (let i = 0; out.length < rows.length; i++) {

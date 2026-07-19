@@ -29,7 +29,6 @@ import { ComponentTable } from "./components/ComponentTable";
 import { PhoneticsPage } from "./components/PhoneticsPage";
 import { ClassicPage } from "./components/ClassicPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
-import { ClusterRecall } from "./components/ClusterRecall";
 import { SentenceStudio } from "./components/SentenceStudio";
 
 import { AppStateProvider } from "./state/contexts";
@@ -38,6 +37,7 @@ import { encodeWords, makeShareToken, shareUrl } from "./lib/share";
 
 import type { Word, ModalEntry } from "./lib/types";
 import { useState } from "react";
+import { buildClusters } from "./lib/drillGen";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -105,6 +105,17 @@ export function App() {
     findWord: dict.findWord,
   });
 
+  // Cluster-recall material (v107, a drill type since the standalone
+  // page was folded into the session queue).
+  const clusters = useMemo(
+    () =>
+      buildClusters(
+        saved.savedList.map((s) => s.word),
+        phonetics.byChar,
+      ),
+    [saved.savedList, phonetics.byChar],
+  );
+
   // Wake the Supabase project early to mask cold-start latency.
   useEffect(() => {
     wakeUp();
@@ -124,7 +135,6 @@ export function App() {
 
   // Launch screen state. null = haven't started yet.
   const [reviewLaunched, setReviewLaunched] = useState<ReviewSettings | null>(null);
-  const [clusterActive, setClusterActive] = useState(false);
 
   // Track full-screen pages via URL hash + route #/c, #/w deep links.
   useEffect(() => {
@@ -138,7 +148,6 @@ export function App() {
       }
       if (window.location.hash !== "#/review") {
         setReviewLaunched(null);
-        setClusterActive(false);
       }
       const entry = parseHash();
       if (entry) {
@@ -339,7 +348,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v106"
+          version="chinese v107"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -358,7 +367,7 @@ export function App() {
         </div>
       </header>
 
-      {showReview && !reviewLaunched && !clusterActive && (
+      {showReview && !reviewLaunched && (
         <ReviewLaunch
           totalDue={dueCards.length}
           facetCounts={{
@@ -368,17 +377,10 @@ export function App() {
               return acc;
             }, {}),
             wordInference: inferenceWords.length,
+            clusterRecall: clusters.length,
           }}
-          canCluster={saved.savedList.length >= 3}
           onStart={(s) => setReviewLaunched(s)}
-          onStartCluster={() => setClusterActive(true)}
           onClose={() => closeHashPage("#/review")}
-        />
-      )}
-      {showReview && clusterActive && (
-        <ClusterRecall
-          onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
-          onClose={() => setClusterActive(false)}
         />
       )}
       {showReview && reviewLaunched && (
@@ -390,6 +392,7 @@ export function App() {
             markInferenceSeen(w);
             recordInference(w, gotIt);
           }}
+          clusters={clusters}
           phoneticComponents={phonetics.components}
           phoneticComponentsByChar={phonetics.byChar}
           enabledFacets={new Set(reviewLaunched.enabledFacets)}
@@ -397,7 +400,7 @@ export function App() {
           includeSubchars={reviewLaunched.includeSubchars}
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
-          onClose={() => closeHashPage("#/review")}
+          onClose={() => setReviewLaunched(null)}
         />
       )}
 

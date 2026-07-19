@@ -52,26 +52,6 @@ function expectedCards(savedWords, phoneticComponentsByChar = null, chars = {}) 
       });
     }
   }
-  if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0) {
-    const FAMILY_PER_COMPONENT = 2;
-    for (const key of savedWords) {
-      if ([...key].length !== 1) continue;
-      const comp = phoneticComponentsByChar.get(key);
-      if (!comp || !comp.family || comp.family.length === 0) continue;
-      let added = 0;
-      for (const fam of comp.family) {
-        if (added >= FAMILY_PER_COMPONENT) break;
-        if (!fam || fam === comp.char) continue;
-        if (saved.has(fam)) continue;
-        out.set(`char|familyTransfer|${fam}`, {
-          itemKey: fam,
-          itemKind: "char",
-          facet: "familyTransfer",
-        });
-        added++;
-      }
-    }
-  }
   for (const key of savedWords) {
     if ([...key].length !== 1) continue;
     out.set(`char|production|${key}`, {
@@ -143,42 +123,14 @@ test("retired componentSound facet never seeds", () => {
   }
 });
 
-test("familyTransfer seeds up to 2 unsaved family members per saved component", () => {
+test("retired familyTransfer facet never seeds (v107)", () => {
   const phoneticByChar = new Map([
     ["青", { char: "青", pinyin: "qing", family: ["请", "情", "晴", "清"] }],
   ]);
   const m = expectedCards(["青"], phoneticByChar);
-  // Cap is 2 per component, picks first members from family[]
-  assert.ok(m.has("char|familyTransfer|请"));
-  assert.ok(m.has("char|familyTransfer|情"));
-  // Beyond cap → no card seeded
-  assert.equal(m.has("char|familyTransfer|晴"), false);
-});
-
-test("familyTransfer skips members the user has already saved", () => {
-  const phoneticByChar = new Map([
-    ["青", { char: "青", pinyin: "qing", family: ["请", "情", "晴"] }],
-  ]);
-  const m = expectedCards(["青", "请"], phoneticByChar); // 请 already saved
-  // 请 is saved → skip; 情 + 晴 are next two unsaved members
-  assert.equal(m.has("char|familyTransfer|请"), false);
-  assert.ok(m.has("char|familyTransfer|情"));
-  assert.ok(m.has("char|familyTransfer|晴"));
-});
-
-test("familyTransfer does nothing without phoneticComponents data", () => {
-  const m = expectedCards(["青"]);
   for (const k of m.keys()) {
-    assert.equal(k.startsWith("char|familyTransfer|"), false, k);
+    assert.equal(k.includes("familyTransfer"), false, k);
   }
-});
-
-test("familyTransfer only applies to saved single-char items", () => {
-  const phoneticByChar = new Map([
-    ["青", { char: "青", pinyin: "qing", family: ["请"] }],
-  ]);
-  const m = expectedCards(["青青"], phoneticByChar);
-  assert.equal(m.has("char|familyTransfer|请"), false);
 });
 
 test("production seeds for every saved single character (v99)", () => {

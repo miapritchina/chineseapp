@@ -14,10 +14,11 @@ import { componentClosure } from "../lib/componentSearch";
 import { useReconcileTriggers } from "./useReconcileTriggers";
 
 const FSRS_KEY = "chinese.fsrs.v1";
-// Drills dropped from the launch screen (v85) — they can never be
-// enabled, so their rows must not load, seed, or sync back in. Legacy
-// rows may still exist in localStorage / Supabase from before the drop.
-const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound"]);
+// Drills dropped from the launch screen (phoneticTap/componentSound
+// v85, familyTransfer v107) — they can never be enabled, so their rows
+// must not load, seed, or sync back in. Legacy rows may still exist in
+// localStorage / Supabase from before the drop.
+const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound", "familyTransfer"]);
 const CASCADE_CAP_DAYS = 7;
 
 export interface ReviewCard {
@@ -170,30 +171,6 @@ export function useReview({
         });
       }
     }
-    // familyTransfer: for each saved phonetic component, take up to two
-    // family members the user hasn't saved yet and seed transfer cards
-    // on them. Surfaces "you know 青, what's 情?" prompts. Cap is to
-    // avoid drowning the queue when the user has saved many components.
-    if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0) {
-      const FAMILY_PER_COMPONENT = 2;
-      for (const key of scheduledKeys) {
-        if ([...key].length !== 1) continue;
-        const comp = phoneticComponentsByChar.get(key);
-        if (!comp || !comp.family || comp.family.length === 0) continue;
-        let added = 0;
-        for (const fam of comp.family) {
-          if (added >= FAMILY_PER_COMPONENT) break;
-          if (!fam || fam === comp.char) continue;
-          if (scheduledKeys.has(fam)) continue; // user already has it
-          out.set(rowId(fam, "char", "familyTransfer"), {
-            itemKey: fam,
-            itemKind: "char",
-            facet: "familyTransfer",
-          });
-          added++;
-        }
-      }
-    }
     // production: any saved single-character item gets a Hanzi Writer
     // trace drill (opt-in on the launch screen). Was gated on the ✒
     // Wrote tier until v99 removed that status (ADR-0011). Multi-char
@@ -260,10 +237,7 @@ export function useReview({
             row.facet === "soundRecognition" ||
             row.facet === "reverseRecognition" ||
             row.facet === "clozeChar")) ||
-        (row.itemKind === "char" &&
-          (row.facet === "phoneticTap" ||
-            row.facet === "familyTransfer" ||
-            row.facet === "production")) ||
+        (row.itemKind === "char" && (row.facet === "phoneticTap" || row.facet === "production")) ||
         (row.itemKind === "component" &&
           (row.facet === "componentSound" || row.facet === "familySweep"));
       if (isAutoFacet && !expectedCards.has(id)) {

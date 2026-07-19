@@ -1,7 +1,7 @@
 import type { RatingName } from "../../lib/fsrs";
 
 // The Again / Good / Easy button trio shared by CombinedRecognitionCard
-// (meaning + sound rows) and ClusterRecall. Renders a fragment of
+// (meaning + sound rows) and ClusterRecallCard. Renders a fragment of
 // `.review-btn` buttons — the caller supplies the wrapper
 // (`.combined-grade-row` vs `.review-actions`) so each call site keeps
 // its exact DOM.
