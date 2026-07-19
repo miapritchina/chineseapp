@@ -11,6 +11,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **Writing card took seconds to show the character (v106, BUG-15):**
+  stroke data was fetched from the CDN only when the card appeared.
+  The session now prefetches stroke data for upcoming Writing cards
+  in the background, and the service worker keeps it cached — so
+  after the first sighting a character's quiz paints instantly, even
+  offline.
+
 ### Changed
 - **Recognition card asks meaning and sound separately (v105,
   [ADR-0013](docs/decisions/0013-split-meaning-sound-grades-on-one-card.md)):**

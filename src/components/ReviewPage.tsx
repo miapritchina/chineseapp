@@ -247,6 +247,24 @@ export function ReviewPage({
     void ensureCached(window);
   }, [current?.itemKey, ensureCached, queue]);
 
+  // Warm stroke data for upcoming Writing cards — HanziWriter fetches
+  // per-char JSON from the CDN when the card mounts, a visible
+  // multi-second wait on a phone (BUG-15). Prefetching lands it in the
+  // service-worker/HTTP cache so the quiz paints instantly.
+  const strokeWarmedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!current) return;
+    for (const c of queue.slice(0, 8)) {
+      if (c.facet !== "production" || strokeWarmedRef.current.has(c.itemKey)) continue;
+      strokeWarmedRef.current.add(c.itemKey);
+      try {
+        void Promise.resolve(window.HanziWriter?.loadCharacterData?.(c.itemKey)).catch(() => {});
+      } catch {
+        /* no HanziWriter global — the card falls back on its own */
+      }
+    }
+  }, [current?.itemKey, queue]);
+
   const advanceWithoutGrading = useCallback((c: ReviewCard) => {
     setSkipped((prev) => {
       const k = rid(c);
