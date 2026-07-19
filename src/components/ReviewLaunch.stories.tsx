@@ -14,12 +14,10 @@ const meta = {
       reverseRecognition: 4,
       clozeChar: 2,
       familySweep: 1,
-      familyTransfer: 2,
+      clusterRecall: 2,
       production: 1,
     },
-    canCluster: true,
     onStart: () => {},
-    onStartCluster: () => {},
     onClose: () => {},
   },
 } satisfies Meta<typeof ReviewLaunch>;
@@ -27,4 +25,4 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const AllDrillTypes: Story = {};
-export const NothingDue: Story = { args: { totalDue: 0, facetCounts: {}, canCluster: false } };
+export const NothingDue: Story = { args: { totalDue: 0, facetCounts: {} } };

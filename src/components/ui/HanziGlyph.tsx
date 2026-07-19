@@ -33,7 +33,7 @@ interface Props {
   className?: string;
   fallbackClassName?: string;
   ariaLabel?: string;
-  onMistake?: (totalMistakes: number) => void;
+  onMistake?: (totalMistakes: number, strokeNum: number) => void;
   onComplete?: (totalMistakes: number) => void;
   onError?: (message: string) => void;
 }
@@ -120,7 +120,7 @@ export const HanziGlyph = forwardRef<HanziGlyphHandle, Props>(function HanziGlyp
         if (!writer) throw new Error("HanziWriter.create returned null");
         instanceRef.current = writer;
         writer.quiz?.({
-          onMistake: (info) => onMistake?.(info.totalMistakes),
+          onMistake: (info) => onMistake?.(info.totalMistakes, info.strokeNum),
           onComplete: (info) => onComplete?.(info.totalMistakes),
         });
       }

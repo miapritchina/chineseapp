@@ -149,12 +149,13 @@ describe("interleaveByActivity", () => {
     ]);
     expect(out.map((r) => r.id)).toEqual(["m1", "p4", "s2", "l3"]);
   });
-  it("rotates wordInference last despite its synthetic dueAt of 0", () => {
+  it("rotates the synthetic facets last despite their dueAt of 0", () => {
     const out = interleaveByActivity([
       row("wordInference", 0, "w"),
+      row("clusterRecall", 0, "c"),
       row("meaningRecognition", 7, "m"),
     ]);
-    expect(out.map((r) => r.id)).toEqual(["m", "w"]);
+    expect(out.map((r) => r.id)[0]).toBe("m");
   });
   it("keeps single-group input in most-overdue order", () => {
     const out = interleaveByActivity([

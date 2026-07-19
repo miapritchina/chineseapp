@@ -9,6 +9,11 @@ others are reference snapshots.
 These describe work the project intends to do. Treat as authoritative
 until superseded.
 
+- **[`explore-page.md`](explore-page.md)** — July 19 2026. One
+  Explore surface (focus stack + breadcrumb, saved-set connection
+  badges) replacing the Network, Components, and Phonetics pages.
+  Owner-approved direction; staged build v109–v111.
+
 - **[`recognition-drills.md`](recognition-drills.md)** — July 2026
   drill candidates; drills 1–4 (new-word inference, reverse
   recognition, masked-char cloze, family sweep) shipped in v98,

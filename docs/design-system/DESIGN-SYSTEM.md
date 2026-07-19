@@ -359,7 +359,7 @@ Key CSS: `.sheet-root` (fixed inset, z-index 55, flex align-items: flex-end) →
 
 ### 6.2 Full-screen page
 
-Review, Phonetics, Sentence Studio, and ClusterRecall all use the same pattern: `position: fixed; inset: 0; z-index: 60; background: var(--bg)` with safe-area padding. A header bar (`.review-header`) provides: back button (left, `--accent` colored), a pill tag (`.review-kind-tag`), and progress text (right, tabular-nums). The body is a flex-grow scrollable area.
+Review, Phonetics, and Sentence Studio all use the same pattern: `position: fixed; inset: 0; z-index: 60; background: var(--bg)` with safe-area padding. A header bar (`.review-header`) provides: back button (left, `--accent` colored), a pill tag (`.review-kind-tag`), and progress text (right, tabular-nums). The body is a flex-grow scrollable area.
 
 ### 6.3 Fixed bottom CTA bar
 
@@ -432,15 +432,15 @@ The app uses two coexisting routing patterns: a **modal stack** (`useModalStack`
 
 ### 7.14 PhoneticTapCard *(removed in v95)*
 
-Retired drill (facet = phoneticTap; dropped from the launch screen in v85, component deleted in v95). The `.phonetic-tap-*` classes remain in use by FamilyTransferCard.
+Retired drill (facet = phoneticTap; dropped from the launch screen in v85, component deleted in v95). The `.phonetic-tap-*` classes remain in use by the surviving drill cards.
 
 ### 7.15 ComponentSoundCard *(removed in v95)*
 
 Retired drill (facet = componentSound); same story as 7.14.
 
-### 7.16 FamilyTransferCard
+### 7.16 FamilyTransferCard *(removed in v107)*
 
-**What:** "You know X, what about Y?" drill. **Where:** ReviewPage (facet = familyTransfer). Shares `.phonetic-tap-*` classes. Additional: `.family-transfer-question`, `.family-transfer-target`.
+Retired drill (facet = familyTransfer) — owner saw no value. Component deleted; legacy rows scrubbed like 7.14/7.15.
 
 ### 7.17 ProductionCard
 
@@ -450,9 +450,9 @@ Retired drill (facet = componentSound); same story as 7.14.
 
 **What:** Side-by-side comparison of confusable cluster members. **Where:** ReviewPage (leech interleave). **Classes:** `.disambig-root`, `.disambig-banner`, `.disambig-grid`, `.disambig-cell`, `.disambig-actions`.
 
-### 7.19 ClusterRecall
+### 7.19 ClusterRecallCard
 
-**What:** 3–4 related saved words, tap to reveal, then grade. **Where:** Standalone full-screen via ReviewPage. **Classes:** `.cluster-body`, `.cluster-prompt`, `.cluster-grid`, `.cluster-cell`, `.cluster-cell-hanzi`.
+**What:** 3–4 related saved words, tap to reveal, then one grade for the group. **Where:** ReviewPage (facet = clusterRecall, v107 — was a standalone page pre-v107). **Classes:** `.cluster-grid` plus the shared `.phonetic-tap-*` drill chrome.
 
 ### 7.20 PhoneticsPage
 
@@ -507,7 +507,7 @@ Ordered by leverage (most-duplicated / most-impactful first).
 
 ### 8.4 `<PageHeader back tag progress actions?>` — Shared top bar ✅ *(shipped v91)*
 
-**Absorbs:** The header pattern from ReviewPage/DrillFrame (`.review-header`), TreeModal (`.modal-header`), PhoneticsPage, SentenceStudio, ClusterRecall — all use the same back-button + tag + progress layout with minor variations (some have action buttons on the right).
+**Absorbs:** The header pattern from ReviewPage/DrillFrame (`.review-header`), TreeModal (`.modal-header`), PhoneticsPage, SentenceStudio — all use the same back-button + tag + progress layout with minor variations (some have action buttons on the right).
 **Props:** `onBack`, `tag?: string`, `progress?: string`, `actions?: ReactNode`.
 **Effort:** **S**
 
@@ -561,7 +561,7 @@ Ordered by leverage (most-duplicated / most-impactful first).
 
 ### 8.13 `<GradeButtons onGrade>` — Again / Good / Easy trio
 
-**Absorbs:** `.review-btn-again`, `.review-btn-good`, `.review-btn-easy` button row used by CombinedRecognitionCard (`.combined-grade-row`) and ClusterRecall (`.review-actions`).
+**Absorbs:** `.review-btn-again`, `.review-btn-good`, `.review-btn-easy` button row used by CombinedRecognitionCard and ClusterRecallCard (`.combined-grade-row`).
 **Props:** `onGrade: (rating: RatingName) => void`, `disabled?: boolean`.
 **Effort:** **S**
 

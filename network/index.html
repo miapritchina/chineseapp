@@ -13,7 +13,10 @@
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+    <!-- Vendored (v108): the CDN copy broke the page on mobile whenever
+         the fetch failed or the SW served a stale response — "cytoscape
+         is not defined" with no fallback. -->
+    <script src="vendor/cytoscape.min.js"></script>
     <style>
       :root {
         --bg: #faf8f4;

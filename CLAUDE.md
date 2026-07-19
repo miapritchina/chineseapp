@@ -82,7 +82,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── HamburgerMenu            Top-bar drawer (Review / Phonetics / Network …)
 │   │   ├── StatusButton             4-tier status dropdown shared by every place
 │   │   ├── ReviewPage               Full-screen SRS surface, routes by facet
-│   │   ├── FamilyTransferCard       Drill: you know 青, what about 情?
+│   │   ├── ClusterRecallCard        Drill: recall a group of related saved words
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz
 │   │   ├── DisambiguationCard       Leech-cluster side-by-side compare
 │   │   ├── PhoneticsPage            List + save the top-250 productive components

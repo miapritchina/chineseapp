@@ -1779,7 +1779,9 @@ body {
 }
 .saved-grid .entity {
   display: inline-block;
-  flex: 0 1 auto;
+  /* Justified rows (v108): cards pack by content width, then grow to
+     fill the row — no ragged right edge (owner request). */
+  flex: 1 1 auto;
   max-width: 100%;
   vertical-align: top;
 }

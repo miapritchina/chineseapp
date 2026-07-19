@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 // (center) + optional progress or actions (right). Emits the existing
 // `.review-header` / `.back-btn` / `.review-kind-tag` / `.review-progress`
 // classes so it's a drop-in for the markup duplicated across ReviewPage,
-// PhoneticsPage, ClusterRecall, and the DrillFrame.
+// PhoneticsPage, and the DrillFrame.
 interface Props {
   onBack: () => void;
   backLabel?: string;
