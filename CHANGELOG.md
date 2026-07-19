@@ -21,6 +21,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   instead of the removed Wrote tier (still opt-in).
 
 ### Added
+- **Apple Watch companion app** (`watchos/`): independent watch-only
+  SwiftUI app (no iOS host). Signs in with the same Supabase email
+  one-time-code flow, loads the due review queue (`user_fsrs_state`
+  word cards, hydrated from `words`), and shows it as a Digital-Crown-
+  paged vertical carousel — crown scrolls to the next word, tap opens
+  a detail sheet (pinyin, definitions, due-since, drills due, HSK/
+  rank). Read-only; grading stays in the web app. No third-party
+  dependencies — plain `URLSession` against GoTrue/PostgREST, session
+  in the watch Keychain. Built separately in Xcode (16+, watchOS 10+);
+  not part of the Pages deploy.
 - **三字经 reader (v100):** new full-screen page (hamburger → 三字经 ·
   Classic, `#/classic`). The standard 1068-character edition rendered
   as one `<Entity>` card per character (pinyin + gloss from

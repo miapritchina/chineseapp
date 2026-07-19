@@ -36,6 +36,8 @@ npm-debug.log*
 release/
 
 # Mobile
+xcuserdata/
+*.xcworkspace/xcuserdata/
 ios/Pods/
 android/.gradle/
 android/app/build/
