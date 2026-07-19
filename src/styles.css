@@ -773,7 +773,9 @@ body {
   color: var(--muted);
 }
 .cloze-solved {
-  color: var(--accent);
+  /* Green, not the vermillion accent — the filled-in character is the
+     correct answer, and red read as "you got it wrong" (owner). */
+  color: var(--grade-good);
 }
 .sweep-grid {
   flex-wrap: wrap;

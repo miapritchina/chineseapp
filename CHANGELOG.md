@@ -20,6 +20,9 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   offline.
 
 ### Changed
+- **Fill-the-gap solved character shows green, not red (v106):** the
+  filled-in character used the vermillion accent, which read as "you
+  got it wrong" even on a correct pick.
 - **Sessions mix activity types by default (v106):** with several
   drills enabled, the queue now round-robins across them (word →
   reverse → cloze → word …) instead of running each type to
