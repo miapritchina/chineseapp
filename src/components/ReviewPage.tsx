@@ -577,15 +577,17 @@ export function ReviewPage({
     );
   }
 
-  // Default = recognition card. ONE grade covers both the meaning and
-  // sound facets (v102) — the rating is applied to both FSRS rows in
-  // the same tick, and Again re-queues the card for this session.
-  const handleCombinedGrade = (rating: RatingName) => {
-    onGrade(current.itemKey, rating, current.itemKind, "meaningRecognition");
-    onGrade(current.itemKey, rating, current.itemKind, "soundRecognition");
-    trackRetry(current, rating);
+  // Default = recognition card. ONE card, TWO answers (v105): meaning
+  // and sound are graded separately on the same reveal, each applied
+  // to its own FSRS row. Again on EITHER dimension re-queues the card
+  // for this session.
+  const handleCombinedGraded = (meaning: RatingName, sound: RatingName) => {
+    onGrade(current.itemKey, meaning, current.itemKind, "meaningRecognition");
+    onGrade(current.itemKey, sound, current.itemKind, "soundRecognition");
+    const worst: RatingName = meaning === "Again" || sound === "Again" ? "Again" : meaning;
+    trackRetry(current, worst);
     if (
-      rating === "Again" &&
+      worst === "Again" &&
       current.itemKind === "word" &&
       [...current.itemKey].length > 1 &&
       onAttributeFailure
@@ -633,7 +635,7 @@ export function ReviewPage({
             itemKind={current.itemKind}
             word={word}
             charData={charData}
-            onGrade={handleCombinedGrade}
+            onGraded={handleCombinedGraded}
           />
         )}
       </div>

@@ -755,7 +755,13 @@ body {
   justify-content: center;
 }
 .reverse-pick {
-  min-width: 72px;
+  min-width: 108px;
+}
+/* Picking hanzi is the whole task — show them at card size, not chip
+   size (owner request, v105). Doubled selector to outrank .entity-sm,
+   which sets the same variable later in the sheet. */
+.entity.reverse-pick {
+  --entity-hanzi-size: var(--hanzi-large);
 }
 .cloze-word {
   font-size: calc(var(--hanzi-large, 56px));

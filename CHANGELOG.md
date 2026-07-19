@@ -12,6 +12,19 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Recognition card asks meaning and sound separately (v105,
+  [ADR-0013](docs/decisions/0013-split-meaning-sound-grades-on-one-card.md)):**
+  one card, two answers — the reveal shows a Meaning row and a Sound
+  row, each grading its own schedule, and the card advances as soon
+  as both are picked. Swiping right/left still grades both at once
+  (Good/Again). Again on either dimension re-queues the card.
+  Character cards that only tracked meaning now grow a sound schedule
+  on first grade.
+- **Reverse review harder + easier to read (v105):** the word tiles
+  show card-size characters (were chip-size), and wrong options are
+  now picked to be confusable — preferring words that share a
+  character with the answer, match its length, or share a component
+  (e.g. 清 baiting 情).
 - **Skip moved to the page header (v105):** every review surface now
   shows Skip next to the progress counter, out of the thumb zone, so
   it can't be tapped by mistake while grading. The in-card and
