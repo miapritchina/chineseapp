@@ -12,6 +12,10 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Fixed
+- **Review glyph invisible in dark mode (v105, BUG-13):** the focal
+  character tile stays white in both themes, but the glyph inherited
+  the dark-theme text color (near-white on white). The tile now pins
+  light-theme ink, so the character reads in both themes.
 - **Answered "New words" stay done (v104, BUG-12):** answering an
   inference word — right or wrong — now counts immediately, not at
   session end. Exiting mid-session no longer resets the count: the

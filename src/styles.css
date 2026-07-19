@@ -1939,7 +1939,11 @@ body {
   --entity-stack-gap: 6px;
   padding: 20px;
   gap: 6px;
+  /* The tile stays white in both themes, so pin light-theme ink —
+     inherited dark-mode text (#ece7dc) is invisible on white (BUG-13). */
   background: #fff;
+  color: #1d1b18;
+  --muted: #6b6359;
 }
 /* Drill-pick flash modifiers (M12). Applied to Entity tiny/sm in drills
    to flag correct/wrong/reveal answers. Color tokens mirror the
