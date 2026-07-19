@@ -1,12 +1,22 @@
-// Browser TTS helpers. Only the lightweight Web Speech API path —
-// nothing fancy, nothing networked. Falls back silently when:
-//   - The browser doesn't expose speechSynthesis (older platforms).
-//   - The user hasn't interacted yet and autoplay policy blocks.
-//   - No zh-CN voice is installed.
+// Audio helpers. Primary path (v106): per-word neural-TTS MP3s from
+// Youdao's public dictionary-audio endpoint — the on-device iOS voices
+// sound like an old radio even at their best (owner-verified in the
+// iOS Settings preview), so device TTS is now only the fallback for
+// offline / endpoint-failure. The service worker CacheFirst-caches
+// each word's MP3, so a word heard once plays instantly and offline.
 //
 // All callers should treat these as fire-and-forget.
 
 type Utterance = InstanceType<typeof window.SpeechSynthesisUtterance>;
+type AudioEl = InstanceType<typeof window.Audio>;
+
+export function youdaoUrl(text: string): string {
+  return `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&le=zh`;
+}
+
+// One shared element — iOS unlocks an <audio> element after its first
+// user-gesture play, and reusing the element keeps that unlock.
+let audioEl: AudioEl | null = null;
 
 let pendingTimer: number | null = null;
 // Keep a live reference while speaking — Safari/Chrome may garbage-
@@ -69,15 +79,11 @@ function utter(text: string, lang: string): void {
   synth.speak(u);
 }
 
-/**
- * Speak `text` once. Cancels any in-flight utterance so quick swipes
- * through review cards don't queue up a backlog of audio. When a
- * cancel is needed, the new utterance is deferred a beat — calling
- * speak() in the same tick as cancel() makes iOS/Chrome clip the
- * start of the audio (the "sound is slightly cut" bug).
- */
-export function speak(text: string, lang: string = "zh-CN"): void {
-  if (typeof window === "undefined") return;
+// Device-TTS path — the fallback. Cancels any in-flight utterance so
+// quick swipes don't queue a backlog; when a cancel is needed the new
+// utterance is deferred a beat (cancel + speak in the same tick makes
+// iOS/Chrome clip the start — the old "sound is slightly cut" bug).
+function speakWithSynth(text: string, lang: string): void {
   const synth = window.speechSynthesis;
   if (!synth) return;
   try {
@@ -103,10 +109,46 @@ export function speak(text: string, lang: string = "zh-CN"): void {
   }
 }
 
-/** Stop whatever's playing (used on unmount). */
+/**
+ * Speak `text` once, cancelling whatever is playing. Neural MP3 when
+ * reachable; device TTS otherwise.
+ */
+export function speak(text: string, lang: string = "zh-CN"): void {
+  if (typeof window === "undefined") return;
+  stopSpeech();
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (!window.Audio || offline) {
+    speakWithSynth(text, lang);
+    return;
+  }
+  try {
+    if (!audioEl) {
+      audioEl = new window.Audio();
+      audioEl.preload = "auto";
+    }
+    const el = audioEl;
+    let fellBack = false;
+    const fallback = () => {
+      if (fellBack) return;
+      fellBack = true;
+      speakWithSynth(text, lang);
+    };
+    el.onerror = fallback;
+    el.src = youdaoUrl(text);
+    void el.play().catch(fallback);
+  } catch {
+    speakWithSynth(text, lang);
+  }
+}
+
+/** Stop whatever's playing (used on unmount and before a new speak). */
 export function stopSpeech(): void {
   if (typeof window === "undefined") return;
   try {
+    if (audioEl) {
+      audioEl.onerror = null;
+      audioEl.pause();
+    }
     if (pendingTimer !== null) {
       window.clearTimeout(pendingTimer);
       pendingTimer = null;

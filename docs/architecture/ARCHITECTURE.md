@@ -166,9 +166,13 @@ not cascade. See [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.m
 ### Queue + leech interleaving
 
 No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —
-everything due surfaces, ordered char/component → meaning/sound →
-reverse/cloze → oldest first. Cards graded Again re-enter the session
-queue until answered without Again. `lapses ≥ 6` items with cluster
+everything due surfaces. Since v106 the default session order is an
+activity **interleave**, not a grouped run: `interleaveByActivity`
+(drillGen) round-robins across drill groups (meaning/sound unified),
+most-overdue first within each group, the neediest group leading each
+cycle; `wordInference` rotates last (synthetic dueAt). The Shuffle
+toggle replaces this with a full random order. Cards graded Again
+re-enter the session queue until answered without Again. `lapses ≥ 6` items with cluster
 entries still get side-by-side disambig ([ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md), leech half).
 
 ---
@@ -286,7 +290,10 @@ All three surfaces install and run offline from one service worker
   `network/` + `components/` pages (NetworkFirst — they're copied into
   the site *after* the Vite build, so they can't be precached and are
   offline only after first visit); `cdn.jsdelivr.net`
-  (CacheFirst 30 days — hanzi-writer, cytoscape, per-char stroke data).
+  (CacheFirst 30 days — hanzi-writer, cytoscape, per-char stroke data);
+  `dict.youdao.com` (CacheFirst 180 days — per-word TTS MP3s, v106:
+  primary review audio, device Web Speech is the offline fallback —
+  see `src/lib/speech.ts`).
 - **Not cached** — everything Supabase. User data stays cloud-first
   ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)); offline
   reads come from the hooks' own localStorage mirrors, not the SW.

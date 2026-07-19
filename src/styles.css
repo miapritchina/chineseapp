@@ -773,12 +773,25 @@ body {
   color: var(--muted);
 }
 .cloze-solved {
-  color: var(--accent);
+  /* Green, not the vermillion accent — the filled-in character is the
+     correct answer, and red read as "you got it wrong" (owner). */
+  color: var(--grade-good);
 }
 .sweep-grid {
   flex-wrap: wrap;
   justify-content: center;
-  max-width: 340px;
+  max-width: 380px;
+}
+/* v106 size pass: glyphs the user must pick or compare need reading
+   size, not chip size (owner: sweep tiles "too small to be
+   comfortable"). Doubled selectors outrank the per-size Entity rules
+   that set the same variable later in the sheet. */
+.entity.phonetic-tap-pick {
+  --entity-hanzi-size: var(--hanzi-large);
+}
+.cluster-grid .entity,
+.disambig-grid .entity {
+  --entity-hanzi-size: var(--hanzi-medium);
 }
 .sweep-confirm {
   margin-top: 10px;

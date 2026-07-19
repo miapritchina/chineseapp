@@ -15,6 +15,7 @@ import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
+import { interleaveByActivity } from "../lib/drillGen";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
 
@@ -200,7 +201,13 @@ export function ReviewPage({
   const retryRows = retries.filter((r) => !liveIds.has(rid(r)) && !skipped.has(rid(r)));
 
   // Promoted cards prepend the queue (right after the current leech card).
-  const combined = [...promotedRows, ...dedupedFiltered, ...inferenceRows, ...retryRows];
+  // Mix activity types by default (v106): round-robin across drill
+  // groups, most-overdue first within each — NOT a shuffle. The
+  // Shuffle toggle still randomizes fully via the position map below.
+  const mixed = randomOrder
+    ? [...dedupedFiltered, ...inferenceRows]
+    : interleaveByActivity([...dedupedFiltered, ...inferenceRows]);
+  const combined = [...promotedRows, ...mixed, ...retryRows];
 
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
@@ -246,6 +253,24 @@ export function ReviewPage({
     const window = queue.slice(0, 5).map((c) => c.itemKey);
     void ensureCached(window);
   }, [current?.itemKey, ensureCached, queue]);
+
+  // Warm stroke data for upcoming Writing cards — HanziWriter fetches
+  // per-char JSON from the CDN when the card mounts, a visible
+  // multi-second wait on a phone (BUG-15). Prefetching lands it in the
+  // service-worker/HTTP cache so the quiz paints instantly.
+  const strokeWarmedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!current) return;
+    for (const c of queue.slice(0, 8)) {
+      if (c.facet !== "production" || strokeWarmedRef.current.has(c.itemKey)) continue;
+      strokeWarmedRef.current.add(c.itemKey);
+      try {
+        void Promise.resolve(window.HanziWriter?.loadCharacterData?.(c.itemKey)).catch(() => {});
+      } catch {
+        /* no HanziWriter global — the card falls back on its own */
+      }
+    }
+  }, [current?.itemKey, queue]);
 
   const advanceWithoutGrading = useCallback((c: ReviewCard) => {
     setSkipped((prev) => {
