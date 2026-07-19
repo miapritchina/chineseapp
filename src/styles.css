@@ -761,32 +761,68 @@ body {
   margin-bottom: 2px;
 }
 .classic-couplet {
-  margin-bottom: 22px;
-  /* 178 couplets × 6 cards — let the browser skip offscreen work. */
+  margin-bottom: 26px;
+  padding-left: 10px;
+  border-left: 2px solid transparent;
+  /* 178 couplets — let the browser skip offscreen work. */
   content-visibility: auto;
-  contain-intrinsic-size: auto 190px;
+  contain-intrinsic-size: auto 210px;
 }
-.classic-line {
+.classic-couplet.is-bookmark {
+  border-left-color: var(--accent);
+}
+.classic-num {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: var(--caption, 12px);
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.classic-phrases {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
 }
-.classic-line .entity {
-  flex: 1;
-  max-width: 118px;
+.classic-phrase {
+  display: flex;
+  gap: 6px;
+  justify-content: space-around;
+  flex: 1 1 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px;
 }
-.entity.classic-known {
-  border-color: var(--status-learned);
-  box-shadow: 0 0 0 1px var(--status-learned);
+.classic-glyph {
+  color: var(--muted);
 }
-.entity.classic-unknown {
-  opacity: 0.82;
+.classic-glyph.is-known {
+  color: var(--status-learned);
 }
-.classic-en {
+.classic-continue {
+  margin: 8px 18px 0;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: var(--caption, 12px);
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.classic-mod {
   font-size: var(--body, 15px);
+  color: var(--text);
+  line-height: 1.45;
+}
+.classic-giles {
+  font-size: var(--caption, 12px);
+  font-style: italic;
   color: var(--muted);
   line-height: 1.4;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .classic-source {
   font-size: var(--caption, 12px);

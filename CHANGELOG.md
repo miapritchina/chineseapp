@@ -11,6 +11,17 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **三字经 v2 (v101):** couplets numbered (№ 1–178); each 3-character
+  phrase is now ONE card using the EntitySheet's pinyin → hanzi →
+  meaning character stacks (known characters in learned-green, the
+  rest muted); a **modern plain-English interpretation** written for
+  this app is the primary line with Giles 1900 kept beneath in italic;
+  and a **reading bookmark** — scrolling advances a furthest-read
+  marker (accent bar on the couplet, "Continue reading at № N" pill on
+  return), synced to the new `user_classic_progress` table (migration
+  **0012**, RLS, max(local, remote) merge) with a localStorage cache.
+
 ### Changed
 - **Two-tier status model** ([ADR-0011](docs/decisions/0011-two-tier-status-model.md)):
   the ❗ Need-to-learn and ✒ Wrote statuses are gone from the UI —

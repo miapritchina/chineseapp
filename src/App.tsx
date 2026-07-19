@@ -11,6 +11,7 @@ import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
 import { useWordInference } from "./hooks/useWordInference";
 import { useSanzijing } from "./hooks/useSanzijing";
+import { useClassicProgress } from "./hooks/useClassicProgress";
 import { useAutoImport } from "./hooks/useAutoImport";
 import { supabase, wakeUp } from "./lib/supabase";
 
@@ -73,6 +74,7 @@ export function App() {
 
   const phonetics = usePhoneticComponents();
   const classic = useSanzijing();
+  const classicProgress = useClassicProgress(auth.user?.id ?? null);
   const mnemonics = useMnemonics({ userId: auth.user?.id ?? null });
 
   const reviewState = useReview({
@@ -324,7 +326,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v100"
+          version="chinese v101"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -395,6 +397,8 @@ export function App() {
         <ClassicPage
           data={classic.data}
           error={classic.error}
+          bookmarkIndex={classicProgress.index}
+          onAdvance={classicProgress.advanceTo}
           onOpenChar={openChar}
           onClose={() => closeHashPage("#/classic")}
         />

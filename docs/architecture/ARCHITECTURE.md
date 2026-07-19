@@ -55,10 +55,11 @@ routes is a future option.
 |---|---|---|
 | `public/data-chars.json` | ~10k chars + components + etymology | Static; built via `extract-chinese.mjs` |
 | `public/phonetic-components.json` | Top-250 productive sound components | Static; built via `extract-phonetic-components.mjs` |
-| `public/sanzijing.json` | 三字经 standard edition (178 couplets) + Giles 1900 translation | Static; curated from Wikisource/ctext (v100) |
+| `public/sanzijing.json` | 三字经 standard edition (178 numbered couplets) + Giles 1900 translation + modern interpretation | Static; curated from Wikisource/ctext (v100–v101) |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
 | Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization; never read by the app yet | Live; insert-only from `useReview` |
+| Supabase `user_classic_progress` | Furthest-read 三字经 couplet (v101) — scroll-tracked bookmark, max(local, remote) merge | Live; `useClassicProgress` |
 
 The split is deliberate — see [ADR-0009](../decisions/0009-chars-static-words-in-db.md).
 The user-data policy is [ADR-0001](../decisions/0001-supabase-source-of-truth.md).

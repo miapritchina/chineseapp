@@ -7,16 +7,23 @@ const sample: ClassicData = {
   titleEn: "Three Character Classic",
   source: "Sample excerpt · Translation: Herbert Giles (1900), public domain",
   couplets: [
-    { a: "人之初", b: "性本善", en: "Men at their birth are naturally good." },
+    {
+      a: "人之初",
+      b: "性本善",
+      en: "Men at their birth are naturally good.",
+      mod: "People are born good at heart.",
+    },
     {
       a: "性相近",
       b: "习相远",
       en: "Their natures are much the same; their habits become widely different.",
+      mod: "Our natures start out alike; it's habit that pulls us apart.",
     },
     {
       a: "苟不教",
       b: "性乃迁",
       en: "If foolishly there is no teaching, the nature will deteriorate.",
+      mod: "Without teaching, that good nature drifts away.",
     },
   ],
 };
@@ -27,7 +34,13 @@ const meta = {
   title: "Pages/ClassicPage",
   component: ClassicPage,
   parameters: { layout: "fullscreen" },
-  args: { data: sample, onOpenChar: () => {}, onClose: () => {} },
+  args: {
+    data: sample,
+    bookmarkIndex: 0,
+    onAdvance: () => {},
+    onOpenChar: () => {},
+    onClose: () => {},
+  },
 } satisfies Meta<typeof ClassicPage>;
 export default meta;
 type Story = StoryObj<typeof meta>;
