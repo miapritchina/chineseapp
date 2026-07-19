@@ -117,6 +117,9 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   └── test-*.mjs                   Eleven headless test files (npm test)
 ├── supabase/
 │   └── migrations/                  Idempotent additive migrations
+├── watchos/                         Apple Watch companion (independent watch-only app)
+│   ├── ChineseWatch.xcodeproj       Xcode 16 project (single watchOS target)
+│   └── ChineseWatch Watch App/      SwiftUI: OTP login, crown-paged due-word carousel
 ├── package.json                     react, d3, ts-fsrs, supabase-js, lz-string
 ├── vite.config.ts                   base path + vite-plugin-pwa (manifest, SW, caches)
 ├── tsconfig.json

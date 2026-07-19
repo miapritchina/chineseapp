@@ -49,6 +49,7 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 | Reading-tap incidental review | Tap a char in a reading view → soft Again. Needs a reading surface first. |
 | Multi-char production drill | Chain Hanzi Writer quizzes across all chars of a saved word at ✒ Wrote tier. |
 | Stats dashboard | v66 separated sound + meaning into distinct FSRS Cards; data is there, no UI shows it side-by-side. |
+| Watch app: grade from the wrist + complication | `watchos/` ships read-only. Next: Again/Good buttons on the detail sheet (writes `user_fsrs_state` + `user_review_log`), due-count complication / Smart Stack widget. |
 | FSRS optimizer | Train custom params from the review log. Wait until ~1000 reviews. `@open-spaced-repetition/binding`. |
 
 ## Deferred / cut
