@@ -12,6 +12,39 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Review overhaul (v102, [ADR-0012](docs/decisions/0012-no-daily-cap-repeat-until-correct.md)):**
+  - **No daily cap** — every due card surfaces; the 25/day new-card
+    machinery is gone. This also fixes **BUG-9**: Reverse and
+    Fill-the-gap always showed 0 because new meaning/sound cards ate
+    every cap slot ahead of them.
+  - **Repeat until correct** — a card graded Again re-enters the
+    session queue at the end and keeps returning until answered
+    without Again.
+  - **One grade per recognition card** — meaning + sound are answered
+    with a single Again/Good/Easy applied to both FSRS rows; the
+    launch screen shows one "Recognition" toggle. Swipe right = Good,
+    left = Again still works.
+  - **"New words" fixed (BUG-10)** — the whole discovered pool
+    surfaces (was capped at 5) with a fresh per-session rotation (was
+    the same 5 words every time).
+  - **Audio fix (BUG-11)** — TTS start was clipped because cancel()
+    and speak() fired in the same tick; the utterance is now deferred
+    after a cancel and an installed zh voice is selected explicitly.
+  - **"Weakest" shelf sort** — new sort pill on the home grid ordering
+    words by FSRS stability (never-reviewed and shaky words first).
+
+### Added
+- **三字经 v2 (v101):** couplets numbered (№ 1–178); each 3-character
+  phrase is now ONE card using the EntitySheet's pinyin → hanzi →
+  meaning character stacks (known characters in learned-green, the
+  rest muted); a **modern plain-English interpretation** written for
+  this app is the primary line with Giles 1900 kept beneath in italic;
+  and a **reading bookmark** — scrolling advances a furthest-read
+  marker (accent bar on the couplet, "Continue reading at № N" pill on
+  return), synced to the new `user_classic_progress` table (migration
+  **0012**, RLS, max(local, remote) merge) with a localStorage cache.
+
+### Changed
 - **Two-tier status model** ([ADR-0011](docs/decisions/0011-two-tier-status-model.md)):
   the ❗ Need-to-learn and ✒ Wrote statuses are gone from the UI —
   the star menu now offers Saved / Learned only, and the shelf has two

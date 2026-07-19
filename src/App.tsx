@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import "./styles.css";
 
 import { useDictionary } from "./hooks/useDictionary";
@@ -11,6 +11,7 @@ import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
 import { useWordInference } from "./hooks/useWordInference";
 import { useSanzijing } from "./hooks/useSanzijing";
+import { useClassicProgress } from "./hooks/useClassicProgress";
 import { useAutoImport } from "./hooks/useAutoImport";
 import { supabase, wakeUp } from "./lib/supabase";
 
@@ -73,6 +74,7 @@ export function App() {
 
   const phonetics = usePhoneticComponents();
   const classic = useSanzijing();
+  const classicProgress = useClassicProgress(auth.user?.id ?? null);
   const mnemonics = useMnemonics({ userId: auth.user?.id ?? null });
 
   const reviewState = useReview({
@@ -82,6 +84,18 @@ export function App() {
     phoneticComponentsByChar: phonetics.byChar,
   });
   const { dueCards, grade, attributeFailure, creditInference } = reviewState;
+
+  // Weakest-first shelf sort: per saved word, the lower of the two
+  // recognition cards' FSRS stability (never-reviewed = 0 = weakest).
+  const weakness = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of saved.savedList) {
+      const meaning = reviewState.cards.get(`word|meaningRecognition|${e.word}`);
+      const sound = reviewState.cards.get(`word|soundRecognition|${e.word}`);
+      m.set(e.word, Math.min(meaning?.card.stability ?? 0, sound?.card.stability ?? 0));
+    }
+    return m;
+  }, [saved.savedList, reviewState.cards]);
 
   // Drill 1 material: real unsaved words made of the user's known chars.
   const inferenceWords = useWordInference({
@@ -324,7 +338,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v100"
+          version="chinese v102"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -352,7 +366,7 @@ export function App() {
               acc[f] = (acc[f] || 0) + 1;
               return acc;
             }, {}),
-            wordInference: Math.min(inferenceWords.length, 5),
+            wordInference: inferenceWords.length,
           }}
           canCluster={saved.savedList.length >= 3}
           onStart={(s) => setReviewLaunched(s)}
@@ -395,6 +409,8 @@ export function App() {
         <ClassicPage
           data={classic.data}
           error={classic.error}
+          bookmarkIndex={classicProgress.index}
+          onAdvance={classicProgress.advanceTo}
           onOpenChar={openChar}
           onClose={() => closeHashPage("#/classic")}
         />
@@ -434,7 +450,11 @@ export function App() {
         />
       ) : (
         <main className="home" aria-label="Home">
-          <SavedShelf onOpenWord={(w) => void openWord(w)} onOpenChar={openChar} />
+          <SavedShelf
+            onOpenWord={(w) => void openWord(w)}
+            onOpenChar={openChar}
+            weakness={weakness}
+          />
         </main>
       )}
 

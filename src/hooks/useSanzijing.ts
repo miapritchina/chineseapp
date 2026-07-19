@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 export interface ClassicCouplet {
   a: string; // first 3-char line
   b: string; // second 3-char line
-  en: string; // Giles translation of the couplet
+  en: string; // Giles (1900) translation of the couplet
+  mod: string; // modern plain-English interpretation
 }
 
 export interface ClassicData {

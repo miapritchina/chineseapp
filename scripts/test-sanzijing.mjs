@@ -29,6 +29,15 @@ test("every couplet has a non-empty English translation", () => {
   }
 });
 
+test("every couplet has a modern interpretation distinct from Giles", () => {
+  let distinct = 0;
+  for (const { en, mod } of data.couplets) {
+    assert.ok(typeof mod === "string" && mod.trim().length > 3, mod);
+    if (mod !== en) distinct++;
+  }
+  assert.ok(distinct > 150, `only ${distinct} differ from Giles`);
+});
+
 test("text is simplified (spot landmarks)", () => {
   const all = data.couplets.map((c) => c.a + c.b).join("");
   assert.ok(all.includes("习相远"), "习相远 (not 習相遠)");

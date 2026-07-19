@@ -18,8 +18,6 @@ import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
 
-// Session quota for drill-1 inference words — a garnish, not the meal.
-const INFERENCE_PER_SESSION = 5;
 // Placeholder FSRS state for the synthetic (non-FSRS) inference rows.
 const INFERENCE_CARD = {
   due: new Date(0).toISOString(),
@@ -86,6 +84,10 @@ export function ReviewPage({
   // Cards the user has explicitly skipped this session; filtered out of
   // the visible queue so they don't keep surfacing.
   const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
+  // Cards graded Again this session: they re-enter at the END of the
+  // queue and keep coming back until answered without Again — "a word
+  // is repeated when it is repeated, not when the session finishes".
+  const [retries, setRetries] = useState<ReviewCard[]>([]);
   // Disambig already shown this session (one-shot per key).
   const [disambigSeen, setDisambigSeen] = useState<Set<string>>(() => new Set());
   // Cluster members forced into the queue this session by an active
@@ -178,7 +180,7 @@ export function ReviewPage({
   // onInferenceCredit instead of onGrade).
   const inferenceRows: ReviewCard[] = [];
   if ((!enabledFacets || enabledFacets.has("wordInference")) && inferenceWords) {
-    for (const w of inferenceWords.slice(0, INFERENCE_PER_SESSION)) {
+    for (const w of inferenceWords) {
       const row: ReviewCard = {
         itemKey: w.word,
         itemKind: "word",
@@ -191,8 +193,13 @@ export function ReviewPage({
     }
   }
 
+  // Retry copies: Again-graded cards whose FSRS row already left
+  // dueCards (due moved out) come back at the end of the session queue.
+  const liveIds = new Set([...promotedRows, ...dedupedFiltered, ...inferenceRows].map(rid));
+  const retryRows = retries.filter((r) => !liveIds.has(rid(r)) && !skipped.has(rid(r)));
+
   // Promoted cards prepend the queue (right after the current leech card).
-  const combined = [...promotedRows, ...dedupedFiltered, ...inferenceRows];
+  const combined = [...promotedRows, ...dedupedFiltered, ...inferenceRows, ...retryRows];
 
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
@@ -272,14 +279,27 @@ export function ReviewPage({
     [onAttributeFailure, onGradedAdvance],
   );
 
+  // Again → the card re-enters the session queue at the end (fresh
+  // position); any other grade clears its pending retry.
+  const trackRetry = useCallback((row: ReviewCard, rating: RatingName) => {
+    const id = rid(row);
+    if (rating === "Again") {
+      positionRef.current.delete(id);
+      setRetries((prev) => (prev.some((r) => rid(r) === id) ? prev : [...prev, row]));
+    } else {
+      setRetries((prev) => prev.filter((r) => rid(r) !== id));
+    }
+  }, []);
+
   const handleDrillGrade = useCallback(
     (rating: RatingName) => {
       if (!current) return;
       const cur = current;
       onGrade(cur.itemKey, rating, cur.itemKind, cur.facet);
+      trackRetry(cur, rating);
       onGradedAdvance();
     },
-    [current, onGrade, onGradedAdvance],
+    [current, onGrade, onGradedAdvance, trackRetry],
   );
 
   const handleSkipCurrent = useCallback(() => {
@@ -531,34 +551,24 @@ export function ReviewPage({
     );
   }
 
-  // Default = combined recognition card (v71). Both meaning + sound
-  // facets surface together; user grades each separately, then taps
-  // anywhere to advance. The other facet's card (if also in dueCards)
-  // is dropped from the queue when this one is graded — useReview's
-  // dueCards memo re-derives both rows out of due in one go.
-  const meaningId = `${current.itemKind}|meaningRecognition|${current.itemKey}`;
-  const soundId = `${current.itemKind}|soundRecognition|${current.itemKey}`;
-  const hasMeaningCard =
-    !!cards?.has(meaningId) ||
-    current.facet === "meaningRecognition" ||
-    current.facet === "recognition";
-  const hasSoundCard = !!cards?.has(soundId) || current.facet === "soundRecognition";
-
-  const handleCombinedGrade = (
-    rating: RatingName,
-    facet: "meaningRecognition" | "soundRecognition",
-  ) => {
-    onGrade(current.itemKey, rating, current.itemKind, facet);
+  // Default = recognition card. ONE grade covers both the meaning and
+  // sound facets (v102) — the rating is applied to both FSRS rows in
+  // the same tick, and Again re-queues the card for this session.
+  const handleCombinedGrade = (rating: RatingName) => {
+    onGrade(current.itemKey, rating, current.itemKind, "meaningRecognition");
+    onGrade(current.itemKey, rating, current.itemKind, "soundRecognition");
+    trackRetry(current, rating);
     if (
       rating === "Again" &&
       current.itemKind === "word" &&
       [...current.itemKey].length > 1 &&
       onAttributeFailure
     ) {
-      // Mirror v57's "what threw you?" affordance for word Again grades.
+      // v57's "what threw you?" affordance for word Again grades.
       setAttribTarget(current.itemKey);
       return;
     }
+    onGradedAdvance();
   };
 
   return (
@@ -591,15 +601,12 @@ export function ReviewPage({
           </div>
         ) : (
           <CombinedRecognitionCard
-            key={current.itemKey}
+            key={rid(current)}
             itemKey={current.itemKey}
             itemKind={current.itemKind}
             word={word}
             charData={charData}
-            hasMeaningCard={hasMeaningCard}
-            hasSoundCard={hasSoundCard}
-            onGradeMeaning={(r) => handleCombinedGrade(r, "meaningRecognition")}
-            onGradeSound={(r) => handleCombinedGrade(r, "soundRecognition")}
+            onGrade={handleCombinedGrade}
             onSkip={handleSkipCurrent}
           />
         )}

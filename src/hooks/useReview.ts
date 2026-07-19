@@ -18,40 +18,7 @@ const FSRS_KEY = "chinese.fsrs.v1";
 // enabled, so their rows must not load, seed, or sync back in. Legacy
 // rows may still exist in localStorage / Supabase from before the drop.
 const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound"]);
-const INTRODUCED_KEY = "chinese.fsrs.introducedToday";
 const CASCADE_CAP_DAYS = 7;
-// Re-fetch from Supabase on tab focus, but at most once per this window.
-// Daily cap on how many *new* (never-directly-reviewed) cards can surface
-// in a single calendar day. Resets at midnight (UTC). Brief recommends
-// 5–15 for sustainable language learning; user picked 25.
-export const DAILY_NEW_CAP = 25;
-
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-interface IntroducedTodayPayload {
-  date: string;
-  ids: string[];
-}
-function loadIntroducedToday(): Set<string> {
-  try {
-    const raw = localStorage.getItem(INTRODUCED_KEY);
-    if (!raw) return new Set();
-    const p = JSON.parse(raw) as IntroducedTodayPayload;
-    if (p?.date === todayKey() && Array.isArray(p.ids)) return new Set(p.ids);
-  } catch {
-    /* ignore */
-  }
-  return new Set();
-}
-function persistIntroducedToday(ids: Set<string>) {
-  try {
-    localStorage.setItem(INTRODUCED_KEY, JSON.stringify({ date: todayKey(), ids: [...ids] }));
-  } catch {
-    /* ignore */
-  }
-}
 
 export interface ReviewCard {
   itemKey: string;
@@ -128,7 +95,6 @@ export function useReview({
 }: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
-  const [introducedToday, setIntroducedToday] = useState<Set<string>>(() => loadIntroducedToday());
 
   // Synchronous mirror of `cards`. Every write goes through applyCards so
   // two grade() calls in the same tick (the combined recognition card
@@ -418,20 +384,16 @@ export function useReview({
 
   useReconcileTriggers(userId, reconcile);
 
-  // Due cards. Char + component cards before word cards (the brief: review
-  // sub-items in isolation occasionally), then oldest-due first. Daily
-  // cap of DAILY_NEW_CAP new (never-direct-reviewed) cards is applied
-  // here so the queue size doesn't explode when the user has many
-  // freshly-saved words.
+  // Due cards — EVERYTHING due, no daily cap (ADR-0012: the owner wants
+  // the whole backlog available; the v95 cap starved the v98 facets to
+  // zero once >25 new meaning/sound cards existed). Char + component
+  // cards before word cards; within word kind, meaning/sound before
+  // reverse/cloze; then oldest-due first.
   const dueCards = useMemo<ReviewCard[]>(() => {
     const now = new Date();
-    // Within word kind, meaning/sound sort before the v98 extras
-    // (reverse, cloze) so the extras only take daily-new slots after
-    // the primary recognition cards have taken theirs — a low-priority
-    // facet must never starve the main queue (BUG-6 lesson).
     const facetTier = (row: ReviewCard) =>
       row.facet === "reverseRecognition" || row.facet === "clozeChar" ? 1 : 0;
-    const ordered = [...cards.values()]
+    return [...cards.values()]
       .filter((row) => isDue(row.card, now))
       .sort((a, b) => {
         const ka = a.itemKind === "word" ? 1 : 0;
@@ -442,27 +404,7 @@ export function useReview({
         if (ta !== tb) return ta - tb;
         return a.dueAt - b.dueAt;
       });
-    // Already-introduced new cards count toward today's cap. Anything
-    // beyond the cap drops off; older / non-new cards stay. The cap only
-    // applies to word cards — its purpose is limiting new-WORD intros.
-    // Char/component drill cards sort ahead of words, so counting them
-    // here let never-reviewable seeds eat every slot and starve the
-    // actual word queue.
-    let newSlotsLeft = Math.max(0, DAILY_NEW_CAP - introducedToday.size);
-    const out: ReviewCard[] = [];
-    for (const row of ordered) {
-      const id = rowId(row.itemKey, row.itemKind, row.facet);
-      const isNew =
-        row.itemKind === "word" && (row.directReviews ?? 0) === 0 && (row.card.reps ?? 0) === 0;
-      const alreadyIntroduced = introducedToday.has(id);
-      if (isNew && !alreadyIntroduced) {
-        if (newSlotsLeft <= 0) continue;
-        newSlotsLeft--;
-      }
-      out.push(row);
-    }
-    return out;
-  }, [cards, introducedToday]);
+  }, [cards]);
 
   // Helper to upsert a batch of changed rows to Supabase.
   const remoteUpsert = (rows: ReviewCard[]) => {
@@ -576,10 +518,6 @@ export function useReview({
       const prev = cardsRef.current;
       const parentRow = prev.get(parentId);
       if (!parentRow) return;
-      const parentWasNew =
-        kind === FIRST_KIND &&
-        (parentRow.directReviews ?? 0) === 0 &&
-        (parentRow.card.reps ?? 0) === 0;
       const next = new Map(prev);
       const changed: ReviewCard[] = [];
 
@@ -604,16 +542,6 @@ export function useReview({
       }
 
       applyCards(next);
-
-      if (parentWasNew) {
-        setIntroducedToday((p) => {
-          if (p.has(parentId)) return p;
-          const n = new Set(p);
-          n.add(parentId);
-          persistIntroducedToday(n);
-          return n;
-        });
-      }
       remoteUpsert(changed);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
