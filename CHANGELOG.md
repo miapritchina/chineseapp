@@ -12,6 +12,19 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Cluster recall is now a full session (v103):** one launch walks
+  EVERY cluster your saved set can form — phonetic families first,
+  then shared-character groups, then random fill, each word used once
+  — with cluster-N-of-M progress. Previously it showed a single group
+  (and, due to deterministic picking, usually the SAME group) and
+  closed after one grade.
+- **"New words" is now multiple choice (v103):** pick the meaning
+  among 4 options (distractors drawn from your other words); a correct
+  pick credits the constituent characters. The reveal shows each
+  character as a pinyin → hanzi → meaning stack (the sheet treatment)
+  so you see WHY the word means what it means.
+
+### Changed
 - **Review overhaul (v102, [ADR-0012](docs/decisions/0012-no-daily-cap-repeat-until-correct.md)):**
   - **No daily cap** — every due card surfaces; the 25/day new-card
     machinery is gone. This also fixes **BUG-9**: Reverse and

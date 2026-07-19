@@ -704,6 +704,46 @@ body {
   gap: 12px;
   margin-top: 10px;
 }
+.inference-hanzi {
+  font-size: calc(var(--hanzi-hero, 120px) * 0.8);
+  line-height: 1.1;
+}
+.inference-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, 100%);
+}
+.inference-option {
+  font: inherit;
+  font-size: var(--body, 15px);
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.inference-option.is-correct {
+  border-color: var(--feedback-correct, var(--grade-good));
+  box-shadow: 0 0 0 1px var(--grade-good);
+}
+.inference-option.is-wrong {
+  border-color: var(--grade-again);
+  box-shadow: 0 0 0 1px var(--grade-again);
+}
+.inference-option.is-reveal {
+  border-color: var(--grade-easy);
+  box-shadow: 0 0 0 1px var(--grade-easy);
+}
+.inference-option:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.inference-breakdown {
+  margin-top: 6px;
+}
 .reverse-gloss {
   font-size: var(--heading-2, 17px);
   text-align: center;

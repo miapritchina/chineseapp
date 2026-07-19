@@ -35,7 +35,12 @@ const savedWords = ["你好", "请", "中国", "学习", "朋友"];
 export const WordInference: StoryObj = {
   render: () => (
     <Shell tag="New word">
-      <WordInferenceCard word={WORDS["中国"]} onGotIt={() => {}} onMissed={() => {}} />
+      <WordInferenceCard
+        word={WORDS["中国"]}
+        glossPool={["hello; hi", "to study; to learn", "friend"]}
+        onGotIt={() => {}}
+        onMissed={() => {}}
+      />
     </Shell>
   ),
 };

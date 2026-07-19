@@ -27,8 +27,10 @@ Design constraints shared by all drills:
 
 **Owner's idea.** Surface a real, common word the user has **not**
 saved whose every character appears in their saved words — e.g. saved
-电话 + 大脑 → show 电脑 — the user guesses the meaning, taps to
-reveal, then self-grades "Got it / Missed".
+电话 + 大脑 → show 电脑. v103: the user picks the meaning among 4
+options (distractor glosses from their other words); the reveal shows
+each character as a pinyin → hanzi → meaning stack. Correct pick →
+cascade credit; wrong → nothing.
 
 - **Material:** ordered pairs of the user's known characters (from the
   most recently saved words, capped) probed against the dictionary via

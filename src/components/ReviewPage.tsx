@@ -384,6 +384,12 @@ export function ReviewPage({
           <WordInferenceCard
             key={rid(current)}
             word={word}
+            glossPool={[
+              ...(inferenceWords ?? [])
+                .filter((w) => w.word !== current.itemKey)
+                .map((w) => (w.definitions || []).slice(0, 2).join("; ")),
+              ...savedWords.map((w) => findWord(w)?.definitions?.[0] ?? ""),
+            ].filter(Boolean)}
             onGotIt={() => {
               onInferenceCredit?.(current.itemKey);
               advanceWithoutGrading(current);
