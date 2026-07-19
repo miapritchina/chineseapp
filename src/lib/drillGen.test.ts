@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildFamilySweep,
   inferencePairs,
+  interleaveByActivity,
   knownChars,
   pickClozeTask,
   pickGlossOptions,
@@ -124,5 +125,42 @@ describe("buildFamilySweep", () => {
   it("drops members missing from data-chars", () => {
     const task = buildFamilySweep(comps[0], comps, (c) => c !== "清", rand0);
     expect(task!.members).toEqual(["请", "情", "晴"]);
+  });
+});
+
+describe("interleaveByActivity", () => {
+  const row = (facet: string, dueAt: number, id: string) => ({ facet, dueAt, id });
+  it("round-robins across groups, most overdue first within each", () => {
+    const out = interleaveByActivity([
+      row("meaningRecognition", 3, "r3"),
+      row("meaningRecognition", 1, "r1"),
+      row("production", 5, "p5"),
+      row("production", 2, "p2"),
+      row("clozeChar", 10, "c10"),
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["r1", "p2", "c10", "r3", "p5"]);
+  });
+  it("unifies meaning/sound/legacy recognition into one group", () => {
+    const out = interleaveByActivity([
+      row("soundRecognition", 2, "s2"),
+      row("meaningRecognition", 1, "m1"),
+      row("recognition", 3, "l3"),
+      row("production", 4, "p4"),
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["m1", "p4", "s2", "l3"]);
+  });
+  it("rotates wordInference last despite its synthetic dueAt of 0", () => {
+    const out = interleaveByActivity([
+      row("wordInference", 0, "w"),
+      row("meaningRecognition", 7, "m"),
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["m", "w"]);
+  });
+  it("keeps single-group input in most-overdue order", () => {
+    const out = interleaveByActivity([
+      row("meaningRecognition", 9, "b"),
+      row("meaningRecognition", 4, "a"),
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["a", "b"]);
   });
 });

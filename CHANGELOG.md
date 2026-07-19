@@ -20,6 +20,18 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   offline.
 
 ### Changed
+- **Sessions mix activity types by default (v106):** with several
+  drills enabled, the queue now round-robins across them (word →
+  reverse → cloze → word …) instead of running each type to
+  exhaustion. Not a shuffle — within each type the most overdue card
+  still comes first, and the neediest type leads. The Shuffle toggle
+  still gives a fully random order.
+- **Bigger glyphs in picking drills (v106):** family-sweep and
+  fill-the-gap option tiles show characters at card size (52 px, were
+  22 px); cluster-recall and confusable-compare cells step up to
+  36 px. Audited every drill — recognition hero, reverse tiles,
+  cloze target, family-transfer target, New-word card, and the
+  writing canvas were already large.
 - **Review audio switched to neural MP3s (v106):** words are spoken
   with Youdao's dictionary voice (fetched per word, cached by the
   service worker — instant + offline after first play) instead of the

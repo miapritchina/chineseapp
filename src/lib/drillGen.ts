@@ -196,6 +196,37 @@ export function buildClusters(
   return shuffle(clusters, rand);
 }
 
+// Interleave due cards across activity types — round-robin over facet
+// groups so a session mixes drills instead of running each type to
+// exhaustion (owner request, v106). NOT a shuffle: within each group
+// the most overdue card stays first, and the rotation leads with the
+// group holding the most overdue card overall. wordInference rows are
+// synthetic (dueAt 0), so they always rotate last.
+export function interleaveByActivity<T extends { facet: string; dueAt: number }>(rows: T[]): T[] {
+  const keyOf = (f: string) =>
+    f === "meaningRecognition" || f === "soundRecognition" || f === "recognition"
+      ? "recognition"
+      : f;
+  const groups = new Map<string, T[]>();
+  for (const r of rows) {
+    const k = keyOf(r.facet);
+    const g = groups.get(k);
+    if (g) g.push(r);
+    else groups.set(k, [r]);
+  }
+  for (const g of groups.values()) g.sort((a, b) => a.dueAt - b.dueAt);
+  const urgency = (k: string) => (k === "wordInference" ? Infinity : groups.get(k)![0].dueAt);
+  const order = [...groups.keys()].sort((a, b) => urgency(a) - urgency(b));
+  const out: T[] = [];
+  for (let i = 0; out.length < rows.length; i++) {
+    for (const k of order) {
+      const g = groups.get(k)!;
+      if (i < g.length) out.push(g[i]);
+    }
+  }
+  return out;
+}
+
 export interface FamilySweepTask {
   component: string;
   members: string[];

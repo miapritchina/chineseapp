@@ -15,6 +15,7 @@ import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
+import { interleaveByActivity } from "../lib/drillGen";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
 
@@ -200,7 +201,13 @@ export function ReviewPage({
   const retryRows = retries.filter((r) => !liveIds.has(rid(r)) && !skipped.has(rid(r)));
 
   // Promoted cards prepend the queue (right after the current leech card).
-  const combined = [...promotedRows, ...dedupedFiltered, ...inferenceRows, ...retryRows];
+  // Mix activity types by default (v106): round-robin across drill
+  // groups, most-overdue first within each — NOT a shuffle. The
+  // Shuffle toggle still randomizes fully via the position map below.
+  const mixed = randomOrder
+    ? [...dedupedFiltered, ...inferenceRows]
+    : interleaveByActivity([...dedupedFiltered, ...inferenceRows]);
+  const combined = [...promotedRows, ...mixed, ...retryRows];
 
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
