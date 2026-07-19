@@ -10,6 +10,7 @@ import { useReview } from "./hooks/useReview";
 import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
 import { useWordInference } from "./hooks/useWordInference";
+import { useSanzijing } from "./hooks/useSanzijing";
 import { useAutoImport } from "./hooks/useAutoImport";
 import { supabase, wakeUp } from "./lib/supabase";
 
@@ -25,6 +26,7 @@ import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
 import { ComponentTable } from "./components/ComponentTable";
 import { PhoneticsPage } from "./components/PhoneticsPage";
+import { ClassicPage } from "./components/ClassicPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
 import { ClusterRecall } from "./components/ClusterRecall";
 import { SentenceStudio } from "./components/SentenceStudio";
@@ -57,6 +59,8 @@ export function App() {
   const setShowReview = useUIStore((s) => s.setShowReview);
   const showPhonetics = useUIStore((s) => s.showPhonetics);
   const setShowPhonetics = useUIStore((s) => s.setShowPhonetics);
+  const showClassic = useUIStore((s) => s.showClassic);
+  const setShowClassic = useUIStore((s) => s.setShowClassic);
   const showSignIn = useUIStore((s) => s.showSignIn);
   const setShowSignIn = useUIStore((s) => s.setShowSignIn);
 
@@ -68,6 +72,7 @@ export function App() {
   const scheduledKeys = saved.saved;
 
   const phonetics = usePhoneticComponents();
+  const classic = useSanzijing();
   const mnemonics = useMnemonics({ userId: auth.user?.id ?? null });
 
   const reviewState = useReview({
@@ -111,6 +116,7 @@ export function App() {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
       setShowPhonetics(window.location.hash === "#/phonetics");
+      setShowClassic(window.location.hash === "#/classic");
       if (window.location.hash === "#/sentence") {
         setSearchMode("sentence");
         history.replaceState(history.state, "", location.pathname + location.search);
@@ -129,13 +135,14 @@ export function App() {
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, [openFromHash, setShowReview, setShowPhonetics, setSearchMode]);
+  }, [openFromHash, setShowReview, setShowPhonetics, setShowClassic, setSearchMode]);
 
   const closeHashPage = (target: string) => {
     if (window.location.hash === target) history.back();
     else {
       if (target === "#/review") setShowReview(false);
       if (target === "#/phonetics") setShowPhonetics(false);
+      if (target === "#/classic") setShowClassic(false);
     }
   };
 
@@ -317,10 +324,11 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v99"
+          version="chinese v100"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
+          classicHref="#/classic"
           onShareWords={shareMyWords}
           wordCount={saved.savedList.length}
         />
@@ -380,6 +388,15 @@ export function App() {
           components={phonetics.components}
           ready={phonetics.ready}
           onClose={() => closeHashPage("#/phonetics")}
+        />
+      )}
+
+      {showClassic && (
+        <ClassicPage
+          data={classic.data}
+          error={classic.error}
+          onOpenChar={openChar}
+          onClose={() => closeHashPage("#/classic")}
         />
       )}
 

@@ -55,6 +55,7 @@ routes is a future option.
 |---|---|---|
 | `public/data-chars.json` | ~10k chars + components + etymology | Static; built via `extract-chinese.mjs` |
 | `public/phonetic-components.json` | Top-250 productive sound components | Static; built via `extract-phonetic-components.mjs` |
+| `public/sanzijing.json` | 三字经 standard edition (178 couplets) + Giles 1900 translation | Static; curated from Wikisource/ctext (v100) |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
 | Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization; never read by the app yet | Live; insert-only from `useReview` |
@@ -181,6 +182,7 @@ URL hash routing  ───▶  │   App.tsx      │
                           └ (stroke + mnemonic)   ├ ProductionCard
                                                   └ DisambiguationCard
                                                   PhoneticsPage
+                                                  ClassicPage
                                                   SentenceStudio
                                                   ClusterRecall
 ```
@@ -195,7 +197,7 @@ Two patterns coexist:
   `{ kind: "word"|"char", key, view?: "sheet"|"tree" }` — `view`
   defaults to `"sheet"` (EntitySheet); `"tree"` renders the full d3
   `TreeModal`.
-- **Top-level pages** (`#/review`, `#/phonetics`, `#/sentence`): a
+- **Top-level pages** (`#/review`, `#/phonetics`, `#/classic`, `#/sentence`): a
   plain `hashchange` listener in `App.tsx` toggles a flag. No modal-
   stack involvement.
 

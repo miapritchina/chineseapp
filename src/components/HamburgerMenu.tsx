@@ -6,6 +6,7 @@ interface Props {
   reviewHref?: string | null;
   reviewBadge?: number;
   phoneticsHref?: string | null;
+  classicHref?: string | null;
   onShareWords?: () => void;
   wordCount?: number;
 }
@@ -17,7 +18,8 @@ export function HamburgerMenu({
   version,
   reviewHref = null,
   reviewBadge = 0,
-  phoneticsHref = null,
+  phoneticsHref,
+  classicHref = null,
   onShareWords,
   wordCount = 0,
 }: Props) {
@@ -47,64 +49,70 @@ export function HamburgerMenu({
       </button>
       {/* Always rendered; toggled via .is-open (visibility/opacity/
           transform) so dismissing doesn't yank a box out of layout. */}
-      <div
-        className={`hamburger-menu${open ? " is-open" : ""}`}
-        role="menu"
-        aria-hidden={!open}
-      >
-          {reviewHref ? (
-            <a
-              role="menuitem"
-              className="hamburger-item"
-              href={reviewHref}
-              onClick={() => setOpen(false)}
-            >
-              <span>Review</span>
-              {reviewBadge > 0 && <span className="hamburger-badge">{reviewBadge}</span>}
-            </a>
-          ) : (
-            <span
-              role="menuitem"
-              className="hamburger-item is-disabled"
-              aria-disabled="true"
-              title="Review (coming soon)"
-            >
-              <span>Review</span>
-              <span className="hamburger-soon">soon</span>
-            </span>
-          )}
-          {phoneticsHref && (
-            <a
-              role="menuitem"
-              className="hamburger-item"
-              href={phoneticsHref}
-              onClick={() => setOpen(false)}
-            >
-              <span>Phonetics</span>
-            </a>
-          )}
-          <a role="menuitem" className="hamburger-item" href="./network/">
-            <span>Network</span>
+      <div className={`hamburger-menu${open ? " is-open" : ""}`} role="menu" aria-hidden={!open}>
+        {reviewHref ? (
+          <a
+            role="menuitem"
+            className="hamburger-item"
+            href={reviewHref}
+            onClick={() => setOpen(false)}
+          >
+            <span>Review</span>
+            {reviewBadge > 0 && <span className="hamburger-badge">{reviewBadge}</span>}
           </a>
-          <a role="menuitem" className="hamburger-item" href="./components/">
-            <span>Components</span>
+        ) : (
+          <span
+            role="menuitem"
+            className="hamburger-item is-disabled"
+            aria-disabled="true"
+            title="Review (coming soon)"
+          >
+            <span>Review</span>
+            <span className="hamburger-soon">soon</span>
+          </span>
+        )}
+        {phoneticsHref && (
+          <a
+            role="menuitem"
+            className="hamburger-item"
+            href={phoneticsHref}
+            onClick={() => setOpen(false)}
+          >
+            <span>Phonetics</span>
           </a>
-          {onShareWords && (
-            <button
-              type="button"
-              role="menuitem"
-              className="hamburger-item"
-              onClick={() => {
-                onShareWords();
-                setOpen(false);
-              }}
-            >
-              <span>Share my words</span>
-              {wordCount > 0 && <span className="hamburger-soon">{wordCount}</span>}
-            </button>
-          )}
-          <div className="hamburger-divider" />
-          <div className="hamburger-version">{version}</div>
+        )}
+        {classicHref && (
+          <a
+            role="menuitem"
+            className="hamburger-item"
+            href={classicHref}
+            onClick={() => setOpen(false)}
+          >
+            <span>三字经 · Classic</span>
+          </a>
+        )}
+        <a role="menuitem" className="hamburger-item" href="./network/">
+          <span>Network</span>
+        </a>
+        <a role="menuitem" className="hamburger-item" href="./components/">
+          <span>Components</span>
+        </a>
+        {onShareWords && (
+          <button
+            type="button"
+            role="menuitem"
+            className="hamburger-item"
+            onClick={() => {
+              onShareWords();
+              setOpen(false);
+            }}
+          >
+            <span>Share my words</span>
+            {wordCount > 0 && <span className="hamburger-soon">{wordCount}</span>}
+          </button>
+        )}
+        <div className="hamburger-divider" />
+        <div className="hamburger-version">{version}</div>
       </div>
     </div>
   );
