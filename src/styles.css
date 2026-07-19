@@ -755,7 +755,13 @@ body {
   justify-content: center;
 }
 .reverse-pick {
-  min-width: 72px;
+  min-width: 108px;
+}
+/* Picking hanzi is the whole task — show them at card size, not chip
+   size (owner request, v105). Doubled selector to outrank .entity-sm,
+   which sets the same variable later in the sheet. */
+.entity.reverse-pick {
+  --entity-hanzi-size: var(--hanzi-large);
 }
 .cloze-word {
   font-size: calc(var(--hanzi-large, 56px));
@@ -1252,13 +1258,10 @@ body {
   outline: 2px solid var(--grade-color, var(--accent));
   outline-offset: -2px;
 }
-/* Drill Skip — small, muted, pushed to the bottom of the card stack
-   (per-user request). Used by CombinedRecognitionCard, PhoneticTap,
-   ComponentSound, FamilyTransfer, and Production cards. */
-.combined-skip,
+/* Drill Skip — small, muted, in the page header next to the progress
+   (v105: moved out of the thumb zone so it can't be tapped by
+   mistake). Rendered by PageHeader for every review surface. */
 .drill-skip {
-  margin-top: 24px;
-  align-self: center;
   background: transparent;
   border: none;
   color: var(--muted);
@@ -1266,23 +1269,19 @@ body {
   font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  padding: 6px 14px;
+  padding: 6px 10px;
   border-radius: 999px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.combined-skip:hover,
-.combined-skip:focus-visible,
 .drill-skip:hover,
 .drill-skip:focus-visible {
   color: var(--text);
   background: var(--surface-2);
   outline: none;
 }
-.drill-skip-row {
-  display: flex;
-  justify-content: center;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+.header-actions .drill-skip-header {
+  margin-left: 6px;
 }
 
 /* Tiny StatusButton overlay in the corner of each Card / CharOnlyCard.
@@ -1939,7 +1938,11 @@ body {
   --entity-stack-gap: 6px;
   padding: 20px;
   gap: 6px;
+  /* The tile stays white in both themes, so pin light-theme ink —
+     inherited dark-mode text (#ece7dc) is invisible on white (BUG-13). */
   background: #fff;
+  color: #1d1b18;
+  --muted: #6b6359;
 }
 /* Drill-pick flash modifiers (M12). Applied to Entity tiny/sm in drills
    to flag correct/wrong/reveal answers. Color tokens mirror the

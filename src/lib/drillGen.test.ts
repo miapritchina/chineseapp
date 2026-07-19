@@ -41,6 +41,30 @@ describe("pickReverseOptions", () => {
   it("returns null with fewer than 2 total options", () => {
     expect(pickReverseOptions("你好", ["你好"], 4, rand0)).toBeNull();
   });
+  it("prefers same-length distractors over different-length ones", () => {
+    const opts = pickReverseOptions(
+      "你好",
+      ["你好", "中国", "朋友", "学习", "发展中国家", "三字经课本"],
+      4,
+      rand0,
+    );
+    // Three two-char candidates fill the distractor slots ahead of the
+    // five-char ones.
+    expect(opts).toEqual(expect.arrayContaining(["你好", "中国", "朋友", "学习"]));
+  });
+  it("prefers distractors sharing a component when char data is available", () => {
+    // 清 and 情 share the 青 component; 木林 shares nothing with 清水.
+    const componentsOf = (c: string) =>
+      ({ 清: ["青", "氵"], 情: ["青", "忄"], 水: [], 木: [], 林: ["木"], 大: [], 人: [] })[c] ?? [];
+    const opts = pickReverseOptions(
+      "清水",
+      ["清水", "情人", "木林", "大人"],
+      3,
+      rand0,
+      componentsOf,
+    );
+    expect(opts).toContain("情人"); // component cousin must make the cut
+  });
 });
 
 describe("pickClozeTask", () => {

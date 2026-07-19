@@ -52,19 +52,42 @@ export function inferencePairs(savedWords: string[], capChars = 36): string[] {
 }
 
 // Reverse recognition: the answer plus up to n-1 saved-word
-// distractors, preferring words that share a character with the
-// answer. Returns null when there aren't at least 2 options.
+// distractors, scored to be confusable — sharing a character with the
+// answer, matching its length, and (when char data is available via
+// componentsOf) sharing a component. Ties break randomly. Returns
+// null when there aren't at least 2 options.
 export function pickReverseOptions(
   answer: string,
   savedWords: string[],
   n = 4,
   rand: Rand = Math.random,
+  componentsOf?: (char: string) => string[],
 ): string[] | null {
   const answerChars = new Set([...answer]);
+  const answerLen = [...answer].length;
+  const answerComps = new Set<string>();
+  if (componentsOf) {
+    for (const c of answer) for (const p of componentsOf(c)) if (p) answerComps.add(p);
+  }
   const pool = savedWords.filter((w) => w !== answer);
-  const sharing = pool.filter((w) => [...w].some((c) => answerChars.has(c)));
-  const rest = pool.filter((w) => !sharing.includes(w));
-  const distractors = [...shuffle(sharing, rand), ...shuffle(rest, rand)].slice(0, n - 1);
+  // Shuffle BEFORE the stable sort so equal scores come out in random
+  // order — otherwise every session shows the same distractors.
+  const scored = shuffle(pool, rand).map((w) => {
+    let score = 0;
+    if ([...w].some((c) => answerChars.has(c))) score += 3;
+    if ([...w].length === answerLen) score += 2;
+    if (answerComps.size > 0 && componentsOf) {
+      // Only unshared chars count here — a shared char would make
+      // component overlap a given, not an extra confusion signal.
+      const sharesComp = [...w].some(
+        (c) => !answerChars.has(c) && componentsOf(c).some((p) => p && answerComps.has(p)),
+      );
+      if (sharesComp) score += 2;
+    }
+    return { w, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  const distractors = scored.slice(0, n - 1).map((s) => s.w);
   if (distractors.length < 1) return null;
   return shuffle([answer, ...distractors], rand);
 }

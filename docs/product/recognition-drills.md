@@ -52,8 +52,9 @@ cascade credit; wrong → nothing.
 ### 2 · Reverse recognition — facet `reverseRecognition` (word kind, FSRS)
 
 Prompt with the **gloss**, pick the right **hanzi** among 4 saved-word
-tiles. Distractors prefer saved words sharing a character with the
-answer. Tap-correct → Good, tap-wrong → Again + reveal. Retrieval in
+tiles (card-size glyphs since v105). Distractors are scored to be
+confusable: shared character > same length > shared component (ties
+random). Tap-correct → Good, tap-wrong → Again + reveal. Retrieval in
 the meaning→form direction, previously untrained. Seeds one row per
 saved word (needs ≥2 saved words to render options).
 

@@ -11,9 +11,20 @@ interface Props {
   tag?: ReactNode;
   progress?: ReactNode;
   actions?: ReactNode;
+  // Renders a Skip button next to the progress. Lives in the header —
+  // out of the thumb zone — so it can't be hit by mistake while
+  // grading (owner request, v105).
+  onSkip?: () => void;
 }
 
-export function PageHeader({ onBack, backLabel = "← Done", tag, progress, actions }: Props) {
+export function PageHeader({
+  onBack,
+  backLabel = "← Done",
+  tag,
+  progress,
+  actions,
+  onSkip,
+}: Props) {
   return (
     <div className="review-header">
       <button className="back-btn" type="button" onClick={onBack}>
@@ -22,6 +33,13 @@ export function PageHeader({ onBack, backLabel = "← Done", tag, progress, acti
       {tag != null && <span className="review-kind-tag">{tag}</span>}
       {actions != null ? (
         <div className="header-actions">{actions}</div>
+      ) : onSkip ? (
+        <div className="header-actions">
+          <span className="review-progress">{progress}</span>
+          <button type="button" className="drill-skip drill-skip-header" onClick={onSkip}>
+            Skip
+          </button>
+        </div>
       ) : (
         <span className="review-progress">{progress}</span>
       )}

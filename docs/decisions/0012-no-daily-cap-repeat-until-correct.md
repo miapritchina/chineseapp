@@ -1,6 +1,6 @@
 # ADR-0012 — No daily new-card cap; repeat-until-correct sessions; one grade per card
 
-**Status:** Accepted · **Date:** 2026-07-19 (v102)
+**Status:** Accepted; one-grade half (point 3) superseded by ADR-0013 · **Date:** 2026-07-19 (v102)
 
 ## Context
 

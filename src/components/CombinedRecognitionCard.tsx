@@ -10,19 +10,22 @@ interface Props {
   itemKind: "word" | "char" | "component";
   word: Word | null;
   charData: Char | undefined;
-  // ONE grade covers both facets (v102): "when I see the character I
-  // answer how well I remember sound AND meaning at the same time".
-  // The parent applies the rating to both FSRS rows.
-  onGrade: (rating: RatingName) => void;
-  onSkip: () => void;
+  // ONE card, TWO answers (v105): the user grades meaning and sound
+  // separately on the same reveal. Reported together once both are
+  // picked; the parent applies each to its FSRS row.
+  onGraded: (meaning: RatingName, sound: RatingName) => void;
 }
 
 // Recognition card. Tap anywhere to reveal (pinyin + meaning + audio),
-// then ONE Again/Good/Easy row grades the item and advances
-// immediately — no second grade row, no extra tap-to-continue.
-export function CombinedRecognitionCard({ itemKey, word, charData, onGrade, onSkip }: Props) {
+// then grade Meaning and Sound in either order — the card advances the
+// moment the second row is picked, no extra tap. A horizontal swipe is
+// the fast path: it applies one rating to BOTH rows (right → Good,
+// left → Again).
+export function CombinedRecognitionCard({ itemKey, word, charData, onGraded }: Props) {
   const [revealed, setRevealed] = useState(false);
-  // Guard against double-taps firing two grades for the same card.
+  const [meaningGrade, setMeaningGrade] = useState<RatingName | null>(null);
+  const [soundGrade, setSoundGrade] = useState<RatingName | null>(null);
+  // Guard against double-taps firing two advances for the same card.
   const gradedRef = useRef(false);
 
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
@@ -37,14 +40,22 @@ export function CombinedRecognitionCard({ itemKey, word, charData, onGrade, onSk
   }, [revealed, itemKey]);
   useEffect(() => () => stopSpeech(), []);
 
-  const handleGrade = (rating: RatingName) => {
+  const finish = (meaning: RatingName, sound: RatingName) => {
     if (gradedRef.current) return;
     gradedRef.current = true;
-    onGrade(rating);
+    onGraded(meaning, sound);
+  };
+  const pickMeaning = (r: RatingName) => {
+    setMeaningGrade(r);
+    if (soundGrade) finish(r, soundGrade);
+  };
+  const pickSound = (r: RatingName) => {
+    setSoundGrade(r);
+    if (meaningGrade) finish(meaningGrade, r);
   };
 
-  // Swipe-to-grade (2B): after reveal, a horizontal swipe grades —
-  // right → Good, left → Again. Buttons stay for Easy.
+  // Swipe-to-grade (2B): after reveal, a horizontal swipe grades both
+  // rows at once — right → Good, left → Again. Buttons let you split.
   const SWIPE_MIN = 60;
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => {
@@ -63,7 +74,10 @@ export function CombinedRecognitionCard({ itemKey, word, charData, onGrade, onSk
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
     if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    handleGrade(dx > 0 ? "Good" : "Again");
+    const rating: RatingName = dx > 0 ? "Good" : "Again";
+    setMeaningGrade(rating);
+    setSoundGrade(rating);
+    finish(rating, rating);
   };
 
   return (
@@ -106,24 +120,18 @@ export function CombinedRecognitionCard({ itemKey, word, charData, onGrade, onSk
               🔊 replay
             </button>
             <div className="combined-grade-block">
+              <div className="combined-grade-label">Meaning</div>
               <div className="combined-grade-row">
-                <GradeButtons onPick={handleGrade} />
+                <GradeButtons picked={meaningGrade} onPick={pickMeaning} />
+              </div>
+            </div>
+            <div className="combined-grade-block">
+              <div className="combined-grade-label">Sound</div>
+              <div className="combined-grade-row">
+                <GradeButtons picked={soundGrade} onPick={pickSound} />
               </div>
             </div>
           </>
-        )}
-        {/* Skip is only available BEFORE reveal. */}
-        {!revealed && (
-          <button
-            type="button"
-            className="review-btn review-btn-skip combined-skip"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSkip();
-            }}
-          >
-            Skip
-          </button>
         )}
       </div>
     </div>

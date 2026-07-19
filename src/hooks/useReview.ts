@@ -537,8 +537,25 @@ export function useReview({
       const now = new Date();
       const parentId = rowId(itemKey, kind, facet);
       const prev = cardsRef.current;
-      const parentRow = prev.get(parentId);
-      if (!parentRow) return;
+      let parentRow = prev.get(parentId);
+      if (!parentRow) {
+        // The recognition card grades meaning AND sound (v105) — items
+        // that historically only had a meaning row (cascade-seeded
+        // chars) get the missing recognition sibling seeded on demand
+        // instead of dropping the grade.
+        if (facet !== "meaningRecognition" && facet !== "soundRecognition") return;
+        const seeded = seedCard(now);
+        parentRow = {
+          itemKey,
+          itemKind: kind,
+          facet,
+          card: seeded,
+          dueAt: new Date(seeded.due).getTime(),
+          lastReviewAt: null,
+          directReviews: 0,
+          cascadeReviews: 0,
+        };
+      }
       const next = new Map(prev);
       const changed: ReviewCard[] = [];
 

@@ -7,7 +7,6 @@ interface Props {
   // Other cluster members to compare against.
   neighbors: string[];
   onContinue: () => void;
-  onSkip?: () => void;
 }
 
 // Side-by-side compare view. Shown once per session when a card hits the
@@ -15,7 +14,7 @@ interface Props {
 // src/lib/confusionClusters.mjs). The contract is just informational —
 // the user reads the contrast, then taps Continue and lands on the
 // regular review prompt for the focus char. No grading happens here.
-export function DisambiguationCard({ focus, neighbors, onContinue, onSkip }: Props) {
+export function DisambiguationCard({ focus, neighbors, onContinue }: Props) {
   const all = [focus, ...neighbors];
   return (
     <div className="disambig-root">
@@ -39,16 +38,6 @@ export function DisambiguationCard({ focus, neighbors, onContinue, onSkip }: Pro
         >
           Got it · continue
         </button>
-        {onSkip && (
-          <button
-            type="button"
-            className="review-btn review-btn-skip"
-            onClick={onSkip}
-            title="Skip this card for the rest of this session"
-          >
-            Skip
-          </button>
-        )}
       </div>
     </div>
   );
