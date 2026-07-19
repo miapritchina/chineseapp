@@ -20,6 +20,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   offline.
 
 ### Changed
+- **Review audio switched to neural MP3s (v106):** words are spoken
+  with Youdao's dictionary voice (fetched per word, cached by the
+  service worker — instant + offline after first play) instead of the
+  device speech engine, whose voices distort even at their best
+  (owner-verified in the iOS Settings preview). Device TTS remains as
+  the automatic fallback when offline or if the endpoint fails.
 - **Recognition card asks meaning and sound separately (v105,
   [ADR-0013](docs/decisions/0013-split-meaning-sound-grades-on-one-card.md)):**
   one card, two answers — the reveal shows a Meaning row and a Sound

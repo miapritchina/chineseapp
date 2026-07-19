@@ -77,6 +77,19 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            // Per-word TTS MP3s (v106) — each word is fetched once,
+            // then plays instantly and offline. Opaque responses
+            // (status 0) are expected: the audio element fetches
+            // cross-origin without CORS.
+            urlPattern: ({ url }) => url.hostname === 'dict.youdao.com',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'tts-audio',
+              expiration: { maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 * 180 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
       },
     }),

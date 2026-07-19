@@ -286,7 +286,10 @@ All three surfaces install and run offline from one service worker
   `network/` + `components/` pages (NetworkFirst — they're copied into
   the site *after* the Vite build, so they can't be precached and are
   offline only after first visit); `cdn.jsdelivr.net`
-  (CacheFirst 30 days — hanzi-writer, cytoscape, per-char stroke data).
+  (CacheFirst 30 days — hanzi-writer, cytoscape, per-char stroke data);
+  `dict.youdao.com` (CacheFirst 180 days — per-word TTS MP3s, v106:
+  primary review audio, device Web Speech is the offline fallback —
+  see `src/lib/speech.ts`).
 - **Not cached** — everything Supabase. User data stays cloud-first
   ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)); offline
   reads come from the hooks' own localStorage mirrors, not the SW.

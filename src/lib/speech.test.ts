@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickVoice, firstReading } from "./speech";
+import { pickVoice, firstReading, youdaoUrl } from "./speech";
 
 const v = (name: string, lang: string, localService = true) => ({ name, lang, localService });
 
@@ -31,6 +31,14 @@ describe("pickVoice", () => {
   it("prefers on-device voices as a tiebreaker", () => {
     const voices = [v("Cloud Voice", "zh-CN", false), v("Local Voice", "zh-CN", true)];
     expect(pickVoice(voices)?.name).toBe("Local Voice");
+  });
+});
+
+describe("youdaoUrl", () => {
+  it("URL-encodes the text and pins the language", () => {
+    expect(youdaoUrl("你好")).toBe(
+      "https://dict.youdao.com/dictvoice?audio=%E4%BD%A0%E5%A5%BD&le=zh",
+    );
   });
 });
 
