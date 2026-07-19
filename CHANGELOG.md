@@ -11,6 +11,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **Answered "New words" stay done (v104, BUG-12):** answering an
+  inference word — right or wrong — now counts immediately, not at
+  session end. Exiting mid-session no longer resets the count: the
+  word rests for 14 days (localStorage, plus a `user_review_log` row
+  under facet `wordInference` so the rest-period follows the account
+  across devices when signed in).
+
 ### Changed
 - **Cluster recall is now a full session (v103):** one launch walks
   EVERY cluster your saved set can form — phonetic families first,

@@ -23,7 +23,7 @@ Design constraints shared by all drills:
 
 ## Shipped (v98)
 
-### 1 · New-word inference — facet `wordInference` (session-only, no FSRS row)
+### 1 · New-word inference — facet `wordInference` (no FSRS row)
 
 **Owner's idea.** Surface a real, common word the user has **not**
 saved whose every character appears in their saved words — e.g. saved
@@ -38,9 +38,14 @@ cascade credit; wrong → nothing.
   aren't single chars become candidates, common-first (rank). Computed
   once per app session (`useWordInference`), rotated randomly; capped
   per review session so it stays a garnish, not the meal.
-- **Scheduling:** none. "Got it" applies the standard damped cascade
-  credit to every constituent char's FSRS card (same rule as a word
-  Good — [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md)); "Missed" writes nothing.
+- **Scheduling:** no FSRS row. A correct pick applies the standard
+  damped cascade credit to every constituent char's FSRS card (same
+  rule as a word Good — [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md)).
+  v104: answering — right OR wrong — marks the word **done for 14
+  days** (localStorage `chinese.inferenceSeen`, plus a
+  `user_review_log` row under facet `wordInference` that signed-in
+  devices read back), so exiting mid-session no longer resets the
+  "New words" count.
 - **Why it matters:** compositional inference is how Chinese
   vocabulary actually scales; fixed decks can never cover it.
 
