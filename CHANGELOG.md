@@ -11,6 +11,25 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Browsing counts a little (v108):** opening a saved word/character
+  from the main page gives its recognition schedule a partial credit —
+  half a Good's stability gain, due date pushed at most 2 days, no
+  repetition recorded — throttled to once per item per day. Reading
+  through your words is study; it just isn't a full answer.
+
+### Changed
+- **Justified word grid (v108):** shelf cards pack as many per row as
+  fit, then stretch to fill the row — no more ragged right edge.
+  Character sizes and no-truncation behavior unchanged.
+
+### Fixed
+- **Graph pages dead on mobile (v108, BUG-17):** network/components
+  loaded Cytoscape from the jsdelivr CDN with no error handling — any
+  failed or stale fetch left "cytoscape is not defined" and a blank
+  page. The library is now vendored into the site
+  (`network/vendor/cytoscape.min.js`), no runtime CDN dependency.
+
 ### Changed
 - **Cluster recall is a drill type (v107):** it joins the launch
   screen toggles and mixes into the session queue (one card per

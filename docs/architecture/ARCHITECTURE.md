@@ -168,6 +168,13 @@ The two-dispatch same-tick write is what forced
 Good/Easy on a word damp-credits every constituent char. Again does
 not cascade. See [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md).
 
+The same damped-credit math powers the **passive-view credit**
+(v108): opening a saved item's EntitySheet applies
+`applyCascadeCredit` to its own meaning/sound rows, capped at 2 days
+(`PASSIVE_CAP_DAYS`), no rep recorded, throttled to once per item per
+day (`chinese.passiveCredit` localStorage log). Browsing counts a
+little; it never replaces answering.
+
 ### Queue + leech interleaving
 
 No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —

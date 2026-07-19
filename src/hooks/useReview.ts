@@ -20,6 +20,33 @@ const FSRS_KEY = "chinese.fsrs.v1";
 // localStorage / Supabase from before the drop.
 const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound", "familyTransfer"]);
 const CASCADE_CAP_DAYS = 7;
+// Passive-view credit (v108): opening a saved item's sheet counts a
+// LITTLE — half a Good's stability gain (the cascade damping), due
+// pushed at most this many days, reps untouched. Throttled to one
+// credit per item per day (persisted) so idle browsing can't
+// snowball a card's schedule.
+const PASSIVE_CAP_DAYS = 2;
+const PASSIVE_KEY = "chinese.passiveCredit";
+
+function loadPassiveLog(): Map<string, number> {
+  try {
+    const raw = localStorage.getItem(PASSIVE_KEY);
+    if (!raw) return new Map();
+    const parsed = JSON.parse(raw) as { items?: [string, number][] };
+    const cutoff = Date.now() - 2 * 86400000;
+    return new Map((parsed.items ?? []).filter(([k, ts]) => k && ts > cutoff));
+  } catch {
+    return new Map();
+  }
+}
+
+function persistPassiveLog(log: Map<string, number>) {
+  try {
+    localStorage.setItem(PASSIVE_KEY, JSON.stringify({ items: [...log.entries()] }));
+  } catch {
+    /* ignore */
+  }
+}
 
 export interface ReviewCard {
   itemKey: string;
@@ -494,6 +521,45 @@ export function useReview({
     [userId, chars, applyCards],
   );
 
+  // Reading through a saved item on the main page counts as a partial
+  // repetition (owner request, v108) — NOT a full grade: no rep is
+  // recorded and the schedule moves at most PASSIVE_CAP_DAYS out, so
+  // the card still comes back soon to be answered properly.
+  const passiveLogRef = useRef<Map<string, number> | null>(null);
+  const creditPassiveView = useCallback(
+    (itemKey: string) => {
+      if (passiveLogRef.current === null) passiveLogRef.current = loadPassiveLog();
+      const log = passiveLogRef.current;
+      const now = new Date();
+      if (now.getTime() - (log.get(itemKey) ?? 0) < 86400000) return;
+      const next = new Map(cardsRef.current);
+      const changed: ReviewCard[] = [];
+      for (const kind of ["word", "char"] as ItemKind[]) {
+        for (const facet of ["meaningRecognition", "soundRecognition"] as Facet[]) {
+          const id = rowId(itemKey, kind, facet);
+          const row = next.get(id);
+          if (!row) continue;
+          const newCard = applyCascadeCredit(row.card, PASSIVE_CAP_DAYS, now);
+          const newRow: ReviewCard = {
+            ...row,
+            card: newCard,
+            dueAt: new Date(newCard.due).getTime(),
+            cascadeReviews: (row.cascadeReviews ?? 0) + 1,
+          };
+          next.set(id, newRow);
+          changed.push(newRow);
+        }
+      }
+      if (changed.length === 0) return;
+      log.set(itemKey, now.getTime());
+      persistPassiveLog(log);
+      applyCards(next);
+      remoteUpsert(changed);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, applyCards],
+  );
+
   // Apply a grade to one card. On Good/Easy on the MEANING facet, also
   // walk the parent's component closure and apply a damped Good cascade
   // to every char and component reachable from it (per the cascade rule
@@ -606,6 +672,7 @@ export function useReview({
     grade,
     attributeFailure,
     recordInference,
+    creditPassiveView,
     syncing,
   };
 }

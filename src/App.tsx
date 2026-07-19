@@ -83,7 +83,7 @@ export function App() {
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
   });
-  const { dueCards, grade, attributeFailure, recordInference } = reviewState;
+  const { dueCards, grade, attributeFailure, recordInference, creditPassiveView } = reviewState;
 
   // Weakest-first shelf sort: per saved word, the lower of the two
   // recognition cards' FSRS stability (never-reviewed = 0 = weakest).
@@ -320,6 +320,15 @@ export function App() {
   const top = stack[stack.length - 1];
   const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
 
+  // Reading a saved item's sheet counts as a partial repetition
+  // (v108): a small capped schedule credit, throttled to once per
+  // item per day — browsing is study, just not a full answer.
+  useEffect(() => {
+    if (!top || top.view === "tree") return;
+    if (!saved.saved.has(top.key)) return;
+    creditPassiveView(top.key);
+  }, [top, saved.saved, creditPassiveView]);
+
   return (
     <AppStateProvider
       saved={{
@@ -348,7 +357,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v107"
+          version="chinese v108"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
