@@ -14,13 +14,12 @@ interface Props {
   // answer how well I remember sound AND meaning at the same time".
   // The parent applies the rating to both FSRS rows.
   onGrade: (rating: RatingName) => void;
-  onSkip: () => void;
 }
 
 // Recognition card. Tap anywhere to reveal (pinyin + meaning + audio),
 // then ONE Again/Good/Easy row grades the item and advances
 // immediately — no second grade row, no extra tap-to-continue.
-export function CombinedRecognitionCard({ itemKey, word, charData, onGrade, onSkip }: Props) {
+export function CombinedRecognitionCard({ itemKey, word, charData, onGrade }: Props) {
   const [revealed, setRevealed] = useState(false);
   // Guard against double-taps firing two grades for the same card.
   const gradedRef = useRef(false);
@@ -111,19 +110,6 @@ export function CombinedRecognitionCard({ itemKey, word, charData, onGrade, onSk
               </div>
             </div>
           </>
-        )}
-        {/* Skip is only available BEFORE reveal. */}
-        {!revealed && (
-          <button
-            type="button"
-            className="review-btn review-btn-skip combined-skip"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSkip();
-            }}
-          >
-            Skip
-          </button>
         )}
       </div>
     </div>

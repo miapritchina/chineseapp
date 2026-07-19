@@ -220,7 +220,8 @@ authoritative contract. Summary:
 - Mounted with `key={rid(current)}` so React unmounts cleanly between
   queue items.
 - Owns its own pick state; receives `onGrade(rating)` from the parent.
-- Renders a small `.drill-skip` button visible only **before** answer.
+- Skip lives in the page header (`PageHeader onSkip`, v105 — moved out
+  of the thumb zone), not inside the card.
 - No timers. Tap-anywhere-to-advance after answering.
 
 ---

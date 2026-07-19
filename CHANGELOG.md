@@ -11,7 +11,23 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Skip moved to the page header (v105):** every review surface now
+  shows Skip next to the progress counter, out of the thumb zone, so
+  it can't be tapped by mistake while grading. The in-card and
+  bottom-row Skip buttons are gone; Skip is also available after
+  reveal now. Skipping a recognition card skips both its meaning and
+  sound rows (previously the sound sibling popped back up as its own
+  card).
+
 ### Fixed
+- **TTS sounds like an old radio (v105, BUG-14):** three causes —
+  the voice picker took the FIRST installed Chinese voice, which on
+  iOS is the low-bitrate "compact" Siri voice; the 0.85 playback rate
+  forced resampling (warble); and Safari could garbage-collect the
+  utterance mid-playback (stutter). Now the highest-quality voice is
+  picked (Enhanced/Premium preferred, zh-CN over other regions),
+  playback is native-rate, and the utterance is held until it ends.
 - **Review glyph invisible in dark mode (v105, BUG-13):** the focal
   character tile stays white in both themes, but the glyph inherited
   the dark-theme text color (near-white on white). The tile now pins

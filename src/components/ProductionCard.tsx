@@ -11,14 +11,13 @@ interface Props {
   // Caller decides what to do with the rating; advance happens via the
   // tap-anywhere overlay after the quiz completes.
   onGrade: (rating: RatingName) => void;
-  onSkip: () => void;
 }
 
 // Production drill — "write the character that means X." Reveals the
 // meaning + pinyin as the prompt, then the user traces the strokes via
 // <HanziGlyph mode="quiz">. Auto-grades on completion based on stroke
-// mistakes; manual Skip available before the user starts tracing.
-export function ProductionCard({ char, charData, onGrade, onSkip }: Props) {
+// mistakes; Skip lives in the page header.
+export function ProductionCard({ char, charData, onGrade }: Props) {
   const [done, setDone] = useState<{ mistakes: number } | null>(null);
   const [mistakes, setMistakes] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -82,18 +81,6 @@ export function ProductionCard({ char, charData, onGrade, onSkip }: Props) {
             </div>
             <div className="drill-tap-hint">Tap anywhere to continue →</div>
           </>
-        )}
-        {!done && (
-          <button
-            type="button"
-            className="review-btn review-btn-skip combined-skip"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSkip();
-            }}
-          >
-            Skip
-          </button>
         )}
       </div>
     </div>

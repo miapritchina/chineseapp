@@ -6,17 +6,66 @@
 //
 // All callers should treat these as fire-and-forget.
 
+type Utterance = InstanceType<typeof window.SpeechSynthesisUtterance>;
+
 let pendingTimer: number | null = null;
+// Keep a live reference while speaking — Safari/Chrome may garbage-
+// collect the utterance mid-playback otherwise, which truncates or
+// crackles the audio.
+let activeUtterance: Utterance | null = null;
+
+// Minimal voice shape so picking is unit-testable without a browser.
+export interface VoiceLike {
+  name: string;
+  lang: string;
+  localService?: boolean;
+}
+
+// Best-quality Chinese voice. iOS lists the low-bitrate "compact"
+// variant of each voice before the Enhanced/Premium variant of the
+// SAME voice — taking the first zh match sounds like an old radio.
+// Score: enhanced/premium name, then zh-CN region, then on-device.
+export function pickVoice<T extends VoiceLike>(voices: T[]): T | null {
+  let best: T | null = null;
+  let bestScore = -1;
+  for (const v of voices) {
+    const lang = (v.lang || "").toLowerCase().replace("_", "-");
+    if (!lang.startsWith("zh")) continue;
+    let score = 0;
+    if (/enhanced|premium|superior/i.test(v.name)) score += 4;
+    if (lang.startsWith("zh-cn")) score += 2;
+    if (v.localService) score += 1;
+    if (score > bestScore) {
+      bestScore = score;
+      best = v;
+    }
+  }
+  return best;
+}
+
+// getVoices() is lazily populated on some platforms (notably iOS) —
+// poke it at module load and on voiceschanged so the list is ready by
+// the first speak().
+if (typeof window !== "undefined" && window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener?.("voiceschanged", () => {
+    window.speechSynthesis.getVoices();
+  });
+}
 
 function utter(text: string, lang: string): void {
   const synth = window.speechSynthesis;
   const u = new window.SpeechSynthesisUtterance(text);
   u.lang = lang;
-  u.rate = 0.85;
-  // Prefer an installed Chinese voice — relying on `lang` alone makes
-  // some platforms pick a poor match or clip the utterance.
-  const voice = synth.getVoices().find((v) => v.lang?.toLowerCase().startsWith("zh"));
+  // Native rate on purpose — sub-1 rates resample on iOS and add a
+  // warbling distortion on top of the compact-voice problem.
+  const voice = pickVoice(synth.getVoices());
   if (voice) u.voice = voice;
+  activeUtterance = u;
+  u.onend = () => {
+    if (activeUtterance === u) activeUtterance = null;
+  };
+  u.onerror = u.onend;
   synth.speak(u);
 }
 
@@ -62,6 +111,7 @@ export function stopSpeech(): void {
       window.clearTimeout(pendingTimer);
       pendingTimer = null;
     }
+    activeUtterance = null;
     window.speechSynthesis?.cancel?.();
   } catch {
     /* no-op */

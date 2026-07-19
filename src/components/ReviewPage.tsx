@@ -253,6 +253,14 @@ export function ReviewPage({
       if (prev.has(k)) return prev;
       const n = new Set(prev);
       n.add(k);
+      // The combined card fronts BOTH recognition rows — skip the
+      // sibling facet too, or it surfaces as its own card once the
+      // meaning row leaves the queue.
+      if (c.facet === "meaningRecognition" || c.facet === "recognition") {
+        n.add(rid({ ...c, facet: "soundRecognition" as Facet }));
+      } else if (c.facet === "soundRecognition") {
+        n.add(rid({ ...c, facet: "meaningRecognition" as Facet }));
+      }
       return n;
     });
     setDoneCount((n) => n + 1);
@@ -330,7 +338,12 @@ export function ReviewPage({
   if (cluster && (current.card.lapses ?? 0) >= LEECH_LAPSES && !disambigSeen.has(current.itemKey)) {
     return (
       <div className="review-root">
-        <PageHeader onBack={onClose} tag="Confusable" progress={`${progressIndex} / ${total}`} />
+        <PageHeader
+          onBack={onClose}
+          tag="Confusable"
+          progress={`${progressIndex} / ${total}`}
+          onSkip={handleSkipCurrent}
+        />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <DisambiguationCard
@@ -353,7 +366,6 @@ export function ReviewPage({
                 return n;
               });
             }}
-            onSkip={handleSkipCurrent}
           />
         </div>
       </div>
@@ -491,7 +503,12 @@ export function ReviewPage({
     }
     return (
       <div className="review-root">
-        <PageHeader onBack={onClose} tag="Write" progress={`${progressIndex} / ${total}`} />
+        <PageHeader
+          onBack={onClose}
+          tag="Write"
+          progress={`${progressIndex} / ${total}`}
+          onSkip={handleSkipCurrent}
+        />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <ProductionCard
@@ -499,7 +516,6 @@ export function ReviewPage({
             char={current.itemKey}
             charData={cd}
             onGrade={handleDrillGrade}
-            onSkip={handleSkipCurrent}
           />
         </div>
       </div>
@@ -587,6 +603,7 @@ export function ReviewPage({
         onBack={onClose}
         tag={current.itemKind === "word" ? "Word" : "Character"}
         progress={`${progressIndex} / ${total}`}
+        onSkip={handleSkipCurrent}
       />
       <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">
@@ -617,7 +634,6 @@ export function ReviewPage({
             word={word}
             charData={charData}
             onGrade={handleCombinedGrade}
-            onSkip={handleSkipCurrent}
           />
         )}
       </div>

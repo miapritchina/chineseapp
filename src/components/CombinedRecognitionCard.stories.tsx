@@ -21,7 +21,6 @@ const meta = {
     word: WORDS["你好"],
     charData: undefined,
     onGrade: () => {},
-    onSkip: () => {},
   },
 } satisfies Meta<typeof CombinedRecognitionCard>;
 export default meta;

@@ -98,7 +98,7 @@ export const FamilyTransfer: StoryObj = {
 export const Production: StoryObj = {
   render: () => (
     <Shell tag="Write">
-      <ProductionCard char="请" charData={CHARS["请"]} onGrade={() => {}} onSkip={() => {}} />
+      <ProductionCard char="请" charData={CHARS["请"]} onGrade={() => {}} />
     </Shell>
   ),
 };
@@ -106,12 +106,7 @@ export const Production: StoryObj = {
 export const Disambiguation: StoryObj = {
   render: () => (
     <Shell tag="Confusable">
-      <DisambiguationCard
-        focus="请"
-        neighbors={["情", "清"]}
-        onContinue={() => {}}
-        onSkip={() => {}}
-      />
+      <DisambiguationCard focus="请" neighbors={["情", "清"]} onContinue={() => {}} />
     </Shell>
   ),
 };
