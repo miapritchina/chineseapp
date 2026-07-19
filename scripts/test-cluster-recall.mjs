@@ -1,106 +1,106 @@
-// Tests for the cluster-recall picker (src/components/ClusterRecall.tsx).
-// Re-implements pickCluster against pure data so we can verify without
-// React. Keep in sync if the picking strategy changes.
+// Tests for the cluster-recall partition (src/lib/drillGen.ts
+// buildClusters). Re-implemented against pure data so we can verify
+// without a build step. Keep in sync if the strategy changes.
+//
+// v103: one launch walks EVERY cluster the saved set can form (each
+// word used at most once), instead of returning a single group.
 
 import assert from "node:assert/strict";
 
-const TARGET_SIZE = 4;
-const MIN_SIZE = 3;
+const TARGET = 4;
+const MIN = 3;
+const rand0 = () => 0; // identity shuffle
 
-function pickCluster(savedKeys, chars, phoneticComponentsByChar) {
-  if (savedKeys.length < MIN_SIZE) return null;
+function shuffle(arr, rand) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const t = out[i];
+    out[i] = out[j];
+    out[j] = t;
+  }
+  return out;
+}
+
+function buildClusters(savedKeys, phoneticComponentsByChar, rand = rand0) {
+  const unused = new Set(savedKeys);
+  const clusters = [];
+  const take = (members) => {
+    const group = members.slice(0, TARGET);
+    for (const w of group) unused.delete(w);
+    clusters.push(group);
+  };
   if (phoneticComponentsByChar) {
     for (const [comp, info] of phoneticComponentsByChar) {
       const family = new Set(info.family || []);
       family.add(comp);
-      const matches = savedKeys.filter((w) => {
-        for (const c of w) if (family.has(c)) return true;
-        return false;
-      });
-      if (matches.length >= MIN_SIZE) return matches.slice(0, TARGET_SIZE);
+      const matches = [...unused].filter((w) => [...w].some((c) => family.has(c)));
+      if (matches.length >= MIN) take(matches);
     }
   }
-  const charCounts = new Map();
-  for (const w of savedKeys) {
-    for (const c of new Set(w)) {
-      const arr = charCounts.get(c) || [];
-      arr.push(w);
-      charCounts.set(c, arr);
+  for (;;) {
+    const counts = new Map();
+    for (const w of unused) {
+      for (const c of new Set(w)) {
+        const arr = counts.get(c) || [];
+        arr.push(w);
+        counts.set(c, arr);
+      }
     }
+    const best = [...counts.values()]
+      .filter((ws) => ws.length >= MIN)
+      .sort((a, b) => b.length - a.length)[0];
+    if (!best) break;
+    take(best);
   }
-  const shared = [...charCounts.entries()]
-    .filter(([, ws]) => ws.length >= MIN_SIZE)
-    .sort((a, b) => b[1].length - a[1].length)[0];
-  if (shared) return shared[1].slice(0, TARGET_SIZE);
-  // Deterministic fallback for testability: use stable order rather
-  // than the production Fisher-Yates. The test exercises only the
-  // structural guarantees (size, dedup) — order doesn't matter for
-  // this branch's contract.
-  return savedKeys.slice(0, TARGET_SIZE);
+  const rest = shuffle([...unused], rand);
+  for (let i = 0; i + MIN <= rest.length; i += TARGET) {
+    const group = rest.slice(i, i + TARGET);
+    if (group.length >= MIN) clusters.push(group);
+  }
+  return shuffle(clusters, rand);
 }
 
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
 
-test("returns null below MIN_SIZE saved keys", () => {
-  assert.equal(pickCluster([], {}, null), null);
-  assert.equal(pickCluster(["a"], {}, null), null);
-  assert.equal(pickCluster(["a", "b"], {}, null), null);
+test("empty / tiny saved sets produce no clusters", () => {
+  assert.deepEqual(buildClusters([], null), []);
+  assert.deepEqual(buildClusters(["a", "b"], null), []);
 });
 
-test("prefers a phonetic-component family when ≥ MIN_SIZE members match", () => {
-  const byChar = new Map([
-    [
-      "青",
-      { char: "青", pinyin: "qing", family: ["请", "情", "晴", "清"] },
-    ],
-  ]);
-  const r = pickCluster(["请", "情", "清", "你好"], {}, byChar);
-  assert.ok(r);
-  assert.equal(r.length <= TARGET_SIZE, true);
-  // Returned cluster is the 3 family members; 你好 is excluded.
-  assert.deepEqual(r, ["请", "情", "清"]);
+test("phonetic family forms the first cluster; leftovers group by shared char", () => {
+  const byChar = new Map([["青", { char: "青", family: ["请", "情", "晴", "清"] }]]);
+  const saved = ["请", "情", "清", "子女", "子弹", "弟子", "独"];
+  const clusters = buildClusters(saved, byChar);
+  // Family cluster 请/情/清 + shared-子 cluster; 独 (singleton) dropped.
+  assert.equal(clusters.length, 2);
+  const flat = clusters.flat();
+  assert.ok(["请", "情", "清"].every((w) => flat.includes(w)));
+  assert.ok(["子女", "子弹", "弟子"].every((w) => flat.includes(w)));
+  assert.equal(flat.includes("独"), false);
 });
 
-test("falls back to shared-character cluster when no phonetic family hits", () => {
-  // Three saved words literally share the char 子 → shared-char cluster
-  // picks them. (pickCluster's shared-char branch looks at the word's
-  // own chars, not their component decomposition.)
-  const r = pickCluster(["子女", "子弹", "弟子", "新年"], {}, null);
-  assert.ok(r);
-  assert.equal(r.length >= MIN_SIZE, true);
-  // 新年 doesn't contain 子 → excluded.
-  assert.equal(r.includes("新年"), false);
+test("every word is used at most once across clusters", () => {
+  const byChar = new Map([["青", { char: "青", family: ["请", "情", "晴", "清"] }]]);
+  const saved = ["请", "情", "晴", "清", "请假", "子女", "子弹", "弟子"];
+  const flat = buildClusters(saved, byChar).flat();
+  assert.equal(new Set(flat).size, flat.length);
 });
 
-test("falls back to plain sample when nothing clusters", () => {
-  const saved = ["甲", "乙", "丙", "丁", "戊"]; // pairwise distinct chars
-  const r = pickCluster(saved, {}, null);
-  assert.ok(r);
-  assert.equal(r.length, TARGET_SIZE);
+test("large unrelated sets partition into random groups of 3-4, none smaller", () => {
+  const saved = [..."甲乙丙丁戊己庚辛壬癸"]; // 10 distinct singles
+  const clusters = buildClusters(saved, null);
+  assert.ok(clusters.length >= 2);
+  for (const c of clusters) {
+    assert.ok(c.length >= MIN && c.length <= TARGET, String(c));
+  }
 });
 
-test("caps result at TARGET_SIZE even when more match", () => {
-  const byChar = new Map([
-    [
-      "青",
-      { char: "青", pinyin: "qing", family: ["请", "情", "晴", "清", "倩"] },
-    ],
-  ]);
-  const r = pickCluster(["请", "情", "晴", "清", "倩"], {}, byChar);
-  assert.ok(r);
-  assert.equal(r.length, TARGET_SIZE);
-});
-
-test("phonetic family branch counts a word containing ANY family char", () => {
-  // Multi-char word 请假 contains 请 (in the 青 family).
-  const byChar = new Map([
-    ["青", { char: "青", pinyin: "qing", family: ["请", "情", "晴"] }],
-  ]);
-  const r = pickCluster(["请假", "情", "晴", "你"], {}, byChar);
-  assert.ok(r);
-  // 请假 + 情 + 晴 share the family → cluster.
-  assert.equal(r.includes("请假"), true);
+test("clusters cap at 4 members even when more relate", () => {
+  const byChar = new Map([["青", { char: "青", family: ["请", "情", "晴", "清", "倩", "精"] }]]);
+  const clusters = buildClusters(["请", "情", "晴", "清", "倩", "精"], byChar);
+  for (const c of clusters) assert.ok(c.length <= TARGET, String(c));
 });
 
 let failures = 0;

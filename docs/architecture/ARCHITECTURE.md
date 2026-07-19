@@ -58,7 +58,7 @@ routes is a future option.
 | `public/sanzijing.json` | 三字经 standard edition (178 numbered couplets) + Giles 1900 translation + modern interpretation | Static; curated from Wikisource/ctext (v100–v101) |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
-| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization; never read by the app yet | Live; insert-only from `useReview` |
+| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices | Live; insert from `useReview`, select from `useWordInference` |
 | Supabase `user_classic_progress` | Furthest-read 三字经 couplet (v101) — scroll-tracked bookmark, max(local, remote) merge | Live; `useClassicProgress` |
 
 The split is deliberate — see [ADR-0009](../decisions/0009-chars-static-words-in-db.md).
@@ -132,10 +132,14 @@ kinds, seven scheduled facets (plus one session-only drill):
 | char | `production` | Hanzi Writer trace quiz | every saved single character (v99; was ✒ Wrote tier) |
 
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
-is session-only: unsaved words built from known chars, no FSRS row —
-a correct guess cascade-credits the constituent char cards. Word-kind
-facets beyond meaning/sound sit in a lower daily-cap tier so they can
-never starve the primary queue.
+has no FSRS row: unsaved words built from known chars — a correct
+guess cascade-credits the constituent char cards. Since v104 an
+answered word (right OR wrong) is done and rests for 14 days: recorded
+immediately in localStorage (`chinese.inferenceSeen`) and logged to
+`user_review_log` under the `wordInference` facet, which signed-in
+devices read back so the rest-period follows the account. Word-kind
+facets beyond meaning/sound sort after meaning/sound in the due queue
+(there is no daily cap since v102).
 
 `recognition` is a legacy facet name from pre-v66 cards; the load path
 renames them to `meaningRecognition` in memory. `phoneticTap` and

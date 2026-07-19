@@ -36,6 +36,7 @@ feature broken) · **Medium** (annoying but workarounds exist) ·
 | BUG-9 | High | Reverse + Fill-the-gap drills always empty | v102 — the daily cap + v98 facet tiers starved them to zero once >25 new meaning/sound cards existed; cap removed (ADR-0012). |
 | BUG-10 | Medium | "New words" drill showed the same 5 words forever | v102 — per-session random rotation + the whole discovered pool surfaces (was a fixed day-keyed slice of 5). |
 | BUG-11 | Medium | TTS audio clipped at the start in all drills | v102 — `speechSynthesis.cancel()` and `speak()` fired in the same tick; new utterance now deferred 120 ms after a cancel, and a zh voice is picked explicitly. |
+| BUG-12 | Medium | Answered "New words" reset when exiting mid-session | v104 — done-state lived only in the session queue; answered words are now persisted (localStorage `chinese.inferenceSeen` + `user_review_log` facet `wordInference`, 14-day rest). Reported live by owner. |
 | BUG-3 | Low | Search "中国" ranks "发展中国家" above "中国" | v90 — client-side exact-match partition in `useDictionary.ts` (`search()`) surfaces an exact hanzi hit ahead of substring/compound matches. |
 | BUG-5 | Medium | Review: grading "Easy" flashes red border (should be blue/green) | v90 — the picked grade button now takes an `outline` in its own `--grade-color` (`.combined-grade-row .review-btn.is-picked`, `styles.css`); Easy → `--grade-easy` blue. No card-surface red flash. |
 

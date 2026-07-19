@@ -39,10 +39,11 @@ interface Props {
   onGrade: (itemKey: string, rating: RatingName, kind?: ItemKind, facet?: Facet) => void;
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
-  // Drill 1: pool of unsaved words made of known chars + the cascade
-  // credit callback for a correct guess.
+  // Drill 1: pool of unsaved words made of known chars. Both outcomes
+  // report up — correct cascades credit, and either way the word is
+  // marked done so it stays out of the pool across sessions.
   inferenceWords?: Word[];
-  onInferenceCredit?: (word: string) => void;
+  onInferenceResult?: (word: string, gotIt: boolean) => void;
   phoneticComponents?: PhoneticComponent[];
   phoneticComponentsByChar?: Map<string, PhoneticComponent>;
   // From the launch screen. If absent, all facets are enabled.
@@ -69,7 +70,7 @@ export function ReviewPage({
   onAttributeFailure,
   onClose,
   inferenceWords,
-  onInferenceCredit,
+  onInferenceResult,
   phoneticComponents,
   phoneticComponentsByChar,
   enabledFacets,
@@ -175,9 +176,9 @@ export function ReviewPage({
       seen.add(rid(row));
     }
   }
-  // Drill-1 inference words: session-only synthetic rows, appended at
-  // the end of the queue (they have no FSRS state; grading routes to
-  // onInferenceCredit instead of onGrade).
+  // Drill-1 inference words: synthetic rows appended at the end of the
+  // queue (they have no FSRS state; grading routes to onInferenceResult
+  // instead of onGrade).
   const inferenceRows: ReviewCard[] = [];
   if ((!enabledFacets || enabledFacets.has("wordInference")) && inferenceWords) {
     for (const w of inferenceWords) {
@@ -384,11 +385,20 @@ export function ReviewPage({
           <WordInferenceCard
             key={rid(current)}
             word={word}
+            glossPool={[
+              ...(inferenceWords ?? [])
+                .filter((w) => w.word !== current.itemKey)
+                .map((w) => (w.definitions || []).slice(0, 2).join("; ")),
+              ...savedWords.map((w) => findWord(w)?.definitions?.[0] ?? ""),
+            ].filter(Boolean)}
             onGotIt={() => {
-              onInferenceCredit?.(current.itemKey);
+              onInferenceResult?.(current.itemKey, true);
               advanceWithoutGrading(current);
             }}
-            onMissed={() => advanceWithoutGrading(current)}
+            onMissed={() => {
+              onInferenceResult?.(current.itemKey, false);
+              advanceWithoutGrading(current);
+            }}
           />
         )}
       </DrillShell>

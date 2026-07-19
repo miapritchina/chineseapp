@@ -443,7 +443,7 @@ export function useReview({
 
   // Damped Good credit for every char/component reachable from
   // itemKey. Mutates `next` in place; returns the changed rows. Shared
-  // by grade() (word Good/Easy) and creditInference() (correct guess
+  // by grade() (word Good/Easy) and recordInference() (correct guess
   // on an unsaved inference word).
   const cascadeToClosure = (itemKey: string, next: Map<string, ReviewCard>, now: Date) => {
     const changed: ReviewCard[] = [];
@@ -484,10 +484,31 @@ export function useReview({
     return changed;
   };
 
-  // "Got it" on a new-word inference card: the word has no FSRS row of
-  // its own — credit the constituent chars, exactly like a word Good.
-  const creditInference = useCallback(
-    (itemKey: string) => {
+  // Outcome of a new-word inference card. The word has no FSRS row of
+  // its own: a correct guess credits the constituent chars exactly like
+  // a word Good; either way the outcome is logged under the
+  // wordInference facet (prev_card null) — useWordInference reads those
+  // rows back so answered words stay out of the pool across devices.
+  const recordInference = useCallback(
+    (itemKey: string, gotIt: boolean) => {
+      if (userId) {
+        void supabase
+          .from("user_review_log")
+          .insert({
+            user_id: userId,
+            item_key: itemKey,
+            item_kind: "word",
+            facet: "wordInference",
+            rating: gotIt ? "Good" : "Again",
+            prev_card: null,
+          })
+          .then(({ error }) => {
+            if (error && !/relation .*user_review_log.*does not exist/i.test(error.message || "")) {
+              console.warn("inference log insert failed:", error);
+            }
+          });
+      }
+      if (!gotIt) return;
       const now = new Date();
       const next = new Map(cardsRef.current);
       const changed = cascadeToClosure(itemKey, next, now);
@@ -593,7 +614,7 @@ export function useReview({
     dueCards,
     grade,
     attributeFailure,
-    creditInference,
+    recordInference,
     syncing,
   };
 }

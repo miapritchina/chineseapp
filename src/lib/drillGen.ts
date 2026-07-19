@@ -96,6 +96,83 @@ export function pickClozeTask(
   return { maskIndex, answer, options: shuffle([answer, ...distractors], rand) };
 }
 
+// New-word inference: 4 meaning options (the correct gloss + distinct
+// distractor glosses from the pool). Null when the pool can't supply
+// at least one distractor.
+export function pickGlossOptions(
+  correct: string,
+  pool: string[],
+  n = 4,
+  rand: Rand = Math.random,
+): string[] | null {
+  const distractors = shuffle([...new Set(pool.filter((g) => g && g !== correct))], rand).slice(
+    0,
+    n - 1,
+  );
+  if (distractors.length < 1) return null;
+  return shuffle([correct, ...distractors], rand);
+}
+
+// Partition the WHOLE saved set into recall clusters (each word used at
+// most once per session):
+//   1. Phonetic-component families (e.g. 请/情/清 words).
+//   2. Shared-character groups among what's left.
+//   3. Random leftover groups.
+// Groups of 3–4; singletons/pairs left over are dropped. Cluster order
+// is shuffled so sessions don't always start with the same family.
+export function buildClusters(
+  savedKeys: string[],
+  phoneticComponentsByChar?: Map<string, { char: string; family: string[] }> | null,
+  rand: Rand = Math.random,
+): string[][] {
+  const TARGET = 4;
+  const MIN = 3;
+  const unused = new Set(savedKeys);
+  const clusters: string[][] = [];
+
+  const take = (members: string[]) => {
+    const group = members.slice(0, TARGET);
+    for (const w of group) unused.delete(w);
+    clusters.push(group);
+  };
+
+  if (phoneticComponentsByChar) {
+    for (const [comp, info] of phoneticComponentsByChar) {
+      const family = new Set(info.family || []);
+      family.add(comp);
+      const matches = [...unused].filter((w) => [...w].some((c) => family.has(c)));
+      if (matches.length >= MIN) take(matches);
+    }
+  }
+
+  // Shared-character groups among the remainder, biggest first, until
+  // nothing groups any more.
+  for (;;) {
+    const counts = new Map<string, string[]>();
+    for (const w of unused) {
+      for (const c of new Set(w)) {
+        const arr = counts.get(c) || [];
+        arr.push(w);
+        counts.set(c, arr);
+      }
+    }
+    const best = [...counts.values()]
+      .filter((ws) => ws.length >= MIN)
+      .sort((a, b) => b.length - a.length)[0];
+    if (!best) break;
+    take(best);
+  }
+
+  // Random leftover groups (≥3 only).
+  const rest = shuffle([...unused], rand);
+  for (let i = 0; i + MIN <= rest.length; i += TARGET) {
+    const group = rest.slice(i, i + TARGET);
+    if (group.length >= MIN) clusters.push(group);
+  }
+
+  return shuffle(clusters, rand);
+}
+
 export interface FamilySweepTask {
   component: string;
   members: string[];

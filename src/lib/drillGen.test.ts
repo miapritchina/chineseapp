@@ -4,6 +4,7 @@ import {
   inferencePairs,
   knownChars,
   pickClozeTask,
+  pickGlossOptions,
   pickReverseOptions,
 } from "./drillGen";
 
@@ -61,6 +62,19 @@ describe("pickClozeTask", () => {
     const task = pickClozeTask("中国", ["中国", "你好", "学习"], () => null, rand0);
     expect(task).not.toBeNull();
     expect(task!.options.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("pickGlossOptions", () => {
+  it("returns the correct gloss among shuffled distinct distractors", () => {
+    const opts = pickGlossOptions("hello", ["friend", "China", "to study", "hello"], 4, rand0);
+    expect(opts).not.toBeNull();
+    expect(opts).toContain("hello");
+    expect(new Set(opts).size).toBe(opts!.length);
+    expect(opts!.length).toBe(4);
+  });
+  it("null when no distractor is available", () => {
+    expect(pickGlossOptions("hello", ["hello", ""], 4, rand0)).toBeNull();
   });
 });
 

@@ -83,7 +83,7 @@ export function App() {
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
   });
-  const { dueCards, grade, attributeFailure, creditInference } = reviewState;
+  const { dueCards, grade, attributeFailure, recordInference } = reviewState;
 
   // Weakest-first shelf sort: per saved word, the lower of the two
   // recognition cards' FSRS stability (never-reviewed = 0 = weakest).
@@ -98,7 +98,8 @@ export function App() {
   }, [saved.savedList, reviewState.cards]);
 
   // Drill 1 material: real unsaved words made of the user's known chars.
-  const inferenceWords = useWordInference({
+  const { words: inferenceWords, markSeen: markInferenceSeen } = useWordInference({
+    userId: auth.user?.id ?? null,
     savedList: saved.savedList,
     ensureCached: dict.ensureCached,
     findWord: dict.findWord,
@@ -338,7 +339,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v102"
+          version="chinese v104"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           phoneticsHref="#/phonetics"
@@ -385,7 +386,10 @@ export function App() {
           dueCards={dueCards}
           cards={reviewState.cards}
           inferenceWords={inferenceWords}
-          onInferenceCredit={(w) => creditInference(w)}
+          onInferenceResult={(w, gotIt) => {
+            markInferenceSeen(w);
+            recordInference(w, gotIt);
+          }}
           phoneticComponents={phonetics.components}
           phoneticComponentsByChar={phonetics.byChar}
           enabledFacets={new Set(reviewLaunched.enabledFacets)}
