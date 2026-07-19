@@ -25,6 +25,17 @@ Cytoscape `network/` + `components/` graph pages and the Phonetics
 list — focus-stack browsing with a breadcrumb trail and saved-set
 connection badges.
 
+There is also a **native Apple Watch companion** (`watchos/`,
+Swift/SwiftUI, watch-only app with no iOS host). It is read-only: it
+signs into the same Supabase project with the same email-OTP flow,
+queries `user_fsrs_state` for due word cards (RLS-scoped) and
+hydrates display data from `words`, presenting them as a Digital-
+Crown-paged carousel with a detail sheet. It talks straight to the
+GoTrue/PostgREST REST endpoints via `URLSession` — no Supabase SDK,
+no shared code with the web app. Grading stays in the web app; the
+watch never writes. Built separately in Xcode; not part of the Pages
+deploy. See `watchos/README.md`.
+
 ## Constraints that shape everything
 
 - **iPhone Safari**, used in short sessions (3–7 min, multiple per day).
