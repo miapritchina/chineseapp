@@ -8,9 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		05F6A86CE2DA2BF1E5256522 /* ChineseWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CW00000000000000000000A1 /* ChineseWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		7FDB5BBF48025CC6EE94C9ED /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DA94D469701C61801183CC82 /* Foundation.framework */; };
 		D897BABD64D22C3F4AED2344 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D086618E442ACE2E45C6980C /* Assets.xcassets */; };
-		EDDFF9972A97F012E073FCF6 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A603FCDA24E7FE99E0E12D6 /* iOSApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,7 +58,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7FDB5BBF48025CC6EE94C9ED /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -146,8 +143,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8C4F12740053E08EF0E347D5 /* Build configuration list for PBXNativeTarget "ChineseWatch" */;
 			buildPhases = (
-				91A1F56AA8D3216A6290CF5A /* Sources */,
-				71D37F1F32541014B6A6D63C /* Frameworks */,
 				3C28524D871EF83CF7515184 /* Resources */,
 				F55633232F9470D319C3551A /* Embed Watch Content */,
 			);
@@ -159,7 +154,7 @@
 			name = ChineseWatch;
 			productName = ChineseWatch;
 			productReference = 10B35CD1FC022E371ECD898E /* ChineseWatch.app */;
-			productType = "com.apple.product-type.application";
+			productType = "com.apple.product-type.application.watchapp2-container";
 		};
 /* End PBXNativeTarget section */
 
@@ -219,7 +214,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EDDFF9972A97F012E073FCF6 /* iOSApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -249,7 +243,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -280,7 +274,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -434,7 +428,7 @@
 				CODE_SIGN_ENTITLEMENTS = "ChineseWatch Watch App/ChineseWatch Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -442,8 +436,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Experimental: shows your latest heart rate while the app is open. Not used by the learning features.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "The app never writes health data. This string is required because it links HealthKit to read your latest heart rate (experimental).";
 				INFOPLIST_KEY_WKApplication = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = io.github.decobots.chineseapp;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -467,7 +460,7 @@
 				CODE_SIGN_ENTITLEMENTS = "ChineseWatch Watch App/ChineseWatch Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -475,8 +468,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Experimental: shows your latest heart rate while the app is open. Not used by the learning features.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "The app never writes health data. This string is required because it links HealthKit to read your latest heart rate (experimental).";
 				INFOPLIST_KEY_WKApplication = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = io.github.decobots.chineseapp;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

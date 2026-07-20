@@ -258,6 +258,18 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   **0012**, RLS, max(local, remote) merge) with a localStorage cache.
 
 ### Changed
+- **Watch app ships truly watch-only:** the visible iOS companion app
+  (added to work around the Xcode 26 watch-only upload bug,
+  FB22730778) is replaced by Apple's invisible watch-only container
+  (`com.apple.product-type.application.watchapp2-container`, zero
+  sources — the same shell Xcode's own "Watch-only App" template
+  ships). Users get only the watch app; nothing installs or shows on
+  iPhone. The watch target regains `WKWatchOnly` and drops the
+  companion-bundle key. Distribution goes through
+  `xcodebuild archive` + `-exportArchive` (app-store-connect now
+  works against the container archive) + `altool` upload with an App
+  Store Connect team API key — build 3 uploaded and VALID in App
+  Store Connect.
 - **Two-tier status model** ([ADR-0011](docs/decisions/0011-two-tier-status-model.md)):
   the ❗ Need-to-learn and ✒ Wrote statuses are gone from the UI —
   the star menu now offers Saved / Learned only, and the shelf has two
