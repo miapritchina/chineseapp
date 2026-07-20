@@ -27,10 +27,10 @@ export interface UIState {
 
   // Top-level pages routed via URL hash.
   showReview: boolean;
-  showPhonetics: boolean;
+  showExplore: boolean;
   showClassic: boolean;
   setShowReview: (b: boolean) => void;
-  setShowPhonetics: (b: boolean) => void;
+  setShowExplore: (b: boolean) => void;
   setShowClassic: (b: boolean) => void;
 
   // Sign-in modal.
@@ -49,10 +49,10 @@ export const useUIStore = create<UIState>((set) => ({
   setSearching: (b) => set({ searching: b }),
 
   showReview: typeof window !== "undefined" && window.location.hash === "#/review",
-  showPhonetics: typeof window !== "undefined" && window.location.hash === "#/phonetics",
+  showExplore: typeof window !== "undefined" && window.location.hash === "#/explore",
   showClassic: typeof window !== "undefined" && window.location.hash === "#/classic",
   setShowReview: (b) => set({ showReview: b }),
-  setShowPhonetics: (b) => set({ showPhonetics: b }),
+  setShowExplore: (b) => set({ showExplore: b }),
   setShowClassic: (b) => set({ showClassic: b }),
 
   showSignIn: false,

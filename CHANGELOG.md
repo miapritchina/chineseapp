@@ -12,6 +12,25 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **Explore page (v109,
+  [spec](docs/product/explore-page.md)):** one browsing surface for
+  words ↔ characters ↔ components. Component index (the old Phonetics
+  list, now tappable through to focus views) + My-words tab; every
+  focus screen shows "in my words" first, then sound family /
+  built-with / made-of sections as readable cards; a tappable
+  breadcrumb trail (青 › 情 › 情人) tracks the path; `→N` badges count
+  connections within the saved set and `end` marks dead ends — the
+  graph's "which direction is worth walking" signal without the
+  graph. "Explore from here" replaces "Show in network" in the entity
+  sheet. Saving components (family-sweep seeding) still works from
+  the index rows and focus cards.
+
+### Removed
+- **Network, Components, and Phonetics pages (v109):** replaced by
+  Explore. The static Cytoscape pages (and the vendored cytoscape.js)
+  are gone; the app is a single React surface now.
+
+### Added
 - **Browsing counts a little (v108):** opening a saved word/character
   from the main page gives its recognition schedule a partial credit —
   half a Good's stability gain, due date pushed at most 2 days, no

@@ -79,6 +79,9 @@ Sections by focus kind:
 
 ## Staged build
 
+> **All three stages shipped in v109** (owner: "build all stages and
+> deploy") — one PR instead of three.
+
 1. **Stage 1 (v109):** `#/explore` route + index (Components tab from
    phonetic-components.json, My-words tab) + component focus view
    with family cards + breadcrumb. Hamburger gets "Explore";
