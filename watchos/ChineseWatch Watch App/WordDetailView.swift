@@ -55,3 +55,17 @@ struct WordDetailView: View {
         .navigationTitle(entry.word.word)
     }
 }
+
+#Preview {
+    WordDetailView(entry: QueueEntry(
+        word: Word(
+            word: "中文",
+            pinyin: "zhōngwén",
+            definitions: ["Chinese language", "Mandarin"],
+            hsk: 1,
+            rank: 42
+        ),
+        dueAt: Date().addingTimeInterval(-3600),
+        facets: ["meaningRecognition", "soundRecognition"]
+    ))
+}
