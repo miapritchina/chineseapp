@@ -9,7 +9,7 @@ struct LoginView: View {
     }
 
     @State private var step: Step = .email
-    @State private var email = ""
+    @AppStorage("lastLoginEmail") private var email = ""
     @State private var code = ""
     @State private var busy = false
     @State private var error: String?
@@ -94,4 +94,9 @@ struct LoginView: View {
             busy = false
         }
     }
+}
+
+#Preview {
+    LoginView()
+        .environmentObject(SessionStore())
 }
