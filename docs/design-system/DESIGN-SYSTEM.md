@@ -454,9 +454,9 @@ Retired drill (facet = familyTransfer) — owner saw no value. Component deleted
 
 **What:** 3–4 related saved words, tap to reveal, then one grade for the group. **Where:** ReviewPage (facet = clusterRecall, v107 — was a standalone page pre-v107). **Classes:** `.cluster-grid` plus the shared `.phonetic-tap-*` drill chrome.
 
-### 7.20 PhoneticsPage
+### 7.20 ExplorePage *(replaced PhoneticsPage in v109)*
 
-**What:** Full-screen list of productive sound components. **Where:** `#/phonetics`. **Classes:** `.phonetics-root`, `.phonetics-list`, `.phonetics-row`, `.phonetics-row-char`, `.phonetics-row-pinyin`, `.phonetics-row-count`, `.phonetics-row-family`.
+**What:** One browsing surface (words ↔ chars ↔ components): component index (reuses the `.phonetics-*` row classes) + focus views with breadcrumb trail and saved-set connection badges. **Where:** `#/explore`. **Classes:** `.explore-root`, `.explore-body`, `.explore-tabs`, `.explore-trail`, `.explore-crumb`, `.explore-focus(-hanzi/-meta/-pinyin/-gloss/-status)`, `.explore-section`, `.explore-cards`, `.explore-card`, `.explore-badge` (`.is-end`), `.explore-more`, `.explore-row`.
 
 ### 7.21 SentenceStudio
 

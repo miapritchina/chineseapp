@@ -5,7 +5,7 @@ interface Props {
   // null means the link is shown but disabled (placeholder for future pages).
   reviewHref?: string | null;
   reviewBadge?: number;
-  phoneticsHref?: string | null;
+  exploreHref?: string | null;
   classicHref?: string | null;
   onShareWords?: () => void;
   wordCount?: number;
@@ -18,7 +18,7 @@ export function HamburgerMenu({
   version,
   reviewHref = null,
   reviewBadge = 0,
-  phoneticsHref,
+  exploreHref,
   classicHref = null,
   onShareWords,
   wordCount = 0,
@@ -71,14 +71,14 @@ export function HamburgerMenu({
             <span className="hamburger-soon">soon</span>
           </span>
         )}
-        {phoneticsHref && (
+        {exploreHref && (
           <a
             role="menuitem"
             className="hamburger-item"
-            href={phoneticsHref}
+            href={exploreHref}
             onClick={() => setOpen(false)}
           >
-            <span>Phonetics</span>
+            <span>Explore</span>
           </a>
         )}
         {classicHref && (
@@ -91,12 +91,6 @@ export function HamburgerMenu({
             <span>三字经 · Classic</span>
           </a>
         )}
-        <a role="menuitem" className="hamburger-item" href="./network/">
-          <span>Network</span>
-        </a>
-        <a role="menuitem" className="hamburger-item" href="./components/">
-          <span>Components</span>
-        </a>
         {onShareWords && (
           <button
             type="button"

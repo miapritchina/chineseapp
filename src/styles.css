@@ -974,6 +974,125 @@ body {
   align-items: center;
 }
 
+/* Explore page (v109) — one browsing surface replacing the Network,
+   Components, and Phonetics pages. See docs/product/explore-page.md. */
+.explore-row {
+  cursor: pointer;
+}
+.explore-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px calc(24px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.explore-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 2px 4px 12px;
+}
+.explore-trail {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 14px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: none;
+}
+.explore-crumb {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 3px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.explore-crumb.is-current {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.explore-crumb + .explore-crumb::before {
+  content: "";
+}
+.explore-focus {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 8px 0 16px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.explore-focus-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+}
+.explore-focus-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.explore-focus-pinyin {
+  font-size: var(--body);
+  color: var(--muted);
+}
+.explore-focus-gloss {
+  font-size: var(--body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.explore-focus-status {
+  flex: none;
+}
+.explore-section {
+  margin-bottom: 18px;
+}
+.explore-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.explore-empty {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.explore-badge {
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  margin-top: 2px;
+}
+.explore-badge.is-end {
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.explore-more {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Disambiguation card — side-by-side comparison of confusable cluster
    members. Shown once per session before a leech-marked card surfaces. */
 .disambig-root {
@@ -3472,6 +3591,12 @@ body {
   color: var(--accent);
   text-decoration: none;
   cursor: pointer;
+  /* Rendered as a <button> since v109 (Explore jump). */
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 .sheet-network-link:hover {
   text-decoration: underline;

@@ -17,24 +17,15 @@ For deeper context:
 
 One Chinese-character learning web app, deployed to GitHub Pages at
 https://decobots.github.io/chineseapp/. Mobile-first; iPhone Safari in
-3–7 minute sessions. Installable PWA (v96): one service worker covers
-all three surfaces — see ARCHITECTURE.md → "PWA / offline".
+3–7 minute sessions. Installable PWA (v96) — see ARCHITECTURE.md →
+"PWA / offline".
 
-The app deploys as **one product, three surfaces**:
-
-- **Main UI** (root) — React + TypeScript + Vite. Search, saved-words
-  shelf, decomposition tree, four-status SRS, 4 review drill types.
-- **Network view** (`network/`) — Cytoscape.js word-graph of the
-  user's saved set. Plain HTML, reached from the hamburger menu.
-- **Components view** (`components/`) — Cytoscape.js vocabulary-
-  structure graph (words → chars → component pieces). Plain HTML,
-  reached from the hamburger menu.
-
-The two Cytoscape views are part of the same app — they share the
-saved set and link out to the main UI for entity detail. They live
-outside React purely for implementation simplicity (plain static HTML
-is cheap; rewriting them as React components is a future option, not
-a requirement).
+**One React surface** since v109: search, saved-words shelf,
+decomposition tree, SRS review drills, the 三字经 reader, Sentence
+Studio, and the Explore page (focus-stack browsing of words ↔
+characters ↔ components — replaced the old Cytoscape network/
+components graph pages and the Phonetics list; see
+docs/product/explore-page.md).
 
 ### Data persistence policy (do not weaken)
 
@@ -85,7 +76,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── ClusterRecallCard        Drill: recall a group of related saved words
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz
 │   │   ├── DisambiguationCard       Leech-cluster side-by-side compare
-│   │   ├── PhoneticsPage            List + save the top-250 productive components
+│   │   ├── ExplorePage              Words ↔ chars ↔ components browser (v109)
 │   │   ├── ClassicPage              三字经 reader w/ known-char highlighting
 │   │   ├── SentenceStudio           Build-a-sentence composer + POS bank
 │   │   ├── AuthButton + SignInModal Email one-time-code auth
@@ -119,10 +110,6 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   ├── sanzijing.json               三字经 (1068 chars) + Giles translation
 │   ├── favicon.svg                  中 glyph (drawn as shapes)
 │   └── pwa-*.png, apple-touch-icon.png, maskable-icon-*.png
-├── network/index.html               Static word-graph page
-├── components/                      Static vocab-structure graph page
-│   ├── index.html
-│   └── graph-data.mjs
 ├── scripts/
 │   ├── extract-chinese.mjs          chinese-lexicon → public/data*.json
 │   ├── extract-phonetic-components.mjs Ranks sound components, dumps JSON
@@ -133,7 +120,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 ├── package.json                     react, d3, ts-fsrs, supabase-js, lz-string
 ├── vite.config.ts                   base path + vite-plugin-pwa (manifest, SW, caches)
 ├── tsconfig.json
-└── .github/workflows/pages.yml      Builds Vite, copies network/, components/
+└── .github/workflows/pages.yml      Builds Vite + Storybook, publishes to Pages
 ```
 
 ---

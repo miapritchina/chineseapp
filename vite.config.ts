@@ -42,10 +42,11 @@ export default defineConfig({
         // and change on data refreshes — runtime-cached below instead.
         globPatterns: ['**/*.{js,css,html,svg,png}'],
         globIgnores: ['**/data-chars.json', '**/phonetic-components.json'],
-        // The network/ + components/ graph pages and /storybook/ are real
-        // files copied into the site AFTER the Vite build — a SPA
-        // navigate-fallback to index.html would shadow them.
-        navigateFallbackDenylist: [/\/network\//, /\/components\//, /\/storybook\//],
+        // /storybook/ is real files copied into the site AFTER the Vite
+        // build — a SPA navigate-fallback to index.html would shadow it.
+        // (The network/ + components/ graph pages retired in v109 —
+        // replaced by the in-app Explore page.)
+        navigateFallbackDenylist: [/\/storybook\//],
         runtimeCaching: [
           {
             // Dictionary + phonetics data: serve cached, refresh behind.
@@ -57,18 +58,8 @@ export default defineConfig({
             },
           },
           {
-            // Graph pages (post-build copies, not in the precache).
-            urlPattern: ({ url, sameOrigin }) =>
-              sameOrigin && /\/(network|components)\//.test(url.pathname),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'graph-pages',
-              expiration: { maxEntries: 20 },
-            },
-          },
-          {
-            // hanzi-writer + cytoscape bundles and per-character stroke
-            // data from jsdelivr.
+            // hanzi-writer bundle and per-character stroke data from
+            // jsdelivr.
             urlPattern: ({ url }) => url.hostname === 'cdn.jsdelivr.net',
             handler: 'CacheFirst',
             options: {

@@ -17,7 +17,7 @@ const meta = {
   args: {
     version: "chinese v99",
     reviewHref: "#/review",
-    phoneticsHref: "#/phonetics",
+    exploreHref: "#/phonetics",
     onShareWords: () => {},
     wordCount: 500,
   },

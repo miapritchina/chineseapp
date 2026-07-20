@@ -26,7 +26,7 @@ import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
 import { ComponentTable } from "./components/ComponentTable";
-import { PhoneticsPage } from "./components/PhoneticsPage";
+import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
 import { SentenceStudio } from "./components/SentenceStudio";
@@ -58,8 +58,8 @@ export function App() {
   const setSearching = useUIStore((s) => s.setSearching);
   const showReview = useUIStore((s) => s.showReview);
   const setShowReview = useUIStore((s) => s.setShowReview);
-  const showPhonetics = useUIStore((s) => s.showPhonetics);
-  const setShowPhonetics = useUIStore((s) => s.setShowPhonetics);
+  const showExplore = useUIStore((s) => s.showExplore);
+  const setShowExplore = useUIStore((s) => s.setShowExplore);
   const showClassic = useUIStore((s) => s.showClassic);
   const setShowClassic = useUIStore((s) => s.setShowClassic);
   const showSignIn = useUIStore((s) => s.showSignIn);
@@ -135,12 +135,14 @@ export function App() {
 
   // Launch screen state. null = haven't started yet.
   const [reviewLaunched, setReviewLaunched] = useState<ReviewSettings | null>(null);
+  // "Explore from here" target handed from the EntitySheet.
+  const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
 
   // Track full-screen pages via URL hash + route #/c, #/w deep links.
   useEffect(() => {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
-      setShowPhonetics(window.location.hash === "#/phonetics");
+      setShowExplore(window.location.hash === "#/explore");
       setShowClassic(window.location.hash === "#/classic");
       if (window.location.hash === "#/sentence") {
         setSearchMode("sentence");
@@ -159,13 +161,13 @@ export function App() {
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, [openFromHash, setShowReview, setShowPhonetics, setShowClassic, setSearchMode]);
+  }, [openFromHash, setShowReview, setShowExplore, setShowClassic, setSearchMode]);
 
   const closeHashPage = (target: string) => {
     if (window.location.hash === target) history.back();
     else {
       if (target === "#/review") setShowReview(false);
-      if (target === "#/phonetics") setShowPhonetics(false);
+      if (target === "#/explore") setShowExplore(false);
       if (target === "#/classic") setShowClassic(false);
     }
   };
@@ -357,10 +359,10 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v108"
+          version="chinese v109"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
-          phoneticsHref="#/phonetics"
+          exploreHref="#/explore"
           classicHref="#/classic"
           onShareWords={shareMyWords}
           wordCount={saved.savedList.length}
@@ -413,11 +415,21 @@ export function App() {
         />
       )}
 
-      {showPhonetics && (
-        <PhoneticsPage
+      {showExplore && (
+        <ExplorePage
+          key={exploreFocus ? `${exploreFocus.kind}|${exploreFocus.key}` : "index"}
           components={phonetics.components}
+          componentsByChar={phonetics.byChar}
           ready={phonetics.ready}
-          onClose={() => closeHashPage("#/phonetics")}
+          initialFocus={exploreFocus}
+          onClose={() => {
+            setExploreFocus(null);
+            closeHashPage("#/explore");
+          }}
+          onOpenSheet={(kind, key) => {
+            if (kind === "word") void openWord(key);
+            else openChar(key);
+          }}
         />
       )}
 
@@ -494,6 +506,11 @@ export function App() {
           onOpenWord={(w) => void openWord(w)}
           onOpenChar={openChar}
           onOpenTree={() => push({ ...top, view: "tree" })}
+          onExplore={(kind, key) => {
+            close();
+            setExploreFocus({ kind, key });
+            window.location.hash = "#/explore";
+          }}
         />
       )}
 

@@ -8,7 +8,7 @@ beforeEach(() => {
     searchMode: "all",
     searching: false,
     showReview: false,
-    showPhonetics: false,
+    showExplore: false,
     showSignIn: false,
   });
 });
@@ -22,10 +22,10 @@ describe("useUIStore", () => {
   it("page flags toggle independently", () => {
     useUIStore.getState().setShowReview(true);
     expect(useUIStore.getState().showReview).toBe(true);
-    expect(useUIStore.getState().showPhonetics).toBe(false);
-    useUIStore.getState().setShowPhonetics(true);
+    expect(useUIStore.getState().showExplore).toBe(false);
+    useUIStore.getState().setShowExplore(true);
     useUIStore.getState().setShowReview(false);
     expect(useUIStore.getState().showReview).toBe(false);
-    expect(useUIStore.getState().showPhonetics).toBe(true);
+    expect(useUIStore.getState().showExplore).toBe(true);
   });
 });

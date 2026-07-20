@@ -13,24 +13,17 @@ For developer workflow (commit style, version bumps, test rules), see
 ## What ships
 
 **One Chinese-character learning web app**, deployed as static files
-to GitHub Pages with one Supabase project behind it. The app surfaces
-in three places under `/chineseapp/`:
+to GitHub Pages with one Supabase project behind it — a single React
+surface under `/chineseapp/` (search, save, decomposition tree, SRS
+review, Explore, Classic, Sentence Studio; Storybook rides along at
+`/storybook/`).
 
-| Path | Tech | What it does |
-|---|---|---|
-| `/` | React + TS + Vite | Main UI — search, save, decomposition tree, SRS review |
-| `/network/` | Cytoscape.js + plain HTML | Word-graph view of the saved set |
-| `/components/` | Cytoscape.js + plain HTML | Vocabulary-structure view (words → chars → components) |
-
-The two Cytoscape views are part of the same app — they share the
-saved set (read from the `localStorage` offline cache that the
-React hooks keep in sync with Supabase, the source of truth — see
-[ADR-0001](../decisions/0001-supabase-source-of-truth.md))
-and link back into the main UI. They live outside React for
-implementation simplicity, not because they're separate products.
-The coupling is one line in `.github/workflows/pages.yml` (a `cp`)
-and one link in `App.tsx`'s hamburger menu — rewriting them as React
-routes is a future option.
+One React surface since v109: the Explore page
+(`src/components/ExplorePage.tsx`, spec in
+[explore-page.md](../product/explore-page.md)) replaced the static
+Cytoscape `network/` + `components/` graph pages and the Phonetics
+list — focus-stack browsing with a breadcrumb trail and saved-set
+connection badges.
 
 ## Constraints that shape everything
 
@@ -293,7 +286,7 @@ For functions that are plain JS today (`componentSearch.mjs`,
 
 ## PWA / offline (v96)
 
-All three surfaces install and run offline from one service worker
+The app installs and runs offline from one service worker
 (`vite-plugin-pwa` / Workbox, `registerType: autoUpdate`, scope
 `/chineseapp/`).
 
@@ -303,21 +296,16 @@ All three surfaces install and run offline from one service worker
   trustworthy after one reload.
 - **Runtime caches** — `data-chars.json` + `phonetic-components.json`
   (StaleWhileRevalidate; ~3 MB, refreshed behind the response);
-  `network/` + `components/` pages (NetworkFirst — they're copied into
-  the site *after* the Vite build, so they can't be precached and are
-  offline only after first visit); `cdn.jsdelivr.net`
-  (CacheFirst 30 days — hanzi-writer, cytoscape, per-char stroke data);
+  `cdn.jsdelivr.net`
+  (CacheFirst 30 days — hanzi-writer + per-char stroke data);
   `dict.youdao.com` (CacheFirst 180 days — per-word TTS MP3s, v106:
   primary review audio, device Web Speech is the offline fallback —
   see `src/lib/speech.ts`).
 - **Not cached** — everything Supabase. User data stays cloud-first
   ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)); offline
   reads come from the hooks' own localStorage mirrors, not the SW.
-- The SPA navigate-fallback is denylisted for `/network/`,
-  `/components/`, `/storybook/` so the SW never shadows those real
-  files with index.html.
-- The graph pages register the same `../sw.js` and carry the manifest +
-  iOS meta tags, so install works from any surface. Icons are the 中
+- The SPA navigate-fallback is denylisted for `/storybook/` so the SW
+  never shadows those real files with index.html. Icons are the 中
   glyph drawn as SVG shapes (`public/favicon.svg` + generated PNGs).
 
 ---

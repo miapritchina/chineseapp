@@ -25,6 +25,9 @@ interface Props {
   onOpenChar: (charKey: string) => void;
   // Open the full recursive d3 decomposition tree for THIS entity.
   onOpenTree: () => void;
+  // Jump into the Explore page focused on this entity (v109 — replaces
+  // the old "Show in network" link).
+  onExplore?: (kind: "word" | "char", key: string) => void;
 }
 
 // Unified detail surface: a bottom sheet on mobile (drag handle, slides
@@ -52,6 +55,7 @@ export function EntitySheet({
   onOpenWord,
   onOpenChar,
   onOpenTree,
+  onExplore,
 }: Props) {
   const { chars } = useCharsCtx();
   const { saved, getStatus, setStatus } = useSavedCtx();
@@ -202,14 +206,15 @@ export function EntitySheet({
           <RelatedWordsColumns wordKey={key} onOpenWord={onOpenWord} />
         )}
 
-        <a
-          className="sheet-network-link"
-          role="button"
-          href={`./network/?focus=${encodeURIComponent(key)}`}
-          onClick={onClose}
-        >
-          Show in network →
-        </a>
+        {onExplore && (
+          <button
+            className="sheet-network-link"
+            type="button"
+            onClick={() => onExplore(isMultiCharWord ? "word" : "char", key)}
+          >
+            Explore from here →
+          </button>
+        )}
       </div>
     </div>
   );
