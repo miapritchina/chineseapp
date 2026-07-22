@@ -192,7 +192,7 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   **0012**, RLS, max(local, remote) merge) with a localStorage cache.
 
 ### Changed
-- **Watch app ships truly watch-only:** the visible iOS companion app
+- **Watch app ships truly watch-only (v110):** the visible iOS companion app
   (added to work around the Xcode 26 watch-only upload bug,
   FB22730778) is replaced by Apple's invisible watch-only container
   (`com.apple.product-type.application.watchapp2-container`, zero
