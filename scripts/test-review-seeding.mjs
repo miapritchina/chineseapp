@@ -52,26 +52,6 @@ function expectedCards(savedWords, phoneticComponentsByChar = null, chars = {}) 
       });
     }
   }
-  if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0) {
-    const FAMILY_PER_COMPONENT = 2;
-    for (const key of savedWords) {
-      if ([...key].length !== 1) continue;
-      const comp = phoneticComponentsByChar.get(key);
-      if (!comp || !comp.family || comp.family.length === 0) continue;
-      let added = 0;
-      for (const fam of comp.family) {
-        if (added >= FAMILY_PER_COMPONENT) break;
-        if (!fam || fam === comp.char) continue;
-        if (saved.has(fam)) continue;
-        out.set(`char|familyTransfer|${fam}`, {
-          itemKey: fam,
-          itemKind: "char",
-          facet: "familyTransfer",
-        });
-        added++;
-      }
-    }
-  }
   for (const key of savedWords) {
     if ([...key].length !== 1) continue;
     out.set(`char|production|${key}`, {
@@ -143,42 +123,14 @@ test("retired componentSound facet never seeds", () => {
   }
 });
 
-test("familyTransfer seeds up to 2 unsaved family members per saved component", () => {
+test("retired familyTransfer facet never seeds (v107)", () => {
   const phoneticByChar = new Map([
     ["青", { char: "青", pinyin: "qing", family: ["请", "情", "晴", "清"] }],
   ]);
   const m = expectedCards(["青"], phoneticByChar);
-  // Cap is 2 per component, picks first members from family[]
-  assert.ok(m.has("char|familyTransfer|请"));
-  assert.ok(m.has("char|familyTransfer|情"));
-  // Beyond cap → no card seeded
-  assert.equal(m.has("char|familyTransfer|晴"), false);
-});
-
-test("familyTransfer skips members the user has already saved", () => {
-  const phoneticByChar = new Map([
-    ["青", { char: "青", pinyin: "qing", family: ["请", "情", "晴"] }],
-  ]);
-  const m = expectedCards(["青", "请"], phoneticByChar); // 请 already saved
-  // 请 is saved → skip; 情 + 晴 are next two unsaved members
-  assert.equal(m.has("char|familyTransfer|请"), false);
-  assert.ok(m.has("char|familyTransfer|情"));
-  assert.ok(m.has("char|familyTransfer|晴"));
-});
-
-test("familyTransfer does nothing without phoneticComponents data", () => {
-  const m = expectedCards(["青"]);
   for (const k of m.keys()) {
-    assert.equal(k.startsWith("char|familyTransfer|"), false, k);
+    assert.equal(k.includes("familyTransfer"), false, k);
   }
-});
-
-test("familyTransfer only applies to saved single-char items", () => {
-  const phoneticByChar = new Map([
-    ["青", { char: "青", pinyin: "qing", family: ["请"] }],
-  ]);
-  const m = expectedCards(["青青"], phoneticByChar);
-  assert.equal(m.has("char|familyTransfer|请"), false);
 });
 
 test("production seeds for every saved single character (v99)", () => {
@@ -192,70 +144,48 @@ test("production does NOT seed for multi-char saved words", () => {
   assert.equal(m.has("char|production|你"), false);
 });
 
-// --- Daily-new-cap rule (mirrors the dueCards memo's cap loop) ---
+// --- Queue ordering (mirrors the dueCards sort; the daily cap was
+// removed in v102 / ADR-0012 — everything due surfaces) ---
 
-function applyNewCap(ordered, introducedToday, cap) {
-  let newSlotsLeft = Math.max(0, cap - introducedToday.size);
-  const out = [];
-  for (const row of ordered) {
-    const id = `${row.itemKind}|${row.facet}|${row.itemKey}`;
-    const isNew =
-      row.itemKind === "word" && (row.directReviews ?? 0) === 0 && (row.card.reps ?? 0) === 0;
-    const alreadyIntroduced = introducedToday.has(id);
-    if (isNew && !alreadyIntroduced) {
-      if (newSlotsLeft <= 0) continue;
-      newSlotsLeft--;
-    }
-    out.push(row);
-  }
-  return out;
+function orderDue(rows) {
+  const tier = (r) => (r.facet === "reverseRecognition" || r.facet === "clozeChar" ? 1 : 0);
+  return rows.slice().sort((a, b) => {
+    const ka = a.itemKind === "word" ? 1 : 0;
+    const kb = b.itemKind === "word" ? 1 : 0;
+    if (ka !== kb) return ka - kb;
+    if (tier(a) !== tier(b)) return tier(a) - tier(b);
+    return a.dueAt - b.dueAt;
+  });
 }
 
-const newWord = (key) => ({
-  itemKey: key,
-  itemKind: "word",
-  facet: "meaningRecognition",
-  card: { reps: 0 },
-  directReviews: 0,
-});
-const newChar = (key, facet) => ({
-  itemKey: key,
-  itemKind: "char",
-  facet,
-  card: { reps: 0 },
-  directReviews: 0,
+test("no cap: every due card surfaces regardless of count", () => {
+  const rows = Array.from({ length: 100 }, (_, i) => ({
+    itemKey: String(i),
+    itemKind: "word",
+    facet: "meaningRecognition",
+    dueAt: i,
+  }));
+  assert.equal(orderDue(rows).length, 100);
 });
 
-test("new word cards beyond the daily cap are dropped", () => {
-  const rows = ["一", "二", "三"].map(newWord);
-  const out = applyNewCap(rows, new Set(), 2);
-  assert.equal(out.length, 2);
-});
-
-test("char/component cards do NOT consume daily-new slots", () => {
-  // Before the fix, 25+ never-reviewable char seeds (sorted ahead of
-  // words) ate every slot and starved the word queue.
+test("meaning/sound sort before reverse/cloze within word kind", () => {
   const rows = [
-    newChar("请", "familyTransfer"),
-    newChar("情", "familyTransfer"),
-    newWord("一"),
-    newWord("二"),
+    { itemKey: "a", itemKind: "word", facet: "reverseRecognition", dueAt: 1 },
+    { itemKey: "b", itemKind: "word", facet: "meaningRecognition", dueAt: 2 },
+    { itemKey: "c", itemKind: "word", facet: "clozeChar", dueAt: 0 },
   ];
-  const out = applyNewCap(rows, new Set(), 2);
-  // Both chars pass through AND both words still get the 2 new slots.
-  assert.equal(out.length, 4);
+  assert.deepEqual(
+    orderDue(rows).map((r) => r.facet),
+    ["meaningRecognition", "clozeChar", "reverseRecognition"],
+  );
 });
 
-test("already-introduced cards re-surface without consuming a slot", () => {
-  const introduced = new Set(["word|meaningRecognition|一"]);
-  const rows = [newWord("一"), newWord("二")];
-  const out = applyNewCap(rows, introduced, 1);
-  // 一 was introduced today (cap size 1 → 0 slots left), but it still
-  // surfaces; 二 is cut.
-  assert.deepEqual(
-    out.map((r) => r.itemKey),
-    ["一"],
-  );
+test("char/component cards sort before word cards", () => {
+  const rows = [
+    { itemKey: "w", itemKind: "word", facet: "meaningRecognition", dueAt: 0 },
+    { itemKey: "c", itemKind: "char", facet: "production", dueAt: 5 },
+  ];
+  assert.equal(orderDue(rows)[0].itemKind, "char");
 });
 
 let failures = 0;

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildFamilySweep,
   inferencePairs,
+  interleaveByActivity,
   knownChars,
   pickClozeTask,
+  pickGlossOptions,
   pickReverseOptions,
 } from "./drillGen";
 
@@ -40,6 +42,30 @@ describe("pickReverseOptions", () => {
   it("returns null with fewer than 2 total options", () => {
     expect(pickReverseOptions("你好", ["你好"], 4, rand0)).toBeNull();
   });
+  it("prefers same-length distractors over different-length ones", () => {
+    const opts = pickReverseOptions(
+      "你好",
+      ["你好", "中国", "朋友", "学习", "发展中国家", "三字经课本"],
+      4,
+      rand0,
+    );
+    // Three two-char candidates fill the distractor slots ahead of the
+    // five-char ones.
+    expect(opts).toEqual(expect.arrayContaining(["你好", "中国", "朋友", "学习"]));
+  });
+  it("prefers distractors sharing a component when char data is available", () => {
+    // 清 and 情 share the 青 component; 木林 shares nothing with 清水.
+    const componentsOf = (c: string) =>
+      ({ 清: ["青", "氵"], 情: ["青", "忄"], 水: [], 木: [], 林: ["木"], 大: [], 人: [] })[c] ?? [];
+    const opts = pickReverseOptions(
+      "清水",
+      ["清水", "情人", "木林", "大人"],
+      3,
+      rand0,
+      componentsOf,
+    );
+    expect(opts).toContain("情人"); // component cousin must make the cut
+  });
 });
 
 describe("pickClozeTask", () => {
@@ -61,6 +87,19 @@ describe("pickClozeTask", () => {
     const task = pickClozeTask("中国", ["中国", "你好", "学习"], () => null, rand0);
     expect(task).not.toBeNull();
     expect(task!.options.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("pickGlossOptions", () => {
+  it("returns the correct gloss among shuffled distinct distractors", () => {
+    const opts = pickGlossOptions("hello", ["friend", "China", "to study", "hello"], 4, rand0);
+    expect(opts).not.toBeNull();
+    expect(opts).toContain("hello");
+    expect(new Set(opts).size).toBe(opts!.length);
+    expect(opts!.length).toBe(4);
+  });
+  it("null when no distractor is available", () => {
+    expect(pickGlossOptions("hello", ["hello", ""], 4, rand0)).toBeNull();
   });
 });
 
@@ -86,5 +125,43 @@ describe("buildFamilySweep", () => {
   it("drops members missing from data-chars", () => {
     const task = buildFamilySweep(comps[0], comps, (c) => c !== "清", rand0);
     expect(task!.members).toEqual(["请", "情", "晴"]);
+  });
+});
+
+describe("interleaveByActivity", () => {
+  const row = (facet: string, dueAt: number, id: string) => ({ facet, dueAt, id });
+  it("round-robins across groups, most overdue first within each", () => {
+    const out = interleaveByActivity([
+      row("meaningRecognition", 3, "r3"),
+      row("meaningRecognition", 1, "r1"),
+      row("production", 5, "p5"),
+      row("production", 2, "p2"),
+      row("clozeChar", 10, "c10"),
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["r1", "p2", "c10", "r3", "p5"]);
+  });
+  it("unifies meaning/sound/legacy recognition into one group", () => {
+    const out = interleaveByActivity([
+      row("soundRecognition", 2, "s2"),
+      row("meaningRecognition", 1, "m1"),
+      row("recognition", 3, "l3"),
+      row("production", 4, "p4"),
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["m1", "p4", "s2", "l3"]);
+  });
+  it("rotates the synthetic facets last despite their dueAt of 0", () => {
+    const out = interleaveByActivity([
+      row("wordInference", 0, "w"),
+      row("clusterRecall", 0, "c"),
+      row("meaningRecognition", 7, "m"),
+    ]);
+    expect(out.map((r) => r.id)[0]).toBe("m");
+  });
+  it("keeps single-group input in most-overdue order", () => {
+    const out = interleaveByActivity([
+      row("meaningRecognition", 9, "b"),
+      row("meaningRecognition", 4, "a"),
+    ]);
+    expect(out.map((r) => r.id)).toEqual(["a", "b"]);
   });
 });

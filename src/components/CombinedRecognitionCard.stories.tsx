@@ -20,18 +20,15 @@ const meta = {
     itemKind: "word",
     word: WORDS["你好"],
     charData: undefined,
-    hasMeaningCard: true,
-    hasSoundCard: true,
-    onGradeMeaning: () => {},
-    onGradeSound: () => {},
-    onSkip: () => {},
+    onGraded: () => {},
   },
 } satisfies Meta<typeof CombinedRecognitionCard>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// Tap to reveal, then ONE Again/Good/Easy row grades meaning + sound
+// together (v102).
 export const Word: Story = {};
 export const SingleChar: Story = {
   args: { itemKey: "请", word: WORDS["请"], charData: CHARS["请"] },
 };
-export const MeaningOnly: Story = { args: { hasSoundCard: false } };

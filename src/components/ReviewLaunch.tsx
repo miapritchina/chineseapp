@@ -11,19 +11,12 @@ export interface ReviewSettings {
 
 const SETTINGS_KEY = "chinese.reviewSettings";
 
-// The five drill types offered on the launch screen. The two granular
-// component-level drills ("Tap the sound component" / "Sound of a
-// component") were dropped — too micro to be worth a card slot.
+// The drill types offered on the launch screen.
 const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
   {
     facet: "meaningRecognition",
-    label: "Meaning",
-    hint: "What does it mean? Reveal-style.",
-  },
-  {
-    facet: "soundRecognition",
-    label: "Sound",
-    hint: "How is it pronounced? Audio + tone-marked pinyin.",
+    label: "Recognition",
+    hint: "See the hanzi, recall sound AND meaning — grade each separately on one card.",
   },
   {
     facet: "wordInference",
@@ -43,12 +36,12 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
   {
     facet: "familySweep",
     label: "Family sweep",
-    hint: "Tap every character that takes its sound from a component you saved — decoys included.",
+    hint: "Spot the component: tap every character built with a component you saved — decoys included.",
   },
   {
-    facet: "familyTransfer",
-    label: "Family transfer",
-    hint: '"You know 青 = qīng — what about 情?" Tests the youbian-dubian skill on un-saved family members.',
+    facet: "clusterRecall",
+    label: "Cluster recall",
+    hint: "3–4 related saved words on one screen — recall each before revealing, one grade for the group.",
   },
   {
     facet: "production",
@@ -60,9 +53,17 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
 // (e.g. the retired phoneticTap / componentSound) from saved settings.
 const KNOWN_FACETS = new Set<Facet>(ALL_FACET_OPTIONS.map((o) => o.facet));
 
-// Default-on facets: the two reveal-style recognition drills. The combined
-// card grades meaning + sound together. Everything else is opt-in.
-const DEFAULT_FACETS: Facet[] = ["meaningRecognition", "soundRecognition"];
+// Default-on facet: the recognition card. Everything else is opt-in.
+const DEFAULT_FACETS: Facet[] = ["meaningRecognition"];
+
+// The Recognition toggle is stored as meaningRecognition; the card
+// grades meaning + sound together (v102), so starting a session also
+// enables the sound facet's rows.
+function expandFacets(enabled: Set<Facet>): Facet[] {
+  const out = [...enabled];
+  if (enabled.has("meaningRecognition")) out.push("soundRecognition");
+  return out;
+}
 
 export function loadSettings(): ReviewSettings {
   try {
@@ -96,29 +97,22 @@ function saveSettings(s: ReviewSettings) {
   }
 }
 
+// UI session size — mirrors ReviewPage's SESSION_LIMIT.
+const SESSION_LIMIT = 25;
+
 interface Props {
   // Counts of due cards per facet — shown so the user knows what they're
   // about to study before tapping Start.
   facetCounts: Record<string, number>;
   totalDue: number;
-  // Whether the user has enough saved words to launch a cluster recall.
-  canCluster: boolean;
   onStart: (settings: ReviewSettings) => void;
-  onStartCluster: () => void;
   onClose: () => void;
 }
 
 // Launch surface for a review session. Shown when the user navigates to
 // #/review; hands a settings object up to the parent on Start. Settings
 // persist in localStorage so reopening uses the user's last choice.
-export function ReviewLaunch({
-  facetCounts,
-  totalDue,
-  canCluster,
-  onStart,
-  onStartCluster,
-  onClose,
-}: Props) {
+export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props) {
   const [enabled, setEnabled] = useState<Set<Facet>>(() => new Set(loadSettings().enabledFacets));
   const [randomOrder, setRandomOrder] = useState<boolean>(() => loadSettings().randomOrder);
   const [includeSubchars, setIncludeSubchars] = useState<boolean>(
@@ -149,7 +143,7 @@ export function ReviewLaunch({
   );
 
   const start = () => {
-    onStart({ enabledFacets: [...enabled], randomOrder, includeSubchars });
+    onStart({ enabledFacets: expandFacets(enabled), randomOrder, includeSubchars });
   };
 
   return (
@@ -166,6 +160,8 @@ export function ReviewLaunch({
           <div className="launch-section-title">Drill types</div>
           <div className="launch-options">
             {ALL_FACET_OPTIONS.map((o) => {
+              // Recognition surfaces ONE card per word even when both
+              // facet rows are due — count words, not rows.
               const count = facetCounts[o.facet] || 0;
               const isOn = enabled.has(o.facet);
               return (
@@ -200,8 +196,8 @@ export function ReviewLaunch({
               <span className="launch-option-label">Shuffle within session</span>
             </span>
             <span className="launch-option-hint">
-              Off: char/component cards before words, oldest-due first. On: random order across all
-              enabled drill types.
+              Off (default): drill types take turns, most-needed cards first. On: fully random
+              order.
             </span>
           </button>
         </div>
@@ -232,20 +228,9 @@ export function ReviewLaunch({
           onClick={start}
           disabled={visibleDue === 0}
         >
-          Start review · {visibleDue} cards
-        </button>
-        <button
-          type="button"
-          className="review-btn"
-          onClick={onStartCluster}
-          disabled={!canCluster}
-          title={
-            canCluster
-              ? "Surface 3–4 related saved words for whole-cluster recall"
-              : "Save at least 3 words first"
-          }
-        >
-          Cluster recall
+          {visibleDue > SESSION_LIMIT
+            ? `Start review · ${SESSION_LIMIT} of ${visibleDue} cards`
+            : `Start review · ${visibleDue} cards`}
         </button>
       </div>
     </div>

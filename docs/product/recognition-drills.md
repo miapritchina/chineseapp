@@ -23,12 +23,14 @@ Design constraints shared by all drills:
 
 ## Shipped (v98)
 
-### 1 · New-word inference — facet `wordInference` (session-only, no FSRS row)
+### 1 · New-word inference — facet `wordInference` (no FSRS row)
 
 **Owner's idea.** Surface a real, common word the user has **not**
 saved whose every character appears in their saved words — e.g. saved
-电话 + 大脑 → show 电脑 — the user guesses the meaning, taps to
-reveal, then self-grades "Got it / Missed".
+电话 + 大脑 → show 电脑. v103: the user picks the meaning among 4
+options (distractor glosses from their other words); the reveal shows
+each character as a pinyin → hanzi → meaning stack. Correct pick →
+cascade credit; wrong → nothing.
 
 - **Material:** ordered pairs of the user's known characters (from the
   most recently saved words, capped) probed against the dictionary via
@@ -36,17 +38,23 @@ reveal, then self-grades "Got it / Missed".
   aren't single chars become candidates, common-first (rank). Computed
   once per app session (`useWordInference`), rotated randomly; capped
   per review session so it stays a garnish, not the meal.
-- **Scheduling:** none. "Got it" applies the standard damped cascade
-  credit to every constituent char's FSRS card (same rule as a word
-  Good — [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md)); "Missed" writes nothing.
+- **Scheduling:** no FSRS row. A correct pick applies the standard
+  damped cascade credit to every constituent char's FSRS card (same
+  rule as a word Good — [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md)).
+  v104: answering — right OR wrong — marks the word **done for 14
+  days** (localStorage `chinese.inferenceSeen`, plus a
+  `user_review_log` row under facet `wordInference` that signed-in
+  devices read back), so exiting mid-session no longer resets the
+  "New words" count.
 - **Why it matters:** compositional inference is how Chinese
   vocabulary actually scales; fixed decks can never cover it.
 
 ### 2 · Reverse recognition — facet `reverseRecognition` (word kind, FSRS)
 
 Prompt with the **gloss**, pick the right **hanzi** among 4 saved-word
-tiles. Distractors prefer saved words sharing a character with the
-answer. Tap-correct → Good, tap-wrong → Again + reveal. Retrieval in
+tiles (card-size glyphs since v105). Distractors are scored to be
+confusable: shared character > same length > shared component (ties
+random). Tap-correct → Good, tap-wrong → Again + reveal. Retrieval in
 the meaning→form direction, previously untrained. Seeds one row per
 saved word (needs ≥2 saved words to render options).
 
@@ -60,13 +68,15 @@ characters; the masked position is randomized per surfacing.
 
 ### 4 · Family sweep — facet `familySweep` (component kind, FSRS)
 
-For a saved phonetic component (青 qīng): a grid mixing its true
-family members (请 情 晴 …) with decoys from other components'
-families. Tap **all** members, then confirm. Exact set → Good,
-any miss/false pick → Again + reveal (missed = outlined, wrong pick =
-red). Widens the existing familyTransfer drill from 2 members to the
-whole family. Seeds one row per saved phonetic component whose family
-has ≥ 3 usable members.
+For a saved component (青): a grid mixing the characters built with
+it (请 情 晴 …) with decoys from other components' families. Tap
+**all** of them, then confirm. Exact set → Good, any miss/false pick
+→ Again + reveal (missed = outlined, wrong pick = red). Seeds one row
+per saved phonetic component whose family has ≥ 3 usable members.
+v107 wording note: the prompt says "contains 青" — the decoys never
+contain the component, so the task is visual component-spotting, and
+framing it as a sound drill oversold it. (The familyTransfer drill
+this once extended was retired in v107 — owner saw no value in it.)
 
 ## Backlog (in TODO.md)
 

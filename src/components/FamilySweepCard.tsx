@@ -12,9 +12,9 @@ interface Props {
   onGrade: (rating: RatingName) => void;
 }
 
-// Drill 4: tap every character that takes its sound from the
-// component; decoys come from other components' families. Exact set →
-// Good, anything else → Again.
+// Drill 4: spot the component — tap every character built with it;
+// decoys come from other components' families. Exact set → Good,
+// anything else → Again.
 export function FamilySweepCard({ component, pool, charExists, onGrade }: Props) {
   const [task] = useState(() => buildFamilySweep(component, pool, charExists));
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
@@ -60,7 +60,7 @@ export function FamilySweepCard({ component, pool, charExists, onGrade }: Props)
     >
       <div className="phonetic-tap-inner">
         <div className="phonetic-tap-prompt">
-          Tap every character that takes its sound from {component.char}
+          Tap every character that contains {component.char}
           {component.pinyin ? ` (${component.pinyin})` : ""}
         </div>
         <div className="phonetic-tap-row sweep-grid">

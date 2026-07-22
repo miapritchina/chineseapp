@@ -1,897 +1,1075 @@
 {
  "title": "三字经",
  "titleEn": "Three Character Classic",
- "source": "Text: ctext.org (Wang Yinglin, standard 1068-character edition) · Translation: Herbert Giles (1900), public domain",
+ "source": "Text: ctext.org (Wang Yinglin, standard 1068-character edition) · Classical translation: Herbert Giles (1900), public domain · Modern interpretation written for this app",
  "couplets": [
   {
    "a": "人之初",
    "b": "性本善",
-   "en": "Men at their birth are naturally good."
+   "en": "Men at their birth are naturally good.",
+   "mod": "People are born good at heart."
   },
   {
    "a": "性相近",
    "b": "习相远",
-   "en": "Their natures are much the same; their habits become widely different."
+   "en": "Their natures are much the same; their habits become widely different.",
+   "mod": "Our natures start out alike; it's habit that pulls us apart."
   },
   {
    "a": "苟不教",
    "b": "性乃迁",
-   "en": "If foolishly there is no teaching, the nature will deteriorate."
+   "en": "If foolishly there is no teaching, the nature will deteriorate.",
+   "mod": "Without teaching, that good nature drifts away."
   },
   {
    "a": "教之道",
    "b": "贵以专",
-   "en": "The right way in teaching is to attach the utmost importance in thoroughness."
+   "en": "The right way in teaching is to attach the utmost importance in thoroughness.",
+   "mod": "The key to teaching well is focus."
   },
   {
    "a": "昔孟母",
    "b": "择邻处",
-   "en": "Of old, the mother of Mencius chose a neighbourhood;"
+   "en": "Of old, the mother of Mencius chose a neighbourhood;",
+   "mod": "Long ago, Mencius' mother moved house to find her son better neighbors —"
   },
   {
    "a": "子不学",
    "b": "断机杼",
-   "en": "and when her child would not learn, she broke the shuttle from the loom."
+   "en": "and when her child would not learn, she broke the shuttle from the loom.",
+   "mod": "and when he slacked off, she cut the cloth on her loom to show him what quitting wastes."
   },
   {
    "a": "窦燕山",
    "b": "有义方",
-   "en": "Dou of the Swallow Hills had the right method."
+   "en": "Dou of the Swallow Hills had the right method.",
+   "mod": "Dou Yanshan had the right method:"
   },
   {
    "a": "教五子",
    "b": "名俱扬",
-   "en": "He taught five sons, each of whom raised the family reputation."
+   "en": "He taught five sons, each of whom raised the family reputation.",
+   "mod": "he taught his five sons well, and every one of them made the family name."
   },
   {
    "a": "养不教",
    "b": "父之过",
-   "en": "To feed without teaching is the father's fault."
+   "en": "To feed without teaching is the father's fault.",
+   "mod": "Raising a child without teaching them is the father's failure;"
   },
   {
    "a": "教不严",
    "b": "师之惰",
-   "en": "To teach without severity is the teacher's laziness."
+   "en": "To teach without severity is the teacher's laziness.",
+   "mod": "teaching without rigor is the teacher's laziness."
   },
   {
    "a": "子不学",
    "b": "非所宜",
-   "en": "If the child does not learn, this is not as it should be."
+   "en": "If the child does not learn, this is not as it should be.",
+   "mod": "A child who won't learn — that's just not acceptable:"
   },
   {
    "a": "幼不学",
    "b": "老何为",
-   "en": "If he does not learn while young, what will he be when old?"
+   "en": "If he does not learn while young, what will he be when old?",
+   "mod": "skip learning while young, and what will you be when you're old?"
   },
   {
    "a": "玉不琢",
    "b": "不成器",
-   "en": "If jade is not polished, it cannot become a thing of use."
+   "en": "If jade is not polished, it cannot become a thing of use.",
+   "mod": "Uncut jade is just a rock;"
   },
   {
    "a": "人不学",
    "b": "不知义",
-   "en": "If a man does not learn, he cannot know his duty towards his neighbour."
+   "en": "If a man does not learn, he cannot know his duty towards his neighbour.",
+   "mod": "an untaught person never learns what's right."
   },
   {
    "a": "为人子",
    "b": "方少时",
-   "en": "He who is the son of a man, when he is young"
+   "en": "He who is the son of a man, when he is young",
+   "mod": "While you're still young,"
   },
   {
    "a": "亲师友",
    "b": "习礼仪",
-   "en": "should attach himself to his teachers and friends, and practise ceremonial usages."
+   "en": "should attach himself to his teachers and friends, and practise ceremonial usages.",
+   "mod": "stay close to good teachers and friends, and learn how to carry yourself."
   },
   {
    "a": "香九龄",
    "b": "能温席",
-   "en": "Xiang, at nine years of age, could warm (his parents') bed."
+   "en": "Xiang, at nine years of age, could warm (his parents') bed.",
+   "mod": "Xiang, aged nine, warmed his parents' bed on winter nights —"
   },
   {
    "a": "孝于亲",
    "b": "所当执",
-   "en": "Filial piety towards parents, is that to which we should hold fast."
+   "en": "Filial piety towards parents, is that to which we should hold fast.",
+   "mod": "looking after your parents is the duty to hold onto."
   },
   {
    "a": "融四岁",
    "b": "能让梨",
-   "en": "Rong, at four years of age, could yield the (bigger) pears."
+   "en": "Rong, at four years of age, could yield the (bigger) pears.",
+   "mod": "Rong, aged four, passed the bigger pears to his brothers —"
   },
   {
    "a": "弟于长",
    "b": "宜先知",
-   "en": "To behave as a younger brother towards elders, is one of the first things to know."
+   "en": "To behave as a younger brother towards elders, is one of the first things to know.",
+   "mod": "deference to elders is one of the first things to learn."
   },
   {
    "a": "首孝弟",
    "b": "次见闻",
-   "en": "Begin with filial piety and fraternal love, and then see and hear."
+   "en": "Begin with filial piety and fraternal love, and then see and hear.",
+   "mod": "Family duty comes first; knowledge second:"
   },
   {
    "a": "知某数",
    "b": "识某文",
-   "en": "Learn to count, and learn to read."
+   "en": "Learn to count, and learn to read.",
+   "mod": "learn your numbers, then learn to read."
   },
   {
    "a": "一而十",
    "b": "十而百",
-   "en": "Units and tens, tens and hundreds,"
+   "en": "Units and tens, tens and hundreds,",
+   "mod": "Ones become tens, tens become hundreds,"
   },
   {
    "a": "百而千",
    "b": "千而万",
-   "en": "hundreds and thousands, thousands and tens of thousands."
+   "en": "hundreds and thousands, thousands and tens of thousands.",
+   "mod": "hundreds become thousands, thousands become ten-thousands."
   },
   {
    "a": "三才者",
    "b": "天地人",
-   "en": "The Three Forces are Heaven, Earth and Man."
+   "en": "The Three Forces are Heaven, Earth and Man.",
+   "mod": "The Three Forces: heaven, earth, and people."
   },
   {
    "a": "三光者",
    "b": "日月星",
-   "en": "The Three Luminaries are the sun, the moon and the stars."
+   "en": "The Three Luminaries are the sun, the moon and the stars.",
+   "mod": "The Three Lights: sun, moon, and stars."
   },
   {
    "a": "三纲者",
    "b": "君臣义",
-   "en": "The Three Bonds are the obligation between sovereign and subject,"
+   "en": "The Three Bonds are the obligation between sovereign and subject,",
+   "mod": "The Three Bonds: ruler and minister bound by duty,"
   },
   {
    "a": "父子亲",
    "b": "夫妇顺",
-   "en": "the love between father and child, the harmony between husband and wife."
+   "en": "the love between father and child, the harmony between husband and wife.",
+   "mod": "parent and child by love, husband and wife by harmony."
   },
   {
    "a": "曰春夏",
    "b": "曰秋冬",
-   "en": "We speak of spring and summer, we speak of autumn and winter."
+   "en": "We speak of spring and summer, we speak of autumn and winter.",
+   "mod": "Spring and summer, autumn and winter —"
   },
   {
    "a": "此四时",
    "b": "运不穷",
-   "en": "These four seasons revolve without ceasing."
+   "en": "These four seasons revolve without ceasing.",
+   "mod": "the four seasons cycle without end."
   },
   {
    "a": "曰南北",
    "b": "曰西东",
-   "en": "We speak of North and South, we speak of East and West,"
+   "en": "We speak of North and South, we speak of East and West,",
+   "mod": "South and north, west and east —"
   },
   {
    "a": "此四方",
    "b": "应乎中",
-   "en": "These four points respond to the requirements of the centre."
+   "en": "These four points respond to the requirements of the centre.",
+   "mod": "the four directions, all anchored to the center."
   },
   {
    "a": "曰水火",
    "b": "木金土",
-   "en": "We speak of water, fire, wood, metal and earth."
+   "en": "We speak of water, fire, wood, metal and earth.",
+   "mod": "Water, fire, wood, metal, earth —"
   },
   {
    "a": "此五行",
    "b": "本乎数",
-   "en": "These five elements have their origin in number."
+   "en": "These five elements have their origin in number.",
+   "mod": "the Five Elements, rooted in number."
   },
   {
    "a": "曰仁义",
    "b": "礼智信",
-   "en": "We speak of charity of heart and of duty towards one's neighbour, of propriety, of wisdom, and of truth."
+   "en": "We speak of charity of heart and of duty towards one's neighbour, of propriety, of wisdom, and of truth.",
+   "mod": "Kindness, justice, courtesy, wisdom, honesty —"
   },
   {
    "a": "此五常",
    "b": "不容紊",
-   "en": "These five virtues admit of no compromise."
+   "en": "These five virtues admit of no compromise.",
+   "mod": "the Five Virtues, and none of them is optional."
   },
   {
    "a": "稻粱菽",
    "b": "麦黍稷",
-   "en": "Rice, spiked millet, pulse, wheat, glutinous millet and common millet."
+   "en": "Rice, spiked millet, pulse, wheat, glutinous millet and common millet.",
+   "mod": "Rice, millet, beans, wheat, and the sticky and common millets —"
   },
   {
    "a": "此六谷",
    "b": "人所食",
-   "en": "These six grains are those which men eat."
+   "en": "These six grains are those which men eat.",
+   "mod": "the six grains people eat."
   },
   {
    "a": "马牛羊",
    "b": "鸡犬豕",
-   "en": "The horse, the ox, the sheep, the fowl, the dog, the pig."
+   "en": "The horse, the ox, the sheep, the fowl, the dog, the pig.",
+   "mod": "Horse, ox, sheep, chicken, dog, pig —"
   },
   {
    "a": "此六畜",
    "b": "人所饲",
-   "en": "These six animals, are those which men keep."
+   "en": "These six animals, are those which men keep.",
+   "mod": "the six animals people raise."
   },
   {
    "a": "曰喜怒",
    "b": "曰哀惧",
-   "en": "We speak of joy, of anger, we speak of pity, of fear,"
+   "en": "We speak of joy, of anger, we speak of pity, of fear,",
+   "mod": "Joy and anger, grief and fear,"
   },
   {
    "a": "爱恶欲",
    "b": "七情具",
-   "en": "of love, of hate, and of desire. These are the seven passions."
+   "en": "of love, of hate, and of desire. These are the seven passions.",
+   "mod": "love, hate, desire — the seven emotions everyone carries."
   },
   {
    "a": "匏土革",
    "b": "木石金",
-   "en": "The gourd, earthenware, skin, wood, stone, metal,"
+   "en": "The gourd, earthenware, skin, wood, stone, metal,",
+   "mod": "Gourd, clay, hide, wood, stone, metal,"
   },
   {
    "a": "与丝竹",
    "b": "乃八音",
-   "en": "silk, and bamboo, yield the eight musical sounds."
+   "en": "silk, and bamboo, yield the eight musical sounds.",
+   "mod": "silk and bamboo — the eight materials instruments are made from."
   },
   {
    "a": "高曾祖",
    "b": "父而身",
-   "en": "Great great grandfather, great grandfather, grandfather, father and self,"
+   "en": "Great great grandfather, great grandfather, grandfather, father and self,",
+   "mod": "Great-great-grandfather, great-grandfather, grandfather, father, you,"
   },
   {
    "a": "身而子",
    "b": "子而孙",
-   "en": "self and son, son and grandson,"
+   "en": "self and son, son and grandson,",
+   "mod": "then your son, your grandson,"
   },
   {
    "a": "自子孙",
    "b": "至玄曾",
-   "en": "from son and grandson on to great grandson and great great grandson."
+   "en": "from son and grandson on to great grandson and great great grandson.",
+   "mod": "and on down to great- and great-great-grandsons:"
   },
   {
    "a": "乃九族",
    "b": "人之伦",
-   "en": "These are the nine agnates, constituting the kinships of man."
+   "en": "These are the nine agnates, constituting the kinships of man.",
+   "mod": "nine generations — the human family line."
   },
   {
    "a": "父子恩",
    "b": "夫妇从",
-   "en": "Affection between father and child, harmony between husband and wife,"
+   "en": "Affection between father and child, harmony between husband and wife,",
+   "mod": "Kindness between parent and child, accord between husband and wife,"
   },
   {
    "a": "兄则友",
    "b": "弟则恭",
-   "en": "friendliness on the part of elder brothers, respectfulness on the part of younger brothers,"
+   "en": "friendliness on the part of elder brothers, respectfulness on the part of younger brothers,",
+   "mod": "older siblings generous, younger ones respectful,"
   },
   {
    "a": "长幼序",
    "b": "友与朋",
-   "en": "precedence between elders and youngers, as between friend and friend,"
+   "en": "precedence between elders and youngers, as between friend and friend,",
+   "mod": "elders and juniors keeping their order, friends staying true,"
   },
   {
    "a": "君则敬",
    "b": "臣则忠",
-   "en": "respect on the part of the sovereign, loyalty on the part of the subject."
+   "en": "respect on the part of the sovereign, loyalty on the part of the subject.",
+   "mod": "rulers respectful, ministers loyal —"
   },
   {
    "a": "此十义",
    "b": "人所同",
-   "en": "These ten obligations, are common to all men."
+   "en": "These ten obligations, are common to all men.",
+   "mod": "ten duties everyone shares."
   },
   {
    "a": "凡训蒙",
    "b": "须讲究",
-   "en": "In the education of the young, there should be explanation and elucidation,"
+   "en": "In the education of the young, there should be explanation and elucidation,",
+   "mod": "Teaching beginners takes real care:"
   },
   {
    "a": "详训诂",
    "b": "名句读",
-   "en": "careful teaching of the interpretations of commentators, and due attention to paragraphs and sentences."
+   "en": "careful teaching of the interpretations of commentators, and due attention to paragraphs and sentences.",
+   "mod": "explain every gloss, mark every sentence break."
   },
   {
    "a": "为学者",
    "b": "必有初",
-   "en": "Those who are learners, must have a beginning."
+   "en": "Those who are learners, must have a beginning.",
+   "mod": "Every student needs a starting point:"
   },
   {
    "a": "小学终",
    "b": "至四书",
-   "en": "The \"little learning\" finished, they proceed to the four books."
+   "en": "The \"little learning\" finished, they proceed to the four books.",
+   "mod": "finish the primer, then move on to the Four Books."
   },
   {
    "a": "论语者",
    "b": "二十篇",
-   "en": "There is the Lun Yu, in twenty sections."
+   "en": "There is the Lun Yu, in twenty sections.",
+   "mod": "The Analects: twenty chapters"
   },
   {
    "a": "群弟子",
    "b": "记善言",
-   "en": "In this, the various disciples have recorded the wise sayings of Confucius."
+   "en": "In this, the various disciples have recorded the wise sayings of Confucius.",
+   "mod": "of Confucius' sayings, written down by his students."
   },
   {
    "a": "孟子者",
    "b": "七篇止",
-   "en": "The works of Mencius are comprised in seven sections."
+   "en": "The works of Mencius are comprised in seven sections.",
+   "mod": "Mencius: seven chapters"
   },
   {
    "a": "讲道德",
    "b": "说仁义",
-   "en": "These explain the way and the exemplification thereof, and expound charity and duty towards one's neighbour."
+   "en": "These explain the way and the exemplification thereof, and expound charity and duty towards one's neighbour.",
+   "mod": "on virtue, kindness, and doing right."
   },
   {
    "a": "作中庸",
    "b": "子思笔",
-   "en": "The Zhong Yong was written by the pen of Zi-si;"
+   "en": "The Zhong Yong was written by the pen of Zi-si;",
+   "mod": "The Doctrine of the Mean, from Zisi's pen:"
   },
   {
    "a": "中不偏",
    "b": "庸不易",
-   "en": "Zhong (the middle) being that which does not lean towards any side, Yong (the course) being that which cannot be changed."
+   "en": "Zhong (the middle) being that which does not lean towards any side, Yong (the course) being that which cannot be changed.",
+   "mod": "'the mean' leans to no side; 'the constant' never changes."
   },
   {
    "a": "作大学",
    "b": "乃曾子",
-   "en": "He who wrote The Great Learning was the philosopher Zeng."
+   "en": "He who wrote The Great Learning was the philosopher Zeng.",
+   "mod": "The Great Learning, by Master Zeng:"
   },
   {
    "a": "自修齐",
    "b": "至平治",
-   "en": "Beginning with cultivation of the individual and ordering of the family, it goes on to government of one's own State and ordering of the Empire."
+   "en": "Beginning with cultivation of the individual and ordering of the family, it goes on to government of one's own State and ordering of the Empire.",
+   "mod": "from improving yourself and your household to governing a state at peace."
   },
   {
    "a": "孝经通",
    "b": "四书熟",
-   "en": "When the Classic of Filial Piety is mastered, and the \"Four books\" are known by heart,"
+   "en": "When the Classic of Filial Piety is mastered, and the \"Four books\" are known by heart,",
+   "mod": "With the Classic of Filial Piety mastered and the Four Books by heart,"
   },
   {
    "a": "如六经",
    "b": "始可读",
-   "en": "the next step is to the \"Six classics\", which may now be studied."
+   "en": "the next step is to the \"Six classics\", which may now be studied.",
+   "mod": "you're ready to start the Six Classics."
   },
   {
    "a": "诗书易",
    "b": "礼春秋",
-   "en": "The Books of Poetry, of History and of Changes. The Rites of the Zhou Dynasty, the Book of Rites, and the Spring and Autumn Annals,"
+   "en": "The Books of Poetry, of History and of Changes. The Rites of the Zhou Dynasty, the Book of Rites, and the Spring and Autumn Annals,",
+   "mod": "Poetry, History, Changes, the Rites of Zhou, the Book of Rites, Spring and Autumn —"
   },
   {
    "a": "号六经",
    "b": "当讲求",
-   "en": "are called the Six Classics, which should be carefully explained and analysed."
+   "en": "are called the Six Classics, which should be carefully explained and analysed.",
+   "mod": "the Six Classics, to be studied and picked apart."
   },
   {
    "a": "有连山",
    "b": "有归藏",
-   "en": "There is the Lian Shan system, there is the Gui Zang,"
+   "en": "There is the Lian Shan system, there is the Gui Zang,",
+   "mod": "There's the Lianshan, the Guicang,"
   },
   {
    "a": "有周易",
    "b": "三易详",
-   "en": "And there is the system of Changes of the Zhou Dynasty; such are the three systems which elucidate the Changes."
+   "en": "And there is the system of Changes of the Zhou Dynasty; such are the three systems which elucidate the Changes.",
+   "mod": "and the Zhou Changes — three systems explaining the Book of Changes."
   },
   {
    "a": "有典谟",
    "b": "有训诰",
-   "en": "There are the Regulations, the Counsels, the Instructions, the Announcements,"
+   "en": "There are the Regulations, the Counsels, the Instructions, the Announcements,",
+   "mod": "Regulations and counsels, instructions and announcements,"
   },
   {
    "a": "有誓命",
    "b": "书之奥",
-   "en": "the Oaths, the Charges; these are the profundities of the Book of History."
+   "en": "the Oaths, the Charges; these are the profundities of the Book of History.",
+   "mod": "oaths and charges — the deep layers of the Book of History."
   },
   {
    "a": "我周公",
    "b": "作周礼",
-   "en": "Our Duke of Zhou drew up the Ritual of the Zhou Dynasty,"
+   "en": "Our Duke of Zhou drew up the Ritual of the Zhou Dynasty,",
+   "mod": "Our Duke of Zhou wrote the Rites of Zhou,"
   },
   {
    "a": "著六官",
    "b": "存治体",
-   "en": "in which he set forth the duties of the six classes of officials; and thus gave a settled form to the government."
+   "en": "in which he set forth the duties of the six classes of officials; and thus gave a settled form to the government.",
+   "mod": "set out the six ministries, and gave government its shape."
   },
   {
    "a": "大小戴",
    "b": "注礼记",
-   "en": "The Elder and the Younger Dai wrote commentaries on the Book of Rites."
+   "en": "The Elder and the Younger Dai wrote commentaries on the Book of Rites.",
+   "mod": "The two Dais annotated the Book of Rites:"
   },
   {
    "a": "述圣言",
    "b": "礼乐备",
-   "en": "They published the holy words, and Ceremonies and Music were set in order."
+   "en": "They published the holy words, and Ceremonies and Music were set in order.",
+   "mod": "the sages' words preserved, ritual and music complete."
   },
   {
    "a": "曰国风",
    "b": "曰雅颂",
-   "en": "We speak of the Guo Feng, we speak of the Ya and the Song."
+   "en": "We speak of the Guo Feng, we speak of the Ya and the Song.",
+   "mod": "Folk songs, court odes, and hymns —"
   },
   {
    "a": "号四诗",
    "b": "当讽咏",
-   "en": "These are the four sections of the Book of poetry, which should be hummed over and over."
+   "en": "These are the four sections of the Book of poetry, which should be hummed over and over.",
+   "mod": "the four parts of the Book of Poetry, meant to be recited aloud."
   },
   {
    "a": "诗既亡",
    "b": "春秋作",
-   "en": "When odes ceased to be made, the Spring and Autumn Annals were produced."
+   "en": "When odes ceased to be made, the Spring and Autumn Annals were produced.",
+   "mod": "When poetry fell silent, the Spring and Autumn Annals took over,"
   },
   {
    "a": "寓褒贬",
    "b": "别善恶",
-   "en": "These Annals contain praise and blame, and distinguish the good from the bad."
+   "en": "These Annals contain praise and blame, and distinguish the good from the bad.",
+   "mod": "handing out praise and blame, sorting good from bad."
   },
   {
    "a": "三传者",
    "b": "有公羊",
-   "en": "The three commentaries upon the above include that of Gong-Yang,"
+   "en": "The three commentaries upon the above include that of Gong-Yang,",
+   "mod": "Three commentaries unpack it: Gongyang's,"
   },
   {
    "a": "有左氏",
    "b": "有彀梁",
-   "en": "that of Zuo and that of Gu-Liang."
+   "en": "that of Zuo and that of Gu-Liang.",
+   "mod": "Zuo's, and Guliang's."
   },
   {
    "a": "经既明",
    "b": "方读子",
-   "en": "When the Classics are understood, then the writings of the various philosophers should be read."
+   "en": "When the Classics are understood, then the writings of the various philosophers should be read.",
+   "mod": "Once the Classics are clear, read the philosophers:"
   },
   {
    "a": "撮其要",
    "b": "记其事",
-   "en": "Pick out the important points in each, and take a note of all facts."
+   "en": "Pick out the important points in each, and take a note of all facts.",
+   "mod": "pull out their key points, note down the facts."
   },
   {
    "a": "五子者",
    "b": "有荀杨",
-   "en": "The five chief philosophers are Xun, Yang,"
+   "en": "The five chief philosophers are Xun, Yang,",
+   "mod": "The five masters: Xunzi, Yangzi,"
   },
   {
    "a": "文中子",
    "b": "及老庄",
-   "en": "Wenzhongzi, Laozi and Zhuangzi."
+   "en": "Wenzhongzi, Laozi and Zhuangzi.",
+   "mod": "Wenzhongzi, Laozi, and Zhuangzi."
   },
   {
    "a": "经子通",
    "b": "读诸史",
-   "en": "When the Classics and the Philosophers are mastered, the various histories should be read,"
+   "en": "When the Classics and the Philosophers are mastered, the various histories should be read,",
+   "mod": "Classics and philosophers done, read the histories:"
   },
   {
    "a": "考世系",
    "b": "知终始",
-   "en": "and the genealogical connections should be examined, so that the end of one dynasty and the beginning of the next may be known."
+   "en": "and the genealogical connections should be examined, so that the end of one dynasty and the beginning of the next may be known.",
+   "mod": "trace the dynastic lines, learn how each began and ended."
   },
   {
    "a": "自羲农",
    "b": "至黄帝",
-   "en": "From Fu Xi and Shen Nong on to the Yellow Emperor,"
+   "en": "From Fu Xi and Shen Nong on to the Yellow Emperor,",
+   "mod": "From Fuxi and Shennong up to the Yellow Emperor —"
   },
   {
    "a": "号三皇",
    "b": "居上世",
-   "en": "these are called the Three Rulers. who lived in the early ages."
+   "en": "these are called the Three Rulers. who lived in the early ages.",
+   "mod": "the Three Sovereigns of the earliest age."
   },
   {
    "a": "唐有虞",
    "b": "号二帝",
-   "en": "Tang and You-Yu are called the two emperors."
+   "en": "Tang and You-Yu are called the two emperors.",
+   "mod": "Yao and Shun were the Two Emperors:"
   },
   {
    "a": "相揖逊",
    "b": "称盛世",
-   "en": "They adbicated, one after the other, and theirs was called the Golden Age."
+   "en": "They adbicated, one after the other, and theirs was called the Golden Age.",
+   "mod": "each handed power to the worthiest, and that was the golden age."
   },
   {
    "a": "夏有禹",
    "b": "商有汤",
-   "en": "The Xia dynasty has Yu; the Shang dynasty has Tang;"
+   "en": "The Xia dynasty has Yu; the Shang dynasty has Tang;",
+   "mod": "Xia had Yu, Shang had Tang,"
   },
   {
    "a": "周文王",
    "b": "称三王",
-   "en": "the Zhou dynasty had Wen and Wu; these are called the Three Kings"
+   "en": "the Zhou dynasty had Wen and Wu; these are called the Three Kings",
+   "mod": "Zhou had Wen and Wu — together, the Three Kings."
   },
   {
    "a": "夏传子",
    "b": "家天下",
-   "en": "Under the Xia dynasty the throne was transmitted from father to son, making a family possession of the empire."
+   "en": "Under the Xia dynasty the throne was transmitted from father to son, making a family possession of the empire.",
+   "mod": "Under Xia the throne became hereditary — the empire a family estate;"
   },
   {
    "a": "四百载",
    "b": "迁夏社",
-   "en": "After four hundred years, the Imperial sacrifice passed from the House of Xia."
+   "en": "After four hundred years, the Imperial sacrifice passed from the House of Xia.",
+   "mod": "four hundred years on, Xia's altars fell."
   },
   {
    "a": "汤伐夏",
    "b": "国号商",
-   "en": "Tang the completer destroyed the Xia Dynasty, and the dynastic title became Shang."
+   "en": "Tang the completer destroyed the Xia Dynasty, and the dynastic title became Shang.",
+   "mod": "Tang overthrew Xia and named his dynasty Shang;"
   },
   {
    "a": "六百载",
    "b": "至纣亡",
-   "en": "The line lasted for six hundred years, ending with Zhou Xin."
+   "en": "The line lasted for six hundred years, ending with Zhou Xin.",
+   "mod": "six hundred years, down to the tyrant Zhou Xin's fall."
   },
   {
    "a": "周武王",
    "b": "始诛纣",
-   "en": "King Wu of the Zhou Dynasty finally slew Zhou Xin."
+   "en": "King Wu of the Zhou Dynasty finally slew Zhou Xin.",
+   "mod": "King Wu of Zhou struck the tyrant down;"
   },
   {
    "a": "八百载",
    "b": "最长久",
-   "en": "His own line lasted for eight hundred years; the longest dynasty of all."
+   "en": "His own line lasted for eight hundred years; the longest dynasty of all.",
+   "mod": "his own line ran eight hundred years — the longest of all."
   },
   {
    "a": "周辙东",
    "b": "王纲堕",
-   "en": "When the Zhous made tracks eastwards, the feudal bond was slackened;"
+   "en": "When the Zhous made tracks eastwards, the feudal bond was slackened;",
+   "mod": "When Zhou moved its capital east, royal authority slipped:"
   },
   {
    "a": "逞干戈",
    "b": "尚游说",
-   "en": "the arbitrament of spear and shields prevailed; and peripatetic politicians were held in high esteem."
+   "en": "the arbitrament of spear and shields prevailed; and peripatetic politicians were held in high esteem.",
+   "mod": "weapons ruled the day, and traveling persuaders were the stars."
   },
   {
    "a": "始春秋",
    "b": "终战国",
-   "en": "This period began with the Spring and Autumn Epoch, and ended with that of the Warring States."
+   "en": "This period began with the Spring and Autumn Epoch, and ended with that of the Warring States.",
+   "mod": "It began with the Spring and Autumn era and ended in the Warring States:"
   },
   {
    "a": "五霸强",
    "b": "七雄出",
-   "en": "Next, the Five Chieftains domineered, and the Seven Martial States came to the front."
+   "en": "Next, the Five Chieftains domineered, and the Seven Martial States came to the front.",
+   "mod": "five hegemons threw their weight around; seven great powers emerged."
   },
   {
    "a": "嬴秦氏",
    "b": "始兼并",
-   "en": "Then the House of Qin, descended from the Ying clan, finally united all the states under one sway."
+   "en": "Then the House of Qin, descended from the Ying clan, finally united all the states under one sway.",
+   "mod": "Then Qin, of the Ying clan, swallowed all the rest —"
   },
   {
    "a": "传二世",
    "b": "楚汉争",
-   "en": "The throne was transmitted to Er Shi, upon which followed the struggle between the Chu and the Han States."
+   "en": "The throne was transmitted to Er Shi, upon which followed the struggle between the Chu and the Han States.",
+   "mod": "two emperors later it collapsed, and Chu fought Han for the prize."
   },
   {
    "a": "高祖兴",
    "b": "汉业建",
-   "en": "Then Gao Zu arose, and the House of Han was established."
+   "en": "Then Gao Zu arose, and the House of Han was established.",
+   "mod": "Gaozu won, and the house of Han was founded;"
   },
   {
    "a": "至孝平",
    "b": "王莽篡",
-   "en": "When we come to the reign of Xiao Ping, Wang Mang usurped the throne."
+   "en": "When we come to the reign of Xiao Ping, Wang Mang usurped the throne.",
+   "mod": "by Emperor Ping's day, Wang Mang had stolen the throne."
   },
   {
    "a": "光武兴",
    "b": "为东汉",
-   "en": "Then Guang Wu arose, and founded the Eastern Han dynasty."
+   "en": "Then Guang Wu arose, and founded the Eastern Han dynasty.",
+   "mod": "Guangwu rose and restored it as the Eastern Han:"
   },
   {
    "a": "四百年",
    "b": "终于献",
-   "en": "It lasted four hundred years, and ended with the Emperor Xian."
+   "en": "It lasted four hundred years, and ended with the Emperor Xian.",
+   "mod": "four hundred years in all, ending with Emperor Xian."
   },
   {
    "a": "魏蜀吴",
    "b": "争汉鼎",
-   "en": "Wei, Shu and Wu, fought for the sovereignty of the Hans."
+   "en": "Wei, Shu and Wu, fought for the sovereignty of the Hans.",
+   "mod": "Wei, Shu, and Wu fought over the Han inheritance —"
   },
   {
    "a": "号三国",
    "b": "迄两晋",
-   "en": "They were called the Three Kingdoms, and existed until the Two Jin Dynasties."
+   "en": "They were called the Three Kingdoms, and existed until the Two Jin Dynasties.",
+   "mod": "the Three Kingdoms, lasting into the two Jins."
   },
   {
    "a": "宋齐继",
    "b": "梁陈承",
-   "en": "Then followed the Song and the Qi dynasties, and after them the Liang and Chen dynasties."
+   "en": "Then followed the Song and the Qi dynasties, and after them the Liang and Chen dynasties.",
+   "mod": "Song and Qi came next, then Liang and Chen:"
   },
   {
    "a": "为南朝",
    "b": "都金陵",
-   "en": "These are the Southern dynasties, with their capital at Nanjing."
+   "en": "These are the Southern dynasties, with their capital at Nanjing.",
+   "mod": "the Southern Dynasties, ruling from Nanjing."
   },
   {
    "a": "北元魏",
    "b": "分东西",
-   "en": "The northern dynasties are the Wei dynasty of the Yuan family, which split into Eastern and Western We,."
+   "en": "The northern dynasties are the Wei dynasty of the Yuan family, which split into Eastern and Western We,.",
+   "mod": "In the north, the Tuoba Wei split east and west,"
   },
   {
    "a": "宇文周",
    "b": "兴高齐",
-   "en": "the Zhou dynasty of the Yuwen family, with the Qi dynasty of the Gao family."
+   "en": "the Zhou dynasty of the Yuwen family, with the Qi dynasty of the Gao family.",
+   "mod": "then the Yuwen Zhou and the Gao family's Qi."
   },
   {
    "a": "迨至隋",
    "b": "一土宇",
-   "en": "At length, under the Sui dynasty, the empire was united under one ruler."
+   "en": "At length, under the Sui dynasty, the empire was united under one ruler.",
+   "mod": "At last the Sui made the realm one again —"
   },
   {
    "a": "不再传",
    "b": "失统绪",
-   "en": "The throne was not transmitted twice, succession to power being lost."
+   "en": "The throne was not transmitted twice, succession to power being lost.",
+   "mod": "but couldn't pass the throne on twice before losing it."
   },
   {
    "a": "唐高祖",
    "b": "起义师",
-   "en": "The first emperor of the Tang dynasty raised volunteer troops."
+   "en": "The first emperor of the Tang dynasty raised volunteer troops.",
+   "mod": "The Tang founder raised a righteous army,"
   },
   {
    "a": "除隋乱",
    "b": "创国基",
-   "en": "He put an end to the disorder of the House of Sui, and established the foundations of his line."
+   "en": "He put an end to the disorder of the House of Sui, and established the foundations of his line.",
+   "mod": "ended the Sui chaos, and laid his dynasty's foundations:"
   },
   {
    "a": "二十传",
    "b": "三百载",
-   "en": "Twenty times the thrown was transmitted in a period of three hundred years."
+   "en": "Twenty times the thrown was transmitted in a period of three hundred years.",
+   "mod": "twenty successions across three hundred years,"
   },
   {
    "a": "梁灭之",
    "b": "国乃改",
-   "en": "The Liang State destroyed it, and the dynastic title was changed."
+   "en": "The Liang State destroyed it, and the dynastic title was changed.",
+   "mod": "until Liang destroyed it and the title changed hands."
   },
   {
    "a": "梁唐晋",
    "b": "及汉周",
-   "en": "The Liang, the Tang, the Jin, the Han, and the Zhou,"
+   "en": "The Liang, the Tang, the Jin, the Han, and the Zhou,",
+   "mod": "Liang, Tang, Jin, Han, Zhou —"
   },
   {
    "a": "称五代",
    "b": "皆有由",
-   "en": "are called the Five Dynasties, and there was a reason for the establishment of each."
+   "en": "are called the Five Dynasties, and there was a reason for the establishment of each.",
+   "mod": "the Five Dynasties, each with its own story."
   },
   {
    "a": "炎宋兴",
    "b": "受周禅",
-   "en": "Then the fire-led house of Song arose, and received the resignation of the house of Zhou."
+   "en": "Then the fire-led house of Song arose, and received the resignation of the house of Zhou.",
+   "mod": "Then the fire-crowned Song arose, taking the throne by abdication:"
   },
   {
    "a": "十八传",
    "b": "南北混",
-   "en": "Eighteen times the throne was transmitted, and then the north and the south were reunited."
+   "en": "Eighteen times the throne was transmitted, and then the north and the south were reunited.",
+   "mod": "eighteen successions, and then north and south merged again."
   },
   {
    "a": "十七史",
    "b": "全在兹",
-   "en": "The Seventeen Dynastic Histories are all embraced in the above."
+   "en": "The Seventeen Dynastic Histories are all embraced in the above.",
+   "mod": "The Seventeen Histories — it's all in there:"
   },
   {
    "a": "载治乱",
    "b": "知兴衰",
-   "en": "They contain examples of good and bad government, whence may be learnt the principles of prosperity and decay."
+   "en": "They contain examples of good and bad government, whence may be learnt the principles of prosperity and decay.",
+   "mod": "order and chaos, and why states rise and fall."
   },
   {
    "a": "读史书",
    "b": "考实录",
-   "en": "Ye who read history must study the State Annals,"
+   "en": "Ye who read history must study the State Annals,",
+   "mod": "Read history alongside the primary records,"
   },
   {
    "a": "通古今",
    "b": "若亲目",
-   "en": "whereby you will understand ancient and modern events, as though having seen them with your own eyes."
+   "en": "whereby you will understand ancient and modern events, as though having seen them with your own eyes.",
+   "mod": "until past and present feel like things you watched yourself."
   },
   {
    "a": "口而诵",
    "b": "心而惟",
-   "en": "Recite them with the mouth, and ponder over them in your hearts."
+   "en": "Recite them with the mouth, and ponder over them in your hearts.",
+   "mod": "Recite it aloud, turn it over in your heart —"
   },
   {
    "a": "朝于斯",
    "b": "夕于斯",
-   "en": "Do this in the morning; do this in the evening."
+   "en": "Do this in the morning; do this in the evening.",
+   "mod": "morning and evening, every single day."
   },
   {
    "a": "昔仲尼",
    "b": "师项橐",
-   "en": "Of old, Confucius took Xiang Tuo for his teacher."
+   "en": "Of old, Confucius took Xiang Tuo for his teacher.",
+   "mod": "Even Confucius took the boy Xiang Tuo as a teacher;"
   },
   {
    "a": "古圣贤",
    "b": "尚勤学",
-   "en": "The inspired men and sages of old studied diligently nevertheless."
+   "en": "The inspired men and sages of old studied diligently nevertheless.",
+   "mod": "the sages of old never stopped studying."
   },
   {
    "a": "赵中令",
    "b": "读鲁论",
-   "en": "Zhao, president of the Council, studied the Lu text of the Lun Yu."
+   "en": "Zhao, president of the Council, studied the Lu text of the Lun Yu.",
+   "mod": "Zhao Pu, already chief minister, still studied his Analects —"
   },
   {
    "a": "彼既仕",
    "b": "学且勤",
-   "en": "He, when already an official, studied, and moreover with diligence."
+   "en": "He, when already an official, studied, and moreover with diligence.",
+   "mod": "in office, and diligent all the same."
   },
   {
    "a": "披蒲编",
    "b": "削竹简",
-   "en": "One opened out rushes and plaited them together; another scraped tablets of bamboo."
+   "en": "One opened out rushes and plaited them together; another scraped tablets of bamboo.",
+   "mod": "One man copied books onto woven rushes; another shaved bamboo strips:"
   },
   {
    "a": "彼无书",
    "b": "且知勉",
-   "en": "These men had no books, but they knew how to make an effort."
+   "en": "These men had no books, but they knew how to make an effort.",
+   "mod": "they owned no books, yet made the effort anyway."
   },
   {
    "a": "头悬梁",
    "b": "锥刺股",
-   "en": "One tied his head to the beam above him; another pricked his thigh with an awl."
+   "en": "One tied his head to the beam above him; another pricked his thigh with an awl.",
+   "mod": "One tied his hair to a roof beam to stay awake; another jabbed an awl into his thigh:"
   },
   {
    "a": "彼不教",
    "b": "自勤苦",
-   "en": "They were not taught, but toiled hard of their own accord."
+   "en": "They were not taught, but toiled hard of their own accord.",
+   "mod": "nobody pushed them — they drove themselves."
   },
   {
    "a": "如囊萤",
    "b": "如映雪",
-   "en": "Then we have one who put fireflies in a bag. and again another who used the white glare from snow."
+   "en": "Then we have one who put fireflies in a bag. and again another who used the white glare from snow.",
+   "mod": "One read by a bag of fireflies, another by the glare off snow:"
   },
   {
    "a": "家虽贫",
    "b": "学不缀",
-   "en": "Although their families were poor, these men studied unceasingly."
+   "en": "Although their families were poor, these men studied unceasingly.",
+   "mod": "dirt poor, and the studying never stopped."
   },
   {
    "a": "如负薪",
    "b": "如挂角",
-   "en": "Again, there was one who carried fuel, and another who used horns as pegs."
+   "en": "Again, there was one who carried fuel, and another who used horns as pegs.",
+   "mod": "One studied while hauling firewood, another with books hung on an ox horn:"
   },
   {
    "a": "身虽劳",
    "b": "犹苦卓",
-   "en": "Although they toiled with their bodies, they were nevertheless remarkable for their application."
+   "en": "Although they toiled with their bodies, they were nevertheless remarkable for their application.",
+   "mod": "worn out by work, they still kept at it."
   },
   {
    "a": "苏老泉",
    "b": "二十七",
-   "en": "Su Lao-Quan, at the age of twenty-seven,"
+   "en": "Su Lao-Quan, at the age of twenty-seven,",
+   "mod": "Su Xun was twenty-seven"
   },
   {
    "a": "始发愤",
    "b": "读书籍",
-   "en": "at last began to show his energy and devote himself to the study of books."
+   "en": "at last began to show his energy and devote himself to the study of books.",
+   "mod": "before he finally got serious and hit the books —"
   },
   {
    "a": "彼既老",
    "b": "犹悔迟",
-   "en": "Then when already past the age, he deeply regretted his delay."
+   "en": "Then when already past the age, he deeply regretted his delay.",
+   "mod": "and even old, he regretted starting late."
   },
   {
    "a": "尔小生",
    "b": "宜早思",
-   "en": "You little boys should take thought betimes."
+   "en": "You little boys should take thought betimes.",
+   "mod": "So you who are young: think about it early."
   },
   {
    "a": "若梁灏",
    "b": "八十二",
-   "en": "Then there were Liang Hao, who at the age of eighty-two,"
+   "en": "Then there were Liang Hao, who at the age of eighty-two,",
+   "mod": "There was Liang Hao, who at eighty-two"
   },
   {
    "a": "对大廷",
    "b": "魁多士",
-   "en": "made his replies in the great hall, and came out first among many scholars."
+   "en": "made his replies in the great hall, and came out first among many scholars.",
+   "mod": "topped the palace examination ahead of a hall full of scholars."
   },
   {
    "a": "彼既成",
    "b": "众称异",
-   "en": "When thus late he had succeeded, all men pronounced him a prodigy."
+   "en": "When thus late he had succeeded, all men pronounced him a prodigy.",
+   "mod": "A success that late, everyone called a marvel —"
   },
   {
    "a": "尔小生",
    "b": "宜立志",
-   "en": "You little boys should make up your minds to work."
+   "en": "You little boys should make up your minds to work.",
+   "mod": "so you who are young: set your goal now."
   },
   {
    "a": "莹八岁",
    "b": "能咏诗",
-   "en": "Ying, at eight years of age, could compose poetry."
+   "en": "Ying, at eight years of age, could compose poetry.",
+   "mod": "Zu Ying at eight could compose poetry;"
   },
   {
    "a": "泌七岁",
    "b": "能赋碁",
-   "en": "Bi, at seven years of age, could make an epigram on wei-qi."
+   "en": "Bi, at seven years of age, could make an epigram on wei-qi.",
+   "mod": "Li Bi at seven wrote verses about the game of go."
   },
   {
    "a": "彼颖悟",
    "b": "人称奇",
-   "en": "These youths were quick of apprehension, and people declared them to be prodigies."
+   "en": "These youths were quick of apprehension, and people declared them to be prodigies.",
+   "mod": "Quick minds like that were called prodigies —"
   },
   {
    "a": "尔幼学",
    "b": "当效之",
-   "en": "You young learners ought to imitate them."
+   "en": "You young learners ought to imitate them.",
+   "mod": "you young learners should measure yourselves against them."
   },
   {
    "a": "蔡文姬",
    "b": "能辨琴",
-   "en": "Cai Wen-ji, was able to judge from the sound of a psaltery."
+   "en": "Cai Wen-ji, was able to judge from the sound of a psaltery.",
+   "mod": "Cai Wenji could read music by ear;"
   },
   {
    "a": "谢道韫",
    "b": "能咏吟",
-   "en": "Xie Dao-yun, was able to compose verses."
+   "en": "Xie Dao-yun, was able to compose verses.",
+   "mod": "Xie Daoyun improvised verse."
   },
   {
    "a": "彼女子",
    "b": "且聪敏",
-   "en": "They were only girls, yet they were quick and clever."
+   "en": "They were only girls, yet they were quick and clever.",
+   "mod": "They were girls — and that sharp."
   },
   {
    "a": "尔男子",
    "b": "当自警",
-   "en": "You boys ought to rouse yourselves."
+   "en": "You boys ought to rouse yourselves.",
+   "mod": "Boys, consider that your wake-up call."
   },
   {
    "a": "唐刘晏",
    "b": "方七岁",
-   "en": "Liu Yan of the Tang dynasty, when only seven years of age,"
+   "en": "Liu Yan of the Tang dynasty, when only seven years of age,",
+   "mod": "Liu Yan of the Tang, at just seven,"
   },
   {
    "a": "举神童",
    "b": "作正字",
-   "en": "was ranked as an \"inspired child,\" and was appointed a Corrector of Texts."
+   "en": "was ranked as an \"inspired child,\" and was appointed a Corrector of Texts.",
+   "mod": "was named a child prodigy and given a court post correcting texts."
   },
   {
    "a": "彼虽幼",
    "b": "身己仕",
-   "en": "He, although a child, was already in an official post."
+   "en": "He, although a child, was already in an official post.",
+   "mod": "A child, and already serving in office —"
   },
   {
    "a": "尔幼学",
    "b": "勉而致",
-   "en": "You young learners strive to bring about a like result."
+   "en": "You young learners strive to bring about a like result.",
+   "mod": "work at it, and you can get there too:"
   },
   {
    "a": "有为者",
    "b": "亦若是",
-   "en": "Those who work will also succeed as he did."
+   "en": "Those who work will also succeed as he did.",
+   "mod": "whoever puts in the effort ends up like him."
   },
   {
    "a": "犬守夜",
    "b": "鸡司晨",
-   "en": "The dog keeps guard by night; the cock proclaims the dawn."
+   "en": "The dog keeps guard by night; the cock proclaims the dawn.",
+   "mod": "The dog guards the night; the rooster calls the dawn —"
   },
   {
    "a": "苟不学",
    "b": "曷为人",
-   "en": "If foolishly you do not study, how can you become men?"
+   "en": "If foolishly you do not study, how can you become men?",
+   "mod": "if you refuse to learn, how do you deserve to be called a person?"
   },
   {
    "a": "蚕吐丝",
    "b": "蜂酿蜜",
-   "en": "The silkworm produces silk, the bee makes honey."
+   "en": "The silkworm produces silk, the bee makes honey.",
+   "mod": "The silkworm spins silk; the bee makes honey —"
   },
   {
    "a": "人不学",
    "b": "不如物",
-   "en": "If a man does not learn, he is not equal to the brutes"
+   "en": "If a man does not learn, he is not equal to the brutes",
+   "mod": "a person who won't learn does less than the animals."
   },
   {
    "a": "幼而学",
    "b": "壮而行",
-   "en": "Learn while young, and when grown up apply what you have learnt;"
+   "en": "Learn while young, and when grown up apply what you have learnt;",
+   "mod": "Learn while young, act on it grown:"
   },
   {
    "a": "上致君",
    "b": "下泽民",
-   "en": "influencing the sovereign above; benefiting the people below."
+   "en": "influencing the sovereign above; benefiting the people below.",
+   "mod": "serve the country above, lift the people below."
   },
   {
    "a": "扬名声",
    "b": "显父母",
-   "en": "Make a name for yourselves, and glorify your father and mother,"
+   "en": "Make a name for yourselves, and glorify your father and mother,",
+   "mod": "Make your name and honor your parents;"
   },
   {
    "a": "光于前",
    "b": "裕于后",
-   "en": "shed lustre on your ancestors, enrich your posterity."
+   "en": "shed lustre on your ancestors, enrich your posterity.",
+   "mod": "shine credit on your ancestors, leave your children better off."
   },
   {
    "a": "人遗子",
    "b": "金满嬴",
-   "en": "Men bequeath to their children coffers of gold;"
+   "en": "Men bequeath to their children coffers of gold;",
+   "mod": "Others leave their children chests full of gold;"
   },
   {
    "a": "我教子",
    "b": "惟一经",
-   "en": "I teach you children only this one book."
+   "en": "I teach you children only this one book.",
+   "mod": "I leave you children just this one book:"
   },
   {
    "a": "勤有功",
    "b": "戏无益",
-   "en": "Diligence has its reward; play has no advantages."
+   "en": "Diligence has its reward; play has no advantages.",
+   "mod": "hard work pays off; fooling around pays nothing."
   },
   {
    "a": "戒之哉",
    "b": "宜勉力",
-   "en": "Oh, be on your guard, and put forth your strength."
+   "en": "Oh, be on your guard, and put forth your strength.",
+   "mod": "Be warned — and give it everything."
   }
  ]
 }

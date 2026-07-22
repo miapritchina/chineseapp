@@ -11,7 +11,199 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Explore page (v109,
+  [spec](docs/product/explore-page.md)):** one browsing surface for
+  words ↔ characters ↔ components. Component index (the old Phonetics
+  list, now tappable through to focus views) + My-words tab; every
+  focus screen shows "in my words" first, then sound family /
+  built-with / made-of sections as readable cards; a tappable
+  breadcrumb trail (青 › 情 › 情人) tracks the path; `→N` badges count
+  connections within the saved set and `end` marks dead ends — the
+  graph's "which direction is worth walking" signal without the
+  graph. "Explore from here" replaces "Show in network" in the entity
+  sheet. Saving components (family-sweep seeding) still works from
+  the index rows and focus cards.
+
+### Removed
+- **Network, Components, and Phonetics pages (v109):** replaced by
+  Explore. The static Cytoscape pages (and the vendored cytoscape.js)
+  are gone; the app is a single React surface now.
+
+### Added
+- **Browsing counts a little (v108):** opening a saved word/character
+  from the main page gives its recognition schedule a partial credit —
+  half a Good's stability gain, due date pushed at most 2 days, no
+  repetition recorded — throttled to once per item per day. Reading
+  through your words is study; it just isn't a full answer.
+
 ### Changed
+- **Justified word grid (v108):** shelf cards pack as many per row as
+  fit, then stretch to fill the row — no more ragged right edge.
+  Character sizes and no-truncation behavior unchanged.
+
+### Fixed
+- **Graph pages dead on mobile (v108, BUG-17):** network/components
+  loaded Cytoscape from the jsdelivr CDN with no error handling — any
+  failed or stale fetch left "cytoscape is not defined" and a blank
+  page. The library is now vendored into the site
+  (`network/vendor/cytoscape.min.js`), no runtime CDN dependency.
+
+### Changed
+- **Cluster recall is a drill type (v107):** it joins the launch
+  screen toggles and mixes into the session queue (one card per
+  cluster of related saved words) instead of being a separate button
+  at the bottom.
+- **Sessions are 25 cards (v107):** a comfortable visible end — the
+  launch button says "25 of N", the progress shows /25, and the
+  session actually finishes. Purely UI: every card still grades and
+  syncs individually; Again-retries stay in past the cap.
+- **Exiting a session returns to the workout chooser (v107)**, not
+  the home page.
+- **Family sweep reworded (v107):** the prompt now says "tap every
+  character that contains 青" — the decoys never contain the
+  component, so it's a component-spotting task; the old "takes its
+  sound from" framing oversold it.
+- **Writing counts distinct wrong strokes (v107, BUG-16):** repeated
+  misses on the same stroke cost ONE mistake — the recognizer often
+  rejects a correct second attempt, and that shouldn't read as two
+  errors. Grade thresholds unchanged (0 → Easy, ≤2 → Good, >2 →
+  Again), now over distinct strokes.
+
+### Removed
+- **Family transfer drill (v107):** owner saw no value in it. The
+  facet is retired like phoneticTap/componentSound — legacy rows are
+  scrubbed on load and never seed again.
+
+### Fixed
+- **Writing card took seconds to show the character (v106, BUG-15):**
+  stroke data was fetched from the CDN only when the card appeared.
+  The session now prefetches stroke data for upcoming Writing cards
+  in the background, and the service worker keeps it cached — so
+  after the first sighting a character's quiz paints instantly, even
+  offline.
+
+### Changed
+- **Fill-the-gap solved character shows green, not red (v106):** the
+  filled-in character used the vermillion accent, which read as "you
+  got it wrong" even on a correct pick.
+- **Sessions mix activity types by default (v106):** with several
+  drills enabled, the queue now round-robins across them (word →
+  reverse → cloze → word …) instead of running each type to
+  exhaustion. Not a shuffle — within each type the most overdue card
+  still comes first, and the neediest type leads. The Shuffle toggle
+  still gives a fully random order.
+- **Bigger glyphs in picking drills (v106):** family-sweep and
+  fill-the-gap option tiles show characters at card size (52 px, were
+  22 px); cluster-recall and confusable-compare cells step up to
+  36 px. Audited every drill — recognition hero, reverse tiles,
+  cloze target, family-transfer target, New-word card, and the
+  writing canvas were already large.
+- **Review audio switched to neural MP3s (v106):** words are spoken
+  with Youdao's dictionary voice (fetched per word, cached by the
+  service worker — instant + offline after first play) instead of the
+  device speech engine, whose voices distort even at their best
+  (owner-verified in the iOS Settings preview). Device TTS remains as
+  the automatic fallback when offline or if the endpoint fails.
+- **Recognition card asks meaning and sound separately (v105,
+  [ADR-0013](docs/decisions/0013-split-meaning-sound-grades-on-one-card.md)):**
+  one card, two answers — the reveal shows a Meaning row and a Sound
+  row, each grading its own schedule, and the card advances as soon
+  as both are picked. Swiping right/left still grades both at once
+  (Good/Again). Again on either dimension re-queues the card.
+  Character cards that only tracked meaning now grow a sound schedule
+  on first grade.
+- **Reverse review harder + easier to read (v105):** the word tiles
+  show card-size characters (were chip-size), and wrong options are
+  now picked to be confusable — preferring words that share a
+  character with the answer, match its length, or share a component
+  (e.g. 清 baiting 情).
+- **Skip moved to the page header (v105):** every review surface now
+  shows Skip next to the progress counter, out of the thumb zone, so
+  it can't be tapped by mistake while grading. The in-card and
+  bottom-row Skip buttons are gone; Skip is also available after
+  reveal now. Skipping a recognition card skips both its meaning and
+  sound rows (previously the sound sibling popped back up as its own
+  card).
+
+### Fixed
+- **TTS sounds like an old radio (v105, BUG-14):** three causes —
+  the voice picker took the FIRST installed Chinese voice, which on
+  iOS is the low-bitrate "compact" Siri voice; the 0.85 playback rate
+  forced resampling (warble); and Safari could garbage-collect the
+  utterance mid-playback (stutter). Now the highest-quality voice is
+  picked (Enhanced/Premium preferred, zh-CN over other regions),
+  playback is native-rate, and the utterance is held until it ends.
+- **Review glyph invisible in dark mode (v105, BUG-13):** the focal
+  character tile stays white in both themes, but the glyph inherited
+  the dark-theme text color (near-white on white). The tile now pins
+  light-theme ink, so the character reads in both themes.
+- **Answered "New words" stay done (v104, BUG-12):** answering an
+  inference word — right or wrong — now counts immediately, not at
+  session end. Exiting mid-session no longer resets the count: the
+  word rests for 14 days (localStorage, plus a `user_review_log` row
+  under facet `wordInference` so the rest-period follows the account
+  across devices when signed in).
+
+### Changed
+- **Cluster recall is now a full session (v103):** one launch walks
+  EVERY cluster your saved set can form — phonetic families first,
+  then shared-character groups, then random fill, each word used once
+  — with cluster-N-of-M progress. Previously it showed a single group
+  (and, due to deterministic picking, usually the SAME group) and
+  closed after one grade.
+- **"New words" is now multiple choice (v103):** pick the meaning
+  among 4 options (distractors drawn from your other words); a correct
+  pick credits the constituent characters. The reveal shows each
+  character as a pinyin → hanzi → meaning stack (the sheet treatment)
+  so you see WHY the word means what it means.
+
+### Changed
+- **Review overhaul (v102, [ADR-0012](docs/decisions/0012-no-daily-cap-repeat-until-correct.md)):**
+  - **No daily cap** — every due card surfaces; the 25/day new-card
+    machinery is gone. This also fixes **BUG-9**: Reverse and
+    Fill-the-gap always showed 0 because new meaning/sound cards ate
+    every cap slot ahead of them.
+  - **Repeat until correct** — a card graded Again re-enters the
+    session queue at the end and keeps returning until answered
+    without Again.
+  - **One grade per recognition card** — meaning + sound are answered
+    with a single Again/Good/Easy applied to both FSRS rows; the
+    launch screen shows one "Recognition" toggle. Swipe right = Good,
+    left = Again still works.
+  - **"New words" fixed (BUG-10)** — the whole discovered pool
+    surfaces (was capped at 5) with a fresh per-session rotation (was
+    the same 5 words every time).
+  - **Audio fix (BUG-11)** — TTS start was clipped because cancel()
+    and speak() fired in the same tick; the utterance is now deferred
+    after a cancel and an installed zh voice is selected explicitly.
+  - **"Weakest" shelf sort** — new sort pill on the home grid ordering
+    words by FSRS stability (never-reviewed and shaky words first).
+
+### Added
+- **三字经 v2 (v101):** couplets numbered (№ 1–178); each 3-character
+  phrase is now ONE card using the EntitySheet's pinyin → hanzi →
+  meaning character stacks (known characters in learned-green, the
+  rest muted); a **modern plain-English interpretation** written for
+  this app is the primary line with Giles 1900 kept beneath in italic;
+  and a **reading bookmark** — scrolling advances a furthest-read
+  marker (accent bar on the couplet, "Continue reading at № N" pill on
+  return), synced to the new `user_classic_progress` table (migration
+  **0012**, RLS, max(local, remote) merge) with a localStorage cache.
+
+### Changed
+- **Watch app ships truly watch-only (v110):** the visible iOS companion app
+  (added to work around the Xcode 26 watch-only upload bug,
+  FB22730778) is replaced by Apple's invisible watch-only container
+  (`com.apple.product-type.application.watchapp2-container`, zero
+  sources — the same shell Xcode's own "Watch-only App" template
+  ships). Users get only the watch app; nothing installs or shows on
+  iPhone. The watch target regains `WKWatchOnly` and drops the
+  companion-bundle key. Distribution goes through
+  `xcodebuild archive` + `-exportArchive` (app-store-connect now
+  works against the container archive) + `altool` upload with an App
+  Store Connect team API key — build 3 uploaded and VALID in App
+  Store Connect.
 - **Two-tier status model** ([ADR-0011](docs/decisions/0011-two-tier-status-model.md)):
   the ❗ Need-to-learn and ✒ Wrote statuses are gone from the UI —
   the star menu now offers Saved / Learned only, and the shelf has two

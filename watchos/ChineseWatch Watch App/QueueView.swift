@@ -117,3 +117,21 @@ struct WordPageView: View {
         .contentShape(Rectangle())
     }
 }
+
+#Preview("Word page") {
+    WordPageView(
+        entry: QueueEntry(
+            word: Word(
+                word: "中文",
+                pinyin: "zhōngwén",
+                definitions: ["Chinese language"],
+                hsk: 1,
+                rank: 42
+            ),
+            dueAt: Date(),
+            facets: ["meaningRecognition"]
+        ),
+        position: 1,
+        total: 5
+    )
+}

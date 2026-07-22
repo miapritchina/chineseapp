@@ -13,24 +13,17 @@ For developer workflow (commit style, version bumps, test rules), see
 ## What ships
 
 **One Chinese-character learning web app**, deployed as static files
-to GitHub Pages with one Supabase project behind it. The app surfaces
-in three places under `/chineseapp/`:
+to GitHub Pages with one Supabase project behind it — a single React
+surface under `/chineseapp/` (search, save, decomposition tree, SRS
+review, Explore, Classic, Sentence Studio; Storybook rides along at
+`/storybook/`).
 
-| Path | Tech | What it does |
-|---|---|---|
-| `/` | React + TS + Vite | Main UI — search, save, decomposition tree, SRS review |
-| `/network/` | Cytoscape.js + plain HTML | Word-graph view of the saved set |
-| `/components/` | Cytoscape.js + plain HTML | Vocabulary-structure view (words → chars → components) |
-
-The two Cytoscape views are part of the same app — they share the
-saved set (read from the `localStorage` offline cache that the
-React hooks keep in sync with Supabase, the source of truth — see
-[ADR-0001](../decisions/0001-supabase-source-of-truth.md))
-and link back into the main UI. They live outside React for
-implementation simplicity, not because they're separate products.
-The coupling is one line in `.github/workflows/pages.yml` (a `cp`)
-and one link in `App.tsx`'s hamburger menu — rewriting them as React
-routes is a future option.
+One React surface since v109: the Explore page
+(`src/components/ExplorePage.tsx`, spec in
+[explore-page.md](../product/explore-page.md)) replaced the static
+Cytoscape `network/` + `components/` graph pages and the Phonetics
+list — focus-stack browsing with a breadcrumb trail and saved-set
+connection badges.
 
 There is also a **native Apple Watch companion** (`watchos/`,
 Swift/SwiftUI, watch-only app with no iOS host). It is read-only: it
@@ -66,10 +59,11 @@ deploy. See `watchos/README.md`.
 |---|---|---|
 | `public/data-chars.json` | ~10k chars + components + etymology | Static; built via `extract-chinese.mjs` |
 | `public/phonetic-components.json` | Top-250 productive sound components | Static; built via `extract-phonetic-components.mjs` |
-| `public/sanzijing.json` | 三字经 standard edition (178 couplets) + Giles 1900 translation | Static; curated from Wikisource/ctext (v100) |
+| `public/sanzijing.json` | 三字经 standard edition (178 numbered couplets) + Giles 1900 translation + modern interpretation | Static; curated from Wikisource/ctext (v100–v101) |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
-| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization; never read by the app yet | Live; insert-only from `useReview` |
+| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices | Live; insert from `useReview`, select from `useWordInference` |
+| Supabase `user_classic_progress` | Furthest-read 三字经 couplet (v101) — scroll-tracked bookmark, max(local, remote) merge | Live; `useClassicProgress` |
 
 The split is deliberate — see [ADR-0009](../decisions/0009-chars-static-words-in-db.md).
 The user-data policy is [ADR-0001](../decisions/0001-supabase-source-of-truth.md).
@@ -137,25 +131,38 @@ kinds, seven scheduled facets (plus one session-only drill):
 | word | `soundRecognition` | combined recognition card (same surface) | every saved word |
 | word | `reverseRecognition` | gloss → pick the hanzi (v98) | every saved word |
 | word | `clozeChar` | masked-char pick (v98) | saved words with ≥2 chars |
-| component | `familySweep` | tap-all-family-members grid (v98) | saved phonetic components with ≥3 usable family members |
-| char | `familyTransfer` | "you know 青, what about 情?" multi-choice | up to 2 family members per saved phonetic component, picked from chars the user hasn't saved |
+| component | `familySweep` | spot-the-component grid (v98; reworded v107 — tap every character containing the component) | saved phonetic components with ≥3 usable family members |
 | char | `production` | Hanzi Writer trace quiz | every saved single character (v99; was ✒ Wrote tier) |
 
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
-is session-only: unsaved words built from known chars, no FSRS row —
-a correct guess cascade-credits the constituent char cards. Word-kind
-facets beyond meaning/sound sit in a lower daily-cap tier so they can
-never starve the primary queue.
+has no FSRS row: unsaved words built from known chars — a correct
+guess cascade-credits the constituent char cards. Since v104 an
+answered word (right OR wrong) is done and rests for 14 days: recorded
+immediately in localStorage (`chinese.inferenceSeen`) and logged to
+`user_review_log` under the `wordInference` facet, which signed-in
+devices read back so the rest-period follows the account. Word-kind
+facets beyond meaning/sound sort after meaning/sound in the due queue
+(there is no daily cap since v102).
+
+`clusterRecall` (v107) is the second synthetic facet: one card per
+cluster of related saved words (`buildClusters` in drillGen, computed
+in App), no FSRS row of its own — the single group grade is applied
+to every member's meaning+sound rows. It replaced the standalone
+Cluster recall page/button.
 
 `recognition` is a legacy facet name from pre-v66 cards; the load path
-renames them to `meaningRecognition` in memory. `phoneticTap` and
-`componentSound` are retired facets (drills dropped from the launch
-screen in v85, seeding + rows removed in v95) — legacy rows are
-ignored on load and scrubbed locally.
+renames them to `meaningRecognition` in memory. `phoneticTap`,
+`componentSound` (dropped v85, scrubbed v95) and `familyTransfer`
+(dropped v107 — owner saw no value) are retired facets — legacy rows
+are ignored on load and scrubbed locally.
 
-The combined recognition card grades both `meaningRecognition` and
-`soundRecognition` at once but they're two FSRS Cards under the hood
-— retention numbers stay distinct per-modality. This is what forced
+The combined recognition card asks for TWO grades on one reveal —
+Meaning and Sound rows, each applied to its own FSRS row; a swipe
+applies one rating to both (v105,
+[ADR-0013](../decisions/0013-split-meaning-sound-grades-on-one-card.md),
+which supersedes v102's single blended grade). Char-kind items that
+only had a meaning row get the sound sibling seeded on first grade.
+The two-dispatch same-tick write is what forced
 [ADR-0008](../decisions/0008-functional-setstate-for-concurrent-grade.md)
 (since superseded in v95 by a ref-mirrored map — `cardsRef` in
 `useReview` — so both same-tick grades also reach the Supabase upsert).
@@ -165,13 +172,28 @@ The combined recognition card grades both `meaningRecognition` and
 Good/Easy on a word damp-credits every constituent char. Again does
 not cascade. See [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md).
 
-### Daily cap + leech interleaving
+The same damped-credit math powers the **passive-view credit**
+(v108): opening a saved item's EntitySheet applies
+`applyCascadeCredit` to its own meaning/sound rows, capped at 2 days
+(`PASSIVE_CAP_DAYS`), no rep recorded, throttled to once per item per
+day (`chinese.passiveCredit` localStorage log). Browsing counts a
+little; it never replaces answering.
 
-25 new cards/day cap; `lapses ≥ 6` items with cluster entries get
-side-by-side disambig. See [ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md).
-Since v95 the cap counts **word** cards only — char/component seeds
-(familyTransfer, production, cascade subchars) sort ahead of words in
-the queue, so letting them consume slots starved word reviews.
+### Queue + leech interleaving
+
+No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —
+everything due surfaces. Since v106 the default session order is an
+activity **interleave**, not a grouped run: `interleaveByActivity`
+(drillGen) round-robins across drill groups (meaning/sound unified),
+most-overdue first within each group, the neediest group leading each
+cycle; `wordInference` rotates last (synthetic dueAt). The Shuffle
+toggle replaces this with a full random order. Cards graded Again
+re-enter the session queue until answered without Again. Sessions are
+capped at 25 cards UI-side (v107, `SESSION_LIMIT` in ReviewPage — a
+frozen first-25 set, so the session genuinely ends; scheduling is
+untouched since every card grades individually), and exiting a
+session returns to the launch screen, not the home page. `lapses ≥ 6` items with cluster
+entries still get side-by-side disambig ([ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md), leech half).
 
 ---
 
@@ -224,7 +246,8 @@ authoritative contract. Summary:
 - Mounted with `key={rid(current)}` so React unmounts cleanly between
   queue items.
 - Owns its own pick state; receives `onGrade(rating)` from the parent.
-- Renders a small `.drill-skip` button visible only **before** answer.
+- Skip lives in the page header (`PageHeader onSkip`, v105 — moved out
+  of the thumb zone), not inside the card.
 - No timers. Tap-anywhere-to-advance after answering.
 
 ---
@@ -274,7 +297,7 @@ For functions that are plain JS today (`componentSearch.mjs`,
 
 ## PWA / offline (v96)
 
-All three surfaces install and run offline from one service worker
+The app installs and runs offline from one service worker
 (`vite-plugin-pwa` / Workbox, `registerType: autoUpdate`, scope
 `/chineseapp/`).
 
@@ -284,18 +307,16 @@ All three surfaces install and run offline from one service worker
   trustworthy after one reload.
 - **Runtime caches** — `data-chars.json` + `phonetic-components.json`
   (StaleWhileRevalidate; ~3 MB, refreshed behind the response);
-  `network/` + `components/` pages (NetworkFirst — they're copied into
-  the site *after* the Vite build, so they can't be precached and are
-  offline only after first visit); `cdn.jsdelivr.net`
-  (CacheFirst 30 days — hanzi-writer, cytoscape, per-char stroke data).
+  `cdn.jsdelivr.net`
+  (CacheFirst 30 days — hanzi-writer + per-char stroke data);
+  `dict.youdao.com` (CacheFirst 180 days — per-word TTS MP3s, v106:
+  primary review audio, device Web Speech is the offline fallback —
+  see `src/lib/speech.ts`).
 - **Not cached** — everything Supabase. User data stays cloud-first
   ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)); offline
   reads come from the hooks' own localStorage mirrors, not the SW.
-- The SPA navigate-fallback is denylisted for `/network/`,
-  `/components/`, `/storybook/` so the SW never shadows those real
-  files with index.html.
-- The graph pages register the same `../sw.js` and carry the manifest +
-  iOS meta tags, so install works from any surface. Icons are the 中
+- The SPA navigate-fallback is denylisted for `/storybook/` so the SW
+  never shadows those real files with index.html. Icons are the 中
   glyph drawn as SVG shapes (`public/favicon.svg` + generated PNGs).
 
 ---

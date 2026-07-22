@@ -8,12 +8,16 @@ import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 interface Props {
   onOpenWord: (word: string) => void;
   onOpenChar: (char: string) => void;
+  // Per-word FSRS stability (min of the two recognition cards) — fuels
+  // the "Weakest" sort. Absent in Storybook fixtures.
+  weakness?: Map<string, number>;
 }
 
-type SortMode = "recent" | "pinyin" | "strokes" | "hsk" | "common";
+type SortMode = "recent" | "weakest" | "pinyin" | "strokes" | "hsk" | "common";
 const SORT_KEY = "chinese.savedSort";
 const SORT_LABELS: [SortMode, string][] = [
   ["recent", "Recent"],
+  ["weakest", "Weakest"],
   ["pinyin", "Pinyin"],
   ["strokes", "Strokes"],
   ["hsk", "HSK"],
@@ -23,7 +27,14 @@ const SORT_LABELS: [SortMode, string][] = [
 function loadSortMode(): SortMode {
   try {
     const v = localStorage.getItem(SORT_KEY);
-    if (v === "pinyin" || v === "strokes" || v === "hsk" || v === "common" || v === "recent") {
+    if (
+      v === "pinyin" ||
+      v === "strokes" ||
+      v === "hsk" ||
+      v === "common" ||
+      v === "recent" ||
+      v === "weakest"
+    ) {
       return v;
     }
   } catch {
@@ -54,7 +65,7 @@ function renderCard(
   return <Entity key={key} itemKey={key} size="md" onTap={onOpenWord} className="card-pending" />;
 }
 
-export function SavedShelf({ onOpenWord, onOpenChar }: Props) {
+export function SavedShelf({ onOpenWord, onOpenChar, weakness }: Props) {
   const { savedList, learned, wrote } = useSavedCtx();
   const { findWord } = useDictCtx();
   const { chars } = useCharsCtx();
@@ -153,7 +164,8 @@ export function SavedShelf({ onOpenWord, onOpenChar }: Props) {
       const kb = sortKeys.get(b.word);
       if (!ka || !kb) return 0;
       let cmp = 0;
-      if (sortMode === "pinyin") cmp = (ka.pinyin || "￿").localeCompare(kb.pinyin || "￿");
+      if (sortMode === "weakest") cmp = (weakness?.get(a.word) ?? 0) - (weakness?.get(b.word) ?? 0);
+      else if (sortMode === "pinyin") cmp = (ka.pinyin || "￿").localeCompare(kb.pinyin || "￿");
       else if (sortMode === "strokes") cmp = ka.strokes - kb.strokes;
       else if (sortMode === "hsk") cmp = ka.hsk - kb.hsk;
       else if (sortMode === "common") cmp = ka.rank - kb.rank;

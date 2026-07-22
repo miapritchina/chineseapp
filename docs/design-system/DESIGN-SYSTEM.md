@@ -304,7 +304,7 @@ The app uses a loose spacing scale with no strict 4-px or 8-px grid. Commonly re
 
 ### 4.5 Safe-area usage
 
-The app respects iOS safe areas throughout: `env(safe-area-inset-top)` on `.topbar`, `.review-root`, `.phonetics-root`, `.sentence-root`, `.modal-header`, `.popup-root`; `env(safe-area-inset-bottom)` on `body`, `.review-actions`, `.review-attrib`, `.sentence-cta-wrap`, `.drill-skip-row`, `.sheet-panel` padding, `.word-bank` bottom padding.
+The app respects iOS safe areas throughout: `env(safe-area-inset-top)` on `.topbar`, `.review-root`, `.phonetics-root`, `.sentence-root`, `.modal-header`, `.popup-root`; `env(safe-area-inset-bottom)` on `body`, `.review-actions`, `.review-attrib`, `.sentence-cta-wrap`, `.sheet-panel` padding, `.word-bank` bottom padding.
 
 ### 4.6 Z-index layers
 
@@ -359,7 +359,7 @@ Key CSS: `.sheet-root` (fixed inset, z-index 55, flex align-items: flex-end) →
 
 ### 6.2 Full-screen page
 
-Review, Phonetics, Sentence Studio, and ClusterRecall all use the same pattern: `position: fixed; inset: 0; z-index: 60; background: var(--bg)` with safe-area padding. A header bar (`.review-header`) provides: back button (left, `--accent` colored), a pill tag (`.review-kind-tag`), and progress text (right, tabular-nums). The body is a flex-grow scrollable area.
+Review, Phonetics, and Sentence Studio all use the same pattern: `position: fixed; inset: 0; z-index: 60; background: var(--bg)` with safe-area padding. A header bar (`.review-header`) provides: back button (left, `--accent` colored), a pill tag (`.review-kind-tag`), and progress text (right, tabular-nums). The body is a flex-grow scrollable area.
 
 ### 6.3 Fixed bottom CTA bar
 
@@ -424,23 +424,23 @@ The app uses two coexisting routing patterns: a **modal stack** (`useModalStack`
 
 ### 7.12 ReviewPage + DrillFrame
 
-**What:** Full-screen SRS review surface, routing by facet to sub-components. **Where:** `#/review`. **Internal helper:** `DrillFrame` — wraps each drill with header (back + tag + progress), body slot, and skip button. **Classes:** `.review-root`, `.review-header`, `.review-body`, `.review-actions`, `.review-card`, `.review-hanzi`, `.review-tap-hint`, `.review-pinyin`, `.review-gloss`, `.review-empty`, `.review-attrib`, `.drill-skip-row`, `.drill-skip`.
+**What:** Full-screen SRS review surface, routing by facet to sub-components. **Where:** `#/review`. **Internal helper:** `DrillFrame` — wraps each drill with header (back + tag + progress), body slot, and skip button. **Classes:** `.review-root`, `.review-header`, `.review-body`, `.review-actions`, `.review-card`, `.review-hanzi`, `.review-tap-hint`, `.review-pinyin`, `.review-gloss`, `.review-empty`, `.review-attrib`, `.drill-skip`, `.drill-skip-header`.
 
 ### 7.13 CombinedRecognitionCard
 
-**What:** Dual-facet recognition card (meaning + sound). **Where:** ReviewPage (facet = meaningRecognition/soundRecognition). **Classes:** `.combined-card-surface`, `.combined-card-stack`, `.combined-grade-block`, `.combined-grade-label`, `.combined-grade-row`, `.combined-skip`, `.drill-tap-hint`.
+**What:** Dual-facet recognition card (meaning + sound). **Where:** ReviewPage (facet = meaningRecognition/soundRecognition). **Classes:** `.combined-card-surface`, `.combined-card-stack`, `.combined-grade-block`, `.combined-grade-label`, `.combined-grade-row`, `.drill-tap-hint`.
 
 ### 7.14 PhoneticTapCard *(removed in v95)*
 
-Retired drill (facet = phoneticTap; dropped from the launch screen in v85, component deleted in v95). The `.phonetic-tap-*` classes remain in use by FamilyTransferCard.
+Retired drill (facet = phoneticTap; dropped from the launch screen in v85, component deleted in v95). The `.phonetic-tap-*` classes remain in use by the surviving drill cards.
 
 ### 7.15 ComponentSoundCard *(removed in v95)*
 
 Retired drill (facet = componentSound); same story as 7.14.
 
-### 7.16 FamilyTransferCard
+### 7.16 FamilyTransferCard *(removed in v107)*
 
-**What:** "You know X, what about Y?" drill. **Where:** ReviewPage (facet = familyTransfer). Shares `.phonetic-tap-*` classes. Additional: `.family-transfer-question`, `.family-transfer-target`.
+Retired drill (facet = familyTransfer) — owner saw no value. Component deleted; legacy rows scrubbed like 7.14/7.15.
 
 ### 7.17 ProductionCard
 
@@ -450,13 +450,13 @@ Retired drill (facet = componentSound); same story as 7.14.
 
 **What:** Side-by-side comparison of confusable cluster members. **Where:** ReviewPage (leech interleave). **Classes:** `.disambig-root`, `.disambig-banner`, `.disambig-grid`, `.disambig-cell`, `.disambig-actions`.
 
-### 7.19 ClusterRecall
+### 7.19 ClusterRecallCard
 
-**What:** 3–4 related saved words, tap to reveal, then grade. **Where:** Standalone full-screen via ReviewPage. **Classes:** `.cluster-body`, `.cluster-prompt`, `.cluster-grid`, `.cluster-cell`, `.cluster-cell-hanzi`.
+**What:** 3–4 related saved words, tap to reveal, then one grade for the group. **Where:** ReviewPage (facet = clusterRecall, v107 — was a standalone page pre-v107). **Classes:** `.cluster-grid` plus the shared `.phonetic-tap-*` drill chrome.
 
-### 7.20 PhoneticsPage
+### 7.20 ExplorePage *(replaced PhoneticsPage in v109)*
 
-**What:** Full-screen list of productive sound components. **Where:** `#/phonetics`. **Classes:** `.phonetics-root`, `.phonetics-list`, `.phonetics-row`, `.phonetics-row-char`, `.phonetics-row-pinyin`, `.phonetics-row-count`, `.phonetics-row-family`.
+**What:** One browsing surface (words ↔ chars ↔ components): component index (reuses the `.phonetics-*` row classes) + focus views with breadcrumb trail and saved-set connection badges. **Where:** `#/explore`. **Classes:** `.explore-root`, `.explore-body`, `.explore-tabs`, `.explore-trail`, `.explore-crumb`, `.explore-focus(-hanzi/-meta/-pinyin/-gloss/-status)`, `.explore-section`, `.explore-cards`, `.explore-card`, `.explore-badge` (`.is-end`), `.explore-more`, `.explore-row`.
 
 ### 7.21 SentenceStudio
 
@@ -472,7 +472,7 @@ Retired drill (facet = componentSound); same story as 7.14.
 
 ### 7.24 Shared UI primitives (`src/components/ui/`) *(v91)*
 
-**What:** The extracted stage-A/B primitives: `PageHeader` (back + tag + progress), `EmptyState` (title + hint variants), `Eyebrow` (mono uppercase micro-label), `SectionHeader` (numbered sheet section head), `SpeakButton` (wraps `lib/speech.ts`), `DrillShell` (drill chrome: header + body slot + skip row), `GradeButtons` (Again/Good/Easy trio with `--grade-color` outline), `HanziGlyph` (HanziWriter animate/quiz mount + fallback). Each emits the pre-existing classNames, so their CSS is documented under the consuming surfaces above.
+**What:** The extracted stage-A/B primitives: `PageHeader` (back + tag + progress), `EmptyState` (title + hint variants), `Eyebrow` (mono uppercase micro-label), `SectionHeader` (numbered sheet section head), `SpeakButton` (wraps `lib/speech.ts`), `DrillShell` (drill chrome: header incl. Skip + body slot), `GradeButtons` (Again/Good/Easy trio with `--grade-color` outline), `HanziGlyph` (HanziWriter animate/quiz mount + fallback). Each emits the pre-existing classNames, so their CSS is documented under the consuming surfaces above.
 
 ### 7.25 v98 drill cards *(WordInferenceCard, ReverseRecognitionCard, ClozeCharCard, FamilySweepCard)*
 
@@ -502,12 +502,12 @@ Ordered by leverage (most-duplicated / most-impactful first).
 
 **Absorbs:** The in-file `DrillFrame` helper in `ReviewPage.tsx` (`.review-root`, `.review-header`, `.review-body`, `.drill-skip-row`). Currently every drill (CombinedRecognition, PhoneticTap, ComponentSound, FamilyTransfer, Production, Disambiguation) shares this chrome but it's an unexported inner component.
 **Props:** `tag: string`, `progress: { current: number; total: number }`, `onClose`, `onSkip?`, `children`.
-**Design note:** The skip button should only appear pre-answer. The "tap to continue" hint (`.drill-tap-hint`) should be **transient** — fade out after ~1.5 s or show only on first occurrence, per the owner's preference against permanent instructional text.
+**Design note:** ~~The skip button should only appear pre-answer.~~ v105: Skip moved into the header (`PageHeader onSkip`, `.drill-skip-header`) — always available, out of the thumb zone so it can't be tapped by mistake. The "tap to continue" hint (`.drill-tap-hint`) should be **transient** — fade out after ~1.5 s or show only on first occurrence, per the owner's preference against permanent instructional text.
 **Effort:** **S** — just export and parameterize `DrillFrame`.
 
 ### 8.4 `<PageHeader back tag progress actions?>` — Shared top bar ✅ *(shipped v91)*
 
-**Absorbs:** The header pattern from ReviewPage/DrillFrame (`.review-header`), TreeModal (`.modal-header`), PhoneticsPage, SentenceStudio, ClusterRecall — all use the same back-button + tag + progress layout with minor variations (some have action buttons on the right).
+**Absorbs:** The header pattern from ReviewPage/DrillFrame (`.review-header`), TreeModal (`.modal-header`), PhoneticsPage, SentenceStudio — all use the same back-button + tag + progress layout with minor variations (some have action buttons on the right).
 **Props:** `onBack`, `tag?: string`, `progress?: string`, `actions?: ReactNode`.
 **Effort:** **S**
 
@@ -561,7 +561,7 @@ Ordered by leverage (most-duplicated / most-impactful first).
 
 ### 8.13 `<GradeButtons onGrade>` — Again / Good / Easy trio
 
-**Absorbs:** `.review-btn-again`, `.review-btn-good`, `.review-btn-easy` button row used by CombinedRecognitionCard (`.combined-grade-row`) and ClusterRecall (`.review-actions`).
+**Absorbs:** `.review-btn-again`, `.review-btn-good`, `.review-btn-easy` button row used by CombinedRecognitionCard and ClusterRecallCard (`.combined-grade-row`).
 **Props:** `onGrade: (rating: RatingName) => void`, `disabled?: boolean`.
 **Effort:** **S**
 

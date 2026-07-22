@@ -4,11 +4,11 @@ import { WordInferenceCard } from "./WordInferenceCard";
 import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
-import { FamilyTransferCard } from "./FamilyTransferCard";
+import { ClusterRecallCard } from "./ClusterRecallCard";
 import { ProductionCard } from "./ProductionCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { DrillShell } from "./ui/DrillShell";
-import { WORDS, CHARS, PHONETIC_COMPONENTS, PHONETIC_BY_CHAR } from "../../.storybook/fixtures";
+import { WORDS, CHARS, PHONETIC_COMPONENTS } from "../../.storybook/fixtures";
 
 // Every drill rendered inside the real DrillShell chrome, against the
 // fixture provider. One file so the "Review/Drills" section reads as a
@@ -35,7 +35,12 @@ const savedWords = ["你好", "请", "中国", "学习", "朋友"];
 export const WordInference: StoryObj = {
   render: () => (
     <Shell tag="New word">
-      <WordInferenceCard word={WORDS["中国"]} onGotIt={() => {}} onMissed={() => {}} />
+      <WordInferenceCard
+        word={WORDS["中国"]}
+        glossPool={["hello; hi", "to study; to learn", "friend"]}
+        onGotIt={() => {}}
+        onMissed={() => {}}
+      />
     </Shell>
   ),
 };
@@ -74,16 +79,10 @@ export const FamilySweep: StoryObj = {
   ),
 };
 
-export const FamilyTransfer: StoryObj = {
+export const ClusterRecall: StoryObj = {
   render: () => (
-    <Shell tag="Family">
-      <FamilyTransferCard
-        familyMember="情"
-        charData={CHARS["情"]}
-        componentEntry={PHONETIC_BY_CHAR.get("青")!}
-        pool={PHONETIC_COMPONENTS}
-        onGrade={() => {}}
-      />
+    <Shell tag="Cluster">
+      <ClusterRecallCard cluster={["请", "情", "清"]} onGraded={() => {}} />
     </Shell>
   ),
 };
@@ -93,7 +92,7 @@ export const FamilyTransfer: StoryObj = {
 export const Production: StoryObj = {
   render: () => (
     <Shell tag="Write">
-      <ProductionCard char="请" charData={CHARS["请"]} onGrade={() => {}} onSkip={() => {}} />
+      <ProductionCard char="请" charData={CHARS["请"]} onGrade={() => {}} />
     </Shell>
   ),
 };
@@ -101,12 +100,7 @@ export const Production: StoryObj = {
 export const Disambiguation: StoryObj = {
   render: () => (
     <Shell tag="Confusable">
-      <DisambiguationCard
-        focus="请"
-        neighbors={["情", "清"]}
-        onContinue={() => {}}
-        onSkip={() => {}}
-      />
+      <DisambiguationCard focus="请" neighbors={["情", "清"]} onContinue={() => {}} />
     </Shell>
   ),
 };

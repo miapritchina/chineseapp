@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import "./styles.css";
 
 import { useDictionary } from "./hooks/useDictionary";
@@ -11,6 +11,7 @@ import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
 import { useWordInference } from "./hooks/useWordInference";
 import { useSanzijing } from "./hooks/useSanzijing";
+import { useClassicProgress } from "./hooks/useClassicProgress";
 import { useAutoImport } from "./hooks/useAutoImport";
 import { supabase, wakeUp } from "./lib/supabase";
 
@@ -25,10 +26,9 @@ import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
 import { ComponentTable } from "./components/ComponentTable";
-import { PhoneticsPage } from "./components/PhoneticsPage";
+import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
-import { ClusterRecall } from "./components/ClusterRecall";
 import { SentenceStudio } from "./components/SentenceStudio";
 
 import { AppStateProvider } from "./state/contexts";
@@ -37,6 +37,7 @@ import { encodeWords, makeShareToken, shareUrl } from "./lib/share";
 
 import type { Word, ModalEntry } from "./lib/types";
 import { useState } from "react";
+import { buildClusters } from "./lib/drillGen";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -57,8 +58,8 @@ export function App() {
   const setSearching = useUIStore((s) => s.setSearching);
   const showReview = useUIStore((s) => s.showReview);
   const setShowReview = useUIStore((s) => s.setShowReview);
-  const showPhonetics = useUIStore((s) => s.showPhonetics);
-  const setShowPhonetics = useUIStore((s) => s.setShowPhonetics);
+  const showExplore = useUIStore((s) => s.showExplore);
+  const setShowExplore = useUIStore((s) => s.setShowExplore);
   const showClassic = useUIStore((s) => s.showClassic);
   const setShowClassic = useUIStore((s) => s.setShowClassic);
   const showSignIn = useUIStore((s) => s.showSignIn);
@@ -73,6 +74,7 @@ export function App() {
 
   const phonetics = usePhoneticComponents();
   const classic = useSanzijing();
+  const classicProgress = useClassicProgress(auth.user?.id ?? null);
   const mnemonics = useMnemonics({ userId: auth.user?.id ?? null });
 
   const reviewState = useReview({
@@ -81,14 +83,38 @@ export function App() {
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
   });
-  const { dueCards, grade, attributeFailure, creditInference } = reviewState;
+  const { dueCards, grade, attributeFailure, recordInference, creditPassiveView } = reviewState;
+
+  // Weakest-first shelf sort: per saved word, the lower of the two
+  // recognition cards' FSRS stability (never-reviewed = 0 = weakest).
+  const weakness = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of saved.savedList) {
+      const meaning = reviewState.cards.get(`word|meaningRecognition|${e.word}`);
+      const sound = reviewState.cards.get(`word|soundRecognition|${e.word}`);
+      m.set(e.word, Math.min(meaning?.card.stability ?? 0, sound?.card.stability ?? 0));
+    }
+    return m;
+  }, [saved.savedList, reviewState.cards]);
 
   // Drill 1 material: real unsaved words made of the user's known chars.
-  const inferenceWords = useWordInference({
+  const { words: inferenceWords, markSeen: markInferenceSeen } = useWordInference({
+    userId: auth.user?.id ?? null,
     savedList: saved.savedList,
     ensureCached: dict.ensureCached,
     findWord: dict.findWord,
   });
+
+  // Cluster-recall material (v107, a drill type since the standalone
+  // page was folded into the session queue).
+  const clusters = useMemo(
+    () =>
+      buildClusters(
+        saved.savedList.map((s) => s.word),
+        phonetics.byChar,
+      ),
+    [saved.savedList, phonetics.byChar],
+  );
 
   // Wake the Supabase project early to mask cold-start latency.
   useEffect(() => {
@@ -109,13 +135,14 @@ export function App() {
 
   // Launch screen state. null = haven't started yet.
   const [reviewLaunched, setReviewLaunched] = useState<ReviewSettings | null>(null);
-  const [clusterActive, setClusterActive] = useState(false);
+  // "Explore from here" target handed from the EntitySheet.
+  const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
 
   // Track full-screen pages via URL hash + route #/c, #/w deep links.
   useEffect(() => {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
-      setShowPhonetics(window.location.hash === "#/phonetics");
+      setShowExplore(window.location.hash === "#/explore");
       setShowClassic(window.location.hash === "#/classic");
       if (window.location.hash === "#/sentence") {
         setSearchMode("sentence");
@@ -123,7 +150,6 @@ export function App() {
       }
       if (window.location.hash !== "#/review") {
         setReviewLaunched(null);
-        setClusterActive(false);
       }
       const entry = parseHash();
       if (entry) {
@@ -135,13 +161,13 @@ export function App() {
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, [openFromHash, setShowReview, setShowPhonetics, setShowClassic, setSearchMode]);
+  }, [openFromHash, setShowReview, setShowExplore, setShowClassic, setSearchMode]);
 
   const closeHashPage = (target: string) => {
     if (window.location.hash === target) history.back();
     else {
       if (target === "#/review") setShowReview(false);
-      if (target === "#/phonetics") setShowPhonetics(false);
+      if (target === "#/explore") setShowExplore(false);
       if (target === "#/classic") setShowClassic(false);
     }
   };
@@ -296,6 +322,15 @@ export function App() {
   const top = stack[stack.length - 1];
   const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
 
+  // Reading a saved item's sheet counts as a partial repetition
+  // (v108): a small capped schedule credit, throttled to once per
+  // item per day — browsing is study, just not a full answer.
+  useEffect(() => {
+    if (!top || top.view === "tree") return;
+    if (!saved.saved.has(top.key)) return;
+    creditPassiveView(top.key);
+  }, [top, saved.saved, creditPassiveView]);
+
   return (
     <AppStateProvider
       saved={{
@@ -324,10 +359,10 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v100"
+          version="chinese v110"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
-          phoneticsHref="#/phonetics"
+          exploreHref="#/explore"
           classicHref="#/classic"
           onShareWords={shareMyWords}
           wordCount={saved.savedList.length}
@@ -343,7 +378,7 @@ export function App() {
         </div>
       </header>
 
-      {showReview && !reviewLaunched && !clusterActive && (
+      {showReview && !reviewLaunched && (
         <ReviewLaunch
           totalDue={dueCards.length}
           facetCounts={{
@@ -352,18 +387,11 @@ export function App() {
               acc[f] = (acc[f] || 0) + 1;
               return acc;
             }, {}),
-            wordInference: Math.min(inferenceWords.length, 5),
+            wordInference: inferenceWords.length,
+            clusterRecall: clusters.length,
           }}
-          canCluster={saved.savedList.length >= 3}
           onStart={(s) => setReviewLaunched(s)}
-          onStartCluster={() => setClusterActive(true)}
           onClose={() => closeHashPage("#/review")}
-        />
-      )}
-      {showReview && clusterActive && (
-        <ClusterRecall
-          onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
-          onClose={() => setClusterActive(false)}
         />
       )}
       {showReview && reviewLaunched && (
@@ -371,7 +399,11 @@ export function App() {
           dueCards={dueCards}
           cards={reviewState.cards}
           inferenceWords={inferenceWords}
-          onInferenceCredit={(w) => creditInference(w)}
+          onInferenceResult={(w, gotIt) => {
+            markInferenceSeen(w);
+            recordInference(w, gotIt);
+          }}
+          clusters={clusters}
           phoneticComponents={phonetics.components}
           phoneticComponentsByChar={phonetics.byChar}
           enabledFacets={new Set(reviewLaunched.enabledFacets)}
@@ -379,15 +411,25 @@ export function App() {
           includeSubchars={reviewLaunched.includeSubchars}
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
-          onClose={() => closeHashPage("#/review")}
+          onClose={() => setReviewLaunched(null)}
         />
       )}
 
-      {showPhonetics && (
-        <PhoneticsPage
+      {showExplore && (
+        <ExplorePage
+          key={exploreFocus ? `${exploreFocus.kind}|${exploreFocus.key}` : "index"}
           components={phonetics.components}
+          componentsByChar={phonetics.byChar}
           ready={phonetics.ready}
-          onClose={() => closeHashPage("#/phonetics")}
+          initialFocus={exploreFocus}
+          onClose={() => {
+            setExploreFocus(null);
+            closeHashPage("#/explore");
+          }}
+          onOpenSheet={(kind, key) => {
+            if (kind === "word") void openWord(key);
+            else openChar(key);
+          }}
         />
       )}
 
@@ -395,6 +437,8 @@ export function App() {
         <ClassicPage
           data={classic.data}
           error={classic.error}
+          bookmarkIndex={classicProgress.index}
+          onAdvance={classicProgress.advanceTo}
           onOpenChar={openChar}
           onClose={() => closeHashPage("#/classic")}
         />
@@ -434,7 +478,11 @@ export function App() {
         />
       ) : (
         <main className="home" aria-label="Home">
-          <SavedShelf onOpenWord={(w) => void openWord(w)} onOpenChar={openChar} />
+          <SavedShelf
+            onOpenWord={(w) => void openWord(w)}
+            onOpenChar={openChar}
+            weakness={weakness}
+          />
         </main>
       )}
 
@@ -458,6 +506,11 @@ export function App() {
           onOpenWord={(w) => void openWord(w)}
           onOpenChar={openChar}
           onOpenTree={() => push({ ...top, view: "tree" })}
+          onExplore={(kind, key) => {
+            close();
+            setExploreFocus({ kind, key });
+            window.location.hash = "#/explore";
+          }}
         />
       )}
 

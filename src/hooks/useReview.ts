@@ -14,40 +14,35 @@ import { componentClosure } from "../lib/componentSearch";
 import { useReconcileTriggers } from "./useReconcileTriggers";
 
 const FSRS_KEY = "chinese.fsrs.v1";
-// Drills dropped from the launch screen (v85) — they can never be
-// enabled, so their rows must not load, seed, or sync back in. Legacy
-// rows may still exist in localStorage / Supabase from before the drop.
-const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound"]);
-const INTRODUCED_KEY = "chinese.fsrs.introducedToday";
+// Drills dropped from the launch screen (phoneticTap/componentSound
+// v85, familyTransfer v107) — they can never be enabled, so their rows
+// must not load, seed, or sync back in. Legacy rows may still exist in
+// localStorage / Supabase from before the drop.
+const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound", "familyTransfer"]);
 const CASCADE_CAP_DAYS = 7;
-// Re-fetch from Supabase on tab focus, but at most once per this window.
-// Daily cap on how many *new* (never-directly-reviewed) cards can surface
-// in a single calendar day. Resets at midnight (UTC). Brief recommends
-// 5–15 for sustainable language learning; user picked 25.
-export const DAILY_NEW_CAP = 25;
+// Passive-view credit (v108): opening a saved item's sheet counts a
+// LITTLE — half a Good's stability gain (the cascade damping), due
+// pushed at most this many days, reps untouched. Throttled to one
+// credit per item per day (persisted) so idle browsing can't
+// snowball a card's schedule.
+const PASSIVE_CAP_DAYS = 2;
+const PASSIVE_KEY = "chinese.passiveCredit";
 
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-interface IntroducedTodayPayload {
-  date: string;
-  ids: string[];
-}
-function loadIntroducedToday(): Set<string> {
+function loadPassiveLog(): Map<string, number> {
   try {
-    const raw = localStorage.getItem(INTRODUCED_KEY);
-    if (!raw) return new Set();
-    const p = JSON.parse(raw) as IntroducedTodayPayload;
-    if (p?.date === todayKey() && Array.isArray(p.ids)) return new Set(p.ids);
+    const raw = localStorage.getItem(PASSIVE_KEY);
+    if (!raw) return new Map();
+    const parsed = JSON.parse(raw) as { items?: [string, number][] };
+    const cutoff = Date.now() - 2 * 86400000;
+    return new Map((parsed.items ?? []).filter(([k, ts]) => k && ts > cutoff));
   } catch {
-    /* ignore */
+    return new Map();
   }
-  return new Set();
 }
-function persistIntroducedToday(ids: Set<string>) {
+
+function persistPassiveLog(log: Map<string, number>) {
   try {
-    localStorage.setItem(INTRODUCED_KEY, JSON.stringify({ date: todayKey(), ids: [...ids] }));
+    localStorage.setItem(PASSIVE_KEY, JSON.stringify({ items: [...log.entries()] }));
   } catch {
     /* ignore */
   }
@@ -128,7 +123,6 @@ export function useReview({
 }: UseReviewOpts) {
   const [cards, setCards] = useState<Map<string, ReviewCard>>(() => loadLocalCards());
   const [syncing, setSyncing] = useState(false);
-  const [introducedToday, setIntroducedToday] = useState<Set<string>>(() => loadIntroducedToday());
 
   // Synchronous mirror of `cards`. Every write goes through applyCards so
   // two grade() calls in the same tick (the combined recognition card
@@ -204,30 +198,6 @@ export function useReview({
         });
       }
     }
-    // familyTransfer: for each saved phonetic component, take up to two
-    // family members the user hasn't saved yet and seed transfer cards
-    // on them. Surfaces "you know 青, what's 情?" prompts. Cap is to
-    // avoid drowning the queue when the user has saved many components.
-    if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0) {
-      const FAMILY_PER_COMPONENT = 2;
-      for (const key of scheduledKeys) {
-        if ([...key].length !== 1) continue;
-        const comp = phoneticComponentsByChar.get(key);
-        if (!comp || !comp.family || comp.family.length === 0) continue;
-        let added = 0;
-        for (const fam of comp.family) {
-          if (added >= FAMILY_PER_COMPONENT) break;
-          if (!fam || fam === comp.char) continue;
-          if (scheduledKeys.has(fam)) continue; // user already has it
-          out.set(rowId(fam, "char", "familyTransfer"), {
-            itemKey: fam,
-            itemKind: "char",
-            facet: "familyTransfer",
-          });
-          added++;
-        }
-      }
-    }
     // production: any saved single-character item gets a Hanzi Writer
     // trace drill (opt-in on the launch screen). Was gated on the ✒
     // Wrote tier until v99 removed that status (ADR-0011). Multi-char
@@ -294,10 +264,7 @@ export function useReview({
             row.facet === "soundRecognition" ||
             row.facet === "reverseRecognition" ||
             row.facet === "clozeChar")) ||
-        (row.itemKind === "char" &&
-          (row.facet === "phoneticTap" ||
-            row.facet === "familyTransfer" ||
-            row.facet === "production")) ||
+        (row.itemKind === "char" && (row.facet === "phoneticTap" || row.facet === "production")) ||
         (row.itemKind === "component" &&
           (row.facet === "componentSound" || row.facet === "familySweep"));
       if (isAutoFacet && !expectedCards.has(id)) {
@@ -418,20 +385,16 @@ export function useReview({
 
   useReconcileTriggers(userId, reconcile);
 
-  // Due cards. Char + component cards before word cards (the brief: review
-  // sub-items in isolation occasionally), then oldest-due first. Daily
-  // cap of DAILY_NEW_CAP new (never-direct-reviewed) cards is applied
-  // here so the queue size doesn't explode when the user has many
-  // freshly-saved words.
+  // Due cards — EVERYTHING due, no daily cap (ADR-0012: the owner wants
+  // the whole backlog available; the v95 cap starved the v98 facets to
+  // zero once >25 new meaning/sound cards existed). Char + component
+  // cards before word cards; within word kind, meaning/sound before
+  // reverse/cloze; then oldest-due first.
   const dueCards = useMemo<ReviewCard[]>(() => {
     const now = new Date();
-    // Within word kind, meaning/sound sort before the v98 extras
-    // (reverse, cloze) so the extras only take daily-new slots after
-    // the primary recognition cards have taken theirs — a low-priority
-    // facet must never starve the main queue (BUG-6 lesson).
     const facetTier = (row: ReviewCard) =>
       row.facet === "reverseRecognition" || row.facet === "clozeChar" ? 1 : 0;
-    const ordered = [...cards.values()]
+    return [...cards.values()]
       .filter((row) => isDue(row.card, now))
       .sort((a, b) => {
         const ka = a.itemKind === "word" ? 1 : 0;
@@ -442,27 +405,7 @@ export function useReview({
         if (ta !== tb) return ta - tb;
         return a.dueAt - b.dueAt;
       });
-    // Already-introduced new cards count toward today's cap. Anything
-    // beyond the cap drops off; older / non-new cards stay. The cap only
-    // applies to word cards — its purpose is limiting new-WORD intros.
-    // Char/component drill cards sort ahead of words, so counting them
-    // here let never-reviewable seeds eat every slot and starve the
-    // actual word queue.
-    let newSlotsLeft = Math.max(0, DAILY_NEW_CAP - introducedToday.size);
-    const out: ReviewCard[] = [];
-    for (const row of ordered) {
-      const id = rowId(row.itemKey, row.itemKind, row.facet);
-      const isNew =
-        row.itemKind === "word" && (row.directReviews ?? 0) === 0 && (row.card.reps ?? 0) === 0;
-      const alreadyIntroduced = introducedToday.has(id);
-      if (isNew && !alreadyIntroduced) {
-        if (newSlotsLeft <= 0) continue;
-        newSlotsLeft--;
-      }
-      out.push(row);
-    }
-    return out;
-  }, [cards, introducedToday]);
+  }, [cards]);
 
   // Helper to upsert a batch of changed rows to Supabase.
   const remoteUpsert = (rows: ReviewCard[]) => {
@@ -501,7 +444,7 @@ export function useReview({
 
   // Damped Good credit for every char/component reachable from
   // itemKey. Mutates `next` in place; returns the changed rows. Shared
-  // by grade() (word Good/Easy) and creditInference() (correct guess
+  // by grade() (word Good/Easy) and recordInference() (correct guess
   // on an unsaved inference word).
   const cascadeToClosure = (itemKey: string, next: Map<string, ReviewCard>, now: Date) => {
     const changed: ReviewCard[] = [];
@@ -542,10 +485,31 @@ export function useReview({
     return changed;
   };
 
-  // "Got it" on a new-word inference card: the word has no FSRS row of
-  // its own — credit the constituent chars, exactly like a word Good.
-  const creditInference = useCallback(
-    (itemKey: string) => {
+  // Outcome of a new-word inference card. The word has no FSRS row of
+  // its own: a correct guess credits the constituent chars exactly like
+  // a word Good; either way the outcome is logged under the
+  // wordInference facet (prev_card null) — useWordInference reads those
+  // rows back so answered words stay out of the pool across devices.
+  const recordInference = useCallback(
+    (itemKey: string, gotIt: boolean) => {
+      if (userId) {
+        void supabase
+          .from("user_review_log")
+          .insert({
+            user_id: userId,
+            item_key: itemKey,
+            item_kind: "word",
+            facet: "wordInference",
+            rating: gotIt ? "Good" : "Again",
+            prev_card: null,
+          })
+          .then(({ error }) => {
+            if (error && !/relation .*user_review_log.*does not exist/i.test(error.message || "")) {
+              console.warn("inference log insert failed:", error);
+            }
+          });
+      }
+      if (!gotIt) return;
       const now = new Date();
       const next = new Map(cardsRef.current);
       const changed = cascadeToClosure(itemKey, next, now);
@@ -555,6 +519,45 @@ export function useReview({
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [userId, chars, applyCards],
+  );
+
+  // Reading through a saved item on the main page counts as a partial
+  // repetition (owner request, v108) — NOT a full grade: no rep is
+  // recorded and the schedule moves at most PASSIVE_CAP_DAYS out, so
+  // the card still comes back soon to be answered properly.
+  const passiveLogRef = useRef<Map<string, number> | null>(null);
+  const creditPassiveView = useCallback(
+    (itemKey: string) => {
+      if (passiveLogRef.current === null) passiveLogRef.current = loadPassiveLog();
+      const log = passiveLogRef.current;
+      const now = new Date();
+      if (now.getTime() - (log.get(itemKey) ?? 0) < 86400000) return;
+      const next = new Map(cardsRef.current);
+      const changed: ReviewCard[] = [];
+      for (const kind of ["word", "char"] as ItemKind[]) {
+        for (const facet of ["meaningRecognition", "soundRecognition"] as Facet[]) {
+          const id = rowId(itemKey, kind, facet);
+          const row = next.get(id);
+          if (!row) continue;
+          const newCard = applyCascadeCredit(row.card, PASSIVE_CAP_DAYS, now);
+          const newRow: ReviewCard = {
+            ...row,
+            card: newCard,
+            dueAt: new Date(newCard.due).getTime(),
+            cascadeReviews: (row.cascadeReviews ?? 0) + 1,
+          };
+          next.set(id, newRow);
+          changed.push(newRow);
+        }
+      }
+      if (changed.length === 0) return;
+      log.set(itemKey, now.getTime());
+      persistPassiveLog(log);
+      applyCards(next);
+      remoteUpsert(changed);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, applyCards],
   );
 
   // Apply a grade to one card. On Good/Easy on the MEANING facet, also
@@ -574,12 +577,25 @@ export function useReview({
       const now = new Date();
       const parentId = rowId(itemKey, kind, facet);
       const prev = cardsRef.current;
-      const parentRow = prev.get(parentId);
-      if (!parentRow) return;
-      const parentWasNew =
-        kind === FIRST_KIND &&
-        (parentRow.directReviews ?? 0) === 0 &&
-        (parentRow.card.reps ?? 0) === 0;
+      let parentRow = prev.get(parentId);
+      if (!parentRow) {
+        // The recognition card grades meaning AND sound (v105) — items
+        // that historically only had a meaning row (cascade-seeded
+        // chars) get the missing recognition sibling seeded on demand
+        // instead of dropping the grade.
+        if (facet !== "meaningRecognition" && facet !== "soundRecognition") return;
+        const seeded = seedCard(now);
+        parentRow = {
+          itemKey,
+          itemKind: kind,
+          facet,
+          card: seeded,
+          dueAt: new Date(seeded.due).getTime(),
+          lastReviewAt: null,
+          directReviews: 0,
+          cascadeReviews: 0,
+        };
+      }
       const next = new Map(prev);
       const changed: ReviewCard[] = [];
 
@@ -604,16 +620,6 @@ export function useReview({
       }
 
       applyCards(next);
-
-      if (parentWasNew) {
-        setIntroducedToday((p) => {
-          if (p.has(parentId)) return p;
-          const n = new Set(p);
-          n.add(parentId);
-          persistIntroducedToday(n);
-          return n;
-        });
-      }
       remoteUpsert(changed);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -665,7 +671,8 @@ export function useReview({
     dueCards,
     grade,
     attributeFailure,
-    creditInference,
+    recordInference,
+    creditPassiveView,
     syncing,
   };
 }

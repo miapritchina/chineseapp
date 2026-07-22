@@ -3,6 +3,7 @@ import type { RatingName } from "../lib/fsrs";
 import { speak, stopSpeech } from "../lib/speech";
 import { pickReverseOptions } from "../lib/drillGen";
 import { Entity } from "./Entity";
+import { useCharsCtx } from "../state/contexts";
 
 interface Props {
   answer: string;
@@ -12,10 +13,19 @@ interface Props {
   onGrade: (rating: RatingName) => void;
 }
 
-// Drill 2: gloss → pick the hanzi. Distractors prefer saved words
-// sharing a character with the answer.
+// Drill 2: gloss → pick the hanzi. Distractors are scored to be
+// confusable: shared character > same length > shared component.
 export function ReverseRecognitionCard({ answer, gloss, savedWords, onGrade }: Props) {
-  const [options] = useState(() => pickReverseOptions(answer, savedWords));
+  const { chars } = useCharsCtx();
+  const [options] = useState(() =>
+    pickReverseOptions(
+      answer,
+      savedWords,
+      4,
+      Math.random,
+      (c) => chars?.[c]?.components?.map((p) => p.char) ?? [],
+    ),
+  );
   const [picked, setPicked] = useState<string | null>(null);
   const isCorrect = picked !== null && picked === answer;
 

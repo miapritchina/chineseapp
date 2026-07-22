@@ -4,9 +4,9 @@ Mobile-first web app for learning Chinese characters — search,
 decomposition tree, four-tier status model, FSRS-scheduled review.
 Live at https://decobots.github.io/chineseapp/.
 
-One app, three surfaces: a React main UI at `/`, plus Cytoscape views
-at `/network/` (word-graph of the saved set) and `/components/`
-(vocabulary-structure graph).
+One React app: search, saved-words shelf, SRS review drills, the
+Explore browser (words ↔ characters ↔ components), a 三字经 reader,
+and a sentence composer.
 
 ## Stack
 
@@ -14,7 +14,6 @@ at `/network/` (word-graph of the saved set) and `/components/`
 - Supabase (Postgres + RLS) for dictionary + user-private state
 - `ts-fsrs` for spaced-repetition scheduling
 - `hanzi-writer` (CDN) for stroke animation + production drills
-- Cytoscape.js for the `/network/` and `/components/` views
 
 ## Quick start
 
@@ -42,8 +41,8 @@ The project's documentation lives in two places:
 ## Deployment
 
 Pushing to `claude/main` (default branch) triggers
-`.github/workflows/pages.yml`. It builds Vite, copies the static
-network/components pages, and publishes to GitHub Pages. Supabase
+`.github/workflows/pages.yml`. It builds Vite + Storybook and
+publishes to GitHub Pages. Supabase
 migrations apply automatically on pushes that touch
 `supabase/migrations/**`.
 

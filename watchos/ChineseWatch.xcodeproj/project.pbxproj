@@ -6,19 +6,61 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		05F6A86CE2DA2BF1E5256522 /* ChineseWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CW00000000000000000000A1 /* ChineseWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D897BABD64D22C3F4AED2344 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D086618E442ACE2E45C6980C /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E238C98B630F2213AE05E69E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CW00000000000000000000F0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CW00000000000000000000E1;
+			remoteInfo = "ChineseWatch Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F55633232F9470D319C3551A /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				05F6A86CE2DA2BF1E5256522 /* ChineseWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		10B35CD1FC022E371ECD898E /* ChineseWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChineseWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8A603FCDA24E7FE99E0E12D6 /* iOSApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		CW00000000000000000000A1 /* ChineseWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ChineseWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D086618E442ACE2E45C6980C /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		DA94D469701C61801183CC82 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CW00000000000000000000B1 /* ChineseWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = "ChineseWatch Watch App";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		71D37F1F32541014B6A6D63C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CW00000000000000000000C1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -29,11 +71,31 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		502309DF4B08F007DDD3DAE5 /* ChineseWatch iOS App */ = {
+			isa = PBXGroup;
+			children = (
+				8A603FCDA24E7FE99E0E12D6 /* iOSApp.swift */,
+				D086618E442ACE2E45C6980C /* Assets.xcassets */,
+			);
+			name = "ChineseWatch iOS App";
+			path = "ChineseWatch iOS App";
+			sourceTree = "<group>";
+		};
+		9CD4866D4B2A19B66F13B435 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				DA94D469701C61801183CC82 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
 		CW00000000000000000000D1 = {
 			isa = PBXGroup;
 			children = (
 				CW00000000000000000000B1 /* ChineseWatch Watch App */,
 				CW00000000000000000000D2 /* Products */,
+				DEB8E1E11FC0E49A3440E9C7 /* Frameworks */,
+				502309DF4B08F007DDD3DAE5 /* ChineseWatch iOS App */,
 			);
 			sourceTree = "<group>";
 		};
@@ -41,8 +103,17 @@
 			isa = PBXGroup;
 			children = (
 				CW00000000000000000000A1 /* ChineseWatch Watch App.app */,
+				10B35CD1FC022E371ECD898E /* ChineseWatch.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DEB8E1E11FC0E49A3440E9C7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9CD4866D4B2A19B66F13B435 /* iOS */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -64,11 +135,26 @@
 				CW00000000000000000000B1 /* ChineseWatch Watch App */,
 			);
 			name = "ChineseWatch Watch App";
-			packageProductDependencies = (
-			);
 			productName = "ChineseWatch Watch App";
 			productReference = CW00000000000000000000A1 /* ChineseWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		EB53911915D0E480D4194A7A /* ChineseWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8C4F12740053E08EF0E347D5 /* Build configuration list for PBXNativeTarget "ChineseWatch" */;
+			buildPhases = (
+				3C28524D871EF83CF7515184 /* Resources */,
+				F55633232F9470D319C3551A /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C94CFFE8017DC7DE03976D5E /* PBXTargetDependency */,
+			);
+			name = ChineseWatch;
+			productName = ChineseWatch;
+			productReference = 10B35CD1FC022E371ECD898E /* ChineseWatch.app */;
+			productType = "com.apple.product-type.application.watchapp2-container";
 		};
 /* End PBXNativeTarget section */
 
@@ -78,7 +164,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					CW00000000000000000000E1 = {
 						CreatedOnToolsVersion = 16.0;
@@ -100,11 +186,20 @@
 			projectRoot = "";
 			targets = (
 				CW00000000000000000000E1 /* ChineseWatch Watch App */,
+				EB53911915D0E480D4194A7A /* ChineseWatch */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3C28524D871EF83CF7515184 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D897BABD64D22C3F4AED2344 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CW00000000000000000000C3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +210,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		91A1F56AA8D3216A6290CF5A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CW00000000000000000000C2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +226,77 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		C94CFFE8017DC7DE03976D5E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "ChineseWatch Watch App";
+			target = CW00000000000000000000E1 /* ChineseWatch Watch App */;
+			targetProxy = E238C98B630F2213AE05E69E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		0D94489C42EFE9A9B9B4BE65 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 9Z26RCYSWA;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Chinese;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.decobots.chineseapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		9C4045EB68B17D6796B54394 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 9Z26RCYSWA;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Chinese;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.decobots.chineseapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		CW0000000000000000000101 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -160,6 +332,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -182,6 +355,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
@@ -223,6 +397,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -238,6 +413,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
@@ -249,11 +425,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ChineseWatch Watch App/ChineseWatch Watch App.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Chinese;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Experimental: shows your latest heart rate while the app is open. Not used by the learning features.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "The app never writes health data. This string is required because it links HealthKit to read your latest heart rate (experimental).";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -261,8 +442,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "io.github.decobots.chineseapp.watchkitapp";
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.decobots.chineseapp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -274,11 +457,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ChineseWatch Watch App/ChineseWatch Watch App.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 9Z26RCYSWA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Chinese;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Experimental: shows your latest heart rate while the app is open. Not used by the learning features.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "The app never writes health data. This string is required because it links HealthKit to read your latest heart rate (experimental).";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -286,8 +474,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "io.github.decobots.chineseapp.watchkitapp";
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.decobots.chineseapp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -297,6 +487,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		8C4F12740053E08EF0E347D5 /* Build configuration list for PBXNativeTarget "ChineseWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D94489C42EFE9A9B9B4BE65 /* Release */,
+				9C4045EB68B17D6796B54394 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CW00000000000000000000F1 /* Build configuration list for PBXNativeTarget "ChineseWatch Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

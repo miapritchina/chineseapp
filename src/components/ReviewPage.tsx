@@ -7,7 +7,7 @@ import { DrillShell } from "./ui/DrillShell";
 import type { Facet, ItemKind } from "../hooks/useReview";
 import type { RatingName } from "../lib/fsrs";
 import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
-import { FamilyTransferCard } from "./FamilyTransferCard";
+import { ClusterRecallCard } from "./ClusterRecallCard";
 import { ProductionCard } from "./ProductionCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { WordInferenceCard } from "./WordInferenceCard";
@@ -15,12 +15,17 @@ import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
+import { interleaveByActivity } from "../lib/drillGen";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
 
-// Session quota for drill-1 inference words — a garnish, not the meal.
-const INFERENCE_PER_SESSION = 5;
-// Placeholder FSRS state for the synthetic (non-FSRS) inference rows.
+// UI-side session size (v107): grading is per-card, so this changes
+// nothing about scheduling — it just gives a session a comfortable
+// visible end. Retries of Again-graded cards stay in regardless.
+const SESSION_LIMIT = 25;
+
+// Placeholder FSRS state for the synthetic (non-FSRS) inference and
+// cluster rows.
 const INFERENCE_CARD = {
   due: new Date(0).toISOString(),
   stability: 0,
@@ -41,10 +46,14 @@ interface Props {
   onGrade: (itemKey: string, rating: RatingName, kind?: ItemKind, facet?: Facet) => void;
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
-  // Drill 1: pool of unsaved words made of known chars + the cascade
-  // credit callback for a correct guess.
+  // Drill 1: pool of unsaved words made of known chars. Both outcomes
+  // report up — correct cascades credit, and either way the word is
+  // marked done so it stays out of the pool across sessions.
   inferenceWords?: Word[];
-  onInferenceCredit?: (word: string) => void;
+  onInferenceResult?: (word: string, gotIt: boolean) => void;
+  // Cluster recall (v107): pre-built clusters of related saved words;
+  // each becomes one synthetic card in the queue.
+  clusters?: string[][];
   phoneticComponents?: PhoneticComponent[];
   phoneticComponentsByChar?: Map<string, PhoneticComponent>;
   // From the launch screen. If absent, all facets are enabled.
@@ -60,7 +69,7 @@ function rid(c: ReviewCard) {
   return `${c.itemKind}|${c.facet}|${c.itemKey}`;
 }
 
-// Recognition / family-transfer / production surface. Drains the queue
+// Recognition / drill / production surface. Drains the queue
 // in dueCards[0] order; the just-graded card drops out naturally via
 // useReview's dueCards memo (its due_at moves into the future). Per-
 // session state — disambig-shown set, manual-skip set — is local.
@@ -71,7 +80,8 @@ export function ReviewPage({
   onAttributeFailure,
   onClose,
   inferenceWords,
-  onInferenceCredit,
+  onInferenceResult,
+  clusters,
   phoneticComponents,
   phoneticComponentsByChar,
   enabledFacets,
@@ -86,6 +96,10 @@ export function ReviewPage({
   // Cards the user has explicitly skipped this session; filtered out of
   // the visible queue so they don't keep surfacing.
   const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
+  // Cards graded Again this session: they re-enter at the END of the
+  // queue and keep coming back until answered without Again — "a word
+  // is repeated when it is repeated, not when the session finishes".
+  const [retries, setRetries] = useState<ReviewCard[]>([]);
   // Disambig already shown this session (one-shot per key).
   const [disambigSeen, setDisambigSeen] = useState<Set<string>>(() => new Set());
   // Cluster members forced into the queue this session by an active
@@ -173,12 +187,12 @@ export function ReviewPage({
       seen.add(rid(row));
     }
   }
-  // Drill-1 inference words: session-only synthetic rows, appended at
-  // the end of the queue (they have no FSRS state; grading routes to
-  // onInferenceCredit instead of onGrade).
+  // Drill-1 inference words: synthetic rows appended at the end of the
+  // queue (they have no FSRS state; grading routes to onInferenceResult
+  // instead of onGrade).
   const inferenceRows: ReviewCard[] = [];
   if ((!enabledFacets || enabledFacets.has("wordInference")) && inferenceWords) {
-    for (const w of inferenceWords.slice(0, INFERENCE_PER_SESSION)) {
+    for (const w of inferenceWords) {
       const row: ReviewCard = {
         itemKey: w.word,
         itemKind: "word",
@@ -190,9 +204,49 @@ export function ReviewPage({
       if (!skipped.has(rid(row))) inferenceRows.push(row);
     }
   }
+  // Cluster recall (v107): one synthetic row per cluster of related
+  // saved words. Grading applies to every member's recognition rows.
+  const clusterRows: ReviewCard[] = [];
+  if ((!enabledFacets || enabledFacets.has("clusterRecall")) && clusters) {
+    for (const cluster of clusters) {
+      const row: ReviewCard = {
+        itemKey: cluster.join("+"),
+        itemKind: "word",
+        facet: "clusterRecall",
+        card: INFERENCE_CARD,
+        dueAt: 0,
+        lastReviewAt: null,
+      };
+      if (!skipped.has(rid(row))) clusterRows.push(row);
+    }
+  }
+
+  // Retry copies: Again-graded cards whose FSRS row already left
+  // dueCards (due moved out) come back at the end of the session queue.
+  const liveIds = new Set(
+    [...promotedRows, ...dedupedFiltered, ...inferenceRows, ...clusterRows].map(rid),
+  );
+  const retryRows = retries.filter((r) => !liveIds.has(rid(r)) && !skipped.has(rid(r)));
 
   // Promoted cards prepend the queue (right after the current leech card).
-  const combined = [...promotedRows, ...dedupedFiltered, ...inferenceRows];
+  // Mix activity types by default (v106): round-robin across drill
+  // groups, most-overdue first within each — NOT a shuffle. The
+  // Shuffle toggle still randomizes fully via the position map below.
+  const mixed = randomOrder
+    ? [...dedupedFiltered, ...inferenceRows, ...clusterRows]
+    : interleaveByActivity([...dedupedFiltered, ...inferenceRows, ...clusterRows]);
+
+  // Freeze the session to the first SESSION_LIMIT cards seen (v107).
+  // Cards that leave the set (graded/skipped) are done; nothing refills
+  // behind them, so the session actually ends. Retries stay eligible.
+  const sessionRidsRef = useRef<Set<string> | null>(null);
+  if (sessionRidsRef.current === null && mixed.length > 0) {
+    sessionRidsRef.current = new Set(mixed.slice(0, SESSION_LIMIT).map(rid));
+  }
+  const sessionRows = sessionRidsRef.current
+    ? mixed.filter((r) => sessionRidsRef.current!.has(rid(r)))
+    : mixed;
+  const combined = [...promotedRows, ...sessionRows, ...retryRows];
 
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
@@ -239,12 +293,38 @@ export function ReviewPage({
     void ensureCached(window);
   }, [current?.itemKey, ensureCached, queue]);
 
+  // Warm stroke data for upcoming Writing cards — HanziWriter fetches
+  // per-char JSON from the CDN when the card mounts, a visible
+  // multi-second wait on a phone (BUG-15). Prefetching lands it in the
+  // service-worker/HTTP cache so the quiz paints instantly.
+  const strokeWarmedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!current) return;
+    for (const c of queue.slice(0, 8)) {
+      if (c.facet !== "production" || strokeWarmedRef.current.has(c.itemKey)) continue;
+      strokeWarmedRef.current.add(c.itemKey);
+      try {
+        void Promise.resolve(window.HanziWriter?.loadCharacterData?.(c.itemKey)).catch(() => {});
+      } catch {
+        /* no HanziWriter global — the card falls back on its own */
+      }
+    }
+  }, [current?.itemKey, queue]);
+
   const advanceWithoutGrading = useCallback((c: ReviewCard) => {
     setSkipped((prev) => {
       const k = rid(c);
       if (prev.has(k)) return prev;
       const n = new Set(prev);
       n.add(k);
+      // The combined card fronts BOTH recognition rows — skip the
+      // sibling facet too, or it surfaces as its own card once the
+      // meaning row leaves the queue.
+      if (c.facet === "meaningRecognition" || c.facet === "recognition") {
+        n.add(rid({ ...c, facet: "soundRecognition" as Facet }));
+      } else if (c.facet === "soundRecognition") {
+        n.add(rid({ ...c, facet: "meaningRecognition" as Facet }));
+      }
       return n;
     });
     setDoneCount((n) => n + 1);
@@ -272,14 +352,27 @@ export function ReviewPage({
     [onAttributeFailure, onGradedAdvance],
   );
 
+  // Again → the card re-enters the session queue at the end (fresh
+  // position); any other grade clears its pending retry.
+  const trackRetry = useCallback((row: ReviewCard, rating: RatingName) => {
+    const id = rid(row);
+    if (rating === "Again") {
+      positionRef.current.delete(id);
+      setRetries((prev) => (prev.some((r) => rid(r) === id) ? prev : [...prev, row]));
+    } else {
+      setRetries((prev) => prev.filter((r) => rid(r) !== id));
+    }
+  }, []);
+
   const handleDrillGrade = useCallback(
     (rating: RatingName) => {
       if (!current) return;
       const cur = current;
       onGrade(cur.itemKey, rating, cur.itemKind, cur.facet);
+      trackRetry(cur, rating);
       onGradedAdvance();
     },
-    [current, onGrade, onGradedAdvance],
+    [current, onGrade, onGradedAdvance, trackRetry],
   );
 
   const handleSkipCurrent = useCallback(() => {
@@ -309,7 +402,12 @@ export function ReviewPage({
   if (cluster && (current.card.lapses ?? 0) >= LEECH_LAPSES && !disambigSeen.has(current.itemKey)) {
     return (
       <div className="review-root">
-        <PageHeader onBack={onClose} tag="Confusable" progress={`${progressIndex} / ${total}`} />
+        <PageHeader
+          onBack={onClose}
+          tag="Confusable"
+          progress={`${progressIndex} / ${total}`}
+          onSkip={handleSkipCurrent}
+        />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <DisambiguationCard
@@ -332,7 +430,6 @@ export function ReviewPage({
                 return n;
               });
             }}
-            onSkip={handleSkipCurrent}
           />
         </div>
       </div>
@@ -364,11 +461,20 @@ export function ReviewPage({
           <WordInferenceCard
             key={rid(current)}
             word={word}
+            glossPool={[
+              ...(inferenceWords ?? [])
+                .filter((w) => w.word !== current.itemKey)
+                .map((w) => (w.definitions || []).slice(0, 2).join("; ")),
+              ...savedWords.map((w) => findWord(w)?.definitions?.[0] ?? ""),
+            ].filter(Boolean)}
             onGotIt={() => {
-              onInferenceCredit?.(current.itemKey);
+              onInferenceResult?.(current.itemKey, true);
               advanceWithoutGrading(current);
             }}
-            onMissed={() => advanceWithoutGrading(current)}
+            onMissed={() => {
+              onInferenceResult?.(current.itemKey, false);
+              advanceWithoutGrading(current);
+            }}
           />
         )}
       </DrillShell>
@@ -461,7 +567,12 @@ export function ReviewPage({
     }
     return (
       <div className="review-root">
-        <PageHeader onBack={onClose} tag="Write" progress={`${progressIndex} / ${total}`} />
+        <PageHeader
+          onBack={onClose}
+          tag="Write"
+          progress={`${progressIndex} / ${total}`}
+          onSkip={handleSkipCurrent}
+        />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <ProductionCard
@@ -469,96 +580,59 @@ export function ReviewPage({
             char={current.itemKey}
             charData={cd}
             onGrade={handleDrillGrade}
-            onSkip={handleSkipCurrent}
           />
         </div>
       </div>
     );
   }
 
-  // Family-transfer drill: "you know 青, what about 情?" Picks the
-  // component for the prompt by walking phoneticComponentsByChar to find
-  // any saved component whose family includes this card's itemKey.
-  if (current.facet === "familyTransfer") {
-    const cd = chars?.[current.itemKey];
-    if (!phoneticComponents || !phoneticComponentsByChar || !cd) {
-      return (
-        <DrillShell
-          tag="Family"
-          onClose={onClose}
-          progressIndex={progressIndex}
-          total={total}
-          onSkip={handleSkipCurrent}
-        >
-          <div className="review-empty-hint">Loading family data…</div>
-        </DrillShell>
-      );
-    }
-    const componentEntry =
-      phoneticComponents.find((p) => p.family.includes(current.itemKey)) ?? null;
-    if (!componentEntry) {
-      return (
-        <DrillShell
-          tag="Family"
-          onClose={onClose}
-          progressIndex={progressIndex}
-          total={total}
-          onSkip={handleSkipCurrent}
-        >
-          <div className="review-empty-hint">
-            No phonetic component found for {current.itemKey}. Tap Skip.
-          </div>
-        </DrillShell>
-      );
-    }
+  // Cluster recall (v107): one synthetic card per group of related
+  // saved words; one grade applies to every member's recognition rows.
+  if (current.facet === "clusterRecall") {
+    const clusterWords = current.itemKey.split("+");
     return (
       <DrillShell
-        tag="Family"
+        tag="Cluster"
         onClose={onClose}
         progressIndex={progressIndex}
         total={total}
         onSkip={handleSkipCurrent}
       >
-        <FamilyTransferCard
+        <ClusterRecallCard
           key={rid(current)}
-          familyMember={current.itemKey}
-          charData={cd}
-          componentEntry={componentEntry}
-          pool={phoneticComponents}
-          onGrade={handleDrillGrade}
+          cluster={clusterWords}
+          onGraded={(rating) => {
+            for (const w of clusterWords) {
+              onGrade(w, rating, "word", "meaningRecognition");
+              onGrade(w, rating, "word", "soundRecognition");
+            }
+            advanceWithoutGrading(current);
+          }}
         />
       </DrillShell>
     );
   }
 
-  // Default = combined recognition card (v71). Both meaning + sound
-  // facets surface together; user grades each separately, then taps
-  // anywhere to advance. The other facet's card (if also in dueCards)
-  // is dropped from the queue when this one is graded — useReview's
-  // dueCards memo re-derives both rows out of due in one go.
-  const meaningId = `${current.itemKind}|meaningRecognition|${current.itemKey}`;
-  const soundId = `${current.itemKind}|soundRecognition|${current.itemKey}`;
-  const hasMeaningCard =
-    !!cards?.has(meaningId) ||
-    current.facet === "meaningRecognition" ||
-    current.facet === "recognition";
-  const hasSoundCard = !!cards?.has(soundId) || current.facet === "soundRecognition";
-
-  const handleCombinedGrade = (
-    rating: RatingName,
-    facet: "meaningRecognition" | "soundRecognition",
-  ) => {
-    onGrade(current.itemKey, rating, current.itemKind, facet);
+  // Default = recognition card. ONE card, TWO answers (v105): meaning
+  // and sound are graded separately on the same reveal, each applied
+  // to its own FSRS row. Again on EITHER dimension re-queues the card
+  // for this session.
+  const handleCombinedGraded = (meaning: RatingName, sound: RatingName) => {
+    onGrade(current.itemKey, meaning, current.itemKind, "meaningRecognition");
+    onGrade(current.itemKey, sound, current.itemKind, "soundRecognition");
+    const worst: RatingName = meaning === "Again" || sound === "Again" ? "Again" : meaning;
+    trackRetry(current, worst);
     if (
-      rating === "Again" &&
+      worst === "Again" &&
       current.itemKind === "word" &&
       [...current.itemKey].length > 1 &&
       onAttributeFailure
     ) {
-      // Mirror v57's "what threw you?" affordance for word Again grades.
+      // v57's "what threw you?" affordance for word Again grades.
       setAttribTarget(current.itemKey);
       return;
     }
+    onGradedAdvance();
   };
 
   return (
@@ -567,6 +641,7 @@ export function ReviewPage({
         onBack={onClose}
         tag={current.itemKind === "word" ? "Word" : "Character"}
         progress={`${progressIndex} / ${total}`}
+        onSkip={handleSkipCurrent}
       />
       <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">
@@ -591,16 +666,12 @@ export function ReviewPage({
           </div>
         ) : (
           <CombinedRecognitionCard
-            key={current.itemKey}
+            key={rid(current)}
             itemKey={current.itemKey}
             itemKind={current.itemKind}
             word={word}
             charData={charData}
-            hasMeaningCard={hasMeaningCard}
-            hasSoundCard={hasSoundCard}
-            onGradeMeaning={(r) => handleCombinedGrade(r, "meaningRecognition")}
-            onGradeSound={(r) => handleCombinedGrade(r, "soundRecognition")}
-            onSkip={handleSkipCurrent}
+            onGraded={handleCombinedGraded}
           />
         )}
       </div>

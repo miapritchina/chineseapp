@@ -704,6 +704,46 @@ body {
   gap: 12px;
   margin-top: 10px;
 }
+.inference-hanzi {
+  font-size: calc(var(--hanzi-hero, 120px) * 0.8);
+  line-height: 1.1;
+}
+.inference-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, 100%);
+}
+.inference-option {
+  font: inherit;
+  font-size: var(--body, 15px);
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.inference-option.is-correct {
+  border-color: var(--feedback-correct, var(--grade-good));
+  box-shadow: 0 0 0 1px var(--grade-good);
+}
+.inference-option.is-wrong {
+  border-color: var(--grade-again);
+  box-shadow: 0 0 0 1px var(--grade-again);
+}
+.inference-option.is-reveal {
+  border-color: var(--grade-easy);
+  box-shadow: 0 0 0 1px var(--grade-easy);
+}
+.inference-option:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.inference-breakdown {
+  margin-top: 6px;
+}
 .reverse-gloss {
   font-size: var(--heading-2, 17px);
   text-align: center;
@@ -715,7 +755,13 @@ body {
   justify-content: center;
 }
 .reverse-pick {
-  min-width: 72px;
+  min-width: 108px;
+}
+/* Picking hanzi is the whole task — show them at card size, not chip
+   size (owner request, v105). Doubled selector to outrank .entity-sm,
+   which sets the same variable later in the sheet. */
+.entity.reverse-pick {
+  --entity-hanzi-size: var(--hanzi-large);
 }
 .cloze-word {
   font-size: calc(var(--hanzi-large, 56px));
@@ -727,12 +773,25 @@ body {
   color: var(--muted);
 }
 .cloze-solved {
-  color: var(--accent);
+  /* Green, not the vermillion accent — the filled-in character is the
+     correct answer, and red read as "you got it wrong" (owner). */
+  color: var(--grade-good);
 }
 .sweep-grid {
   flex-wrap: wrap;
   justify-content: center;
-  max-width: 340px;
+  max-width: 380px;
+}
+/* v106 size pass: glyphs the user must pick or compare need reading
+   size, not chip size (owner: sweep tiles "too small to be
+   comfortable"). Doubled selectors outrank the per-size Entity rules
+   that set the same variable later in the sheet. */
+.entity.phonetic-tap-pick {
+  --entity-hanzi-size: var(--hanzi-large);
+}
+.cluster-grid .entity,
+.disambig-grid .entity {
+  --entity-hanzi-size: var(--hanzi-medium);
 }
 .sweep-confirm {
   margin-top: 10px;
@@ -761,32 +820,68 @@ body {
   margin-bottom: 2px;
 }
 .classic-couplet {
-  margin-bottom: 22px;
-  /* 178 couplets × 6 cards — let the browser skip offscreen work. */
+  margin-bottom: 26px;
+  padding-left: 10px;
+  border-left: 2px solid transparent;
+  /* 178 couplets — let the browser skip offscreen work. */
   content-visibility: auto;
-  contain-intrinsic-size: auto 190px;
+  contain-intrinsic-size: auto 210px;
 }
-.classic-line {
+.classic-couplet.is-bookmark {
+  border-left-color: var(--accent);
+}
+.classic-num {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: var(--caption, 12px);
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.classic-phrases {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
 }
-.classic-line .entity {
-  flex: 1;
-  max-width: 118px;
+.classic-phrase {
+  display: flex;
+  gap: 6px;
+  justify-content: space-around;
+  flex: 1 1 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px;
 }
-.entity.classic-known {
-  border-color: var(--status-learned);
-  box-shadow: 0 0 0 1px var(--status-learned);
+.classic-glyph {
+  color: var(--muted);
 }
-.entity.classic-unknown {
-  opacity: 0.82;
+.classic-glyph.is-known {
+  color: var(--status-learned);
 }
-.classic-en {
+.classic-continue {
+  margin: 8px 18px 0;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: var(--caption, 12px);
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.classic-mod {
   font-size: var(--body, 15px);
+  color: var(--text);
+  line-height: 1.45;
+}
+.classic-giles {
+  font-size: var(--caption, 12px);
+  font-style: italic;
   color: var(--muted);
   line-height: 1.4;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .classic-source {
   font-size: var(--caption, 12px);
@@ -877,6 +972,125 @@ body {
   grid-column: 4;
   display: flex;
   align-items: center;
+}
+
+/* Explore page (v109) — one browsing surface replacing the Network,
+   Components, and Phonetics pages. See docs/product/explore-page.md. */
+.explore-row {
+  cursor: pointer;
+}
+.explore-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px calc(24px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.explore-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 2px 4px 12px;
+}
+.explore-trail {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 14px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: none;
+}
+.explore-crumb {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 3px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.explore-crumb.is-current {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.explore-crumb + .explore-crumb::before {
+  content: "";
+}
+.explore-focus {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 8px 0 16px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.explore-focus-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+}
+.explore-focus-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.explore-focus-pinyin {
+  font-size: var(--body);
+  color: var(--muted);
+}
+.explore-focus-gloss {
+  font-size: var(--body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.explore-focus-status {
+  flex: none;
+}
+.explore-section {
+  margin-bottom: 18px;
+}
+.explore-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.explore-empty {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.explore-badge {
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  margin-top: 2px;
+}
+.explore-badge.is-end {
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.explore-more {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Disambiguation card — side-by-side comparison of confusable cluster
@@ -1176,13 +1390,10 @@ body {
   outline: 2px solid var(--grade-color, var(--accent));
   outline-offset: -2px;
 }
-/* Drill Skip — small, muted, pushed to the bottom of the card stack
-   (per-user request). Used by CombinedRecognitionCard, PhoneticTap,
-   ComponentSound, FamilyTransfer, and Production cards. */
-.combined-skip,
+/* Drill Skip — small, muted, in the page header next to the progress
+   (v105: moved out of the thumb zone so it can't be tapped by
+   mistake). Rendered by PageHeader for every review surface. */
 .drill-skip {
-  margin-top: 24px;
-  align-self: center;
   background: transparent;
   border: none;
   color: var(--muted);
@@ -1190,23 +1401,19 @@ body {
   font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  padding: 6px 14px;
+  padding: 6px 10px;
   border-radius: 999px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.combined-skip:hover,
-.combined-skip:focus-visible,
 .drill-skip:hover,
 .drill-skip:focus-visible {
   color: var(--text);
   background: var(--surface-2);
   outline: none;
 }
-.drill-skip-row {
-  display: flex;
-  justify-content: center;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+.header-actions .drill-skip-header {
+  margin-left: 6px;
 }
 
 /* Tiny StatusButton overlay in the corner of each Card / CharOnlyCard.
@@ -1691,7 +1898,9 @@ body {
 }
 .saved-grid .entity {
   display: inline-block;
-  flex: 0 1 auto;
+  /* Justified rows (v108): cards pack by content width, then grow to
+     fill the row — no ragged right edge (owner request). */
+  flex: 1 1 auto;
   max-width: 100%;
   vertical-align: top;
 }
@@ -1863,7 +2072,11 @@ body {
   --entity-stack-gap: 6px;
   padding: 20px;
   gap: 6px;
+  /* The tile stays white in both themes, so pin light-theme ink —
+     inherited dark-mode text (#ece7dc) is invisible on white (BUG-13). */
   background: #fff;
+  color: #1d1b18;
+  --muted: #6b6359;
 }
 /* Drill-pick flash modifiers (M12). Applied to Entity tiny/sm in drills
    to flag correct/wrong/reveal answers. Color tokens mirror the
@@ -3378,6 +3591,12 @@ body {
   color: var(--accent);
   text-decoration: none;
   cursor: pointer;
+  /* Rendered as a <button> since v109 (Explore jump). */
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 .sheet-network-link:hover {
   text-decoration: underline;

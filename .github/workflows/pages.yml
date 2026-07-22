@@ -39,11 +39,7 @@ jobs:
 
       - name: Prepare site
         run: |
-          mkdir -p _site/network _site/components
           cp -r dist/.                _site/
-          cp network/index.html       _site/network/index.html
-          cp components/index.html    _site/components/index.html
-          cp components/graph-data.mjs _site/components/graph-data.mjs
           cp -r storybook-static      _site/storybook
           echo "Build OK - $(date)" > _site/build-info.txt
 

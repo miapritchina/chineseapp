@@ -52,19 +52,42 @@ export function inferencePairs(savedWords: string[], capChars = 36): string[] {
 }
 
 // Reverse recognition: the answer plus up to n-1 saved-word
-// distractors, preferring words that share a character with the
-// answer. Returns null when there aren't at least 2 options.
+// distractors, scored to be confusable — sharing a character with the
+// answer, matching its length, and (when char data is available via
+// componentsOf) sharing a component. Ties break randomly. Returns
+// null when there aren't at least 2 options.
 export function pickReverseOptions(
   answer: string,
   savedWords: string[],
   n = 4,
   rand: Rand = Math.random,
+  componentsOf?: (char: string) => string[],
 ): string[] | null {
   const answerChars = new Set([...answer]);
+  const answerLen = [...answer].length;
+  const answerComps = new Set<string>();
+  if (componentsOf) {
+    for (const c of answer) for (const p of componentsOf(c)) if (p) answerComps.add(p);
+  }
   const pool = savedWords.filter((w) => w !== answer);
-  const sharing = pool.filter((w) => [...w].some((c) => answerChars.has(c)));
-  const rest = pool.filter((w) => !sharing.includes(w));
-  const distractors = [...shuffle(sharing, rand), ...shuffle(rest, rand)].slice(0, n - 1);
+  // Shuffle BEFORE the stable sort so equal scores come out in random
+  // order — otherwise every session shows the same distractors.
+  const scored = shuffle(pool, rand).map((w) => {
+    let score = 0;
+    if ([...w].some((c) => answerChars.has(c))) score += 3;
+    if ([...w].length === answerLen) score += 2;
+    if (answerComps.size > 0 && componentsOf) {
+      // Only unshared chars count here — a shared char would make
+      // component overlap a given, not an extra confusion signal.
+      const sharesComp = [...w].some(
+        (c) => !answerChars.has(c) && componentsOf(c).some((p) => p && answerComps.has(p)),
+      );
+      if (sharesComp) score += 2;
+    }
+    return { w, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  const distractors = scored.slice(0, n - 1).map((s) => s.w);
   if (distractors.length < 1) return null;
   return shuffle([answer, ...distractors], rand);
 }
@@ -94,6 +117,117 @@ export function pickClozeTask(
   const distractors = [...shuffle(cluster, rand), ...shuffle(padPool, rand)].slice(0, 3);
   if (distractors.length < 1) return null;
   return { maskIndex, answer, options: shuffle([answer, ...distractors], rand) };
+}
+
+// New-word inference: 4 meaning options (the correct gloss + distinct
+// distractor glosses from the pool). Null when the pool can't supply
+// at least one distractor.
+export function pickGlossOptions(
+  correct: string,
+  pool: string[],
+  n = 4,
+  rand: Rand = Math.random,
+): string[] | null {
+  const distractors = shuffle([...new Set(pool.filter((g) => g && g !== correct))], rand).slice(
+    0,
+    n - 1,
+  );
+  if (distractors.length < 1) return null;
+  return shuffle([correct, ...distractors], rand);
+}
+
+// Partition the WHOLE saved set into recall clusters (each word used at
+// most once per session):
+//   1. Phonetic-component families (e.g. 请/情/清 words).
+//   2. Shared-character groups among what's left.
+//   3. Random leftover groups.
+// Groups of 3–4; singletons/pairs left over are dropped. Cluster order
+// is shuffled so sessions don't always start with the same family.
+export function buildClusters(
+  savedKeys: string[],
+  phoneticComponentsByChar?: Map<string, { char: string; family: string[] }> | null,
+  rand: Rand = Math.random,
+): string[][] {
+  const TARGET = 4;
+  const MIN = 3;
+  const unused = new Set(savedKeys);
+  const clusters: string[][] = [];
+
+  const take = (members: string[]) => {
+    const group = members.slice(0, TARGET);
+    for (const w of group) unused.delete(w);
+    clusters.push(group);
+  };
+
+  if (phoneticComponentsByChar) {
+    for (const [comp, info] of phoneticComponentsByChar) {
+      const family = new Set(info.family || []);
+      family.add(comp);
+      const matches = [...unused].filter((w) => [...w].some((c) => family.has(c)));
+      if (matches.length >= MIN) take(matches);
+    }
+  }
+
+  // Shared-character groups among the remainder, biggest first, until
+  // nothing groups any more.
+  for (;;) {
+    const counts = new Map<string, string[]>();
+    for (const w of unused) {
+      for (const c of new Set(w)) {
+        const arr = counts.get(c) || [];
+        arr.push(w);
+        counts.set(c, arr);
+      }
+    }
+    const best = [...counts.values()]
+      .filter((ws) => ws.length >= MIN)
+      .sort((a, b) => b.length - a.length)[0];
+    if (!best) break;
+    take(best);
+  }
+
+  // Random leftover groups (≥3 only).
+  const rest = shuffle([...unused], rand);
+  for (let i = 0; i + MIN <= rest.length; i += TARGET) {
+    const group = rest.slice(i, i + TARGET);
+    if (group.length >= MIN) clusters.push(group);
+  }
+
+  return shuffle(clusters, rand);
+}
+
+// Interleave due cards across activity types — round-robin over facet
+// groups so a session mixes drills instead of running each type to
+// exhaustion (owner request, v106). NOT a shuffle: within each group
+// the most overdue card stays first, and the rotation leads with the
+// group holding the most overdue card overall. wordInference and
+// clusterRecall rows are synthetic (dueAt 0), so they always rotate
+// last.
+const SYNTHETIC_FACETS = new Set(["wordInference", "clusterRecall"]);
+
+export function interleaveByActivity<T extends { facet: string; dueAt: number }>(rows: T[]): T[] {
+  const keyOf = (f: string) =>
+    f === "meaningRecognition" || f === "soundRecognition" || f === "recognition"
+      ? "recognition"
+      : f;
+  const groups = new Map<string, T[]>();
+  for (const r of rows) {
+    const k = keyOf(r.facet);
+    const g = groups.get(k);
+    if (g) g.push(r);
+    else groups.set(k, [r]);
+  }
+  for (const g of groups.values()) g.sort((a, b) => a.dueAt - b.dueAt);
+  const urgency = (k: string) => (SYNTHETIC_FACETS.has(k) ? Infinity : groups.get(k)![0].dueAt);
+  const order = [...groups.keys()].sort((a, b) => urgency(a) - urgency(b));
+  const out: T[] = [];
+  for (let i = 0; out.length < rows.length; i++) {
+    for (const k of order) {
+      const g = groups.get(k)!;
+      if (i < g.length) out.push(g[i]);
+    }
+  }
+  return out;
 }
 
 export interface FamilySweepTask {
