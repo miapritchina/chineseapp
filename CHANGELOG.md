@@ -12,6 +12,17 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **New-word drill shows pinyin before answering (v110):** the word
+  is new — its sound is fair help for guessing the meaning.
+- **Every character in every drill is explorable (v110):** once a
+  card is answered/revealed, tapping any glyph — the recognition
+  focal card, reverse/cloze/sweep option tiles, the New-word
+  breakdown, cluster words, confusable-compare cells, the traced
+  character — opens its bottom sheet over the session (dotted
+  underline marks tappable glyphs where they aren't already cards).
+  Close the sheet and the card is exactly where you left it. The
+  passive-view credit does NOT apply to sheets opened mid-review —
+  it would have silently completed the current card before grading.
 - **Sharing shares the profile, not a snapshot (v110, migration
   0013):** "Share my words" now hands out ONE stable short link per
   account. Opening it imports the sharer's saved words **as they are

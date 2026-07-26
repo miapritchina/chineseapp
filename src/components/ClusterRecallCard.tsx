@@ -10,13 +10,15 @@ interface Props {
   // rows.
   cluster: string[];
   onGraded: (rating: RatingName) => void;
+  // Open the EntitySheet for a revealed word (second tap).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Whole-cluster recall (Stern & Halamish 2023: recalling a small group
 // of related words together beats reviewing them in isolation). v107:
 // one cluster per card, mixed into the regular session queue like any
 // other drill.
-export function ClusterRecallCard({ cluster, onGraded }: Props) {
+export function ClusterRecallCard({ cluster, onGraded, onOpenEntity }: Props) {
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
   const allRevealed = cluster.every((w) => revealed.has(w));
 
@@ -38,9 +40,14 @@ export function ClusterRecallCard({ cluster, onGraded }: Props) {
                 showMeaning={isRevealed}
                 roleColor={isRevealed ? "var(--accent)" : undefined}
                 ariaLabel={isRevealed ? `Revealed: ${w}` : `Tap to reveal ${w}`}
+                // First tap reveals; a second tap on a revealed word
+                // opens its sheet.
                 onTap={() => {
+                  if (isRevealed) {
+                    onOpenEntity?.(w);
+                    return;
+                  }
                   setRevealed((prev) => {
-                    if (prev.has(w)) return prev;
                     const n = new Set(prev);
                     n.add(w);
                     return n;

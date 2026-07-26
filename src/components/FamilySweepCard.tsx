@@ -10,12 +10,14 @@ interface Props {
   pool: PhoneticComponent[];
   charExists: (char: string) => boolean;
   onGrade: (rating: RatingName) => void;
+  // Open the EntitySheet for a tapped character (post-confirm).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Drill 4: spot the component — tap every character built with it;
 // decoys come from other components' families. Exact set → Good,
 // anything else → Again.
-export function FamilySweepCard({ component, pool, charExists, onGrade }: Props) {
+export function FamilySweepCard({ component, pool, charExists, onGrade, onOpenEntity }: Props) {
   const [task] = useState(() => buildFamilySweep(component, pool, charExists));
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [confirmed, setConfirmed] = useState(false);
@@ -60,7 +62,20 @@ export function FamilySweepCard({ component, pool, charExists, onGrade }: Props)
     >
       <div className="phonetic-tap-inner">
         <div className="phonetic-tap-prompt">
-          Tap every character that contains {component.char}
+          Tap every character that contains{" "}
+          <span
+            className={onOpenEntity ? "is-explorable" : undefined}
+            onClick={
+              onOpenEntity
+                ? (e) => {
+                    e.stopPropagation();
+                    onOpenEntity(component.char);
+                  }
+                : undefined
+            }
+          >
+            {component.char}
+          </span>
           {component.pinyin ? ` (${component.pinyin})` : ""}
         </div>
         <div className="phonetic-tap-row sweep-grid">
@@ -87,7 +102,11 @@ export function FamilySweepCard({ component, pool, charExists, onGrade }: Props)
                 showMeaning={false}
                 ariaLabel={c}
                 className={`phonetic-tap-pick ${flash}`.trim()}
-                onTap={!confirmed ? () => toggle(c) : undefined}
+                // Before confirming a tap toggles the selection;
+                // afterwards it opens the character's sheet.
+                onTap={
+                  !confirmed ? () => toggle(c) : onOpenEntity ? () => onOpenEntity(c) : undefined
+                }
               />
             );
           })}

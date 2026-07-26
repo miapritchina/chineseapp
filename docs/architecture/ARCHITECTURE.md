@@ -167,7 +167,10 @@ The same damped-credit math powers the **passive-view credit**
 `applyCascadeCredit` to its own meaning/sound rows, capped at 2 days
 (`PASSIVE_CAP_DAYS`), no rep recorded, throttled to once per item per
 day (`chinese.passiveCredit` localStorage log). Browsing counts a
-little; it never replaces answering.
+little; it never replaces answering. Suppressed while a review
+session is active (v110) — drills open sheets for tapped glyphs, and
+crediting the current card would push it out of the due queue before
+it was graded.
 
 ### Queue + leech interleaving
 

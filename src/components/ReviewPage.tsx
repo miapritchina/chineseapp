@@ -46,6 +46,9 @@ interface Props {
   onGrade: (itemKey: string, rating: RatingName, kind?: ItemKind, facet?: Facet) => void;
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
+  // Open the EntitySheet for a tapped character/word (v110 — every
+  // glyph in a drill is explorable once the card is answered).
+  onOpenEntity?: (key: string) => void;
   // Drill 1: pool of unsaved words made of known chars. Both outcomes
   // report up — correct cascades credit, and either way the word is
   // marked done so it stays out of the pool across sessions.
@@ -79,6 +82,7 @@ export function ReviewPage({
   onGrade,
   onAttributeFailure,
   onClose,
+  onOpenEntity,
   inferenceWords,
   onInferenceResult,
   clusters,
@@ -430,6 +434,7 @@ export function ReviewPage({
                 return n;
               });
             }}
+            onOpenEntity={onOpenEntity}
           />
         </div>
       </div>
@@ -475,6 +480,7 @@ export function ReviewPage({
               onInferenceResult?.(current.itemKey, false);
               advanceWithoutGrading(current);
             }}
+            onOpenEntity={onOpenEntity}
           />
         )}
       </DrillShell>
@@ -497,6 +503,7 @@ export function ReviewPage({
           gloss={glossOf(current.itemKey)}
           savedWords={savedWords}
           onGrade={handleDrillGrade}
+          onOpenEntity={onOpenEntity}
         />
       </DrillShell>
     );
@@ -518,6 +525,7 @@ export function ReviewPage({
           gloss={glossOf(current.itemKey)}
           savedWords={savedWords}
           onGrade={handleDrillGrade}
+          onOpenEntity={onOpenEntity}
         />
       </DrillShell>
     );
@@ -543,6 +551,7 @@ export function ReviewPage({
             pool={phoneticComponents}
             charExists={(c) => !!chars?.[c]}
             onGrade={handleDrillGrade}
+            onOpenEntity={onOpenEntity}
           />
         )}
       </DrillShell>
@@ -580,6 +589,7 @@ export function ReviewPage({
             char={current.itemKey}
             charData={cd}
             onGrade={handleDrillGrade}
+            onOpenEntity={onOpenEntity}
           />
         </div>
       </div>
@@ -608,6 +618,7 @@ export function ReviewPage({
             }
             advanceWithoutGrading(current);
           }}
+          onOpenEntity={onOpenEntity}
         />
       </DrillShell>
     );
@@ -672,6 +683,7 @@ export function ReviewPage({
             word={word}
             charData={charData}
             onGraded={handleCombinedGraded}
+            onOpenEntity={onOpenEntity}
           />
         )}
       </div>

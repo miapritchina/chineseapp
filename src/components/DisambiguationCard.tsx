@@ -7,6 +7,8 @@ interface Props {
   // Other cluster members to compare against.
   neighbors: string[];
   onContinue: () => void;
+  // Open the EntitySheet for a tapped cluster member.
+  onOpenEntity?: (key: string) => void;
 }
 
 // Side-by-side compare view. Shown once per session when a card hits the
@@ -14,7 +16,7 @@ interface Props {
 // src/lib/confusionClusters.mjs). The contract is just informational —
 // the user reads the contrast, then taps Continue and lands on the
 // regular review prompt for the focus char. No grading happens here.
-export function DisambiguationCard({ focus, neighbors, onContinue }: Props) {
+export function DisambiguationCard({ focus, neighbors, onContinue, onOpenEntity }: Props) {
   const all = [focus, ...neighbors];
   return (
     <div className="disambig-root">
@@ -27,6 +29,7 @@ export function DisambiguationCard({ focus, neighbors, onContinue }: Props) {
             size="sm"
             roleColor={i === 0 ? "var(--accent)" : undefined}
             ariaLabel={i === 0 ? `Focus: ${c}` : c}
+            onTap={onOpenEntity ? () => onOpenEntity(c) : undefined}
           />
         ))}
       </div>

@@ -340,12 +340,16 @@ export function App() {
 
   // Reading a saved item's sheet counts as a partial repetition
   // (v108): a small capped schedule credit, throttled to once per
-  // item per day — browsing is study, just not a full answer.
+  // item per day — browsing is study, just not a full answer. NOT
+  // during a review session (v110): exploring the current card would
+  // push its due date out and silently drop it from the queue before
+  // it was graded.
   useEffect(() => {
+    if (reviewLaunched) return;
     if (!top || top.view === "tree") return;
     if (!saved.saved.has(top.key)) return;
     creditPassiveView(top.key);
-  }, [top, saved.saved, creditPassiveView]);
+  }, [top, saved.saved, creditPassiveView, reviewLaunched]);
 
   return (
     <AppStateProvider
@@ -428,6 +432,10 @@ export function App() {
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={() => setReviewLaunched(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
         />
       )}
 

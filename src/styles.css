@@ -1093,6 +1093,25 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Drill glyphs that open the EntitySheet once the card is answered
+   (v110). A dotted underline keeps the affordance quiet. */
+.is-explorable {
+  cursor: pointer;
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+.production-explore {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 14px;
+  margin-top: 10px;
+}
+
 /* Disambiguation card — side-by-side comparison of confusable cluster
    members. Shown once per session before a leech-marked card surfaces. */
 .disambig-root {
@@ -2171,7 +2190,9 @@ body {
 .modal-root {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  /* Above the sheet (70): the tree opens from the sheet, which can
+     itself sit over a full-screen page since v110. */
+  z-index: 75;
   display: none;
   background: var(--bg);
   flex-direction: column;
@@ -3195,7 +3216,9 @@ body {
 .sheet-root {
   position: fixed;
   inset: 0;
-  z-index: 55;
+  /* Above the full-screen pages (60) since v110 — drills open the
+     sheet for any tapped character mid-session. */
+  z-index: 70;
   display: flex;
   align-items: flex-end;
   justify-content: center;
