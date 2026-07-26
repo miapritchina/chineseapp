@@ -53,6 +53,7 @@ connection badges.
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
 | Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices | Live; insert from `useReview`, select from `useWordInference` |
 | Supabase `user_classic_progress` | Furthest-read 三字经 couplet (v101) — scroll-tracked bookmark, max(local, remote) merge | Live; `useClassicProgress` |
+| Supabase `user_shares` | Profile share tokens (v110): one stable 12-char token per account; `get_profile_words(token)` resolves to the owner's LIVE saved set (SECURITY DEFINER), so a `?share=` link imports the profile as it is at click time. `words` column = courtesy snapshot for pre-v110 clients (`get_shared_words`) | Live; share flow in `App.tsx`, import in `useAutoImport` |
 
 The split is deliberate — see [ADR-0009](../decisions/0009-chars-static-words-in-db.md).
 The user-data policy is [ADR-0001](../decisions/0001-supabase-source-of-truth.md).

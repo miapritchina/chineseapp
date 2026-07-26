@@ -1,20 +1,23 @@
 // "Share my words" links. Two flavours, picked at share time:
 //
-//  * Short link — `?share=<token>` where <token> is a random 12-char id.
-//    The word list lives in Supabase (`user_shares` table, read back via
-//    the `get_shared_words` RPC). Used when the user is signed in (and the
-//    table exists / the insert succeeds). Tiny link regardless of list size.
+//  * Profile link (v110) — `?share=<token>` where <token> is a random
+//    12-char id. ONE stable token per account (a `user_shares` row);
+//    the recipient resolves it to the sharer's LIVE saved set via the
+//    `get_profile_words` RPC, so the link shares the PROFILE, not a
+//    snapshot — reopening it later imports whatever the profile holds
+//    then. (Pre-v110 recipients fall back to the `get_shared_words`
+//    snapshot RPC; the share flow refreshes that snapshot on each
+//    share.) Used when the user is signed in.
 //
 //  * Inline link — `?share=<lz-string blob>`: the whole list compressed
-//    straight into the URL, no backend. The fallback for signed-out users
-//    or when the DB write fails. Compression keeps it ~2.5–3× shorter than
-//    plain base64-of-JSON; `decodeWords` also still understands that
-//    original uncompressed base64 format (links shared before v88).
+//    straight into the URL, no backend — necessarily a snapshot. The
+//    fallback for signed-out users or when the DB write fails.
+//    `decodeWords` also still understands the original uncompressed
+//    base64 format (links shared before v88).
 //
-// Either way the recipient's ?share= handler in App.tsx ends up calling
-// `importSaved`, which syncs to `user_saves` as usual. The payload is just
-// a copy of state that already lives there, so the inline form persists
-// nothing new and the short-link table is non-authoritative.
+// Either way the recipient's ?share= handler ends up calling
+// `importSaved` (merge; already-saved words skipped), which syncs to
+// `user_saves` as usual.
 //
 // Round-trip behaviour is pinned by scripts/test-share.mjs — keep in sync.
 
@@ -26,19 +29,17 @@ export const SHARE_PARAM = "share";
 
 function asWordList(parsed: unknown): string[] | null {
   if (!Array.isArray(parsed)) return null;
-  const words = parsed.filter(
-    (x): x is string => typeof x === "string" && x.length > 0,
-  );
+  const words = parsed.filter((x): x is string => typeof x === "string" && x.length > 0);
   return words.length > 0 ? words : null;
 }
 
 function fromLegacyBase64Url(token: string): unknown {
   const b64 = token.replace(/-/g, "+").replace(/_/g, "/");
   const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-  const bin = atob(padded);
+  const bin = window.atob(padded);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return JSON.parse(new TextDecoder().decode(bytes));
+  return JSON.parse(new window.TextDecoder().decode(bytes));
 }
 
 export function encodeWords(words: string[]): string {
@@ -73,7 +74,7 @@ const TOKEN_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"; // exactly 32 chars
 const TOKEN_LEN = 12;
 
 export function makeShareToken(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(TOKEN_LEN));
+  const bytes = window.crypto.getRandomValues(new Uint8Array(TOKEN_LEN));
   let s = "";
   for (let i = 0; i < TOKEN_LEN; i++) s += TOKEN_ALPHABET[bytes[i] & 31];
   return s;

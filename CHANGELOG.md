@@ -11,6 +11,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Sharing shares the profile, not a snapshot (v110, migration
+  0013):** "Share my words" now hands out ONE stable short link per
+  account. Opening it imports the sharer's saved words **as they are
+  at that moment** — resolved live via a new `get_profile_words` RPC
+  — so re-opening the same link later picks up everything saved
+  since. Words are no longer encoded into the URL when signed in;
+  the inline-blob link remains only as the signed-out fallback, and
+  old links (short and inline) keep working.
+
 ### Added
 - **Explore page (v109,
   [spec](docs/product/explore-page.md)):** one browsing surface for

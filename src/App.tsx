@@ -280,20 +280,36 @@ export function App() {
       const uid = auth.user?.id;
       if (uid) {
         try {
-          const token = makeShareToken();
-          const { error } = await supabase
+          // Profile link (v110): ONE stable token per account — the
+          // recipient resolves it to the LIVE saved set, so a link
+          // shared once keeps tracking the profile. Reuse the oldest
+          // row; refresh its snapshot for pre-v110 recipients.
+          const { data } = await supabase
             .from("user_shares")
-            .insert({ token, user_id: uid, words });
-          if (!error) url = shareUrl(token);
+            .select("token")
+            .eq("user_id", uid)
+            .order("created_at", { ascending: true })
+            .limit(1);
+          let token: string | undefined = data?.[0]?.token;
+          if (token) {
+            void supabase.from("user_shares").update({ words }).eq("token", token);
+          } else {
+            token = makeShareToken();
+            const { error } = await supabase
+              .from("user_shares")
+              .insert({ token, user_id: uid, words });
+            if (error) token = undefined;
+          }
+          if (token) url = shareUrl(token);
         } catch {
-          /* table missing / offline / collision — keep the inline link */
+          /* table missing / offline — keep the inline snapshot link */
         }
       }
       if (typeof navigator !== "undefined" && navigator.share) {
         try {
           await navigator.share({
             title: "My Chinese words",
-            text: `Here are ${label} I've saved — open the link to add them to your list.`,
+            text: `My Chinese profile — ${label}. Open the link to import them into your list.`,
             url,
           });
           return;
@@ -359,7 +375,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v109"
+          version="chinese v110"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"

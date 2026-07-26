@@ -85,16 +85,24 @@ export function useAutoImport(opts: { saved: SavedHook; authLoading: boolean }) 
       try {
         let items: string[] | null = null;
         if (looksLikeShareToken(value)) {
-          try {
-            const { data, error } = await supabase.rpc("get_shared_words", { p_token: value });
-            if (!error && Array.isArray(data)) {
-              const list = (data as unknown[]).filter(
-                (x): x is string => typeof x === "string" && x.length > 0,
-              );
-              if (list.length > 0) items = list;
+          // Profile link (v110): resolve to the sharer's LIVE saved
+          // set. Falls back to the pre-v110 snapshot RPC when the new
+          // function isn't deployed yet, then to inline decode.
+          for (const fn of ["get_profile_words", "get_shared_words"]) {
+            try {
+              const { data, error } = await supabase.rpc(fn, { p_token: value });
+              if (!error && Array.isArray(data)) {
+                const list = (data as unknown[]).filter(
+                  (x): x is string => typeof x === "string" && x.length > 0,
+                );
+                if (list.length > 0) {
+                  items = list;
+                  break;
+                }
+              }
+            } catch {
+              /* RPC missing, offline, etc. — try the next resolver */
             }
-          } catch {
-            /* table/RPC missing, offline, etc. — fall through to inline decode */
           }
         }
         if (!items) items = decodeWords(value);
@@ -103,7 +111,7 @@ export function useAutoImport(opts: { saved: SavedHook; authLoading: boolean }) 
           return;
         }
         const ok = window.confirm(
-          `Someone shared ${items.length} word${items.length === 1 ? "" : "s"} with you. Add them to your saved list?`,
+          `Someone shared their profile — ${items.length} word${items.length === 1 ? "" : "s"}. Add them to your saved list?`,
         );
         if (!ok) return;
         const { added, total } = await saved.importSaved(items);
