@@ -3668,12 +3668,15 @@ body {
 .learn-body {
   width: 100%;
   max-width: 480px;
-  /* auto margins, not centering-by-parent: .review-body centers its
-     child, and a centered flex child that OVERFLOWS is clipped above
-     the scroll origin — the hero word at the top became unreachable
-     (owner report, v112). Auto margins collapse to 0 on overflow, so
-     the top stays scrollable; short lessons still center. */
-  margin: auto;
+  margin: 0 auto;
+  /* The lesson is its OWN scroll container (like .explore-body /
+     .classic-body, which scroll fine on iOS): align-self stretch
+     escapes .review-body's vertical centering — a centered flex child
+     that overflows clips above the scroll origin and iOS wouldn't
+     touch-scroll the shell body at all (owner reports, v112). */
+  align-self: stretch;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 16px;

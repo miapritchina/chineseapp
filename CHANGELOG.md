@@ -29,11 +29,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   nothing survives, the "Originally: …" line steps in.
 
 ### Fixed
-- **Learn card's word was cut off at the top (v112, BUG-19):** the
-  drill body centers its content, and a centered flex child that
-  overflows clips above the scroll origin — tall lesson cards lost
-  their hero word on small screens. Auto margins fix it: short
-  lessons still center, tall ones scroll from the very top.
+- **Learn card: word cut off at the top and no touch scrolling
+  (v112, BUG-19):** the drill body centers its content (a centered
+  flex child that overflows clips above the scroll origin) and
+  wasn't a working iOS scroll surface. The lesson is now its own
+  scroll container — same pattern as Explore/Classic — so it starts
+  at the top and scrolls with momentum.
 - **Wrong answer could freeze the drill (v111, BUG-18):** after a
   mistake, tapping to continue advanced the counter but kept showing
   the answered card whenever the retry resurfaced immediately (short
