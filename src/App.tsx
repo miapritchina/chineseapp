@@ -429,6 +429,7 @@ export function App() {
           enabledFacets={new Set(reviewLaunched.enabledFacets)}
           randomOrder={reviewLaunched.randomOrder}
           includeSubchars={reviewLaunched.includeSubchars}
+          sessionSize={reviewLaunched.sessionSize}
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={() => setReviewLaunched(null)}

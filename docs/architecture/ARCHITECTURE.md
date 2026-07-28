@@ -181,11 +181,12 @@ activity **interleave**, not a grouped run: `interleaveByActivity`
 most-overdue first within each group, the neediest group leading each
 cycle; `wordInference` rotates last (synthetic dueAt). The Shuffle
 toggle replaces this with a full random order. Cards graded Again
-re-enter the session queue until answered without Again. Sessions are
-capped at 25 cards UI-side (v107, `SESSION_LIMIT` in ReviewPage — a
-frozen first-25 set, so the session genuinely ends; scheduling is
-untouched since every card grades individually), and exiting a
-session returns to the launch screen, not the home page. `lapses ≥ 6` items with cluster
+re-enter the session queue until answered without Again. Session
+size is chosen on the launch screen (v110: 10 / 25 / 50 / All,
+default 25, persisted) — a frozen first-N set UI-side, so the
+session genuinely ends; scheduling is untouched since every card
+grades individually. Exiting a session returns to the launch screen,
+not the home page. `lapses ≥ 6` items with cluster
 entries still get side-by-side disambig ([ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md), leech half).
 
 ---

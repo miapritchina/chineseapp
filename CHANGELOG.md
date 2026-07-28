@@ -12,6 +12,9 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Session size is your choice (v110):** the launch screen offers
+  10 / 25 / 50 / All (default 25, remembered) — replaces the fixed
+  25-card session from v107.
 - **New-word drill shows pinyin before answering (v110):** the word
   is new — its sound is fair help for guessing the meaning.
 - **Every character in every drill is explorable (v110):** once a

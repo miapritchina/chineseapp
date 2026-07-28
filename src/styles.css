@@ -3656,3 +3656,10 @@ body {
     padding-top: 8px;
   }
 }
+
+/* Session-size pills on the review launch screen (v110). */
+.launch-size-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

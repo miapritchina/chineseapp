@@ -19,11 +19,6 @@ import { interleaveByActivity } from "../lib/drillGen";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
 
-// UI-side session size (v107): grading is per-card, so this changes
-// nothing about scheduling — it just gives a session a comfortable
-// visible end. Retries of Again-graded cards stay in regardless.
-const SESSION_LIMIT = 25;
-
 // Placeholder FSRS state for the synthetic (non-FSRS) inference and
 // cluster rows.
 const INFERENCE_CARD = {
@@ -63,6 +58,11 @@ interface Props {
   enabledFacets?: Set<Facet>;
   randomOrder?: boolean;
   includeSubchars?: boolean;
+  // Cards per session, owner-chosen on the launch screen (v110;
+  // null/undefined = everything due). UI-side only: grading is
+  // per-card, so scheduling is untouched; Again-retries stay in
+  // regardless.
+  sessionSize?: number | null;
 }
 
 // Stable id for a card across the (kind, facet, key) tuple. Used to mark
@@ -91,6 +91,7 @@ export function ReviewPage({
   enabledFacets,
   randomOrder,
   includeSubchars,
+  sessionSize,
 }: Props) {
   const { chars } = useCharsCtx();
   const { findWord, ensureCached } = useDictCtx();
@@ -240,12 +241,13 @@ export function ReviewPage({
     ? [...dedupedFiltered, ...inferenceRows, ...clusterRows]
     : interleaveByActivity([...dedupedFiltered, ...inferenceRows, ...clusterRows]);
 
-  // Freeze the session to the first SESSION_LIMIT cards seen (v107).
-  // Cards that leave the set (graded/skipped) are done; nothing refills
-  // behind them, so the session actually ends. Retries stay eligible.
+  // Freeze the session to the first `sessionSize` cards seen (v107;
+  // owner-chosen since v110, null = no cap). Cards that leave the set
+  // (graded/skipped) are done; nothing refills behind them, so the
+  // session actually ends. Retries stay eligible.
   const sessionRidsRef = useRef<Set<string> | null>(null);
-  if (sessionRidsRef.current === null && mixed.length > 0) {
-    sessionRidsRef.current = new Set(mixed.slice(0, SESSION_LIMIT).map(rid));
+  if (sessionSize != null && sessionRidsRef.current === null && mixed.length > 0) {
+    sessionRidsRef.current = new Set(mixed.slice(0, sessionSize).map(rid));
   }
   const sessionRows = sessionRidsRef.current
     ? mixed.filter((r) => sessionRidsRef.current!.has(rid(r)))
