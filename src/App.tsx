@@ -29,6 +29,7 @@ import { ComponentTable } from "./components/ComponentTable";
 import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
+import { LearnPage } from "./components/LearnPage";
 import { SentenceStudio } from "./components/SentenceStudio";
 
 import { AppStateProvider } from "./state/contexts";
@@ -38,6 +39,7 @@ import { encodeWords, makeShareToken, shareUrl } from "./lib/share";
 import type { Word, ModalEntry } from "./lib/types";
 import { useState } from "react";
 import { buildClusters } from "./lib/drillGen";
+import { learnPool } from "./lib/learn";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -105,6 +107,18 @@ export function App() {
     findWord: dict.findWord,
   });
 
+  // Learn-mode material (v110): never-reviewed words first, then
+  // weakest — see lib/learn.ts.
+  const learnableWords = useMemo(
+    () =>
+      learnPool(saved.savedList, (w) => {
+        const m = reviewState.cards.get(`word|meaningRecognition|${w}`);
+        if (!m || (m.card.reps ?? 0) === 0) return null;
+        return m.card.stability ?? 0;
+      }),
+    [saved.savedList, reviewState.cards],
+  );
+
   // Cluster-recall material (v107, a drill type since the standalone
   // page was folded into the session queue).
   const clusters = useMemo(
@@ -137,6 +151,8 @@ export function App() {
   const [reviewLaunched, setReviewLaunched] = useState<ReviewSettings | null>(null);
   // "Explore from here" target handed from the EntitySheet.
   const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
+  // Learn mode (v110): the active lesson's words; null = no lesson.
+  const [learnWords, setLearnWords] = useState<string[] | null>(null);
 
   // Track full-screen pages via URL hash + route #/c, #/w deep links.
   useEffect(() => {
@@ -150,6 +166,7 @@ export function App() {
       }
       if (window.location.hash !== "#/review") {
         setReviewLaunched(null);
+        setLearnWords(null);
       }
       const entry = parseHash();
       if (entry) {
@@ -398,7 +415,7 @@ export function App() {
         </div>
       </header>
 
-      {showReview && !reviewLaunched && (
+      {showReview && !reviewLaunched && !learnWords && (
         <ReviewLaunch
           totalDue={dueCards.length}
           facetCounts={{
@@ -410,8 +427,21 @@ export function App() {
             wordInference: inferenceWords.length,
             clusterRecall: clusters.length,
           }}
+          learnCount={learnableWords.length}
+          onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
+        />
+      )}
+      {showReview && learnWords && (
+        <LearnPage
+          words={learnWords}
+          onClose={() => setLearnWords(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+          onIntroduced={(w) => creditPassiveView(w)}
         />
       )}
       {showReview && reviewLaunched && (

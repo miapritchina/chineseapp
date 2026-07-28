@@ -116,6 +116,11 @@ interface Props {
   // about to study before tapping Start.
   facetCounts: Record<string, number>;
   totalDue: number;
+  // Learn mode (v110): how many saved words qualify for a lesson, and
+  // the launcher — receives the chosen session size so App can cap
+  // the lesson the same way review sessions are capped.
+  learnCount?: number;
+  onStartLearn?: (sessionSize: number | null) => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -123,7 +128,14 @@ interface Props {
 // Launch surface for a review session. Shown when the user navigates to
 // #/review; hands a settings object up to the parent on Start. Settings
 // persist in localStorage so reopening uses the user's last choice.
-export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props) {
+export function ReviewLaunch({
+  facetCounts,
+  totalDue,
+  learnCount = 0,
+  onStartLearn,
+  onStart,
+  onClose,
+}: Props) {
   const [enabled, setEnabled] = useState<Set<Facet>>(() => new Set(loadSettings().enabledFacets));
   const [randomOrder, setRandomOrder] = useState<boolean>(() => loadSettings().randomOrder);
   const [includeSubchars, setIncludeSubchars] = useState<boolean>(
@@ -261,6 +273,17 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
             ? `Start review · ${sessionSize} of ${visibleDue} cards`
             : `Start review · ${visibleDue} cards`}
         </button>
+        {onStartLearn && (
+          <button
+            type="button"
+            className="review-btn"
+            onClick={() => onStartLearn(sessionSize)}
+            disabled={learnCount === 0}
+            title="A lesson, not a test: each word is introduced with sound, component breakdown, and your related words. No grading."
+          >
+            Learn · {Math.min(sessionSize ?? learnCount, learnCount)} words
+          </button>
+        )}
       </div>
     </div>
   );

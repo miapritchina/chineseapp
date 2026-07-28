@@ -170,7 +170,9 @@ day (`chinese.passiveCredit` localStorage log). Browsing counts a
 little; it never replaces answering. Suppressed while a review
 session is active (v110) — drills open sheets for tapped glyphs, and
 crediting the current card would push it out of the due queue before
-it was graded.
+it was graded. Learn mode (`LearnPage`, material from `lib/learn.ts`)
+reuses the same credit as its "introduced" marker: a finished lesson
+card nudges the word's schedule without recording a rep.
 
 ### Queue + leech interleaving
 

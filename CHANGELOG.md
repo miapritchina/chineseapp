@@ -11,6 +11,17 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Learn mode (v110):** an exercise that teaches instead of testing.
+  "Learn · N words" on the review launch screen walks your
+  never-reviewed (then weakest) words through lesson cards: word +
+  pinyin + audio, each character broken into role-colored components
+  (请 = 讠 speech + 青 qīng) with the dictionary's etymology story,
+  plus related words you already know. No grading — finishing a card
+  marks the word "introduced" (small schedule nudge, no repetition),
+  so its first real review comes soon but not cold. Every glyph opens
+  its sheet.
+
 ### Changed
 - **Session size is your choice (v110):** the launch screen offers
   10 / 25 / 50 / All (default 25, remembered) — replaces the fixed

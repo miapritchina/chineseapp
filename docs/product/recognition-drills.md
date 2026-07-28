@@ -80,6 +80,20 @@ contain the component, so the task is visual component-spotting, and
 framing it as a sound drill oversold it. (The familyTransfer drill
 this once extended was retired in v107 — owner saw no value in it.)
 
+## Learn mode (v110 — teaches, never tests)
+
+Owner ask: "an exercise whose goal is not to test my knowledge but to
+teach me." A lesson session from the review launch screen ("Learn ·
+N words"): material = never-reviewed saved words first (newest saves
+leading), then weakest by recognition stability (`lib/learn.ts`),
+capped by the chosen session size. Each card: the word with pinyin +
+audio → per-character cards with role-colored component formulas
+(请 = 讠 speech + 青 qīng) and the dictionary's etymology notes →
+"You already know" related saved words → Continue. No grading
+anywhere; finishing a card applies the passive-view credit
+("introduced": stability nudge, due ≤ +2 days, no rep) so the first
+real test comes soon but not cold. Every glyph opens its EntitySheet.
+
 ## Backlog (in TODO.md)
 
 ### 5 · Audio-first recognition

@@ -3663,3 +3663,80 @@ body {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Learn mode (v110) — lesson cards that teach instead of test. */
+.learn-body {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 4px 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.learn-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.learn-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: calc(var(--hanzi-hero, 120px) * 0.7);
+  line-height: 1.15;
+}
+.learn-char {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.learn-char-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.learn-char-glyph {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+}
+.learn-char-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.learn-char-pinyin {
+  color: var(--muted);
+  font-size: var(--body);
+}
+.learn-char-def {
+  font-size: var(--body);
+}
+.learn-pieces {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--heading-2);
+}
+.learn-piece-plus {
+  color: var(--muted);
+}
+.learn-note {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.learn-related {
+  display: flex;
+  flex-direction: column;
+}
+.learn-continue {
+  align-self: center;
+  margin-top: 4px;
+}
