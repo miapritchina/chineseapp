@@ -3668,13 +3668,16 @@ body {
 .learn-body {
   width: 100%;
   max-width: 480px;
-  margin: 0 auto;
+  /* auto margins, not centering-by-parent: .review-body centers its
+     child, and a centered flex child that OVERFLOWS is clipped above
+     the scroll origin — the hero word at the top became unreachable
+     (owner report, v112). Auto margins collapse to 0 on overflow, so
+     the top stays scrollable; short lessons still center. */
+  margin: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 8px 4px 24px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 .learn-hero {
   display: flex;
