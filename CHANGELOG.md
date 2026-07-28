@@ -11,6 +11,17 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Etymology boilerplate stripped (v112):** template sentences like
+  "Phonosemantic compound. 口 represents the meaning and 厅 represents
+  the sound." and bare "Simplified form of 聽." no longer render in
+  character descriptions (Learn cards, entity sheet, decomposition
+  tree) — they repeat what the role-colored component formula already
+  shows and bury the genuinely helpful notes ("The right side looks
+  like 斤 (axe) but is actually a corruption of 厅."). Longer
+  simplified-form sentences that carry real content are kept; when
+  nothing survives, the "Originally: …" line steps in.
+
 ### Fixed
 - **Wrong answer could freeze the drill (v111, BUG-18):** after a
   mistake, tapping to continue advanced the counter but kept showing

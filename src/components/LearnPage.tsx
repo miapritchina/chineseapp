@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 import { wordsSharingChar } from "../lib/explore";
+import { cleanEtymologyNotes } from "../lib/etymology";
 import { speak, stopSpeech } from "../lib/speech";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
@@ -98,6 +99,7 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced }: Props)
           const cd = chars?.[c];
           if (!cd) return null;
           const pieces = (cd.components ?? []).filter((p) => p.char);
+          const note = cleanEtymologyNotes(cd.notes);
           return (
             <div className="learn-char" key={c}>
               <div className="learn-char-head">
@@ -138,8 +140,8 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced }: Props)
                   ))}
                 </div>
               )}
-              {cd.notes && <div className="learn-note">{cd.notes}</div>}
-              {!cd.notes && cd.originalMeaning && (
+              {note && <div className="learn-note">{note}</div>}
+              {!note && cd.originalMeaning && (
                 <div className="learn-note">Originally: {cd.originalMeaning}</div>
               )}
             </div>

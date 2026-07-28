@@ -1,6 +1,7 @@
 import type { Char, TreeNode } from "../lib/types";
 import { ROLE_LABEL, strokeRoleForIndex } from "../lib/tree";
 import type { StrokeData } from "../hooks/useStrokeData";
+import { cleanEtymologyNotes } from "../lib/etymology";
 
 interface Props {
   node: TreeNode;
@@ -30,8 +31,7 @@ export function NodeCard({ node, charData, strokeData, cardW, usageCount }: Prop
     : node.gloss ||
       (isCharacterless && node.compHint
         ? node.compHint
-        : node.compDef ||
-          (charData?.definitions?.length ? charData.definitions.join("; ") : ""));
+        : node.compDef || (charData?.definitions?.length ? charData.definitions.join("; ") : ""));
 
   // Etymology shown on every card by default. For characterless components
   // we don't have a separate notes field — the hint already covers it via
@@ -40,7 +40,7 @@ export function NodeCard({ node, charData, strokeData, cardW, usageCount }: Prop
     ? ""
     : isCharacterless
       ? ""
-      : charData?.notes?.trim() ||
+      : cleanEtymologyNotes(charData?.notes) ||
         (charData?.originalMeaning && charData.originalMeaning !== "characterless component"
           ? `Originally: ${charData.originalMeaning}`
           : "");
@@ -77,10 +77,7 @@ export function NodeCard({ node, charData, strokeData, cardW, usageCount }: Prop
           {strokeData?.strokes?.length ? (
             <CharGlyph node={node} strokeData={strokeData} />
           ) : (
-            <div
-              className="card-glyph-fallback"
-              style={{ color: `var(--role-${role})` }}
-            >
+            <div className="card-glyph-fallback" style={{ color: `var(--role-${role})` }}>
               {node.char}
             </div>
           )}

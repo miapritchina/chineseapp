@@ -4,6 +4,7 @@ import type { Char, TreeNode } from "../lib/types";
 import { walkTree } from "../lib/tree";
 import { useStrokeData } from "../hooks/useStrokeData";
 import { NodeCard } from "./NodeCard";
+import { cleanEtymologyNotes } from "../lib/etymology";
 
 const CARD_W = 220;
 // Per-card heights are computed from content (note + gloss length, role
@@ -12,7 +13,7 @@ const CARD_W = 220;
 // on top in estimateCardHeight().
 const CARD_BASE_H = 220;
 const CARD_MIN_H = 240;
-const CARD_NOTE_LINE_H = 16;       // px per wrapped note line
+const CARD_NOTE_LINE_H = 16; // px per wrapped note line
 const CARD_NOTE_CHARS_PER_LINE = 28; // ~ at 11.5px font in 220px width
 const Y_GAP = 28;
 const X_GAP = 10;
@@ -28,8 +29,8 @@ interface Props {
 interface Placement {
   node: TreeNode;
   x: number;
-  y: number;            // vertical center of the card
-  cardH: number;        // this card's actual height
+  y: number; // vertical center of the card
+  cardH: number; // this card's actual height
   parent: Placement | null;
   id: string;
 }
@@ -54,15 +55,14 @@ function estimateCardHeight(node: TreeNode, charsData: Record<string, Char>): nu
     : node.gloss ||
       (isCharacterless && node.compHint
         ? node.compHint
-        : node.compDef ||
-          (c?.definitions?.length ? c.definitions.join("; ") : ""));
+        : node.compDef || (c?.definitions?.length ? c.definitions.join("; ") : ""));
 
   // Etymology text — same source the NodeCard uses.
   const noteText = node.isWord
     ? ""
     : isCharacterless
       ? ""
-      : c?.notes?.trim() ||
+      : cleanEtymologyNotes(c?.notes) ||
         (c?.originalMeaning && c.originalMeaning !== "characterless component"
           ? `Originally: ${c.originalMeaning}`
           : "");
@@ -75,7 +75,7 @@ function estimateCardHeight(node: TreeNode, charsData: Record<string, Char>): nu
     : 0;
 
   // Heights per text block.
-  const glossH = glossLines * 18;          // gloss is 14px font, line-height ~1.3
+  const glossH = glossLines * 18; // gloss is 14px font, line-height ~1.3
   const noteH = noteLines * CARD_NOTE_LINE_H + (noteText ? 12 /* margin-top */ : 0);
 
   return Math.max(CARD_MIN_H, CARD_BASE_H + glossH + noteH + 12 /* pad */);
@@ -101,6 +101,7 @@ export function DecompositionTree({ tree, chars, saved, onNodeClick }: Props) {
   }, [saved]);
   const usageOf = (char: string): number => usageByChar.get(char) || 0;
   const svgRef = useRef<SVGSVGElement>(null);
+  // eslint-disable-next-line no-undef -- DOM lib type, not a global value
   const innerRef = useRef<SVGGElement>(null);
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
@@ -126,11 +127,11 @@ export function DecompositionTree({ tree, chars, saved, onNodeClick }: Props) {
       // (e.g. 休 / 息 of 休息) far apart. 1.4 for non-siblings strikes a
       // balance: visible gap between independent subtrees, tighter than the
       // original 2×.
-      d3
+      const layout = d3
         .tree<TreeNode>()
         .nodeSize([CARD_W + X_GAP, 1])
-        .separation((a, b) => (a.parent === b.parent ? 1 : 1.4))
-        (root);
+        .separation((a, b) => (a.parent === b.parent ? 1 : 1.4));
+      layout(root);
 
       // Per-node estimated heights + group by depth.
       const heightOf = new Map<d3.HierarchyPointNode<TreeNode>, number>();
@@ -180,7 +181,9 @@ export function DecompositionTree({ tree, chars, saved, onNodeClick }: Props) {
       visit(root as d3.HierarchyPointNode<TreeNode>, "", 0);
 
       // viewBox bounds.
-      let minX = Infinity, maxX = -Infinity, maxBottom = 0;
+      let minX = Infinity,
+        maxX = -Infinity,
+        maxBottom = 0;
       for (const p of newPlacements) {
         if (p.x < minX) minX = p.x;
         if (p.x > maxX) maxX = p.x;
@@ -225,14 +228,21 @@ export function DecompositionTree({ tree, chars, saved, onNodeClick }: Props) {
   }, [strokesReady]);
 
   const linkPath = (l: Link) => {
-    const sx = l.source.x, sy = l.source.y + l.source.cardH / 2;
-    const tx = l.target.x, ty = l.target.y - l.target.cardH / 2;
+    const sx = l.source.x,
+      sy = l.source.y + l.source.cardH / 2;
+    const tx = l.target.x,
+      ty = l.target.y - l.target.cardH / 2;
     const my = (sy + ty) / 2;
     return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
   };
 
   return (
-    <svg ref={svgRef} className="tree-svg" role="img" aria-label={`Decomposition tree for ${tree.char}`}>
+    <svg
+      ref={svgRef}
+      className="tree-svg"
+      role="img"
+      aria-label={`Decomposition tree for ${tree.char}`}
+    >
       <g ref={innerRef}>
         <g>
           {links.map((l) => (
