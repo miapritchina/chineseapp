@@ -60,8 +60,7 @@ interface Props {
   includeSubchars?: boolean;
   // Cards per session, owner-chosen on the launch screen (v110;
   // null/undefined = everything due). UI-side only: grading is
-  // per-card, so scheduling is untouched; Again-retries stay in
-  // regardless.
+  // per-card, so scheduling is untouched.
   sessionSize?: number | null;
 }
 
@@ -101,10 +100,6 @@ export function ReviewPage({
   // Cards the user has explicitly skipped this session; filtered out of
   // the visible queue so they don't keep surfacing.
   const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
-  // Cards graded Again this session: they re-enter at the END of the
-  // queue and keep coming back until answered without Again — "a word
-  // is repeated when it is repeated, not when the session finishes".
-  const [retries, setRetries] = useState<ReviewCard[]>([]);
   // Disambig already shown this session (one-shot per key).
   const [disambigSeen, setDisambigSeen] = useState<Set<string>>(() => new Set());
   // Cluster members forced into the queue this session by an active
@@ -226,13 +221,6 @@ export function ReviewPage({
     }
   }
 
-  // Retry copies: Again-graded cards whose FSRS row already left
-  // dueCards (due moved out) come back at the end of the session queue.
-  const liveIds = new Set(
-    [...promotedRows, ...dedupedFiltered, ...inferenceRows, ...clusterRows].map(rid),
-  );
-  const retryRows = retries.filter((r) => !liveIds.has(rid(r)) && !skipped.has(rid(r)));
-
   // Promoted cards prepend the queue (right after the current leech card).
   // Mix activity types by default (v106): round-robin across drill
   // groups, most-overdue first within each — NOT a shuffle. The
@@ -252,7 +240,7 @@ export function ReviewPage({
   const sessionRows = sessionRidsRef.current
     ? mixed.filter((r) => sessionRidsRef.current!.has(rid(r)))
     : mixed;
-  const combined = [...promotedRows, ...sessionRows, ...retryRows];
+  const combined = [...promotedRows, ...sessionRows];
 
   // Per-card session position. Assigned once on first sighting so the
   // queue head doesn't jump on every re-render. New cards (cascade
@@ -360,24 +348,10 @@ export function ReviewPage({
 
   // Again → the card re-enters the session queue at the end (fresh
   // position); any other grade clears its pending retry.
-  // Per-card attempt counter, bumped on every Again. Part of the card
-  // KEY: a retry that resurfaces immediately (short queue / last card)
-  // has the same rid, and without a changed key React never remounts
-  // the drill — the counter advanced but the card stayed frozen in its
-  // answered state (owner-reported bug, v110).
-  const attemptsRef = useRef<Map<string, number>>(new Map());
-  const cardKey = (c: ReviewCard) => `${rid(c)}#${attemptsRef.current.get(rid(c)) ?? 0}`;
-
-  const trackRetry = useCallback((row: ReviewCard, rating: RatingName) => {
-    const id = rid(row);
-    if (rating === "Again") {
-      positionRef.current.delete(id);
-      attemptsRef.current.set(id, (attemptsRef.current.get(id) ?? 0) + 1);
-      setRetries((prev) => (prev.some((r) => rid(r) === id) ? prev : [...prev, row]));
-    } else {
-      setRetries((prev) => prev.filter((r) => rid(r) !== id));
-    }
-  }, []);
+  // No same-day retry (v112, ADR-0014): a wrong answer reschedules
+  // via FSRS — with enable_short_term disabled, Again lands exactly
+  // 24h out, so the card returns tomorrow, not later this session.
+  const cardKey = (c: ReviewCard) => rid(c);
 
   // Guard against fast double-taps re-grading the same attempt (the
   // drill stays mounted until the next render).
@@ -390,11 +364,9 @@ export function ReviewPage({
       lastGradedRef.current = k;
       const cur = current;
       onGrade(cur.itemKey, rating, cur.itemKind, cur.facet);
-      trackRetry(cur, rating);
       onGradedAdvance();
     },
-
-    [current, onGrade, onGradedAdvance, trackRetry],
+    [current, onGrade, onGradedAdvance],
   );
 
   const handleSkipCurrent = useCallback(() => {
@@ -644,13 +616,12 @@ export function ReviewPage({
 
   // Default = recognition card. ONE card, TWO answers (v105): meaning
   // and sound are graded separately on the same reveal, each applied
-  // to its own FSRS row. Again on EITHER dimension re-queues the card
-  // for this session.
+  // to its own FSRS row. Again on either dimension reschedules to
+  // tomorrow (no same-day retry, ADR-0014).
   const handleCombinedGraded = (meaning: RatingName, sound: RatingName) => {
     onGrade(current.itemKey, meaning, current.itemKind, "meaningRecognition");
     onGrade(current.itemKey, sound, current.itemKind, "soundRecognition");
     const worst: RatingName = meaning === "Again" || sound === "Again" ? "Again" : meaning;
-    trackRetry(current, worst);
     if (
       worst === "Again" &&
       current.itemKind === "word" &&

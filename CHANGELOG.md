@@ -11,7 +11,30 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **No same-day retry after a mistake (v112,
+  [ADR-0014](docs/decisions/0014-no-same-day-retry.md)):** a card
+  answered wrong now leaves the session and comes back tomorrow (the
+  scheduler puts an Again exactly 24 h out) instead of re-queuing in
+  the same session — an immediate retry only tests short-term memory.
+  Session totals no longer grow after mistakes.
+- **Etymology boilerplate stripped (v112):** template sentences like
+  "Phonosemantic compound. 口 represents the meaning and 厅 represents
+  the sound." and bare "Simplified form of 聽." no longer render in
+  character descriptions (Learn cards, entity sheet, decomposition
+  tree) — they repeat what the role-colored component formula already
+  shows and bury the genuinely helpful notes ("The right side looks
+  like 斤 (axe) but is actually a corruption of 厅."). Longer
+  simplified-form sentences that carry real content are kept; when
+  nothing survives, the "Originally: …" line steps in.
+
 ### Fixed
+- **Learn card: word cut off at the top and no touch scrolling
+  (v112, BUG-19):** the drill body centers its content (a centered
+  flex child that overflows clips above the scroll origin) and
+  wasn't a working iOS scroll surface. The lesson is now its own
+  scroll container — same pattern as Explore/Classic — so it starts
+  at the top and scrolls with momentum.
 - **Wrong answer could freeze the drill (v111, BUG-18):** after a
   mistake, tapping to continue advanced the counter but kept showing
   the answered card whenever the retry resurfaced immediately (short

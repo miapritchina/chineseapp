@@ -3669,12 +3669,18 @@ body {
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
+  /* The lesson is its OWN scroll container (like .explore-body /
+     .classic-body, which scroll fine on iOS): align-self stretch
+     escapes .review-body's vertical centering — a centered flex child
+     that overflows clips above the scroll origin and iOS wouldn't
+     touch-scroll the shell body at all (owner reports, v112). */
+  align-self: stretch;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 8px 4px 24px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 .learn-hero {
   display: flex;
