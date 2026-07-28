@@ -183,7 +183,9 @@ activity **interleave**, not a grouped run: `interleaveByActivity`
 most-overdue first within each group, the neediest group leading each
 cycle; `wordInference` rotates last (synthetic dueAt). The Shuffle
 toggle replaces this with a full random order. Cards graded Again
-re-enter the session queue until answered without Again. Session
+leave the session and come back tomorrow — FSRS schedules an Again
+exactly 24 h out ([ADR-0014](../decisions/0014-no-same-day-retry.md);
+the v102 repeat-until-correct rule is retired). Session
 size is chosen on the launch screen (v110: 10 / 25 / 50 / All,
 default 25, persisted) — a frozen first-N set UI-side, so the
 session genuinely ends; scheduling is untouched since every card

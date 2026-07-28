@@ -12,6 +12,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **No same-day retry after a mistake (v112,
+  [ADR-0014](docs/decisions/0014-no-same-day-retry.md)):** a card
+  answered wrong now leaves the session and comes back tomorrow (the
+  scheduler puts an Again exactly 24 h out) instead of re-queuing in
+  the same session — an immediate retry only tests short-term memory.
+  Session totals no longer grow after mistakes.
 - **Etymology boilerplate stripped (v112):** template sentences like
   "Phonosemantic compound. 口 represents the meaning and 厅 represents
   the sound." and bare "Simplified form of 聽." no longer render in
