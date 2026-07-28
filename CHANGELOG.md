@@ -11,6 +11,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **Wrong answer could freeze the drill (v111, BUG-18):** after a
+  mistake, tapping to continue advanced the counter but kept showing
+  the answered card whenever the retry resurfaced immediately (short
+  queue / last card) — the retry copy shared the old card's React
+  key, so the drill never reset. Cards are now keyed per attempt, and
+  fast double-taps can no longer double-grade an attempt.
+
 ### Added
 - **Learn mode (v110):** an exercise that teaches instead of testing.
   "Learn · N words" on the review launch screen walks your

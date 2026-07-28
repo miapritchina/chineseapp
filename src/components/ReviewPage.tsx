@@ -360,24 +360,40 @@ export function ReviewPage({
 
   // Again → the card re-enters the session queue at the end (fresh
   // position); any other grade clears its pending retry.
+  // Per-card attempt counter, bumped on every Again. Part of the card
+  // KEY: a retry that resurfaces immediately (short queue / last card)
+  // has the same rid, and without a changed key React never remounts
+  // the drill — the counter advanced but the card stayed frozen in its
+  // answered state (owner-reported bug, v110).
+  const attemptsRef = useRef<Map<string, number>>(new Map());
+  const cardKey = (c: ReviewCard) => `${rid(c)}#${attemptsRef.current.get(rid(c)) ?? 0}`;
+
   const trackRetry = useCallback((row: ReviewCard, rating: RatingName) => {
     const id = rid(row);
     if (rating === "Again") {
       positionRef.current.delete(id);
+      attemptsRef.current.set(id, (attemptsRef.current.get(id) ?? 0) + 1);
       setRetries((prev) => (prev.some((r) => rid(r) === id) ? prev : [...prev, row]));
     } else {
       setRetries((prev) => prev.filter((r) => rid(r) !== id));
     }
   }, []);
 
+  // Guard against fast double-taps re-grading the same attempt (the
+  // drill stays mounted until the next render).
+  const lastGradedRef = useRef<string | null>(null);
   const handleDrillGrade = useCallback(
     (rating: RatingName) => {
       if (!current) return;
+      const k = cardKey(current);
+      if (lastGradedRef.current === k) return;
+      lastGradedRef.current = k;
       const cur = current;
       onGrade(cur.itemKey, rating, cur.itemKind, cur.facet);
       trackRetry(cur, rating);
       onGradedAdvance();
     },
+
     [current, onGrade, onGradedAdvance, trackRetry],
   );
 
@@ -466,7 +482,7 @@ export function ReviewPage({
           <div className="review-empty-hint">Loading word…</div>
         ) : (
           <WordInferenceCard
-            key={rid(current)}
+            key={cardKey(current)}
             word={word}
             glossPool={[
               ...(inferenceWords ?? [])
@@ -500,7 +516,7 @@ export function ReviewPage({
         onSkip={handleSkipCurrent}
       >
         <ReverseRecognitionCard
-          key={rid(current)}
+          key={cardKey(current)}
           answer={current.itemKey}
           gloss={glossOf(current.itemKey)}
           savedWords={savedWords}
@@ -522,7 +538,7 @@ export function ReviewPage({
         onSkip={handleSkipCurrent}
       >
         <ClozeCharCard
-          key={rid(current)}
+          key={cardKey(current)}
           word={current.itemKey}
           gloss={glossOf(current.itemKey)}
           savedWords={savedWords}
@@ -548,7 +564,7 @@ export function ReviewPage({
           <div className="review-empty-hint">Loading family data…</div>
         ) : (
           <FamilySweepCard
-            key={rid(current)}
+            key={cardKey(current)}
             component={comp}
             pool={phoneticComponents}
             charExists={(c) => !!chars?.[c]}
@@ -587,7 +603,7 @@ export function ReviewPage({
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
           <ProductionCard
-            key={rid(current)}
+            key={cardKey(current)}
             char={current.itemKey}
             charData={cd}
             onGrade={handleDrillGrade}
@@ -611,7 +627,7 @@ export function ReviewPage({
         onSkip={handleSkipCurrent}
       >
         <ClusterRecallCard
-          key={rid(current)}
+          key={cardKey(current)}
           cluster={clusterWords}
           onGraded={(rating) => {
             for (const w of clusterWords) {
@@ -679,7 +695,7 @@ export function ReviewPage({
           </div>
         ) : (
           <CombinedRecognitionCard
-            key={rid(current)}
+            key={cardKey(current)}
             itemKey={current.itemKey}
             itemKind={current.itemKind}
             word={word}
