@@ -29,8 +29,10 @@ Design constraints shared by all drills:
 saved whose every character appears in their saved words — e.g. saved
 电话 + 大脑 → show 电脑. v103: the user picks the meaning among 4
 options (distractor glosses from their other words); the reveal shows
-each character as a pinyin → hanzi → meaning stack. Correct pick →
-cascade credit; wrong → nothing.
+each character as a pinyin → hanzi → meaning stack. v110: pinyin is
+visible BEFORE answering (the word is new; sound is fair help), and
+the post-answer breakdown pieces open each character's sheet. Correct
+pick → cascade credit; wrong → nothing.
 
 - **Material:** ordered pairs of the user's known characters (from the
   most recently saved words, capped) probed against the dictionary via
@@ -77,6 +79,20 @@ v107 wording note: the prompt says "contains 青" — the decoys never
 contain the component, so the task is visual component-spotting, and
 framing it as a sound drill oversold it. (The familyTransfer drill
 this once extended was retired in v107 — owner saw no value in it.)
+
+## Learn mode (v110 — teaches, never tests)
+
+Owner ask: "an exercise whose goal is not to test my knowledge but to
+teach me." A lesson session from the review launch screen ("Learn ·
+N words"): material = never-reviewed saved words first (newest saves
+leading), then weakest by recognition stability (`lib/learn.ts`),
+capped by the chosen session size. Each card: the word with pinyin +
+audio → per-character cards with role-colored component formulas
+(请 = 讠 speech + 青 qīng) and the dictionary's etymology notes →
+"You already know" related saved words → Continue. No grading
+anywhere; finishing a card applies the passive-view credit
+("introduced": stability nudge, due ≤ +2 days, no rep) so the first
+real test comes soon but not cold. Every glyph opens its EntitySheet.
 
 ## Backlog (in TODO.md)
 

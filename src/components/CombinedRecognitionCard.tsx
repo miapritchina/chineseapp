@@ -14,6 +14,8 @@ interface Props {
   // separately on the same reveal. Reported together once both are
   // picked; the parent applies each to its FSRS row.
   onGraded: (meaning: RatingName, sound: RatingName) => void;
+  // Open the EntitySheet for the focal item (post-reveal).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Recognition card. Tap anywhere to reveal (pinyin + meaning + audio),
@@ -21,7 +23,13 @@ interface Props {
 // moment the second row is picked, no extra tap. A horizontal swipe is
 // the fast path: it applies one rating to BOTH rows (right → Good,
 // left → Again).
-export function CombinedRecognitionCard({ itemKey, word, charData, onGraded }: Props) {
+export function CombinedRecognitionCard({
+  itemKey,
+  word,
+  charData,
+  onGraded,
+  onOpenEntity,
+}: Props) {
   const [revealed, setRevealed] = useState(false);
   const [meaningGrade, setMeaningGrade] = useState<RatingName | null>(null);
   const [soundGrade, setSoundGrade] = useState<RatingName | null>(null);
@@ -103,6 +111,10 @@ export function CombinedRecognitionCard({ itemKey, word, charData, onGraded }: P
           showPinyin={false}
           showMeaning={false}
           ariaLabel={itemKey}
+          // Post-reveal the answer is out — tapping the glyph opens
+          // its sheet for exploring (pre-reveal it stays inert so the
+          // tap-anywhere reveal keeps working).
+          onTap={revealed && onOpenEntity ? () => onOpenEntity(itemKey) : undefined}
         />
         {!revealed && <div className="review-tap-hint">Tap anywhere to reveal</div>}
         {revealed && (

@@ -12,6 +12,41 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **Learn mode (v110):** an exercise that teaches instead of testing.
+  "Learn · N words" on the review launch screen walks your
+  never-reviewed (then weakest) words through lesson cards: word +
+  pinyin + audio, each character broken into role-colored components
+  (请 = 讠 speech + 青 qīng) with the dictionary's etymology story,
+  plus related words you already know. No grading — finishing a card
+  marks the word "introduced" (small schedule nudge, no repetition),
+  so its first real review comes soon but not cold. Every glyph opens
+  its sheet.
+
+### Changed
+- **Session size is your choice (v110):** the launch screen offers
+  10 / 25 / 50 / All (default 25, remembered) — replaces the fixed
+  25-card session from v107.
+- **New-word drill shows pinyin before answering (v110):** the word
+  is new — its sound is fair help for guessing the meaning.
+- **Every character in every drill is explorable (v110):** once a
+  card is answered/revealed, tapping any glyph — the recognition
+  focal card, reverse/cloze/sweep option tiles, the New-word
+  breakdown, cluster words, confusable-compare cells, the traced
+  character — opens its bottom sheet over the session (dotted
+  underline marks tappable glyphs where they aren't already cards).
+  Close the sheet and the card is exactly where you left it. The
+  passive-view credit does NOT apply to sheets opened mid-review —
+  it would have silently completed the current card before grading.
+- **Sharing shares the profile, not a snapshot (v110, migration
+  0013):** "Share my words" now hands out ONE stable short link per
+  account. Opening it imports the sharer's saved words **as they are
+  at that moment** — resolved live via a new `get_profile_words` RPC
+  — so re-opening the same link later picks up everything saved
+  since. Words are no longer encoded into the URL when signed in;
+  the inline-blob link remains only as the signed-out fallback, and
+  old links (short and inline) keep working.
+
+### Added
 - **Explore page (v109,
   [spec](docs/product/explore-page.md)):** one browsing surface for
   words ↔ characters ↔ components. Component index (the old Phonetics

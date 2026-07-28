@@ -7,6 +7,8 @@ export interface ReviewSettings {
   // Off by default: hide cascade-seeded char cards (sub-characters of
   // saved words that the user never explicitly saved) from the queue.
   includeSubchars: boolean;
+  // Cards per session (v110, owner-chosen; null = everything due).
+  sessionSize: number | null;
 }
 
 const SETTINGS_KEY = "chinese.reviewSettings";
@@ -72,10 +74,17 @@ export function loadSettings(): ReviewSettings {
       const parsed = JSON.parse(raw) as Partial<ReviewSettings>;
       if (Array.isArray(parsed.enabledFacets)) {
         const cleaned = (parsed.enabledFacets as Facet[]).filter((f) => KNOWN_FACETS.has(f));
+        const size =
+          parsed.sessionSize === null
+            ? null
+            : typeof parsed.sessionSize === "number" && parsed.sessionSize > 0
+              ? parsed.sessionSize
+              : DEFAULT_SESSION_SIZE;
         return {
           enabledFacets: cleaned.length > 0 ? cleaned : DEFAULT_FACETS,
           randomOrder: !!parsed.randomOrder,
           includeSubchars: !!parsed.includeSubchars,
+          sessionSize: size,
         };
       }
     }
@@ -86,6 +95,7 @@ export function loadSettings(): ReviewSettings {
     enabledFacets: DEFAULT_FACETS,
     randomOrder: false,
     includeSubchars: false,
+    sessionSize: DEFAULT_SESSION_SIZE,
   };
 }
 
@@ -97,14 +107,20 @@ function saveSettings(s: ReviewSettings) {
   }
 }
 
-// UI session size — mirrors ReviewPage's SESSION_LIMIT.
-const SESSION_LIMIT = 25;
+// Session-size choices (v110). null = everything due.
+const SESSION_SIZES: (number | null)[] = [10, 25, 50, null];
+const DEFAULT_SESSION_SIZE = 25;
 
 interface Props {
   // Counts of due cards per facet — shown so the user knows what they're
   // about to study before tapping Start.
   facetCounts: Record<string, number>;
   totalDue: number;
+  // Learn mode (v110): how many saved words qualify for a lesson, and
+  // the launcher — receives the chosen session size so App can cap
+  // the lesson the same way review sessions are capped.
+  learnCount?: number;
+  onStartLearn?: (sessionSize: number | null) => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -112,12 +128,20 @@ interface Props {
 // Launch surface for a review session. Shown when the user navigates to
 // #/review; hands a settings object up to the parent on Start. Settings
 // persist in localStorage so reopening uses the user's last choice.
-export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props) {
+export function ReviewLaunch({
+  facetCounts,
+  totalDue,
+  learnCount = 0,
+  onStartLearn,
+  onStart,
+  onClose,
+}: Props) {
   const [enabled, setEnabled] = useState<Set<Facet>>(() => new Set(loadSettings().enabledFacets));
   const [randomOrder, setRandomOrder] = useState<boolean>(() => loadSettings().randomOrder);
   const [includeSubchars, setIncludeSubchars] = useState<boolean>(
     () => loadSettings().includeSubchars,
   );
+  const [sessionSize, setSessionSize] = useState<number | null>(() => loadSettings().sessionSize);
 
   // Persist on every toggle so the values survive a navigation away.
   useEffect(() => {
@@ -125,8 +149,9 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
       enabledFacets: [...enabled],
       randomOrder,
       includeSubchars,
+      sessionSize,
     });
-  }, [enabled, randomOrder, includeSubchars]);
+  }, [enabled, randomOrder, includeSubchars, sessionSize]);
 
   const toggleFacet = (f: Facet) => {
     setEnabled((prev) => {
@@ -143,7 +168,7 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
   );
 
   const start = () => {
-    onStart({ enabledFacets: expandFacets(enabled), randomOrder, includeSubchars });
+    onStart({ enabledFacets: expandFacets(enabled), randomOrder, includeSubchars, sessionSize });
   };
 
   return (
@@ -181,6 +206,22 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
                 </button>
               );
             })}
+          </div>
+        </div>
+        <div className="launch-section">
+          <div className="launch-section-title">Session size</div>
+          <div className="launch-size-row">
+            {SESSION_SIZES.map((n) => (
+              <button
+                key={n ?? "all"}
+                type="button"
+                className={`sort-pill${sessionSize === n ? " is-active" : ""}`}
+                onClick={() => setSessionSize(n)}
+                aria-pressed={sessionSize === n}
+              >
+                {n === null ? "All" : n}
+              </button>
+            ))}
           </div>
         </div>
         <div className="launch-section">
@@ -228,10 +269,21 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
           onClick={start}
           disabled={visibleDue === 0}
         >
-          {visibleDue > SESSION_LIMIT
-            ? `Start review · ${SESSION_LIMIT} of ${visibleDue} cards`
+          {sessionSize !== null && visibleDue > sessionSize
+            ? `Start review · ${sessionSize} of ${visibleDue} cards`
             : `Start review · ${visibleDue} cards`}
         </button>
+        {onStartLearn && (
+          <button
+            type="button"
+            className="review-btn"
+            onClick={() => onStartLearn(sessionSize)}
+            disabled={learnCount === 0}
+            title="A lesson, not a test: each word is introduced with sound, component breakdown, and your related words. No grading."
+          >
+            Learn · {Math.min(sessionSize ?? learnCount, learnCount)} words
+          </button>
+        )}
       </div>
     </div>
   );

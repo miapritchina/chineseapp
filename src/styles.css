@@ -1093,6 +1093,25 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Drill glyphs that open the EntitySheet once the card is answered
+   (v110). A dotted underline keeps the affordance quiet. */
+.is-explorable {
+  cursor: pointer;
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+.production-explore {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 14px;
+  margin-top: 10px;
+}
+
 /* Disambiguation card — side-by-side comparison of confusable cluster
    members. Shown once per session before a leech-marked card surfaces. */
 .disambig-root {
@@ -2171,7 +2190,9 @@ body {
 .modal-root {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  /* Above the sheet (70): the tree opens from the sheet, which can
+     itself sit over a full-screen page since v110. */
+  z-index: 75;
   display: none;
   background: var(--bg);
   flex-direction: column;
@@ -3195,7 +3216,9 @@ body {
 .sheet-root {
   position: fixed;
   inset: 0;
-  z-index: 55;
+  /* Above the full-screen pages (60) since v110 — drills open the
+     sheet for any tapped character mid-session. */
+  z-index: 70;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -3632,4 +3655,88 @@ body {
   .sheet-grip-zone {
     padding-top: 8px;
   }
+}
+
+/* Session-size pills on the review launch screen (v110). */
+.launch-size-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Learn mode (v110) — lesson cards that teach instead of test. */
+.learn-body {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 4px 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.learn-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.learn-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: calc(var(--hanzi-hero, 120px) * 0.7);
+  line-height: 1.15;
+}
+.learn-char {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.learn-char-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.learn-char-glyph {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+}
+.learn-char-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.learn-char-pinyin {
+  color: var(--muted);
+  font-size: var(--body);
+}
+.learn-char-def {
+  font-size: var(--body);
+}
+.learn-pieces {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--heading-2);
+}
+.learn-piece-plus {
+  color: var(--muted);
+}
+.learn-note {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.learn-related {
+  display: flex;
+  flex-direction: column;
+}
+.learn-continue {
+  align-self: center;
+  margin-top: 4px;
 }

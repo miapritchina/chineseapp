@@ -102,7 +102,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │       ├── componentSearch.mjs+.d.ts Recursive-closure search + freq map
 │       ├── confusionClusters.mjs+.d.ts Hand-curated leech clusters
 │       ├── fsrs.ts                  ts-fsrs wrapper + cascade math
-│       ├── share.ts                 encode/decode the saved set ↔ ?share= link
+│       ├── share.ts                 profile share links (?share=token → live saved set)
 │       └── supabase.ts              Client + wakeUp ping
 ├── public/
 │   ├── data-chars.json              ~10k chars + components + etymology
