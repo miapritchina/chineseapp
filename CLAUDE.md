@@ -76,6 +76,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── ClusterRecallCard        Drill: recall a group of related saved words
 │   │   ├── SiftPage                 Tinder-style triage over the due backlog
 │   │   ├── StatsPage                Words/strength/review-history stats (#/stats)
+│   │   ├── ForgePage / PairsPage    Games: component forging + memory match (ungraded)
 │   │   ├── LearnPage                Lesson cards that teach instead of test
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz
 │   │   ├── DisambiguationCard       Leech-cluster side-by-side compare

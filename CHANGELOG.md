@@ -12,6 +12,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **Games (v116):** two owner-picked games on the workout launch
+  screen, pure play — nothing is graded. **⚒ Forge:** loose
+  components scatter in a tray; tap a valid pair to forge a character
+  you know (讠 + 青 = 请) — forged characters line up with reading +
+  meaning and speak. **🀄 Pairs:** classic memory match, six hanzi
+  tiles against their meanings (due words first), moves + time score,
+  deal again.
+
+### Added
 - **Stats page (v115):** hamburger → Stats. Words collected + learned
   + due now, a word-strength breakdown (solid / growing / shaky / not
   started by FSRS stability), and — signed in — reviews-per-day bars

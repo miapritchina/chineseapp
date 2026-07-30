@@ -38,6 +38,10 @@ import { LearnPage } from "./components/LearnPage";
 import { SiftPage } from "./components/SiftPage";
 import { SentenceStudio } from "./components/SentenceStudio";
 import { StatsPage } from "./components/StatsPage";
+import { ForgePage } from "./components/ForgePage";
+import { PairsPage } from "./components/PairsPage";
+import { forgeCandidates } from "./lib/forge";
+import { PAIRS_PER_BOARD } from "./lib/pairs";
 
 import { AppStateProvider } from "./state/contexts";
 import { useUIStore } from "./state/uiStore";
@@ -248,6 +252,22 @@ export function App() {
   const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
   // Learn mode (v110): the active lesson's words; null = no lesson.
   const [learnWords, setLearnWords] = useState<string[] | null>(null);
+  // Games (v116): pure play, launched from the review launch screen.
+  const [gameOpen, setGameOpen] = useState<"forge" | "pairs" | null>(null);
+  const forgeReady = useMemo(
+    () =>
+      forgeCandidates(
+        saved.savedList.map((s) => s.word),
+        charsData.chars,
+      ).length >= 3,
+    [saved.savedList, charsData.chars],
+  );
+  // Pairs material: due words first, the rest of the shelf after.
+  const pairsPool = useMemo(
+    () => [...new Set([...siftableWords, ...saved.savedList.map((s) => s.word)])],
+    [siftableWords, saved.savedList],
+  );
+
   // "Just start" flow (v114): the stages still ahead of the active one.
   // Non-empty ⇒ the current stage auto-advances into the next when its
   // deck drains.
@@ -291,6 +311,7 @@ export function App() {
         setLearnWords(null);
         setSiftWords(null);
         setFlowQueue([]);
+        setGameOpen(null);
       }
       const entry = parseHash();
       if (entry) {
@@ -521,7 +542,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v115"
+          version="chinese v116"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -543,7 +564,7 @@ export function App() {
         </div>
       </header>
 
-      {showReview && !reviewLaunched && !learnWords && !siftWords && (
+      {showReview && !reviewLaunched && !learnWords && !siftWords && !gameOpen && (
         <ReviewLaunch
           totalDue={dueCards.length}
           facetCounts={{
@@ -560,8 +581,31 @@ export function App() {
           siftCount={siftableWords.length}
           onStartSift={() => setSiftWords(siftableWords)}
           onJustStart={justStart}
+          forgeReady={forgeReady}
+          onStartForge={() => setGameOpen("forge")}
+          pairsReady={pairsPool.length >= PAIRS_PER_BOARD}
+          onStartPairs={() => setGameOpen("pairs")}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
+        />
+      )}
+      {showReview && gameOpen === "forge" && (
+        <ForgePage
+          onClose={() => setGameOpen(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+        />
+      )}
+      {showReview && gameOpen === "pairs" && (
+        <PairsPage
+          words={pairsPool}
+          onClose={() => setGameOpen(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
         />
       )}
       {showReview && siftWords && (

@@ -3,7 +3,7 @@
 // the rules are unit-testable. Callers pass `rand` for deterministic
 // tests; production uses Math.random.
 
-type Rand = () => number;
+export type Rand = () => number;
 
 export function shuffle<T>(arr: T[], rand: Rand = Math.random): T[] {
   const out = arr.slice();

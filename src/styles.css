@@ -3963,3 +3963,160 @@ body {
   color: var(--muted);
   font-size: var(--body);
 }
+
+/* Games (v116): Forge + Pairs. */
+.launch-games-row {
+  display: flex;
+  gap: 10px;
+}
+.launch-game-btn {
+  flex: 1;
+}
+.forge-body,
+.pairs-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 16px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.forge-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 360px;
+}
+.forge-piece {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+  width: 76px;
+  height: 76px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s,
+    border-color 0.12s,
+    opacity 0.2s;
+}
+.forge-piece.is-selected {
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+.forge-piece.is-consumed {
+  opacity: 0;
+  pointer-events: none;
+}
+.forge-piece.is-wrong {
+  animation: forge-shake 0.4s;
+  border-color: var(--grade-again);
+}
+@keyframes forge-shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.forge-done-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.forge-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--status-learned);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  max-width: 150px;
+}
+.forge-result-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-medium);
+  line-height: 1.1;
+}
+.forge-result-meta {
+  font-size: var(--caption);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.forge-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.forge-end-title {
+  font-size: var(--heading-1);
+  font-weight: 600;
+}
+.pairs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+.pairs-tile {
+  min-height: 92px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 22px;
+  padding: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.pairs-tile.is-up {
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: var(--body);
+  line-height: 1.3;
+  word-break: break-word;
+}
+.pairs-tile.is-up.is-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-medium);
+}
+.pairs-tile.is-matched {
+  border-color: var(--status-learned);
+  opacity: 0.75;
+}
+.pairs-status {
+  color: var(--muted);
+  font-size: var(--caption);
+}
+.pairs-review-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}

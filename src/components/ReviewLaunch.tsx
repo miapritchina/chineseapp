@@ -142,6 +142,11 @@ interface Props {
   // "Just start" (v114): one tap, App builds the whole session
   // (sift → drills → learn) from the saved settings.
   onJustStart?: () => void;
+  // Games (v116): pure play, no grading.
+  forgeReady?: boolean;
+  onStartForge?: () => void;
+  pairsReady?: boolean;
+  onStartPairs?: () => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -157,6 +162,10 @@ export function ReviewLaunch({
   siftCount = 0,
   onStartSift,
   onJustStart,
+  forgeReady = false,
+  onStartForge,
+  pairsReady = false,
+  onStartPairs,
   onStart,
   onClose,
 }: Props) {
@@ -359,6 +368,32 @@ export function ReviewLaunch({
           >
             Sift · {siftCount} due words
           </button>
+        )}
+        {(onStartForge || onStartPairs) && (
+          <div className="launch-games-row">
+            {onStartForge && (
+              <button
+                type="button"
+                className="review-btn launch-game-btn"
+                onClick={onStartForge}
+                disabled={!forgeReady}
+                title="Game: combine loose components into characters you know. Nothing is graded."
+              >
+                ⚒ Forge
+              </button>
+            )}
+            {onStartPairs && (
+              <button
+                type="button"
+                className="review-btn launch-game-btn"
+                onClick={onStartPairs}
+                disabled={!pairsReady}
+                title="Game: memory match — hanzi tiles against meanings. Nothing is graded."
+              >
+                🀄 Pairs
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -123,6 +123,26 @@ Session-wide sound setting (v114): "Speak answers automatically"
 auto-play — reveals, Sift cards, Learn lesson openings. The 🔊 replay
 buttons always work regardless.
 
+## Games (v116 — play, not practice)
+
+Owner picked two from a proposed list (word chain, tone sniper,
+forge, pairs, sprint, scramble). Both are launch-screen buttons and
+write NO FSRS state — pure exposure.
+
+- **⚒ Forge** (`lib/forge.ts` + `ForgePage`): tray of scattered
+  components from the user's known characters (only chars that split
+  into exactly 2 distinct pieces qualify; piece glyphs are unique per
+  round so every valid pair forges exactly one target). Tap two →
+  forge → the character lines up below with pinyin + gloss + audio.
+  Round of ≤ 5; misses counted; "New round" re-deals.
+- **🀄 Pairs** (`lib/pairs.ts` + `PairsPage`): 6-pair memory board,
+  hanzi tiles vs meaning tiles, material due-words-first. Mismatch
+  flips back; match locks green + speaks. Score = moves + seconds;
+  matched words are tappable into their sheets at the end.
+
+Unpicked ideas parked for later: 词语接龙 word chain, tone sniper,
+speed sprint (TODO), sentence scramble.
+
 ## Backlog (in TODO.md)
 
 ### 5 · Audio-first recognition
