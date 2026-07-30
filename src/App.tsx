@@ -37,6 +37,7 @@ import {
 import { LearnPage } from "./components/LearnPage";
 import { SiftPage } from "./components/SiftPage";
 import { SentenceStudio } from "./components/SentenceStudio";
+import { StatsPage } from "./components/StatsPage";
 
 import { AppStateProvider } from "./state/contexts";
 import { useUIStore } from "./state/uiStore";
@@ -129,6 +130,11 @@ export function App() {
     [saved.savedList, reviewState.cards],
   );
 
+  // Stats page (v115): routed via #/stats like the other full pages.
+  const [showStats, setShowStats] = useState<boolean>(
+    () => typeof window !== "undefined" && window.location.hash === "#/stats",
+  );
+
   // Sift mode (v113): the active triage deck; null = not sifting.
   const [siftWords, setSiftWords] = useState<string[] | null>(null);
   // Words left-swiped in Sift today — hidden from Sift until tomorrow,
@@ -173,6 +179,17 @@ export function App() {
       siftKept,
     );
   }, [saved.savedList, reviewState.cards, weakness, siftKept]);
+
+  // Stats page material (v115): words with anything due right now
+  // (unlike siftableWords, today's left-swipes still count as due).
+  const dueWordCount = useMemo(() => {
+    const savedSet = new Set(saved.savedList.map((s) => s.word));
+    const due = new Set<string>();
+    for (const row of reviewState.cards.values()) {
+      if (savedSet.has(row.itemKey) && isDue(row.card)) due.add(row.itemKey);
+    }
+    return due.size;
+  }, [saved.savedList, reviewState.cards]);
 
   // Cluster-recall material (v107, a drill type since the standalone
   // page was folded into the session queue).
@@ -264,6 +281,7 @@ export function App() {
       setShowReview(window.location.hash === "#/review");
       setShowExplore(window.location.hash === "#/explore");
       setShowClassic(window.location.hash === "#/classic");
+      setShowStats(window.location.hash === "#/stats");
       if (window.location.hash === "#/sentence") {
         setSearchMode("sentence");
         history.replaceState(history.state, "", location.pathname + location.search);
@@ -292,6 +310,7 @@ export function App() {
       if (target === "#/review") setShowReview(false);
       if (target === "#/explore") setShowExplore(false);
       if (target === "#/classic") setShowClassic(false);
+      if (target === "#/stats") setShowStats(false);
     }
   };
 
@@ -502,11 +521,12 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v114"
+          version="chinese v115"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
           classicHref="#/classic"
+          statsHref="#/stats"
           onShareWords={shareMyWords}
           wordCount={saved.savedList.length}
           brushFont={brushFont}
@@ -582,6 +602,7 @@ export function App() {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
           }}
+          onOpenTree={(c) => push({ kind: "char", key: c, view: "tree" })}
           onIntroduced={(w) => creditPassiveView(w)}
         />
       )}
@@ -630,6 +651,17 @@ export function App() {
             if (kind === "word") void openWord(key);
             else openChar(key);
           }}
+        />
+      )}
+
+      {showStats && (
+        <StatsPage
+          userId={auth.user?.id ?? null}
+          totalWords={saved.savedList.length}
+          learnedCount={saved.learned.size}
+          dueCount={dueWordCount}
+          stabilities={saved.savedList.map((e) => weakness.get(e.word) ?? 0)}
+          onClose={() => closeHashPage("#/stats")}
         />
       )}
 

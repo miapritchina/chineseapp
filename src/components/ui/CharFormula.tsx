@@ -26,7 +26,7 @@ export function CharFormula({ pieces, onOpenEntity }: Props) {
           >
             {p.char}
             {p.type === "sound" && p.pinyin
-              ? ` ${p.pinyin}`
+              ? ` ${p.pinyin}${p.definition ? ` ${p.definition}` : ""}`
               : p.definition
                 ? ` ${p.definition}`
                 : ""}

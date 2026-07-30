@@ -7,6 +7,7 @@ interface Props {
   reviewBadge?: number;
   exploreHref?: string | null;
   classicHref?: string | null;
+  statsHref?: string | null;
   onShareWords?: () => void;
   wordCount?: number;
   // Brush-form hanzi display pref (v114).
@@ -23,6 +24,7 @@ export function HamburgerMenu({
   reviewBadge = 0,
   exploreHref,
   classicHref = null,
+  statsHref = null,
   onShareWords,
   wordCount = 0,
   brushFont = false,
@@ -94,6 +96,16 @@ export function HamburgerMenu({
             onClick={() => setOpen(false)}
           >
             <span>三字经 · Classic</span>
+          </a>
+        )}
+        {statsHref && (
+          <a
+            role="menuitem"
+            className="hamburger-item"
+            href={statsHref}
+            onClick={() => setOpen(false)}
+          >
+            <span>Stats</span>
           </a>
         )}
         {onShareWords && (

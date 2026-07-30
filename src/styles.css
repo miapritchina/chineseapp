@@ -1096,11 +1096,10 @@ body {
 }
 
 /* Drill glyphs that open the EntitySheet once the card is answered
-   (v110). A dotted underline keeps the affordance quiet. */
+   (v110). No visual marker (v115, owner: the dotted underline was
+   ugly noise) — tapping glyphs is learned behavior by now. */
 .is-explorable {
   cursor: pointer;
-  text-decoration: underline dotted var(--muted);
-  text-underline-offset: 4px;
   -webkit-tap-highlight-color: transparent;
 }
 .production-explore {
@@ -3770,8 +3769,11 @@ body {
 }
 .sift-hanzi {
   font-family: var(--font-hanzi, inherit);
-  font-size: calc(var(--hanzi-hero, 120px) * 0.8);
+  /* The glyph IS the page (v115): full hero size, generous air. */
+  font-size: calc(var(--hanzi-hero, 120px) * var(--hanzi-scale, 1));
   line-height: 1.15;
+  margin: 26px 0 14px;
+  max-width: 100%;
 }
 .sift-actions {
   display: flex;
@@ -3835,4 +3837,129 @@ body {
   font-family: "Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "AR PL UKai CN", serif;
   font-size: 18px;
   margin-left: 2px;
+}
+
+/* Stats page (v115). */
+.stats-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 18px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.stats-hero {
+  text-align: center;
+  padding-top: 10px;
+}
+.stats-hero-number {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+}
+.stats-hero-label {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: var(--body);
+}
+.stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stats-strength-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 2px;
+}
+.stats-strength-seg {
+  min-width: 4px;
+}
+.stats-strength-seg.is-solid,
+.stats-dot.is-solid {
+  background: var(--status-learned);
+}
+.stats-strength-seg.is-growing,
+.stats-dot.is-growing {
+  background: var(--status-saved);
+}
+.stats-strength-seg.is-shaky,
+.stats-dot.is-shaky {
+  background: var(--status-review);
+}
+.stats-strength-seg.is-fresh,
+.stats-dot.is-fresh {
+  background: var(--border);
+}
+.stats-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stats-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--body);
+}
+.stats-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.stats-legend-label {
+  flex: 1;
+}
+.stats-legend-count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stats-summary-row {
+  display: flex;
+  gap: 18px;
+  font-size: var(--body);
+  color: var(--muted);
+}
+.stats-summary-row b {
+  color: var(--text);
+  font-size: 18px;
+}
+.stats-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 90px;
+  padding-top: 6px;
+}
+.stats-bar-slot {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.stats-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--surface-2);
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface-2));
+}
+.stats-bar.is-today {
+  background: var(--accent);
+}
+.stats-bars-caption {
+  font-size: var(--caption);
+  color: var(--muted);
+}
+.stats-hint {
+  color: var(--muted);
+  font-size: var(--body);
 }

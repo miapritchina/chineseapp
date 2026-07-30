@@ -16,6 +16,7 @@ import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import { interleaveByActivity } from "../lib/drillGen";
+import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
 
@@ -285,11 +286,16 @@ export function ReviewPage({
   }
 
   // Hydrate the next few words in the background so reveal is instant.
+  // Second pass caches any "variant of X" cross-ref targets so glosses
+  // resolve to real meanings (v115).
   useEffect(() => {
     if (!current) return;
     const window = queue.slice(0, 5).map((c) => c.itemKey);
-    void ensureCached(window);
-  }, [current?.itemKey, ensureCached, queue]);
+    void ensureCached(window).then(() => {
+      const targets = window.flatMap((k) => crossRefTargets(findWord(k)?.definitions ?? []));
+      if (targets.length > 0) void ensureCached(targets);
+    });
+  }, [current?.itemKey, ensureCached, findWord, queue]);
 
   // Warm stroke data for upcoming Writing cards — HanziWriter fetches
   // per-char JSON from the CDN when the card mounts, a visible
@@ -442,9 +448,9 @@ export function ReviewPage({
   const glossOf = (key: string) => {
     const w = findWord(key);
     const cd = chars?.[key];
-    return w
-      ? (w.definitions || []).slice(0, 3).join("; ")
-      : (cd?.definitions || []).slice(0, 3).join("; ");
+    return resolveCrossRefs(w ? w.definitions || [] : cd?.definitions || [], findWord)
+      .slice(0, 3)
+      .join("; ");
   };
   const savedWords = savedList.map((s) => s.word);
 

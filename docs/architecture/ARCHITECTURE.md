@@ -241,9 +241,9 @@ Two patterns coexist:
   `{ kind: "word"|"char", key, view?: "sheet"|"tree" }` — `view`
   defaults to `"sheet"` (EntitySheet); `"tree"` renders the full d3
   `TreeModal`.
-- **Top-level pages** (`#/review`, `#/phonetics`, `#/classic`, `#/sentence`): a
-  plain `hashchange` listener in `App.tsx` toggles a flag. No modal-
-  stack involvement.
+- **Top-level pages** (`#/review`, `#/explore`, `#/classic`,
+  `#/sentence`, `#/stats`): a plain `hashchange` listener in
+  `App.tsx` toggles a flag. No modal-stack involvement.
 
 The combined recognition card has a launch screen (`ReviewLaunch`)
 between `#/review` and the actual review session — `App.tsx` holds

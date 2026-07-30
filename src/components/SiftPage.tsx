@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useCharsCtx, useDictCtx } from "../state/contexts";
 import { autoSpeak, speak, stopSpeech } from "../lib/speech";
+import { hanziScaleStyle } from "../lib/hanzi";
+import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
@@ -44,6 +46,12 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity, onCompl
   useEffect(() => {
     if (!current && onComplete) onComplete();
   }, [current, onComplete]);
+
+  const word = current ? findWord(current) : null;
+  const cd = current ? chars?.[current] : undefined;
+  const pinyin = word?.pinyin ?? cd?.pinyin ?? "";
+  const defs = useResolvedDefs(word?.definitions ?? cd?.definitions ?? []);
+  const gloss = defs.slice(0, 3).join("; ");
 
   const decide = (verdict: "know" | "keep") => {
     if (!current || decidedRef.current) return;
@@ -91,11 +99,6 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity, onCompl
     );
   }
 
-  const word = findWord(current);
-  const cd = chars?.[current];
-  const pinyin = word?.pinyin ?? cd?.pinyin ?? "";
-  const gloss = (word?.definitions ?? cd?.definitions ?? []).slice(0, 3).join("; ");
-
   return (
     <DrillShell
       tag="Sift"
@@ -113,6 +116,7 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity, onCompl
         <div className="phonetic-tap-prompt">Know it? Swipe right. Needs work? Swipe left.</div>
         <span
           className={`sift-hanzi${onOpenEntity ? " is-explorable" : ""}`}
+          style={hanziScaleStyle(current)}
           onClick={onOpenEntity ? () => onOpenEntity(current) : undefined}
           role="button"
           tabIndex={0}

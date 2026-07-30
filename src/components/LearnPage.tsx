@@ -8,6 +8,7 @@ import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
 import { Entity } from "./Entity";
 import { CharFormula } from "./ui/CharFormula";
+import { useResolvedDefs } from "../hooks/useResolvedDefs";
 
 interface Props {
   // The lesson's words, already ordered and capped by the caller.
@@ -15,6 +16,8 @@ interface Props {
   onClose: () => void;
   // Open the EntitySheet for a tapped glyph.
   onOpenEntity: (key: string) => void;
+  // Open the full d3 decomposition tree for a character (v115).
+  onOpenTree?: (char: string) => void;
   // Called once per finished lesson card — applies the small
   // passive-style schedule nudge ("introduced", not "answered").
   onIntroduced: (word: string) => void;
@@ -29,7 +32,14 @@ interface Props {
 // dictionary's etymology notes) → the owner's related words, then a
 // Continue tap. No grading anywhere; finishing a card marks the word
 // introduced so tomorrow's review is its first real test.
-export function LearnPage({ words, onClose, onOpenEntity, onIntroduced, onComplete }: Props) {
+export function LearnPage({
+  words,
+  onClose,
+  onOpenEntity,
+  onOpenTree,
+  onIntroduced,
+  onComplete,
+}: Props) {
   const { chars } = useCharsCtx();
   const { findWord, ensureCached } = useDictCtx();
   const { savedList } = useSavedCtx();
@@ -52,6 +62,11 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced, onComple
     if (!current && onComplete) onComplete();
   }, [current, onComplete]);
 
+  const word = current ? findWord(current) : null;
+  const heroDefs = useResolvedDefs(
+    word?.definitions ?? (current ? chars?.[current]?.definitions : undefined) ?? [],
+  );
+
   if (!current) {
     return (
       <div className="review-root">
@@ -65,7 +80,6 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced, onComple
     );
   }
 
-  const word = findWord(current);
   const glyphs = [...new Set(current)];
   const related = wordsSharingChar(current, savedWords).slice(0, 6);
 
@@ -95,9 +109,7 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced, onComple
           <div className="review-pinyin review-pinyin-lg">
             {word?.pinyin ?? chars?.[current]?.pinyin ?? ""}
           </div>
-          <div className="review-gloss">
-            {(word?.definitions ?? chars?.[current]?.definitions ?? []).slice(0, 3).join("; ")}
-          </div>
+          <div className="review-gloss">{heroDefs.slice(0, 3).join("; ")}</div>
           <button type="button" className="review-tap-replay" onClick={() => speak(current)}>
             🔊 replay
           </button>
@@ -123,6 +135,17 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced, onComple
                   <span className="learn-char-pinyin">{cd.pinyin}</span>
                   <span className="learn-char-def">{cd.definitions?.[0] ?? ""}</span>
                 </span>
+                {onOpenTree && pieces.length > 0 && (
+                  <button
+                    type="button"
+                    className="sheet-etym-expand learn-char-tree"
+                    aria-label={`Open the decomposition tree for ${c}`}
+                    title="Full decomposition tree"
+                    onClick={() => onOpenTree(c)}
+                  >
+                    ⤢
+                  </button>
+                )}
               </div>
               <CharFormula pieces={pieces} onOpenEntity={onOpenEntity} />
               {note && <div className="learn-note">{note}</div>}

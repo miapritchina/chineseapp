@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Word, Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
 import { autoSpeak, speak, stopSpeech } from "../lib/speech";
+import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { GradeButtons } from "./ui/GradeButtons";
 import { Entity } from "./Entity";
 
@@ -37,9 +38,8 @@ export function CombinedRecognitionCard({
   const gradedRef = useRef(false);
 
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
-  const gloss = word
-    ? (word.definitions || []).slice(0, 3).join("; ")
-    : (charData?.definitions || []).slice(0, 3).join("; ");
+  const defs = useResolvedDefs(word ? word.definitions || [] : charData?.definitions || []);
+  const gloss = defs.slice(0, 3).join("; ");
 
   // Speak the answer on reveal. Stop pending speech on unmount.
   useEffect(() => {

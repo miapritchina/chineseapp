@@ -12,6 +12,28 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **Stats page (v115):** hamburger → Stats. Words collected + learned
+  + due now, a word-strength breakdown (solid / growing / shaky / not
+  started by FSRS stability), and — signed in — reviews-per-day bars
+  for the last 14 days with today's count and the current streak
+  (reads `user_review_log`).
+- **Tree button on Learn cards (v115):** each per-character panel in
+  a lesson gets the ⤢ button that opens the full d3 decomposition
+  tree, same as the sheet's.
+
+### Changed
+- **Sift hero (v115):** the character now renders at full hero size
+  with real air around it, and the dotted "explorable" underline is
+  gone app-wide (it read as ugly noise; glyphs stay tappable).
+- **Component formula (v115):** sound components now show meaning too
+  — 特 = 牛 cow + 寺 sì *temple*, not just the bare reading.
+- **Cross-reference glosses resolved (v115):** definitions like
+  "erhua variant of 一塊|一块[yīkuài]" now render as "casual 儿-form
+  of 一块: lump; piece" — the referenced word's real meaning is
+  fetched and inlined (sheet, recognition reveal, Sift, Learn,
+  reverse/cloze prompts).
+
+### Added
 - **"Just start" (v114):** one-tap session on the launch screen — a
   quick Sift pass first when ≥ 20 words are due (capped at 15), then
   the usual mixed drills with the saved settings, then a 2-word Learn
