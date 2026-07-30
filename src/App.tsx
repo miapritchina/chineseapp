@@ -40,8 +40,10 @@ import { SentenceStudio } from "./components/SentenceStudio";
 import { StatsPage } from "./components/StatsPage";
 import { ForgePage } from "./components/ForgePage";
 import { PairsPage } from "./components/PairsPage";
+import { ChainPage } from "./components/ChainPage";
 import { forgeCandidates } from "./lib/forge";
 import { PAIRS_PER_BOARD } from "./lib/pairs";
+import { chainPool, pickChainStart } from "./lib/chain";
 
 import { AppStateProvider } from "./state/contexts";
 import { useUIStore } from "./state/uiStore";
@@ -253,7 +255,7 @@ export function App() {
   // Learn mode (v110): the active lesson's words; null = no lesson.
   const [learnWords, setLearnWords] = useState<string[] | null>(null);
   // Games (v116): pure play, launched from the review launch screen.
-  const [gameOpen, setGameOpen] = useState<"forge" | "pairs" | null>(null);
+  const [gameOpen, setGameOpen] = useState<"forge" | "pairs" | "chain" | null>(null);
   const forgeReady = useMemo(
     () =>
       forgeCandidates(
@@ -267,6 +269,10 @@ export function App() {
     () => [...new Set([...siftableWords, ...saved.savedList.map((s) => s.word)])],
     [siftableWords, saved.savedList],
   );
+  const chainReady = useMemo(() => {
+    const pool = chainPool(saved.savedList.map((s) => s.word));
+    return pool.length >= 5 && pickChainStart(pool, () => 0) !== null;
+  }, [saved.savedList]);
 
   // "Just start" flow (v114): the stages still ahead of the active one.
   // Non-empty ⇒ the current stage auto-advances into the next when its
@@ -542,7 +548,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v116"
+          version="chinese v117"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -585,12 +591,23 @@ export function App() {
           onStartForge={() => setGameOpen("forge")}
           pairsReady={pairsPool.length >= PAIRS_PER_BOARD}
           onStartPairs={() => setGameOpen("pairs")}
+          chainReady={chainReady}
+          onStartChain={() => setGameOpen("chain")}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
         />
       )}
       {showReview && gameOpen === "forge" && (
         <ForgePage
+          onClose={() => setGameOpen(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+        />
+      )}
+      {showReview && gameOpen === "chain" && (
+        <ChainPage
           onClose={() => setGameOpen(null)}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);

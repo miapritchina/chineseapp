@@ -147,6 +147,8 @@ interface Props {
   onStartForge?: () => void;
   pairsReady?: boolean;
   onStartPairs?: () => void;
+  chainReady?: boolean;
+  onStartChain?: () => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -166,6 +168,8 @@ export function ReviewLaunch({
   onStartForge,
   pairsReady = false,
   onStartPairs,
+  chainReady = false,
+  onStartChain,
   onStart,
   onClose,
 }: Props) {
@@ -369,7 +373,7 @@ export function ReviewLaunch({
             Sift · {siftCount} due words
           </button>
         )}
-        {(onStartForge || onStartPairs) && (
+        {(onStartForge || onStartPairs || onStartChain) && (
           <div className="launch-games-row">
             {onStartForge && (
               <button
@@ -391,6 +395,17 @@ export function ReviewLaunch({
                 title="Game: memory match — hanzi tiles against meanings. Nothing is graded."
               >
                 🀄 Pairs
+              </button>
+            )}
+            {onStartChain && (
+              <button
+                type="button"
+                className="review-btn launch-game-btn"
+                onClick={onStartChain}
+                disabled={!chainReady}
+                title="Game: 词语接龙 — chain your words by their last character. Nothing is graded."
+              >
+                ⛓ Chain
               </button>
             )}
           </div>

@@ -12,6 +12,13 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **⛓ 词语接龙 word chain (v117):** third game — the next word must
+  start with the previous word's last character (学生 → 生日 → 日子),
+  picked among 4 tiles from the saved set. A wrong tap breaks the
+  chain (with the intended link revealed); exhausting the pool is a
+  perfect chain. Score = links; best-this-visit shown.
+
+### Added
 - **Games (v116):** two owner-picked games on the workout launch
   screen, pure play — nothing is graded. **⚒ Forge:** loose
   components scatter in a tray; tap a valid pair to forge a character

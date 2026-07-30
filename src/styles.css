@@ -4120,3 +4120,83 @@ body {
   justify-content: center;
   gap: 8px;
 }
+
+/* 词语接龙 word chain (v117). */
+.chain-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 16px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.chain-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-height: 34vh;
+  overflow-y: auto;
+  width: 100%;
+}
+.chain-word-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chain-arrow {
+  color: var(--muted);
+}
+.chain-word {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-small);
+  line-height: 1.2;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chain-word.is-head {
+  font-size: var(--hanzi-medium);
+  border-color: var(--accent);
+}
+.chain-link-char {
+  color: var(--accent);
+  font-weight: 600;
+}
+.chain-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+.chain-option {
+  font-family: var(--font-hanzi, inherit);
+  font-size: calc(var(--hanzi-large) * var(--hanzi-scale, 1));
+  line-height: 1.15;
+  min-height: 92px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chain-reveal {
+  color: var(--muted);
+  font-size: var(--body);
+  text-align: center;
+}
+.chain-best {
+  color: var(--muted);
+  font-size: var(--caption);
+}

@@ -140,8 +140,14 @@ write NO FSRS state — pure exposure.
   flips back; match locks green + speaks. Score = moves + seconds;
   matched words are tappable into their sheets at the end.
 
-Unpicked ideas parked for later: 词语接龙 word chain, tone sniper,
-speed sprint (TODO), sentence scramble.
+- **⛓ Chain / 词语接龙** (v117, `lib/chain.ts` + `ChainPage`): grow a
+  chain of saved words, each starting with the previous word's last
+  character; 4 tiles per step, exactly one valid. Wrong tap breaks
+  the chain (intended link revealed); pool exhaustion = perfect
+  chain. Best-this-visit only — no persistence.
+
+Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
+sentence scramble.
 
 ## Backlog (in TODO.md)
 
