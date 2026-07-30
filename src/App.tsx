@@ -30,6 +30,7 @@ import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
 import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
 import { LearnPage } from "./components/LearnPage";
+import { SiftPage } from "./components/SiftPage";
 import { SentenceStudio } from "./components/SentenceStudio";
 
 import { AppStateProvider } from "./state/contexts";
@@ -40,6 +41,8 @@ import type { Word, ModalEntry } from "./lib/types";
 import { useState } from "react";
 import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
+import { siftDayKey, siftPool } from "./lib/sift";
+import { isDue } from "./lib/fsrs";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -119,6 +122,51 @@ export function App() {
     [saved.savedList, reviewState.cards],
   );
 
+  // Sift mode (v113): the active triage deck; null = not sifting.
+  const [siftWords, setSiftWords] = useState<string[] | null>(null);
+  // Words left-swiped in Sift today — hidden from Sift until tomorrow,
+  // still due everywhere else. Per-day ephemeral, so localStorage-only
+  // (same carve-out as the old per-day new-card counter).
+  const [siftKept, setSiftKept] = useState<Set<string>>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("chinese.siftKept") ?? "null");
+      if (raw && raw.day === siftDayKey() && Array.isArray(raw.items)) return new Set(raw.items);
+    } catch {
+      /* ignore */
+    }
+    return new Set();
+  });
+  const keepInSift = (word: string) => {
+    setSiftKept((prev) => {
+      const next = new Set(prev);
+      next.add(word);
+      try {
+        localStorage.setItem(
+          "chinese.siftKept",
+          JSON.stringify({ day: siftDayKey(), items: [...next] }),
+        );
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  // Sift material (v113): due words, strongest first (weakness map =
+  // min recognition stability, so high = well known).
+  const siftableWords = useMemo(() => {
+    const dueKeys = new Set<string>();
+    for (const row of reviewState.cards.values()) {
+      if (isDue(row.card)) dueKeys.add(row.itemKey);
+    }
+    return siftPool(
+      saved.savedList.map((s) => s.word),
+      dueKeys,
+      (w) => weakness.get(w) ?? 0,
+      siftKept,
+    );
+  }, [saved.savedList, reviewState.cards, weakness, siftKept]);
+
   // Cluster-recall material (v107, a drill type since the standalone
   // page was folded into the session queue).
   const clusters = useMemo(
@@ -153,7 +201,6 @@ export function App() {
   const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
   // Learn mode (v110): the active lesson's words; null = no lesson.
   const [learnWords, setLearnWords] = useState<string[] | null>(null);
-
   // Track full-screen pages via URL hash + route #/c, #/w deep links.
   useEffect(() => {
     const onHash = () => {
@@ -167,6 +214,7 @@ export function App() {
       if (window.location.hash !== "#/review") {
         setReviewLaunched(null);
         setLearnWords(null);
+        setSiftWords(null);
       }
       const entry = parseHash();
       if (entry) {
@@ -396,7 +444,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v112"
+          version="chinese v113"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -415,7 +463,7 @@ export function App() {
         </div>
       </header>
 
-      {showReview && !reviewLaunched && !learnWords && (
+      {showReview && !reviewLaunched && !learnWords && !siftWords && (
         <ReviewLaunch
           totalDue={dueCards.length}
           facetCounts={{
@@ -429,8 +477,32 @@ export function App() {
           }}
           learnCount={learnableWords.length}
           onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
+          siftCount={siftableWords.length}
+          onStartSift={() => setSiftWords(siftableWords)}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
+        />
+      )}
+      {showReview && siftWords && (
+        <SiftPage
+          words={siftWords}
+          onClose={() => setSiftWords(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+          onKnow={(w) => {
+            // Good on every facet of this word that is due right now —
+            // "counts as repeated in all workouts today". Non-due rows
+            // are untouched (they weren't in today's workouts anyway).
+            const now = new Date();
+            for (const row of reviewState.cards.values()) {
+              if (row.itemKey === w && isDue(row.card, now)) {
+                grade(w, "Good", row.itemKind, row.facet);
+              }
+            }
+          }}
+          onKeep={(w) => keepInSift(w)}
         />
       )}
       {showReview && learnWords && (

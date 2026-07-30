@@ -121,6 +121,10 @@ interface Props {
   // the lesson the same way review sessions are capped.
   learnCount?: number;
   onStartLearn?: (sessionSize: number | null) => void;
+  // Sift mode (v113): due words available for triage. Uncapped — the
+  // whole point is bulk-clearing a big backlog.
+  siftCount?: number;
+  onStartSift?: () => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -133,6 +137,8 @@ export function ReviewLaunch({
   totalDue,
   learnCount = 0,
   onStartLearn,
+  siftCount = 0,
+  onStartSift,
   onStart,
   onClose,
 }: Props) {
@@ -282,6 +288,17 @@ export function ReviewLaunch({
             title="A lesson, not a test: each word is introduced with sound, component breakdown, and your related words. No grading."
           >
             Learn · {Math.min(sessionSize ?? learnCount, learnCount)} words
+          </button>
+        )}
+        {onStartSift && (
+          <button
+            type="button"
+            className="review-btn"
+            onClick={onStartSift}
+            disabled={siftCount === 0}
+            title="Triage: swipe right = I know this (counts as done in every drill today); swipe left = keep for practice, hidden from Sift until tomorrow."
+          >
+            Sift · {siftCount} due words
           </button>
         )}
       </div>

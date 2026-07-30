@@ -3746,3 +3746,33 @@ body {
   align-self: center;
   margin-top: 4px;
 }
+
+/* Sift — Tinder-style triage (v113). */
+.sift-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+  padding: 18px 12px;
+  border-radius: 16px;
+  transition: background 0.15s;
+}
+.sift-card.is-know {
+  background: var(--feedback-correct-bg, rgba(46, 125, 50, 0.12));
+}
+.sift-card.is-keep {
+  background: var(--surface-2);
+}
+.sift-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: calc(var(--hanzi-hero, 120px) * 0.8);
+  line-height: 1.15;
+}
+.sift-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}

@@ -11,6 +11,18 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Sift — Tinder-style triage (v113):** for working through a big
+  due backlog fast. "Sift · N due words" on the launch screen shows
+  each due word with pinyin and meaning visible (a self-judgement,
+  not a test); swipe right / ✓ = "I know this" — grades Good on every
+  facet of the word that's due today, clearing it from all of today's
+  workouts with proper rescheduling; swipe left / ✗ = keep for
+  practice — no schedule change, hidden from Sift until tomorrow but
+  still due in the other drills. The deck runs strongest-words-first
+  so the easy yeses come fast. (Per-day left-swipe list is local-only,
+  like the old per-day counter.)
+
 ### Changed
 - **No same-day retry after a mistake (v112,
   [ADR-0014](docs/decisions/0014-no-same-day-retry.md)):** a card

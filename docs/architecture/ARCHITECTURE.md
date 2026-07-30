@@ -174,6 +174,12 @@ it was graded. Learn mode (`LearnPage`, material from `lib/learn.ts`)
 reuses the same credit as its "introduced" marker: a finished lesson
 card nudges the word's schedule without recording a rep.
 
+Sift mode (v113, `SiftPage` + `lib/sift.ts`) is grading, not credit:
+a right-swipe applies a real Good to every facet of the word that is
+due at that moment. Left-swipes live in a day-stamped localStorage
+list (`chinese.siftKept`) — per-day ephemeral, the same local-only
+carve-out as the old daily new-card counter.
+
 ### Queue + leech interleaving
 
 No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —

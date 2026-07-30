@@ -74,6 +74,8 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── StatusButton             4-tier status dropdown shared by every place
 │   │   ├── ReviewPage               Full-screen SRS surface, routes by facet
 │   │   ├── ClusterRecallCard        Drill: recall a group of related saved words
+│   │   ├── SiftPage                 Tinder-style triage over the due backlog
+│   │   ├── LearnPage                Lesson cards that teach instead of test
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz
 │   │   ├── DisambiguationCard       Leech-cluster side-by-side compare
 │   │   ├── ExplorePage              Words ↔ chars ↔ components browser (v109)
