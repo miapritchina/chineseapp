@@ -2,7 +2,7 @@
 
 Mobile-first web app for learning Chinese characters — search,
 decomposition tree, four-tier status model, FSRS-scheduled review.
-Live at https://decobots.github.io/chineseapp/.
+Live at https://miapritchina.github.io/chineseapp/.
 
 One React app: search, saved-words shelf, SRS review drills, the
 Explore browser (words ↔ characters ↔ components), a 三字经 reader,

@@ -94,6 +94,19 @@ anywhere; finishing a card applies the passive-view credit
 ("introduced": stability nudge, due ≤ +2 days, no rep) so the first
 real test comes soon but not cold. Every glyph opens its EntitySheet.
 
+## Sift (v113 — triage, not practice)
+
+Owner ask: 1000+ due words across drills, many already well known —
+"it would be faster to sift through them and leave exercise only for
+words which I actually need to work on." A launch-screen deck
+("Sift · N due words") over words with anything due, strongest first
+(`lib/sift.ts`). Everything visible up front. Swipe right / ✓ →
+Good on EVERY due facet of the word (it "counts as repeated in all
+workouts today"; normal FSRS rescheduling, cascade included). Swipe
+left / ✗ → no schedule change; hidden from Sift until tomorrow
+(localStorage `chinese.siftKept`, day-stamped) while staying due in
+the other drills.
+
 ## Backlog (in TODO.md)
 
 ### 5 · Audio-first recognition
