@@ -34,6 +34,11 @@ Requires Xcode 16+ and watchOS 10+ (the vertical-page `TabView`).
 The app is marked `WKWatchOnly`, so it installs from the watch App
 Store / Xcode directly with no companion iPhone app.
 
+To ship to TestFlight / the App Store, see
+[DISTRIBUTION.md](DISTRIBUTION.md) — Xcode 26 can't distribute
+watch-only archives directly, so releases go through the invisible
+container target and a CLI pipeline.
+
 ## Files
 
 | File | Role |
