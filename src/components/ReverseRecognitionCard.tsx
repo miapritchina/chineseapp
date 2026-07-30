@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { pickReverseOptions } from "../lib/drillGen";
 import { Entity } from "./Entity";
 import { useCharsCtx } from "../state/contexts";
@@ -38,7 +38,7 @@ export function ReverseRecognitionCard({
   const isCorrect = picked !== null && picked === answer;
 
   useEffect(() => {
-    if (picked !== null) speak(answer);
+    if (picked !== null) autoSpeak(answer);
   }, [picked, answer]);
   useEffect(() => () => stopSpeech(), []);
 

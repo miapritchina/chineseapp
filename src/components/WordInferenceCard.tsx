@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Word } from "../lib/types";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { pickGlossOptions } from "../lib/drillGen";
 import { useCharsCtx } from "../state/contexts";
 
@@ -27,7 +27,7 @@ export function WordInferenceCard({ word, glossPool, onGotIt, onMissed, onOpenEn
   const isCorrect = picked !== null && picked === gloss;
 
   useEffect(() => {
-    if (picked !== null) speak(word.word);
+    if (picked !== null) autoSpeak(word.word);
   }, [picked, word.word]);
   useEffect(() => () => stopSpeech(), []);
 

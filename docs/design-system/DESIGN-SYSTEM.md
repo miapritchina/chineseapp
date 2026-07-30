@@ -17,13 +17,13 @@ A warm "paper and ink" palette: off-white background, near-black ink, a single m
 
 | Token | Light | Dark | Usage |
 |---|---|---|---|
-| `--bg` | `#faf8f4` | `#16140f` | Page background |
+| `--bg` | `#faf6ee` | `#16140f` | Page background |
 | `--card-bg` | `#ffffff` | `#211e15` | Card surfaces in the saved grid |
 | `--surface` | `#fefdfb` | `#1d1a13` | Elevated panel (hamburger, review card, status menu, composer, bank chip, sheet) |
-| `--surface-2` | `#f0ece4` | `#272319` | Hover fills, active pill backgrounds, subtle elevation |
+| `--surface-2` | `#f0ebe0` | `#272319` | Hover fills, active pill backgrounds, subtle elevation |
 | `--text` | `#1d1b18` | `#ece7dc` | Primary ink / body text |
 | `--muted` | `#6b6359` | `#a39c8f` | Secondary text, captions, hints |
-| `--accent` | `#b12a2a` | `#e07070` | Vermillion — CTAs, active states, error links |
+| `--accent` | `#c3272b` | `#e07070` | Vermillion — CTAs, active states, error links |
 | `--border` | `#e4dfd5` | `#2a2620` | Dividers, card outlines, input borders |
 
 > **Note:** `--surface` is now **defined in `:root`** (`#fefdfb` light, `#1d1a13` dark) — a slightly elevated tier between `--bg` and `--card-bg`. The `var(--surface, var(--bg))` fallbacks in the rules are now redundant but harmless.
@@ -111,12 +111,12 @@ Dark overrides: Correct → `#6dba84` / `rgba(109,186,132,0.15)` / `#6dba84`; Wr
 
 ```css
 :root {
-  --bg: #faf8f4;
+  --bg: #faf6ee;
   --card-bg: #ffffff;
-  --surface-2: #f0ece4;
+  --surface-2: #f0ebe0;
   --text: #1d1b18;
   --muted: #6b6359;
-  --accent: #b12a2a;
+  --accent: #c3272b;
   --border: #e4dfd5;
 
   --role-iconic:         #16a34a;
@@ -251,6 +251,17 @@ The detailed per-class tables below are the historical/raw inventory; where a cl
 | 10 px | — | 0.4 px | `.bank-chip-p`, `.composer-token-p` |
 | 9 px | 600 | 0.12 em | `.card-role-badge` |
 | 8 px | — | 1 px | `.bank-chip-pos` (mono) |
+
+### 3.2b Brush-form hanzi mode (v114)
+
+`html.brush-hanzi` (hamburger → "Brush font", persisted in
+`chinese.brushFont`) sets `--font-hanzi` to the Kaiti stack
+(`"Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "AR PL UKai CN", serif`) —
+built into iOS/macOS, zero download. Hanzi display classes reference
+`var(--font-hanzi, inherit)`; the few that hardcode PingFang
+(`.review-hanzi`, `.sheet-glyph-text`, etc.) are overridden by the
+`.brush-hanzi` selector block at the end of styles.css. Stroke
+animations (HanziWriter SVG) are unaffected.
 
 ### 3.3 Design note on text sizing
 

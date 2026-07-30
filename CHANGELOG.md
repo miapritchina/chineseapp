@@ -12,6 +12,65 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **⛓ 词语接龙 word chain (v117):** third game — the next word must
+  start with the previous word's last character (学生 → 生日 → 日子),
+  picked among 4 tiles from the saved set. A wrong tap breaks the
+  chain (with the intended link revealed); exhausting the pool is a
+  perfect chain. Score = links; best-this-visit shown.
+
+### Added
+- **Games (v116):** two owner-picked games on the workout launch
+  screen, pure play — nothing is graded. **⚒ Forge:** loose
+  components scatter in a tray; tap a valid pair to forge a character
+  you know (讠 + 青 = 请) — forged characters line up with reading +
+  meaning and speak. **🀄 Pairs:** classic memory match, six hanzi
+  tiles against their meanings (due words first), moves + time score,
+  deal again.
+
+### Added
+- **Stats page (v115):** hamburger → Stats. Words collected + learned
+  + due now, a word-strength breakdown (solid / growing / shaky / not
+  started by FSRS stability), and — signed in — reviews-per-day bars
+  for the last 14 days with today's count and the current streak
+  (reads `user_review_log`).
+- **Tree button on Learn cards (v115):** each per-character panel in
+  a lesson gets the ⤢ button that opens the full d3 decomposition
+  tree, same as the sheet's.
+
+### Changed
+- **Sift hero (v115):** the character now renders at full hero size
+  with real air around it, and the dotted "explorable" underline is
+  gone app-wide (it read as ugly noise; glyphs stay tappable).
+- **Component formula (v115):** sound components now show meaning too
+  — 特 = 牛 cow + 寺 sì *temple*, not just the bare reading.
+- **Cross-reference glosses resolved (v115):** definitions like
+  "erhua variant of 一塊|一块[yīkuài]" now render as "casual 儿-form
+  of 一块: lump; piece" — the referenced word's real meaning is
+  fetched and inlined (sheet, recognition reveal, Sift, Learn,
+  reverse/cloze prompts).
+
+### Added
+- **"Just start" (v114):** one-tap session on the launch screen — a
+  quick Sift pass first when ≥ 20 words are due (capped at 15), then
+  the usual mixed drills with the saved settings, then a 2-word Learn
+  lesson. Stages auto-advance as each deck drains; backing out
+  cancels the rest.
+- **Brush font (v114):** hamburger toggle that renders big hanzi in
+  Kaiti (brush-form, built into iOS/macOS — zero download). Persisted
+  per device.
+- **Component formula in the EntitySheet (v114):** single characters
+  now show the Learn-style role-colored one-liner (请 = 讠 speech +
+  青 qīng) right under the header; each piece opens its own sheet.
+- **Sound toggle (v114):** "Speak answers automatically" on the
+  launch screen (default on) now gates every drill's auto-play; Sift
+  cards also speak their word as they appear. 🔊 buttons always work.
+
+### Changed
+- **Ink-and-paper tokens (v114):** light background warmed a step
+  (`--bg` #faf6ee), accent nudged to seal-stamp vermillion
+  (`--accent` #c3272b).
+
+### Added
 - **Sift — Tinder-style triage (v113):** for working through a big
   due backlog fast. "Sift · N due words" on the launch screen shows
   each due word with pinyin and meaning visible (a self-judgement,

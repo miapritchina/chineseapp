@@ -75,6 +75,8 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── ReviewPage               Full-screen SRS surface, routes by facet
 │   │   ├── ClusterRecallCard        Drill: recall a group of related saved words
 │   │   ├── SiftPage                 Tinder-style triage over the due backlog
+│   │   ├── StatsPage                Words/strength/review-history stats (#/stats)
+│   │   ├── ForgePage / PairsPage / ChainPage  Games: forge, memory match, 接龙 (ungraded)
 │   │   ├── LearnPage                Lesson cards that teach instead of test
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz
 │   │   ├── DisambiguationCard       Leech-cluster side-by-side compare
@@ -104,6 +106,9 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │       ├── componentSearch.mjs+.d.ts Recursive-closure search + freq map
 │       ├── confusionClusters.mjs+.d.ts Hand-curated leech clusters
 │       ├── fsrs.ts                  ts-fsrs wrapper + cascade math
+│       ├── flow.ts                  "Just start" stage planner (sift → review → learn)
+│       ├── sift.ts                  Sift triage pool (due words, strongest first)
+│       ├── learn.ts                 Learn-mode material picker
 │       ├── share.ts                 profile share links (?share=token → live saved set)
 │       └── supabase.ts              Client + wakeUp ping
 ├── public/
@@ -210,8 +215,11 @@ the commit that lands.
 - Idempotent + additive only. Never drop, never rename. See [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 - Front-end queries widest shape first, falls back on `column not
   found`.
-- **Don't auto-merge** PRs containing a migration. Add a "re-run
-  Setup Supabase" note to the PR body.
+- Migrations apply themselves: the **Setup Supabase** workflow
+  auto-runs on any merge to `claude/main` touching
+  `supabase/migrations/**`. After merging a migration PR, verify that
+  run succeeded (dispatch it manually if it didn't fire) — never ask
+  the owner to run it.
 
 ### Code style
 

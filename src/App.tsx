@@ -28,10 +28,22 @@ import { ReviewPage } from "./components/ReviewPage";
 import { ComponentTable } from "./components/ComponentTable";
 import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
-import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
+import {
+  ReviewLaunch,
+  loadSettings,
+  loadStartSettings,
+  type ReviewSettings,
+} from "./components/ReviewLaunch";
 import { LearnPage } from "./components/LearnPage";
 import { SiftPage } from "./components/SiftPage";
 import { SentenceStudio } from "./components/SentenceStudio";
+import { StatsPage } from "./components/StatsPage";
+import { ForgePage } from "./components/ForgePage";
+import { PairsPage } from "./components/PairsPage";
+import { ChainPage } from "./components/ChainPage";
+import { forgeCandidates } from "./lib/forge";
+import { PAIRS_PER_BOARD } from "./lib/pairs";
+import { chainPool, pickChainStart } from "./lib/chain";
 
 import { AppStateProvider } from "./state/contexts";
 import { useUIStore } from "./state/uiStore";
@@ -43,6 +55,8 @@ import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
 import { isDue } from "./lib/fsrs";
+import { planFlow, SIFT_STAGE_CAP, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
+import { setAutoSpeakEnabled } from "./lib/speech";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -122,6 +136,11 @@ export function App() {
     [saved.savedList, reviewState.cards],
   );
 
+  // Stats page (v115): routed via #/stats like the other full pages.
+  const [showStats, setShowStats] = useState<boolean>(
+    () => typeof window !== "undefined" && window.location.hash === "#/stats",
+  );
+
   // Sift mode (v113): the active triage deck; null = not sifting.
   const [siftWords, setSiftWords] = useState<string[] | null>(null);
   // Words left-swiped in Sift today — hidden from Sift until tomorrow,
@@ -167,6 +186,17 @@ export function App() {
     );
   }, [saved.savedList, reviewState.cards, weakness, siftKept]);
 
+  // Stats page material (v115): words with anything due right now
+  // (unlike siftableWords, today's left-swipes still count as due).
+  const dueWordCount = useMemo(() => {
+    const savedSet = new Set(saved.savedList.map((s) => s.word));
+    const due = new Set<string>();
+    for (const row of reviewState.cards.values()) {
+      if (savedSet.has(row.itemKey) && isDue(row.card)) due.add(row.itemKey);
+    }
+    return due.size;
+  }, [saved.savedList, reviewState.cards]);
+
   // Cluster-recall material (v107, a drill type since the standalone
   // page was folded into the session queue).
   const clusters = useMemo(
@@ -182,6 +212,29 @@ export function App() {
   useEffect(() => {
     wakeUp();
   }, []);
+
+  // Apply persisted display/sound prefs on load.
+  useEffect(() => {
+    setAutoSpeakEnabled(loadSettings().autoSpeak);
+  }, []);
+  // Brush-form hanzi (v114): Kaiti is built into iOS/macOS, so this is
+  // a zero-download font swap on the big glyphs. Display pref only —
+  // localStorage, not user data.
+  const [brushFont, setBrushFont] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("chinese.brushFont") === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    document.documentElement.classList.toggle("brush-hanzi", brushFont);
+    try {
+      localStorage.setItem("chinese.brushFont", brushFont ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [brushFont]);
 
   // --- Deep links: #/c/:char and #/w/:word open the EntitySheet. ---
   const stackRef = useRef(stack);
@@ -201,12 +254,60 @@ export function App() {
   const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
   // Learn mode (v110): the active lesson's words; null = no lesson.
   const [learnWords, setLearnWords] = useState<string[] | null>(null);
+  // Games (v116): pure play, launched from the review launch screen.
+  const [gameOpen, setGameOpen] = useState<"forge" | "pairs" | "chain" | null>(null);
+  const forgeReady = useMemo(
+    () =>
+      forgeCandidates(
+        saved.savedList.map((s) => s.word),
+        charsData.chars,
+      ).length >= 3,
+    [saved.savedList, charsData.chars],
+  );
+  // Pairs material: due words first, the rest of the shelf after.
+  const pairsPool = useMemo(
+    () => [...new Set([...siftableWords, ...saved.savedList.map((s) => s.word)])],
+    [siftableWords, saved.savedList],
+  );
+  const chainReady = useMemo(() => {
+    const pool = chainPool(saved.savedList.map((s) => s.word));
+    return pool.length >= 5 && pickChainStart(pool, () => 0) !== null;
+  }, [saved.savedList]);
+
+  // "Just start" flow (v114): the stages still ahead of the active one.
+  // Non-empty ⇒ the current stage auto-advances into the next when its
+  // deck drains.
+  const [flowQueue, setFlowQueue] = useState<FlowStage[]>([]);
+
+  const openStage = (stage: FlowStage) => {
+    if (stage === "sift") setSiftWords(siftableWords.slice(0, SIFT_STAGE_CAP));
+    else if (stage === "review") setReviewLaunched(loadStartSettings());
+    else setLearnWords(learnableWords.slice(0, LEARN_STAGE_COUNT));
+  };
+  const justStart = () => {
+    const stages = planFlow(siftableWords.length, learnableWords.length);
+    setFlowQueue(stages.slice(1));
+    openStage(stages[0]);
+  };
+  // The LAST stage keeps its natural end screen (onComplete is only
+  // wired while a next stage exists), so the flow finishes on a real
+  // "done" note instead of vanishing.
+  const advanceFlow = () => {
+    setSiftWords(null);
+    setReviewLaunched(null);
+    setLearnWords(null);
+    const [next, ...rest] = flowQueue;
+    setFlowQueue(rest);
+    if (next) openStage(next);
+  };
+  const cancelFlow = () => setFlowQueue([]);
   // Track full-screen pages via URL hash + route #/c, #/w deep links.
   useEffect(() => {
     const onHash = () => {
       setShowReview(window.location.hash === "#/review");
       setShowExplore(window.location.hash === "#/explore");
       setShowClassic(window.location.hash === "#/classic");
+      setShowStats(window.location.hash === "#/stats");
       if (window.location.hash === "#/sentence") {
         setSearchMode("sentence");
         history.replaceState(history.state, "", location.pathname + location.search);
@@ -215,6 +316,8 @@ export function App() {
         setReviewLaunched(null);
         setLearnWords(null);
         setSiftWords(null);
+        setFlowQueue([]);
+        setGameOpen(null);
       }
       const entry = parseHash();
       if (entry) {
@@ -234,6 +337,7 @@ export function App() {
       if (target === "#/review") setShowReview(false);
       if (target === "#/explore") setShowExplore(false);
       if (target === "#/classic") setShowClassic(false);
+      if (target === "#/stats") setShowStats(false);
     }
   };
 
@@ -444,13 +548,16 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v113"
+          version="chinese v117"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
           classicHref="#/classic"
+          statsHref="#/stats"
           onShareWords={shareMyWords}
           wordCount={saved.savedList.length}
+          brushFont={brushFont}
+          onToggleBrushFont={() => setBrushFont((v) => !v)}
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -463,7 +570,7 @@ export function App() {
         </div>
       </header>
 
-      {showReview && !reviewLaunched && !learnWords && !siftWords && (
+      {showReview && !reviewLaunched && !learnWords && !siftWords && !gameOpen && (
         <ReviewLaunch
           totalDue={dueCards.length}
           facetCounts={{
@@ -479,14 +586,53 @@ export function App() {
           onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
           siftCount={siftableWords.length}
           onStartSift={() => setSiftWords(siftableWords)}
+          onJustStart={justStart}
+          forgeReady={forgeReady}
+          onStartForge={() => setGameOpen("forge")}
+          pairsReady={pairsPool.length >= PAIRS_PER_BOARD}
+          onStartPairs={() => setGameOpen("pairs")}
+          chainReady={chainReady}
+          onStartChain={() => setGameOpen("chain")}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
+        />
+      )}
+      {showReview && gameOpen === "forge" && (
+        <ForgePage
+          onClose={() => setGameOpen(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+        />
+      )}
+      {showReview && gameOpen === "chain" && (
+        <ChainPage
+          onClose={() => setGameOpen(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+        />
+      )}
+      {showReview && gameOpen === "pairs" && (
+        <PairsPage
+          words={pairsPool}
+          onClose={() => setGameOpen(null)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
         />
       )}
       {showReview && siftWords && (
         <SiftPage
           words={siftWords}
-          onClose={() => setSiftWords(null)}
+          onClose={() => {
+            cancelFlow();
+            setSiftWords(null);
+          }}
+          onComplete={flowQueue.length > 0 ? advanceFlow : undefined}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -508,11 +654,16 @@ export function App() {
       {showReview && learnWords && (
         <LearnPage
           words={learnWords}
-          onClose={() => setLearnWords(null)}
+          onClose={() => {
+            cancelFlow();
+            setLearnWords(null);
+          }}
+          onComplete={flowQueue.length > 0 ? advanceFlow : undefined}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
           }}
+          onOpenTree={(c) => push({ kind: "char", key: c, view: "tree" })}
           onIntroduced={(w) => creditPassiveView(w)}
         />
       )}
@@ -534,7 +685,11 @@ export function App() {
           sessionSize={reviewLaunched.sessionSize}
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
-          onClose={() => setReviewLaunched(null)}
+          onClose={() => {
+            cancelFlow();
+            setReviewLaunched(null);
+          }}
+          onComplete={flowQueue.length > 0 ? advanceFlow : undefined}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -557,6 +712,17 @@ export function App() {
             if (kind === "word") void openWord(key);
             else openChar(key);
           }}
+        />
+      )}
+
+      {showStats && (
+        <StatsPage
+          userId={auth.user?.id ?? null}
+          totalWords={saved.savedList.length}
+          learnedCount={saved.learned.size}
+          dueCount={dueWordCount}
+          stabilities={saved.savedList.map((e) => weakness.get(e.word) ?? 0)}
+          onClose={() => closeHashPage("#/stats")}
         />
       )}
 

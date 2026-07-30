@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCharsCtx, useDictCtx } from "../state/contexts";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, speak, stopSpeech } from "../lib/speech";
+import { hanziScaleStyle } from "../lib/hanzi";
+import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
@@ -16,6 +18,9 @@ interface Props {
   // from Sift until tomorrow (persisted by the parent).
   onKeep: (word: string) => void;
   onOpenEntity?: (key: string) => void;
+  // Flow mode (v114): called when the deck is exhausted, instead of
+  // showing the end state — the parent advances to the next stage.
+  onComplete?: () => void;
 }
 
 // Tinder-style triage (v113, owner request): the drills backlog holds
@@ -23,7 +28,7 @@ interface Props {
 // clears those and leaves the drills for the words that need work.
 // Everything is visible up front (word + pinyin + meaning): this is a
 // self-judgement, not a test.
-export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity }: Props) {
+export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity, onComplete }: Props) {
   const { chars } = useCharsCtx();
   const { findWord } = useDictCtx();
   const [index, setIndex] = useState(0);
@@ -32,6 +37,21 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity }: Props
   const decidedRef = useRef(false);
 
   const current = words[index];
+
+  useEffect(() => {
+    if (current) autoSpeak(current);
+  }, [current]);
+  useEffect(() => () => stopSpeech(), []);
+
+  useEffect(() => {
+    if (!current && onComplete) onComplete();
+  }, [current, onComplete]);
+
+  const word = current ? findWord(current) : null;
+  const cd = current ? chars?.[current] : undefined;
+  const pinyin = word?.pinyin ?? cd?.pinyin ?? "";
+  const defs = useResolvedDefs(word?.definitions ?? cd?.definitions ?? []);
+  const gloss = defs.slice(0, 3).join("; ");
 
   const decide = (verdict: "know" | "keep") => {
     if (!current || decidedRef.current) return;
@@ -79,11 +99,6 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity }: Props
     );
   }
 
-  const word = findWord(current);
-  const cd = chars?.[current];
-  const pinyin = word?.pinyin ?? cd?.pinyin ?? "";
-  const gloss = (word?.definitions ?? cd?.definitions ?? []).slice(0, 3).join("; ");
-
   return (
     <DrillShell
       tag="Sift"
@@ -101,6 +116,7 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity }: Props
         <div className="phonetic-tap-prompt">Know it? Swipe right. Needs work? Swipe left.</div>
         <span
           className={`sift-hanzi${onOpenEntity ? " is-explorable" : ""}`}
+          style={hanziScaleStyle(current)}
           onClick={onOpenEntity ? () => onOpenEntity(current) : undefined}
           role="button"
           tabIndex={0}

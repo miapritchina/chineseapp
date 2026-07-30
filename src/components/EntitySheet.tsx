@@ -4,6 +4,8 @@ import { StatusButton } from "./StatusButton";
 import { detectPos } from "../lib/pos";
 import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { SheetHeader } from "./sheet/SheetHeader";
+import { CharFormula } from "./ui/CharFormula";
+import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { EtymologySection } from "./sheet/EtymologySection";
 import { RelatedWordsColumns } from "./sheet/RelatedWordsColumns";
 import { roleColor } from "./sheet/helpers";
@@ -66,10 +68,12 @@ export function EntitySheet({
   const charData = chars[key];
   // For a single-char word the dictionary row usually has richer
   // glosses than the chars file; prefer it when present.
-  const defs =
+  const rawDefs =
     word?.definitions && word.definitions.length > 0
       ? word.definitions
       : (charData?.definitions ?? []);
+  // "variant of X" definitions resolve to X's meaning (v115).
+  const defs = useResolvedDefs(rawDefs);
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
   const pos = defs.length > 0 ? detectPos({ word: key, definitions: defs } as Word) : null;
 
@@ -188,6 +192,15 @@ export function EntitySheet({
           pos={pos}
           defs={defs}
         />
+
+        {!isMultiCharWord && (
+          <div className="sheet-formula">
+            <CharFormula
+              pieces={(charData?.components ?? []).filter((p) => p.char && p.char !== "◎")}
+              onOpenEntity={onOpenChar}
+            />
+          </div>
+        )}
 
         {hasEtym && (
           <EtymologySection

@@ -107,6 +107,48 @@ left / ✗ → no schedule change; hidden from Sift until tomorrow
 (localStorage `chinese.siftKept`, day-stamped) while staying due in
 the other drills.
 
+## "Just start" flow (v114 — one tap, zero decisions)
+
+Launch-screen primary button that builds the whole session from the
+saved settings (`lib/flow.ts` planFlow): a quick Sift pass first when
+the backlog is fat (≥ 20 due words, capped at 15 cards), then the
+normal mixed review session, then a 2-word Learn lesson when there's
+anything to learn. Each stage auto-advances into the next when its
+deck drains (`onComplete`, wired only while a next stage exists — the
+last stage keeps its natural end screen). Backing out of any stage
+cancels the rest of the flow.
+
+Session-wide sound setting (v114): "Speak answers automatically"
+(default on, persisted with the review settings) gates every drill's
+auto-play — reveals, Sift cards, Learn lesson openings. The 🔊 replay
+buttons always work regardless.
+
+## Games (v116 — play, not practice)
+
+Owner picked two from a proposed list (word chain, tone sniper,
+forge, pairs, sprint, scramble). Both are launch-screen buttons and
+write NO FSRS state — pure exposure.
+
+- **⚒ Forge** (`lib/forge.ts` + `ForgePage`): tray of scattered
+  components from the user's known characters (only chars that split
+  into exactly 2 distinct pieces qualify; piece glyphs are unique per
+  round so every valid pair forges exactly one target). Tap two →
+  forge → the character lines up below with pinyin + gloss + audio.
+  Round of ≤ 5; misses counted; "New round" re-deals.
+- **🀄 Pairs** (`lib/pairs.ts` + `PairsPage`): 6-pair memory board,
+  hanzi tiles vs meaning tiles, material due-words-first. Mismatch
+  flips back; match locks green + speaks. Score = moves + seconds;
+  matched words are tappable into their sheets at the end.
+
+- **⛓ Chain / 词语接龙** (v117, `lib/chain.ts` + `ChainPage`): grow a
+  chain of saved words, each starting with the previous word's last
+  character; 4 tiles per step, exactly one valid. Wrong tap breaks
+  the chain (intended link revealed); pool exhaustion = perfect
+  chain. Best-this-visit only — no persistence.
+
+Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
+sentence scramble.
+
 ## Backlog (in TODO.md)
 
 ### 5 · Audio-first recognition

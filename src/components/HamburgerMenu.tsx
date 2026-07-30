@@ -7,8 +7,12 @@ interface Props {
   reviewBadge?: number;
   exploreHref?: string | null;
   classicHref?: string | null;
+  statsHref?: string | null;
   onShareWords?: () => void;
   wordCount?: number;
+  // Brush-form hanzi display pref (v114).
+  brushFont?: boolean;
+  onToggleBrushFont?: () => void;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
@@ -20,8 +24,11 @@ export function HamburgerMenu({
   reviewBadge = 0,
   exploreHref,
   classicHref = null,
+  statsHref = null,
   onShareWords,
   wordCount = 0,
+  brushFont = false,
+  onToggleBrushFont,
 }: Props) {
   const { open, setOpen, ref: wrapperRef } = usePopover<HTMLDivElement>();
 
@@ -91,6 +98,16 @@ export function HamburgerMenu({
             <span>三字经 · Classic</span>
           </a>
         )}
+        {statsHref && (
+          <a
+            role="menuitem"
+            className="hamburger-item"
+            href={statsHref}
+            onClick={() => setOpen(false)}
+          >
+            <span>Stats</span>
+          </a>
+        )}
         {onShareWords && (
           <button
             type="button"
@@ -103,6 +120,20 @@ export function HamburgerMenu({
           >
             <span>Share my words</span>
             {wordCount > 0 && <span className="hamburger-soon">{wordCount}</span>}
+          </button>
+        )}
+        {onToggleBrushFont && (
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={brushFont}
+            className="hamburger-item"
+            onClick={onToggleBrushFont}
+          >
+            <span>
+              Brush font <span className="hamburger-brush-sample">书</span>
+            </span>
+            <span className="hamburger-soon">{brushFont ? "on" : "off"}</span>
           </button>
         )}
         <div className="hamburger-divider" />
