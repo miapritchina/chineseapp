@@ -28,7 +28,12 @@ import { ReviewPage } from "./components/ReviewPage";
 import { ComponentTable } from "./components/ComponentTable";
 import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
-import { ReviewLaunch, type ReviewSettings } from "./components/ReviewLaunch";
+import {
+  ReviewLaunch,
+  loadSettings,
+  loadStartSettings,
+  type ReviewSettings,
+} from "./components/ReviewLaunch";
 import { LearnPage } from "./components/LearnPage";
 import { SiftPage } from "./components/SiftPage";
 import { SentenceStudio } from "./components/SentenceStudio";
@@ -43,6 +48,8 @@ import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
 import { isDue } from "./lib/fsrs";
+import { planFlow, SIFT_STAGE_CAP, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
+import { setAutoSpeakEnabled } from "./lib/speech";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -183,6 +190,29 @@ export function App() {
     wakeUp();
   }, []);
 
+  // Apply persisted display/sound prefs on load.
+  useEffect(() => {
+    setAutoSpeakEnabled(loadSettings().autoSpeak);
+  }, []);
+  // Brush-form hanzi (v114): Kaiti is built into iOS/macOS, so this is
+  // a zero-download font swap on the big glyphs. Display pref only —
+  // localStorage, not user data.
+  const [brushFont, setBrushFont] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("chinese.brushFont") === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    document.documentElement.classList.toggle("brush-hanzi", brushFont);
+    try {
+      localStorage.setItem("chinese.brushFont", brushFont ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [brushFont]);
+
   // --- Deep links: #/c/:char and #/w/:word open the EntitySheet. ---
   const stackRef = useRef(stack);
   stackRef.current = stack;
@@ -201,6 +231,33 @@ export function App() {
   const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
   // Learn mode (v110): the active lesson's words; null = no lesson.
   const [learnWords, setLearnWords] = useState<string[] | null>(null);
+  // "Just start" flow (v114): the stages still ahead of the active one.
+  // Non-empty ⇒ the current stage auto-advances into the next when its
+  // deck drains.
+  const [flowQueue, setFlowQueue] = useState<FlowStage[]>([]);
+
+  const openStage = (stage: FlowStage) => {
+    if (stage === "sift") setSiftWords(siftableWords.slice(0, SIFT_STAGE_CAP));
+    else if (stage === "review") setReviewLaunched(loadStartSettings());
+    else setLearnWords(learnableWords.slice(0, LEARN_STAGE_COUNT));
+  };
+  const justStart = () => {
+    const stages = planFlow(siftableWords.length, learnableWords.length);
+    setFlowQueue(stages.slice(1));
+    openStage(stages[0]);
+  };
+  // The LAST stage keeps its natural end screen (onComplete is only
+  // wired while a next stage exists), so the flow finishes on a real
+  // "done" note instead of vanishing.
+  const advanceFlow = () => {
+    setSiftWords(null);
+    setReviewLaunched(null);
+    setLearnWords(null);
+    const [next, ...rest] = flowQueue;
+    setFlowQueue(rest);
+    if (next) openStage(next);
+  };
+  const cancelFlow = () => setFlowQueue([]);
   // Track full-screen pages via URL hash + route #/c, #/w deep links.
   useEffect(() => {
     const onHash = () => {
@@ -215,6 +272,7 @@ export function App() {
         setReviewLaunched(null);
         setLearnWords(null);
         setSiftWords(null);
+        setFlowQueue([]);
       }
       const entry = parseHash();
       if (entry) {
@@ -444,13 +502,15 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v113"
+          version="chinese v114"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
           classicHref="#/classic"
           onShareWords={shareMyWords}
           wordCount={saved.savedList.length}
+          brushFont={brushFont}
+          onToggleBrushFont={() => setBrushFont((v) => !v)}
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -479,6 +539,7 @@ export function App() {
           onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
           siftCount={siftableWords.length}
           onStartSift={() => setSiftWords(siftableWords)}
+          onJustStart={justStart}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
         />
@@ -486,7 +547,11 @@ export function App() {
       {showReview && siftWords && (
         <SiftPage
           words={siftWords}
-          onClose={() => setSiftWords(null)}
+          onClose={() => {
+            cancelFlow();
+            setSiftWords(null);
+          }}
+          onComplete={flowQueue.length > 0 ? advanceFlow : undefined}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -508,7 +573,11 @@ export function App() {
       {showReview && learnWords && (
         <LearnPage
           words={learnWords}
-          onClose={() => setLearnWords(null)}
+          onClose={() => {
+            cancelFlow();
+            setLearnWords(null);
+          }}
+          onComplete={flowQueue.length > 0 ? advanceFlow : undefined}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -534,7 +603,11 @@ export function App() {
           sessionSize={reviewLaunched.sessionSize}
           onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
-          onClose={() => setReviewLaunched(null)}
+          onClose={() => {
+            cancelFlow();
+            setReviewLaunched(null);
+          }}
+          onComplete={flowQueue.length > 0 ? advanceFlow : undefined}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);

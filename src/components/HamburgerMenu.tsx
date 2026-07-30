@@ -9,6 +9,9 @@ interface Props {
   classicHref?: string | null;
   onShareWords?: () => void;
   wordCount?: number;
+  // Brush-form hanzi display pref (v114).
+  brushFont?: boolean;
+  onToggleBrushFont?: () => void;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
@@ -22,6 +25,8 @@ export function HamburgerMenu({
   classicHref = null,
   onShareWords,
   wordCount = 0,
+  brushFont = false,
+  onToggleBrushFont,
 }: Props) {
   const { open, setOpen, ref: wrapperRef } = usePopover<HTMLDivElement>();
 
@@ -103,6 +108,20 @@ export function HamburgerMenu({
           >
             <span>Share my words</span>
             {wordCount > 0 && <span className="hamburger-soon">{wordCount}</span>}
+          </button>
+        )}
+        {onToggleBrushFont && (
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={brushFont}
+            className="hamburger-item"
+            onClick={onToggleBrushFont}
+          >
+            <span>
+              Brush font <span className="hamburger-brush-sample">书</span>
+            </span>
+            <span className="hamburger-soon">{brushFont ? "on" : "off"}</span>
           </button>
         )}
         <div className="hamburger-divider" />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { clusterFor } from "../lib/confusionClusters";
 import { pickClozeTask } from "../lib/drillGen";
 import { Entity } from "./Entity";
@@ -23,7 +23,7 @@ export function ClozeCharCard({ word, gloss, savedWords, onGrade, onOpenEntity }
   const isCorrect = picked !== null && task !== null && picked === task.answer;
 
   useEffect(() => {
-    if (picked !== null) speak(word);
+    if (picked !== null) autoSpeak(word);
   }, [picked, word]);
   useEffect(() => () => stopSpeech(), []);
 

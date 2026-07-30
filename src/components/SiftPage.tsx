@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCharsCtx, useDictCtx } from "../state/contexts";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, speak, stopSpeech } from "../lib/speech";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
@@ -16,6 +16,9 @@ interface Props {
   // from Sift until tomorrow (persisted by the parent).
   onKeep: (word: string) => void;
   onOpenEntity?: (key: string) => void;
+  // Flow mode (v114): called when the deck is exhausted, instead of
+  // showing the end state — the parent advances to the next stage.
+  onComplete?: () => void;
 }
 
 // Tinder-style triage (v113, owner request): the drills backlog holds
@@ -23,7 +26,7 @@ interface Props {
 // clears those and leaves the drills for the words that need work.
 // Everything is visible up front (word + pinyin + meaning): this is a
 // self-judgement, not a test.
-export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity }: Props) {
+export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity, onComplete }: Props) {
   const { chars } = useCharsCtx();
   const { findWord } = useDictCtx();
   const [index, setIndex] = useState(0);
@@ -32,6 +35,15 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity }: Props
   const decidedRef = useRef(false);
 
   const current = words[index];
+
+  useEffect(() => {
+    if (current) autoSpeak(current);
+  }, [current]);
+  useEffect(() => () => stopSpeech(), []);
+
+  useEffect(() => {
+    if (!current && onComplete) onComplete();
+  }, [current, onComplete]);
 
   const decide = (verdict: "know" | "keep") => {
     if (!current || decidedRef.current) return;

@@ -180,6 +180,13 @@ due at that moment. Left-swipes live in a day-stamped localStorage
 list (`chinese.siftKept`) — per-day ephemeral, the same local-only
 carve-out as the old daily new-card counter.
 
+"Just start" (v114, `lib/flow.ts`) chains the three surfaces from one
+tap: sift stage when ≥ 20 due (capped at 15) → review with the saved
+settings → a 2-word Learn lesson. App holds the remaining-stage queue;
+each page takes an optional `onComplete` (wired only while a next
+stage exists) that fires when its deck drains. Backing out of a stage
+clears the queue.
+
 ### Queue + leech interleaving
 
 No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —

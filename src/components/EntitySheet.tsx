@@ -4,6 +4,7 @@ import { StatusButton } from "./StatusButton";
 import { detectPos } from "../lib/pos";
 import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { SheetHeader } from "./sheet/SheetHeader";
+import { CharFormula } from "./ui/CharFormula";
 import { EtymologySection } from "./sheet/EtymologySection";
 import { RelatedWordsColumns } from "./sheet/RelatedWordsColumns";
 import { roleColor } from "./sheet/helpers";
@@ -188,6 +189,15 @@ export function EntitySheet({
           pos={pos}
           defs={defs}
         />
+
+        {!isMultiCharWord && (
+          <div className="sheet-formula">
+            <CharFormula
+              pieces={(charData?.components ?? []).filter((p) => p.char && p.char !== "◎")}
+              onOpenEntity={onOpenChar}
+            />
+          </div>
+        )}
 
         {hasEtym && (
           <EtymologySection

@@ -41,6 +41,9 @@ interface Props {
   onGrade: (itemKey: string, rating: RatingName, kind?: ItemKind, facet?: Facet) => void;
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
+  // Flow mode (v114): called when the queue drains, instead of the
+  // "All caught up" state — the parent advances to the next stage.
+  onComplete?: () => void;
   // Open the EntitySheet for a tapped character/word (v110 — every
   // glyph in a drill is explorable once the card is answered).
   onOpenEntity?: (key: string) => void;
@@ -81,6 +84,7 @@ export function ReviewPage({
   onGrade,
   onAttributeFailure,
   onClose,
+  onComplete,
   onOpenEntity,
   inferenceWords,
   onInferenceResult,
@@ -372,6 +376,10 @@ export function ReviewPage({
   const handleSkipCurrent = useCallback(() => {
     if (current) advanceWithoutGrading(current);
   }, [current, advanceWithoutGrading]);
+
+  useEffect(() => {
+    if (!current && onComplete) onComplete();
+  }, [current, onComplete]);
 
   if (!current) {
     return (

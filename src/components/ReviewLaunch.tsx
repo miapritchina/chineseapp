@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Facet } from "../hooks/useReview";
+import { setAutoSpeakEnabled } from "../lib/speech";
+import { SIFT_FLOW_MIN } from "../lib/flow";
 
 export interface ReviewSettings {
   enabledFacets: Facet[];
@@ -9,6 +11,8 @@ export interface ReviewSettings {
   includeSubchars: boolean;
   // Cards per session (v110, owner-chosen; null = everything due).
   sessionSize: number | null;
+  // Speak answers on reveal (v114, default on).
+  autoSpeak: boolean;
 }
 
 const SETTINGS_KEY = "chinese.reviewSettings";
@@ -85,6 +89,7 @@ export function loadSettings(): ReviewSettings {
           randomOrder: !!parsed.randomOrder,
           includeSubchars: !!parsed.includeSubchars,
           sessionSize: size,
+          autoSpeak: parsed.autoSpeak !== false,
         };
       }
     }
@@ -96,7 +101,16 @@ export function loadSettings(): ReviewSettings {
     randomOrder: false,
     includeSubchars: false,
     sessionSize: DEFAULT_SESSION_SIZE,
+    autoSpeak: true,
   };
+}
+
+// The saved settings, ready to hand to ReviewPage: the Recognition
+// toggle expanded to both its facet rows. Used by App's "Just start"
+// flow, which skips the launch screen's Start button.
+export function loadStartSettings(): ReviewSettings {
+  const s = loadSettings();
+  return { ...s, enabledFacets: expandFacets(new Set(s.enabledFacets)) };
 }
 
 function saveSettings(s: ReviewSettings) {
@@ -125,6 +139,9 @@ interface Props {
   // whole point is bulk-clearing a big backlog.
   siftCount?: number;
   onStartSift?: () => void;
+  // "Just start" (v114): one tap, App builds the whole session
+  // (sift → drills → learn) from the saved settings.
+  onJustStart?: () => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -139,6 +156,7 @@ export function ReviewLaunch({
   onStartLearn,
   siftCount = 0,
   onStartSift,
+  onJustStart,
   onStart,
   onClose,
 }: Props) {
@@ -148,6 +166,7 @@ export function ReviewLaunch({
     () => loadSettings().includeSubchars,
   );
   const [sessionSize, setSessionSize] = useState<number | null>(() => loadSettings().sessionSize);
+  const [autoSpeak, setAutoSpeak] = useState<boolean>(() => loadSettings().autoSpeak);
 
   // Persist on every toggle so the values survive a navigation away.
   useEffect(() => {
@@ -156,8 +175,10 @@ export function ReviewLaunch({
       randomOrder,
       includeSubchars,
       sessionSize,
+      autoSpeak,
     });
-  }, [enabled, randomOrder, includeSubchars, sessionSize]);
+    setAutoSpeakEnabled(autoSpeak);
+  }, [enabled, randomOrder, includeSubchars, sessionSize, autoSpeak]);
 
   const toggleFacet = (f: Facet) => {
     setEnabled((prev) => {
@@ -174,7 +195,13 @@ export function ReviewLaunch({
   );
 
   const start = () => {
-    onStart({ enabledFacets: expandFacets(enabled), randomOrder, includeSubchars, sessionSize });
+    onStart({
+      enabledFacets: expandFacets(enabled),
+      randomOrder,
+      includeSubchars,
+      sessionSize,
+      autoSpeak,
+    });
   };
 
   return (
@@ -187,6 +214,20 @@ export function ReviewLaunch({
         <span className="review-progress">{totalDue} due</span>
       </div>
       <div className="review-body launch-body">
+        {onJustStart && (
+          <button
+            type="button"
+            className="review-btn review-btn-reveal launch-just-start"
+            onClick={onJustStart}
+            disabled={totalDue === 0 && siftCount === 0 && learnCount === 0}
+          >
+            <span className="launch-just-start-label">▶ Just start</span>
+            <span className="launch-just-start-hint">
+              One tap: {siftCount >= SIFT_FLOW_MIN ? "quick sift, then " : ""}your usual drills
+              {learnCount > 0 ? ", then a couple of new words" : ""}.
+            </span>
+          </button>
+        )}
         <div className="launch-section">
           <div className="launch-section-title">Drill types</div>
           <div className="launch-options">
@@ -245,6 +286,24 @@ export function ReviewLaunch({
             <span className="launch-option-hint">
               Off (default): drill types take turns, most-needed cards first. On: fully random
               order.
+            </span>
+          </button>
+        </div>
+        <div className="launch-section">
+          <div className="launch-section-title">Sound</div>
+          <button
+            type="button"
+            className={`launch-option${autoSpeak ? " is-on" : ""}`}
+            onClick={() => setAutoSpeak((v) => !v)}
+            aria-pressed={autoSpeak}
+          >
+            <span className="launch-option-row">
+              <span className="launch-option-check">{autoSpeak ? "●" : "○"}</span>
+              <span className="launch-option-label">Speak answers automatically</span>
+            </span>
+            <span className="launch-option-hint">
+              On (default): every reveal plays the word&apos;s audio. Off: only the 🔊 buttons
+              speak.
             </span>
           </button>
         </div>

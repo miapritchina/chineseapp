@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { buildFamilySweep } from "../lib/drillGen";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import { Entity } from "./Entity";
@@ -23,7 +23,7 @@ export function FamilySweepCard({ component, pool, charExists, onGrade, onOpenEn
   const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
-    speak(component.char);
+    autoSpeak(component.char);
     return () => stopSpeech();
   }, [component.char]);
 

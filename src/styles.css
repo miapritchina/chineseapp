@@ -2,13 +2,15 @@
   color-scheme: light dark;
   /* Surface scale: page bg → elevated panel → inset/well. --card-bg is the
      brightest (white-ish) surface for content cards. */
-  --bg: #faf8f4;
+  /* v114 ink-and-paper pass: bg warmed a step toward paper, accent
+     nudged to seal-stamp vermillion (朱红). */
+  --bg: #faf6ee;
   --surface: #fefdfb;
   --card-bg: #ffffff;
-  --surface-2: #f0ece4;
+  --surface-2: #f0ebe0;
   --text: #1d1b18;
   --muted: #6b6359;
-  --accent: #b12a2a;
+  --accent: #c3272b;
   --border: #e4dfd5;
 
   /* Decomposition role palette — Dong Chinese convention.
@@ -3775,4 +3777,62 @@ body {
   display: flex;
   gap: 12px;
   margin-top: 8px;
+}
+
+/* "Just start" flow (v114). */
+.launch-just-start {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  width: 100%;
+  padding: 14px 16px;
+}
+.launch-just-start-label {
+  font-size: var(--heading-1);
+  font-weight: 600;
+}
+.launch-just-start-hint {
+  font-size: var(--caption);
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* EntitySheet component formula (v114) — the Learn-style one-liner
+   right under the header. */
+.sheet-formula {
+  display: flex;
+  justify-content: center;
+  margin: 2px 0 4px;
+}
+.sheet-formula .learn-pieces {
+  font-size: var(--heading-1);
+}
+
+/* Brush-form hanzi (v114): html.brush-hanzi swaps big glyphs to Kaiti
+   (built into iOS/macOS; serif fallback elsewhere). --font-hanzi is
+   the shared hook — classes already reference it with an inherit
+   fallback; the hardcoded PingFang ones are overridden below. */
+.brush-hanzi {
+  --font-hanzi: "Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "AR PL UKai CN", serif;
+}
+.brush-hanzi .review-hanzi,
+.brush-hanzi .sheet-glyph-text,
+.brush-hanzi .sheet-glyph-fallback,
+.brush-hanzi .inference-hanzi,
+.brush-hanzi .cluster-cell-hanzi,
+.brush-hanzi .classic-glyph,
+.brush-hanzi .disambig-cell-glyph,
+.brush-hanzi .phonetic-tap-glyph,
+.brush-hanzi .sheet-etym-glyph,
+.brush-hanzi .sheet-saved-hanzi,
+.brush-hanzi .cloze-word,
+.brush-hanzi .result-row .r-hanzi {
+  font-family: var(--font-hanzi);
+}
+.hamburger-brush-sample {
+  font-family: "Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "AR PL UKai CN", serif;
+  font-size: 18px;
+  margin-left: 2px;
 }

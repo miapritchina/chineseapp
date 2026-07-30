@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 import { wordsSharingChar } from "../lib/explore";
 import { cleanEtymologyNotes } from "../lib/etymology";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, speak, stopSpeech } from "../lib/speech";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
 import { Entity } from "./Entity";
+import { CharFormula } from "./ui/CharFormula";
 
 interface Props {
   // The lesson's words, already ordered and capped by the caller.
@@ -17,6 +18,9 @@ interface Props {
   // Called once per finished lesson card — applies the small
   // passive-style schedule nudge ("introduced", not "answered").
   onIntroduced: (word: string) => void;
+  // Flow mode (v114): called when the lesson is exhausted, instead of
+  // showing the end state — the parent advances to the next stage.
+  onComplete?: () => void;
 }
 
 // Learn mode (v110, owner request): an "exercise" that TEACHES
@@ -25,7 +29,7 @@ interface Props {
 // dictionary's etymology notes) → the owner's related words, then a
 // Continue tap. No grading anywhere; finishing a card marks the word
 // introduced so tomorrow's review is its first real test.
-export function LearnPage({ words, onClose, onOpenEntity, onIntroduced }: Props) {
+export function LearnPage({ words, onClose, onOpenEntity, onIntroduced, onComplete }: Props) {
   const { chars } = useCharsCtx();
   const { findWord, ensureCached } = useDictCtx();
   const { savedList } = useSavedCtx();
@@ -40,9 +44,13 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced }: Props)
 
   // Hear the word as its lesson opens.
   useEffect(() => {
-    if (current) speak(current);
+    if (current) autoSpeak(current);
   }, [current]);
   useEffect(() => () => stopSpeech(), []);
+
+  useEffect(() => {
+    if (!current && onComplete) onComplete();
+  }, [current, onComplete]);
 
   if (!current) {
     return (
@@ -116,30 +124,7 @@ export function LearnPage({ words, onClose, onOpenEntity, onIntroduced }: Props)
                   <span className="learn-char-def">{cd.definitions?.[0] ?? ""}</span>
                 </span>
               </div>
-              {pieces.length > 0 && (
-                <div className="learn-pieces">
-                  ={" "}
-                  {pieces.map((p, i) => (
-                    <span key={`${p.char}-${i}`}>
-                      {i > 0 && <span className="learn-piece-plus"> + </span>}
-                      <span
-                        className="learn-piece is-explorable"
-                        style={{ color: `var(--role-${p.type}, var(--text))` }}
-                        onClick={() => onOpenEntity(p.char)}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        {p.char}
-                        {p.type === "sound" && p.pinyin
-                          ? ` ${p.pinyin}`
-                          : p.definition
-                            ? ` ${p.definition}`
-                            : ""}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <CharFormula pieces={pieces} onOpenEntity={onOpenEntity} />
               {note && <div className="learn-note">{note}</div>}
               {!note && cd.originalMeaning && (
                 <div className="learn-note">Originally: {cd.originalMeaning}</div>

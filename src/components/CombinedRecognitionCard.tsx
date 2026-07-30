@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Word, Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, speak, stopSpeech } from "../lib/speech";
 import { GradeButtons } from "./ui/GradeButtons";
 import { Entity } from "./Entity";
 
@@ -44,7 +44,7 @@ export function CombinedRecognitionCard({
   // Speak the answer on reveal. Stop pending speech on unmount.
   useEffect(() => {
     if (!revealed) return;
-    speak(itemKey);
+    autoSpeak(itemKey);
   }, [revealed, itemKey]);
   useEffect(() => () => stopSpeech(), []);
 

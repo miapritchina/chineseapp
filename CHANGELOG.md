@@ -12,6 +12,27 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **"Just start" (v114):** one-tap session on the launch screen — a
+  quick Sift pass first when ≥ 20 words are due (capped at 15), then
+  the usual mixed drills with the saved settings, then a 2-word Learn
+  lesson. Stages auto-advance as each deck drains; backing out
+  cancels the rest.
+- **Brush font (v114):** hamburger toggle that renders big hanzi in
+  Kaiti (brush-form, built into iOS/macOS — zero download). Persisted
+  per device.
+- **Component formula in the EntitySheet (v114):** single characters
+  now show the Learn-style role-colored one-liner (请 = 讠 speech +
+  青 qīng) right under the header; each piece opens its own sheet.
+- **Sound toggle (v114):** "Speak answers automatically" on the
+  launch screen (default on) now gates every drill's auto-play; Sift
+  cards also speak their word as they appear. 🔊 buttons always work.
+
+### Changed
+- **Ink-and-paper tokens (v114):** light background warmed a step
+  (`--bg` #faf6ee), accent nudged to seal-stamp vermillion
+  (`--accent` #c3272b).
+
+### Added
 - **Sift — Tinder-style triage (v113):** for working through a big
   due backlog fast. "Sift · N due words" on the launch screen shows
   each due word with pinyin and meaning visible (a self-judgement,

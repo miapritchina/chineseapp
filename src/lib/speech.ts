@@ -141,6 +141,20 @@ export function speak(text: string, lang: string = "zh-CN"): void {
   }
 }
 
+// Auto-play preference (v114): drills speak answers on reveal unless
+// the owner turns Sound off on the launch screen. Explicit 🔊 taps
+// always go through speak() directly.
+let autoSpeakOn = true;
+
+export function setAutoSpeakEnabled(on: boolean): void {
+  autoSpeakOn = on;
+}
+
+/** speak(), but only when the auto-play toggle is on. */
+export function autoSpeak(text: string, lang: string = "zh-CN"): void {
+  if (autoSpeakOn) speak(text, lang);
+}
+
 /** Stop whatever's playing (used on unmount and before a new speak). */
 export function stopSpeech(): void {
   if (typeof window === "undefined") return;

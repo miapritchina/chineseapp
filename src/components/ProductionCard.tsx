@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { HanziGlyph } from "./ui/HanziGlyph";
 
 interface Props {
@@ -35,7 +35,7 @@ export function ProductionCard({ char, charData, onGrade, onOpenEntity }: Props)
   // Speak the prompt when the drill mounts so the user knows what to
   // write, and stop any pending speech on unmount.
   useEffect(() => {
-    speak(char);
+    autoSpeak(char);
     return () => stopSpeech();
   }, [char]);
 

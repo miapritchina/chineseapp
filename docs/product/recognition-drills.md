@@ -107,6 +107,22 @@ left / ✗ → no schedule change; hidden from Sift until tomorrow
 (localStorage `chinese.siftKept`, day-stamped) while staying due in
 the other drills.
 
+## "Just start" flow (v114 — one tap, zero decisions)
+
+Launch-screen primary button that builds the whole session from the
+saved settings (`lib/flow.ts` planFlow): a quick Sift pass first when
+the backlog is fat (≥ 20 due words, capped at 15 cards), then the
+normal mixed review session, then a 2-word Learn lesson when there's
+anything to learn. Each stage auto-advances into the next when its
+deck drains (`onComplete`, wired only while a next stage exists — the
+last stage keeps its natural end screen). Backing out of any stage
+cancels the rest of the flow.
+
+Session-wide sound setting (v114): "Speak answers automatically"
+(default on, persisted with the review settings) gates every drill's
+auto-play — reveals, Sift cards, Learn lesson openings. The 🔊 replay
+buttons always work regardless.
+
 ## Backlog (in TODO.md)
 
 ### 5 · Audio-first recognition
