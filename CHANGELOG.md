@@ -23,6 +23,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   so the easy yeses come fast. (Per-day left-swipe list is local-only,
   like the old per-day counter.)
 
+### Fixed
+- **Setup Supabase workflow pointed auth at a dead URL:** `SITE_URL`
+  still read `decobots.github.io/Ai-/` (pre-rename, pre-transfer), so
+  every run PATCHed a stale redirect URL + allow-list into Supabase
+  auth config. Now `miapritchina.github.io/chineseapp/`. Sign-in was
+  unaffected (OTP codes, no link clicking), but email links would have
+  404ed. Stale `decobots` URLs in README / CLAUDE.md / vite comment
+  updated too.
+
 ### Changed
 - **No same-day retry after a mistake (v112,
   [ADR-0014](docs/decisions/0014-no-same-day-retry.md)):** a card
