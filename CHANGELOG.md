@@ -12,6 +12,10 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Games get their own launch section (v119):** Forge / Pairs /
+  Chain moved out of the bottom action bar (where they squeezed into
+  one row) into a "Games" section in the scrollable body — one
+  full-width button per game with a one-line description.
 - **Forge is now a word game (v118, Smush-style):** the component
   forge didn't land — replaced. The tray now scatters the characters
   of your saved two-character words (duplicates are real tiles); tap
