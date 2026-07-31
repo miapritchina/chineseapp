@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useCharsCtx, useSavedCtx } from "../state/contexts";
+import { useDictCtx, useSavedCtx } from "../state/contexts";
 import { autoSpeak, stopSpeech } from "../lib/speech";
-import { buildForgeRound, forgeCandidates, forgeMatch } from "../lib/forge";
+import { anySmushLeft, buildWordForgeRound, forgeWordPool, smush } from "../lib/forge";
 import { PageHeader } from "./ui/PageHeader";
 import { EmptyState } from "./ui/EmptyState";
 
@@ -10,27 +10,22 @@ interface Props {
   onOpenEntity?: (key: string) => void;
 }
 
-// Character forge (v116): the tray scatters components of characters
-// the user knows; tapping a valid pair forges the character — glyph,
-// reading, meaning, sound. A game, not a drill: nothing is graded.
+// Word forge (v118, Smush-style — replaced the component forge): the
+// tray scatters characters from the user's words; tap two to smush
+// them into any saved word. Round ends when nothing combines; an
+// empty tray is a perfect clear. A game — nothing is graded.
 export function ForgePage({ onClose, onOpenEntity }: Props) {
-  const { chars } = useCharsCtx();
+  const { findWord } = useDictCtx();
   const { savedList } = useSavedCtx();
 
-  const candidates = useMemo(
-    () =>
-      forgeCandidates(
-        savedList.map((s) => s.word),
-        chars,
-      ),
-    [savedList, chars],
-  );
+  const pool = useMemo(() => forgeWordPool(savedList.map((s) => s.word)), [savedList]);
   const [roundSeed, setRoundSeed] = useState(0);
-  const round = useMemo(() => buildForgeRound(candidates), [candidates, roundSeed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const round = useMemo(() => buildWordForgeRound(pool), [pool, roundSeed]);
 
   const [selected, setSelected] = useState<number | null>(null);
   const [consumed, setConsumed] = useState<Set<number>>(() => new Set());
-  const [forged, setForged] = useState<string[]>([]);
+  const [formed, setFormed] = useState<string[]>([]);
   const [misses, setMisses] = useState(0);
   const [shake, setShake] = useState<[number, number] | null>(null);
   const shakeTimer = useRef<number | null>(null);
@@ -41,7 +36,7 @@ export function ForgePage({ onClose, onOpenEntity }: Props) {
     setRoundSeed((n) => n + 1);
     setSelected(null);
     setConsumed(new Set());
-    setForged([]);
+    setFormed([]);
     setMisses(0);
     setShake(null);
   };
@@ -53,17 +48,18 @@ export function ForgePage({ onClose, onOpenEntity }: Props) {
         <EmptyState
           variant="review"
           title="Not enough material yet."
-          hint="Forge needs a few saved characters that split into two components."
+          hint="Forge needs a handful of saved two-character words."
         />
       </div>
     );
   }
 
-  const forgedSet = new Set(forged);
-  const done = forged.length === round.targets.length;
+  const remaining = round.tiles.filter((_, i) => !consumed.has(i));
+  const done = remaining.length === 0 || !anySmushLeft(remaining, round.wordSet);
+  const perfect = remaining.length === 0;
 
-  const tapPiece = (i: number) => {
-    if (consumed.has(i) || shake) return;
+  const tapTile = (i: number) => {
+    if (consumed.has(i) || shake || done) return;
     if (selected === i) {
       setSelected(null);
       return;
@@ -72,12 +68,12 @@ export function ForgePage({ onClose, onOpenEntity }: Props) {
       setSelected(i);
       return;
     }
-    const target = forgeMatch(round.targets, forgedSet, round.pieces[selected], round.pieces[i]);
-    if (target) {
+    const word = smush(round.tiles[selected], round.tiles[i], round.wordSet);
+    if (word) {
       setConsumed((prev) => new Set(prev).add(selected).add(i));
-      setForged((prev) => [...prev, target.char]);
+      setFormed((prev) => [...prev, word]);
       setSelected(null);
-      autoSpeak(target.char);
+      autoSpeak(word);
     } else {
       setMisses((n) => n + 1);
       setShake([selected, i]);
@@ -92,41 +88,39 @@ export function ForgePage({ onClose, onOpenEntity }: Props) {
       <PageHeader
         onBack={onClose}
         tag="Forge"
-        progress={`${forged.length} / ${round.targets.length}`}
+        progress={`${formed.length} word${formed.length === 1 ? "" : "s"}`}
       />
       <div className="forge-body">
-        <div className="phonetic-tap-prompt">
-          Tap two components that forge a character you know.
-        </div>
+        <div className="phonetic-tap-prompt">Smush two characters into a word you know.</div>
         <div className="forge-tray">
-          {round.pieces.map((p, i) => (
+          {round.tiles.map((c, i) => (
             <button
-              key={`${p}-${i}`}
+              key={`${c}-${i}`}
               type="button"
               className={`forge-piece${selected === i ? " is-selected" : ""}${
                 consumed.has(i) ? " is-consumed" : ""
               }${shake && (shake[0] === i || shake[1] === i) ? " is-wrong" : ""}`}
-              onClick={() => tapPiece(i)}
+              onClick={() => tapTile(i)}
               disabled={consumed.has(i)}
             >
-              {p}
+              {c}
             </button>
           ))}
         </div>
-        {forged.length > 0 && (
+        {formed.length > 0 && (
           <div className="forge-done-row">
-            {forged.map((c) => {
-              const cd = chars?.[c];
+            {formed.map((w, i) => {
+              const row = findWord(w);
               return (
                 <button
-                  key={c}
+                  key={`${w}-${i}`}
                   type="button"
                   className="forge-result is-explorable"
-                  onClick={onOpenEntity ? () => onOpenEntity(c) : undefined}
+                  onClick={onOpenEntity ? () => onOpenEntity(w) : undefined}
                 >
-                  <span className="forge-result-hanzi">{c}</span>
+                  <span className="forge-result-hanzi">{w}</span>
                   <span className="forge-result-meta">
-                    {cd?.pinyin ?? ""} {cd?.definitions?.[0] ?? ""}
+                    {row?.pinyin ?? ""} {row?.definitions?.[0] ?? ""}
                   </span>
                 </button>
               );
@@ -136,9 +130,15 @@ export function ForgePage({ onClose, onOpenEntity }: Props) {
         {done && (
           <div className="forge-end">
             <div className="forge-end-title">
-              All forged!{" "}
-              {misses === 0 ? "Flawless." : `${misses} miss${misses === 1 ? "" : "es"}.`}
+              {perfect
+                ? `Perfect clear — ${formed.length} words! ✨`
+                : `Nothing left to smush — ${formed.length} word${formed.length === 1 ? "" : "s"}, ${remaining.length} tiles stranded.`}
             </div>
+            {misses > 0 && (
+              <div className="chain-best">
+                {misses} miss{misses === 1 ? "" : "es"}
+              </div>
+            )}
             <button type="button" className="review-btn review-btn-reveal" onClick={newRound}>
               New round
             </button>

@@ -381,7 +381,7 @@ export function ReviewLaunch({
                 className="review-btn launch-game-btn"
                 onClick={onStartForge}
                 disabled={!forgeReady}
-                title="Game: combine loose components into characters you know. Nothing is graded."
+                title="Game: smush loose characters into words you know. Nothing is graded."
               >
                 ⚒ Forge
               </button>

@@ -41,7 +41,7 @@ import { StatsPage } from "./components/StatsPage";
 import { ForgePage } from "./components/ForgePage";
 import { PairsPage } from "./components/PairsPage";
 import { ChainPage } from "./components/ChainPage";
-import { forgeCandidates } from "./lib/forge";
+import { forgeWordPool } from "./lib/forge";
 import { PAIRS_PER_BOARD } from "./lib/pairs";
 import { chainPool, pickChainStart } from "./lib/chain";
 
@@ -257,12 +257,8 @@ export function App() {
   // Games (v116): pure play, launched from the review launch screen.
   const [gameOpen, setGameOpen] = useState<"forge" | "pairs" | "chain" | null>(null);
   const forgeReady = useMemo(
-    () =>
-      forgeCandidates(
-        saved.savedList.map((s) => s.word),
-        charsData.chars,
-      ).length >= 3,
-    [saved.savedList, charsData.chars],
+    () => forgeWordPool(saved.savedList.map((s) => s.word)).length >= 4,
+    [saved.savedList],
   );
   // Pairs material: due words first, the rest of the shelf after.
   const pairsPool = useMemo(
@@ -548,7 +544,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v117"
+          version="chinese v118"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"

@@ -129,12 +129,13 @@ Owner picked two from a proposed list (word chain, tone sniper,
 forge, pairs, sprint, scramble). Both are launch-screen buttons and
 write NO FSRS state — pure exposure.
 
-- **⚒ Forge** (`lib/forge.ts` + `ForgePage`): tray of scattered
-  components from the user's known characters (only chars that split
-  into exactly 2 distinct pieces qualify; piece glyphs are unique per
-  round so every valid pair forges exactly one target). Tap two →
-  forge → the character lines up below with pinyin + gloss + audio.
-  Round of ≤ 5; misses counted; "New round" re-deals.
+- **⚒ Forge** (`lib/forge.ts` + `ForgePage`): Smush-style word game
+  (v118 — the original component-forge version didn't land with the
+  owner and was replaced). Tray = the characters of ~7 saved 2-char
+  words, duplicates as real tiles; tap two to smush into ANY saved
+  word (either order, tapped order wins — 蜂蜜/蜜蜂). Cross-
+  combinations count. Round ends when no pair combines; empty tray =
+  perfect clear. Formed words line up with pinyin + gloss + audio.
 - **🀄 Pairs** (`lib/pairs.ts` + `PairsPage`): 6-pair memory board,
   hanzi tiles vs meaning tiles, material due-words-first. Mismatch
   flips back; match locks green + speaks. Score = moves + seconds;

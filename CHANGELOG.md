@@ -11,6 +11,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Forge is now a word game (v118, Smush-style):** the component
+  forge didn't land — replaced. The tray now scatters the characters
+  of your saved two-character words (duplicates are real tiles); tap
+  two to smush them into ANY saved word, either order. Cross-
+  combinations count (学 from 学生 + 习 = 学习). Round ends when
+  nothing combines; an empty tray is a perfect clear. Misses counted,
+  still nothing graded.
+
 ### Added
 - **⛓ 词语接龙 word chain (v117):** third game — the next word must
   start with the previous word's last character (学生 → 生日 → 日子),
