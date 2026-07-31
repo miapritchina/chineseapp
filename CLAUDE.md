@@ -156,8 +156,12 @@ These are hard rules. Bend them only after asking.
 - **Never push to `main` directly.** Never force-push to it.
 - Don't use `--no-verify`, `--no-gpg-sign`, or amend a pushed commit
   unless explicitly asked.
-- **Never create a PR unless explicitly asked.** The owner opens PRs
-  from the Claude Code UI.
+- **Deploy on completion** (standing instruction since v118): when a
+  feature is built, tested, browser-verified, and documented, deploy
+  it without waiting to be asked — open/merge the PR to
+  `claude/main`, watch the Pages run, and confirm the new `chinese
+  vNN` label is live. Proposals and open design questions still wait
+  for the owner; finished work does not.
 
 ### Review documentation before pushing
 
