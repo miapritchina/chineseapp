@@ -1,85 +1,57 @@
-// Character forge (v116, owner-picked game): loose components are
-// scattered; tapping a valid pair "forges" a character the user
-// knows (讠 + 青 = 请). Pure play — no FSRS writes.
+// Word forge (v118, replaced the component forge the owner didn't
+// enjoy): Smush-style — a tray of loose characters from the user's
+// saved two-character words; tap two to smush them into ANY saved
+// word (either order counts, tapped order wins). Keep smushing until
+// no remaining pair forms a word; an empty tray is a perfect clear.
+// Pure play — no FSRS writes.
 
-import type { Char } from "./types";
 import { shuffle, type Rand } from "./drillGen";
 
-export interface ForgeTarget {
-  char: string;
-  pieces: [string, string];
+export const FORGE_WORDS_PER_ROUND = 7;
+
+export interface WordForgeRound {
+  // The tray: every chosen word's characters, shuffled. Duplicates
+  // are real tiles — 学生 + 生日 puts two 生 in the tray.
+  tiles: string[];
+  // Every saved 2-char word is a valid smush, not just the seeds —
+  // cross-combinations are the fun (学+习 from 学生's 学).
+  wordSet: Set<string>;
 }
 
-export interface ForgeRound {
-  targets: ForgeTarget[];
-  // The scattered tray: every target's pieces, shuffled. All piece
-  // glyphs are unique across the round, so each valid pair forges
-  // exactly one target.
-  pieces: string[];
+export function forgeWordPool(savedWords: string[]): string[] {
+  return [...new Set(savedWords.filter((w) => [...w].length === 2))];
 }
 
-// Material: every character inside the user's saved words that
-// decomposes into exactly two distinct component glyphs.
-export function forgeCandidates(
-  savedWords: string[],
-  chars: Record<string, Char> | null | undefined,
-): ForgeTarget[] {
-  if (!chars) return [];
-  const seen = new Set<string>();
-  const out: ForgeTarget[] = [];
-  for (const w of savedWords) {
-    for (const c of w) {
-      if (seen.has(c)) continue;
-      seen.add(c);
-      const pieces = (chars[c]?.components ?? []).filter((p) => p.char && p.char !== "◎");
-      if (pieces.length !== 2) continue;
-      if (pieces[0].char === pieces[1].char) continue;
-      out.push({ char: c, pieces: [pieces[0].char, pieces[1].char] });
-    }
-  }
-  return out;
-}
-
-export function buildForgeRound(
-  candidates: ForgeTarget[],
+export function buildWordForgeRound(
+  pool: string[],
   rand: Rand = Math.random,
-  targetCount = 5,
-): ForgeRound | null {
-  const used = new Set<string>();
-  const targets: ForgeTarget[] = [];
-  for (const t of shuffle(candidates, rand)) {
-    if (targets.length >= targetCount) break;
-    // Unique pieces only — and a piece may not double as another
-    // target's result, or one tap could mean two different things.
-    if (used.has(t.pieces[0]) || used.has(t.pieces[1]) || used.has(t.char)) continue;
-    if (targets.some((x) => x.char === t.pieces[0] || x.char === t.pieces[1])) continue;
-    used.add(t.pieces[0]);
-    used.add(t.pieces[1]);
-    used.add(t.char);
-    targets.push(t);
-  }
-  if (targets.length < 3) return null;
+  wordCount = FORGE_WORDS_PER_ROUND,
+): WordForgeRound | null {
+  if (pool.length < 4) return null;
+  const chosen = shuffle(pool, rand).slice(0, wordCount);
   return {
-    targets,
-    pieces: shuffle(
-      targets.flatMap((t) => t.pieces),
+    tiles: shuffle(
+      chosen.flatMap((w) => [...w]),
       rand,
     ),
+    wordSet: new Set(pool),
   };
 }
 
-// Which unforged target (if any) do these two tray pieces make?
-export function forgeMatch(
-  targets: ForgeTarget[],
-  forged: Set<string>,
-  a: string,
-  b: string,
-): ForgeTarget | null {
-  for (const t of targets) {
-    if (forged.has(t.char)) continue;
-    if ((t.pieces[0] === a && t.pieces[1] === b) || (t.pieces[0] === b && t.pieces[1] === a)) {
-      return t;
+// The word two tiles smush into, or null. Tapped order wins when both
+// orders are words (蜂蜜 vs 蜜蜂).
+export function smush(a: string, b: string, wordSet: Set<string>): string | null {
+  if (wordSet.has(a + b)) return a + b;
+  if (wordSet.has(b + a)) return b + a;
+  return null;
+}
+
+// Round over when no remaining pair smushes into a word.
+export function anySmushLeft(remaining: string[], wordSet: Set<string>): boolean {
+  for (let i = 0; i < remaining.length; i++) {
+    for (let j = i + 1; j < remaining.length; j++) {
+      if (smush(remaining[i], remaining[j], wordSet)) return true;
     }
   }
-  return null;
+  return false;
 }
