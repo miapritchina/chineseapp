@@ -320,6 +320,48 @@ export function ReviewLaunch({
             </span>
           </button>
         </div>
+        {(onStartForge || onStartPairs || onStartChain) && (
+          <div className="launch-section">
+            <div className="launch-section-title">Games</div>
+            <div className="launch-games-col">
+              {onStartForge && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartForge}
+                  disabled={!forgeReady}
+                >
+                  <span className="launch-game-name">⚒ Forge</span>
+                  <span className="launch-game-hint">Smush characters into words you know</span>
+                </button>
+              )}
+              {onStartPairs && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartPairs}
+                  disabled={!pairsReady}
+                >
+                  <span className="launch-game-name">🀄 Pairs</span>
+                  <span className="launch-game-hint">Memory match — hanzi against meanings</span>
+                </button>
+              )}
+              {onStartChain && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartChain}
+                  disabled={!chainReady}
+                >
+                  <span className="launch-game-name">⛓ Chain</span>
+                  <span className="launch-game-hint">
+                    接龙 — link words by their last character
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="launch-section">
           <div className="launch-section-title">Scope</div>
           <button
@@ -372,43 +414,6 @@ export function ReviewLaunch({
           >
             Sift · {siftCount} due words
           </button>
-        )}
-        {(onStartForge || onStartPairs || onStartChain) && (
-          <div className="launch-games-row">
-            {onStartForge && (
-              <button
-                type="button"
-                className="review-btn launch-game-btn"
-                onClick={onStartForge}
-                disabled={!forgeReady}
-                title="Game: smush loose characters into words you know. Nothing is graded."
-              >
-                ⚒ Forge
-              </button>
-            )}
-            {onStartPairs && (
-              <button
-                type="button"
-                className="review-btn launch-game-btn"
-                onClick={onStartPairs}
-                disabled={!pairsReady}
-                title="Game: memory match — hanzi tiles against meanings. Nothing is graded."
-              >
-                🀄 Pairs
-              </button>
-            )}
-            {onStartChain && (
-              <button
-                type="button"
-                className="review-btn launch-game-btn"
-                onClick={onStartChain}
-                disabled={!chainReady}
-                title="Game: 词语接龙 — chain your words by their last character. Nothing is graded."
-              >
-                ⛓ Chain
-              </button>
-            )}
-          </div>
         )}
       </div>
     </div>
