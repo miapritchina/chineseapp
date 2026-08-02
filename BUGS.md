@@ -66,8 +66,8 @@ home screen. No console errors.
 **and** the `hashchange` listener both need a handler for these
 patterns.
 
-**Reproduce:** Open `https://decobots.github.io/Ai-/#/c/好` in a fresh
-tab.
+**Reproduce:** Open `https://miapritchina.github.io/chineseapp/#/c/好` in a
+fresh tab.
 
 ---
 

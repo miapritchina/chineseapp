@@ -11,6 +11,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **Remaining stale `decobots/Ai-` URLs (v120):** the BUG-1 repro link
+  and the Setup Supabase workflow link in `supabase/README.md` still
+  pointed at the pre-rename repo. Now `miapritchina/chineseapp`.
+  (v113 fixed the README / CLAUDE.md / vite ones; these two were
+  missed.) Historical references in the changelog, the v84 QA record,
+  and `docs/archive/` are left as-is — they document what was true at
+  the time.
+
 ### Changed
 - **Games get their own launch section (v119):** Forge / Pairs /
   Chain moved out of the bottom action bar (where they squeezed into

@@ -24,7 +24,7 @@ page.)
 
 ### 3. Run the workflow
 
-Open `github.com/decobots/Ai-/actions`.
+Open `github.com/miapritchina/chineseapp/actions`.
 
 - Tap **Setup Supabase** → **Run workflow**.
 - Leave the three checkboxes ticked.
