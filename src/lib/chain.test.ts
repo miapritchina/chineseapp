@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { chainPool, nextChainStep, pickChainStart } from "./chain";
+import { chainBuildState, chainPool, nextChainStep, pickChainStart } from "./chain";
 
-const pool = ["学生", "生日", "日子", "中国", "电话", "朋友"];
+const pool = ["学生", "生日", "日子", "中国", "电话", "朋友", "生活"];
 
 describe("chainPool", () => {
   it("multi-char words only, deduped", () => {
@@ -21,19 +21,37 @@ describe("pickChainStart", () => {
 });
 
 describe("nextChainStep", () => {
-  it("exactly one option continues the chain", () => {
+  it("lists every unused continuation and trays their completions", () => {
     const step = nextChainStep("学生", pool, new Set(["学生"]), () => 0);
     expect(step).not.toBeNull();
     expect(step!.link).toBe("生");
-    expect(step!.options.filter((w) => w.startsWith("生"))).toEqual(["生日"]);
-    expect(step!.options.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(step!.answers)).toEqual(new Set(["生日", "生活"]));
+    expect(step!.tray).toContain("日");
+    expect(step!.tray).toContain("活");
+  });
+  it("decoys never complete a word of the pool", () => {
+    const step = nextChainStep("学生", pool, new Set(["学生"]), () => 0)!;
+    for (const c of step.tray) {
+      const completes = pool.some((w) => w.startsWith("生" + c));
+      const isNeeded = ["日", "活"].includes(c);
+      expect(completes).toBe(isNeeded);
+    }
   });
   it("dead end when no continuation is left", () => {
-    expect(nextChainStep("学生", pool, new Set(["学生", "生日"]), () => 0)).toBeNull();
+    expect(nextChainStep("学生", pool, new Set(["学生", "生日", "生活"]), () => 0)).toBeNull();
   });
-  it("used words never reappear", () => {
-    const step = nextChainStep("生日", pool, new Set(["学生", "生日"]), () => 0);
-    expect(step!.options).not.toContain("学生");
-    expect(step!.options.filter((w) => w.startsWith("日"))).toEqual(["日子"]);
+});
+
+describe("chainBuildState", () => {
+  const answers = ["生日", "生活费"];
+  it("recognizes a finished word", () => {
+    expect(chainBuildState("生", "日", answers)).toBe("win");
+  });
+  it("keeps building through a longer word", () => {
+    expect(chainBuildState("生", "活", answers)).toBe("building");
+    expect(chainBuildState("生", "活费", answers)).toBe("win");
+  });
+  it("dead when the prefix leads nowhere", () => {
+    expect(chainBuildState("生", "国", answers)).toBe("dead");
   });
 });

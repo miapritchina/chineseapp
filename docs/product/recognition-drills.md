@@ -143,14 +143,18 @@ write NO FSRS state — pure exposure.
 
 - **⛓ Chain / 词语接龙** (v117, `lib/chain.ts` + `ChainPage`): grow a
   chain of saved words, each starting with the previous word's last
-  character; 4 options per step, exactly one valid. v120: the options
-  are **meanings**, not hanzi — showing the glyphs let the owner
-  solve every step by matching the link character with no idea what
-  the words meant, so the prompt is now "which of your words starts
-  with 生 and means…" and the hanzi reveals on a correct pick (words
-  without a gloss are excluded from the deck). Wrong pick breaks the
-  chain and reveals both what was tapped and the intended word; pool
-  exhaustion = perfect chain. Best-this-visit only — no persistence.
+  character. The mechanic converged over two revisions: v117 offered
+  candidate hanzi (solvable by matching the link character alone),
+  v120 offered meanings, v121 **offers nothing to recognize** — the
+  link character sits on a build row and the player produces the
+  continuation from a tray of loose characters (生 + 日 = 生日).
+  Every unused pool word starting with the link is accepted;
+  multi-character words build up tap by tap (`chainBuildState`
+  → win / building / dead); tray decoys are filtered so they cannot
+  start ANY pool word, so a dead tile is a genuine failure to
+  produce, not a trick. Wrong tile breaks the chain and reveals an
+  intended word; pool exhaustion = perfect chain. Best-this-visit
+  only — no persistence.
 
 Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
 sentence scramble.

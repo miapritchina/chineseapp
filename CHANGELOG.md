@@ -12,7 +12,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
-- **Chain now asks for meanings (v120):** picking among hanzi tiles
+- **Chain: build the next word from loose characters (v121):**
+  nothing is offered to recognize any more — no candidate words, no
+  meanings. The link character sits on the build row and you produce
+  the continuation from a tray of loose characters (生 + 日). Any of
+  your unused words starting with the link counts, longer words are
+  built character by character, and tray decoys are guaranteed never
+  to start a word you know — so a dead tile really does mean you
+  couldn't produce one, and the chain breaks with the intended word
+  revealed.
+- **Chain asked for meanings (v120, superseded by v121):** picking among hanzi tiles
   was solvable by matching the link character without knowing any of
   the words. The four options are now English meanings — "which of
   your words starts with 生 and means…" — and the hanzi is revealed
