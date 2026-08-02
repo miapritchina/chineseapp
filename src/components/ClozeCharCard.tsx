@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { clusterFor } from "../lib/confusionClusters";
 import { pickClozeTask } from "../lib/drillGen";
 import { Entity } from "./Entity";
@@ -10,18 +10,20 @@ interface Props {
   gloss: string;
   savedWords: string[];
   onGrade: (rating: RatingName) => void;
+  // Open the EntitySheet for a tapped character (post-answer).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Drill 3: the word with one character masked; pick the missing char.
 // Distractors come from the masked char's confusion cluster when it
 // has one, padded from the user's other saved characters.
-export function ClozeCharCard({ word, gloss, savedWords, onGrade }: Props) {
+export function ClozeCharCard({ word, gloss, savedWords, onGrade, onOpenEntity }: Props) {
   const [task] = useState(() => pickClozeTask(word, savedWords, clusterFor));
   const [picked, setPicked] = useState<string | null>(null);
   const isCorrect = picked !== null && task !== null && picked === task.answer;
 
   useEffect(() => {
-    if (picked !== null) speak(word);
+    if (picked !== null) autoSpeak(word);
   }, [picked, word]);
   useEffect(() => () => stopSpeech(), []);
 
@@ -53,7 +55,20 @@ export function ClozeCharCard({ word, gloss, savedWords, onGrade }: Props) {
                 ▢
               </span>
             ) : (
-              <span key={i} className={i === task.maskIndex ? "cloze-solved" : undefined}>
+              <span
+                key={i}
+                className={`${i === task.maskIndex ? "cloze-solved" : ""}${
+                  picked !== null && onOpenEntity ? " is-explorable" : ""
+                }`.trim()}
+                onClick={
+                  picked !== null && onOpenEntity
+                    ? (e) => {
+                        e.stopPropagation();
+                        onOpenEntity(i === task.maskIndex ? task.answer : g);
+                      }
+                    : undefined
+                }
+              >
                 {i === task.maskIndex ? task.answer : g}
               </span>
             ),
@@ -81,7 +96,15 @@ export function ClozeCharCard({ word, gloss, savedWords, onGrade }: Props) {
                 showMeaning={false}
                 ariaLabel={c}
                 className={`phonetic-tap-pick ${flash}`.trim()}
-                onTap={picked === null ? () => setPicked(c) : undefined}
+                // Before answering a tap IS the answer; afterwards it
+                // opens the character's sheet.
+                onTap={
+                  picked === null
+                    ? () => setPicked(c)
+                    : onOpenEntity
+                      ? () => onOpenEntity(c)
+                      : undefined
+                }
               />
             );
           })}

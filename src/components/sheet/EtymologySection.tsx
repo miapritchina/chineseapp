@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import type { Char } from "../../lib/types";
 import { useCharsCtx } from "../../state/contexts";
+import { cleanEtymologyNotes } from "../../lib/etymology";
 
 // "ETYMOLOGY / MADE OF" section: role-colored decomposition equation +
 // the etymological note (if any). Each piece is tappable and opens its
@@ -96,8 +97,10 @@ export function EtymologySection({
         charData.originalMeaning !== "characterless component" && (
           <div className="sheet-etym-note">Originally: {charData.originalMeaning}</div>
         )}
-      {!isMultiCharWord && charData?.notes && (
-        <div className="sheet-etym-note sheet-etym-note-em">{charData.notes}</div>
+      {!isMultiCharWord && cleanEtymologyNotes(charData?.notes) && (
+        <div className="sheet-etym-note sheet-etym-note-em">
+          {cleanEtymologyNotes(charData?.notes)}
+        </div>
       )}
     </section>
   );

@@ -103,7 +103,17 @@ export function Entity({
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-label={ariaLabel ?? `${key} ${pinyin}`.trim()}
-      onClick={interactive ? handleTap : undefined}
+      // stopPropagation so a tappable Entity inside a tap-anywhere
+      // drill surface doesn't ALSO advance the card (v110 — drills
+      // open the sheet for tapped characters).
+      onClick={
+        interactive
+          ? (e) => {
+              e.stopPropagation();
+              handleTap();
+            }
+          : undefined
+      }
       onKeyDown={
         interactive
           ? (e) => {

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Facet } from "../hooks/useReview";
+import { setAutoSpeakEnabled } from "../lib/speech";
+import { SIFT_FLOW_MIN } from "../lib/flow";
 
 export interface ReviewSettings {
   enabledFacets: Facet[];
@@ -7,6 +9,10 @@ export interface ReviewSettings {
   // Off by default: hide cascade-seeded char cards (sub-characters of
   // saved words that the user never explicitly saved) from the queue.
   includeSubchars: boolean;
+  // Cards per session (v110, owner-chosen; null = everything due).
+  sessionSize: number | null;
+  // Speak answers on reveal (v114, default on).
+  autoSpeak: boolean;
 }
 
 const SETTINGS_KEY = "chinese.reviewSettings";
@@ -72,10 +78,18 @@ export function loadSettings(): ReviewSettings {
       const parsed = JSON.parse(raw) as Partial<ReviewSettings>;
       if (Array.isArray(parsed.enabledFacets)) {
         const cleaned = (parsed.enabledFacets as Facet[]).filter((f) => KNOWN_FACETS.has(f));
+        const size =
+          parsed.sessionSize === null
+            ? null
+            : typeof parsed.sessionSize === "number" && parsed.sessionSize > 0
+              ? parsed.sessionSize
+              : DEFAULT_SESSION_SIZE;
         return {
           enabledFacets: cleaned.length > 0 ? cleaned : DEFAULT_FACETS,
           randomOrder: !!parsed.randomOrder,
           includeSubchars: !!parsed.includeSubchars,
+          sessionSize: size,
+          autoSpeak: parsed.autoSpeak !== false,
         };
       }
     }
@@ -86,7 +100,17 @@ export function loadSettings(): ReviewSettings {
     enabledFacets: DEFAULT_FACETS,
     randomOrder: false,
     includeSubchars: false,
+    sessionSize: DEFAULT_SESSION_SIZE,
+    autoSpeak: true,
   };
+}
+
+// The saved settings, ready to hand to ReviewPage: the Recognition
+// toggle expanded to both its facet rows. Used by App's "Just start"
+// flow, which skips the launch screen's Start button.
+export function loadStartSettings(): ReviewSettings {
+  const s = loadSettings();
+  return { ...s, enabledFacets: expandFacets(new Set(s.enabledFacets)) };
 }
 
 function saveSettings(s: ReviewSettings) {
@@ -97,14 +121,34 @@ function saveSettings(s: ReviewSettings) {
   }
 }
 
-// UI session size — mirrors ReviewPage's SESSION_LIMIT.
-const SESSION_LIMIT = 25;
+// Session-size choices (v110). null = everything due.
+const SESSION_SIZES: (number | null)[] = [10, 25, 50, null];
+const DEFAULT_SESSION_SIZE = 25;
 
 interface Props {
   // Counts of due cards per facet — shown so the user knows what they're
   // about to study before tapping Start.
   facetCounts: Record<string, number>;
   totalDue: number;
+  // Learn mode (v110): how many saved words qualify for a lesson, and
+  // the launcher — receives the chosen session size so App can cap
+  // the lesson the same way review sessions are capped.
+  learnCount?: number;
+  onStartLearn?: (sessionSize: number | null) => void;
+  // Sift mode (v113): due words available for triage. Uncapped — the
+  // whole point is bulk-clearing a big backlog.
+  siftCount?: number;
+  onStartSift?: () => void;
+  // "Just start" (v114): one tap, App builds the whole session
+  // (sift → drills → learn) from the saved settings.
+  onJustStart?: () => void;
+  // Games (v116): pure play, no grading.
+  forgeReady?: boolean;
+  onStartForge?: () => void;
+  pairsReady?: boolean;
+  onStartPairs?: () => void;
+  chainReady?: boolean;
+  onStartChain?: () => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -112,12 +156,30 @@ interface Props {
 // Launch surface for a review session. Shown when the user navigates to
 // #/review; hands a settings object up to the parent on Start. Settings
 // persist in localStorage so reopening uses the user's last choice.
-export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props) {
+export function ReviewLaunch({
+  facetCounts,
+  totalDue,
+  learnCount = 0,
+  onStartLearn,
+  siftCount = 0,
+  onStartSift,
+  onJustStart,
+  forgeReady = false,
+  onStartForge,
+  pairsReady = false,
+  onStartPairs,
+  chainReady = false,
+  onStartChain,
+  onStart,
+  onClose,
+}: Props) {
   const [enabled, setEnabled] = useState<Set<Facet>>(() => new Set(loadSettings().enabledFacets));
   const [randomOrder, setRandomOrder] = useState<boolean>(() => loadSettings().randomOrder);
   const [includeSubchars, setIncludeSubchars] = useState<boolean>(
     () => loadSettings().includeSubchars,
   );
+  const [sessionSize, setSessionSize] = useState<number | null>(() => loadSettings().sessionSize);
+  const [autoSpeak, setAutoSpeak] = useState<boolean>(() => loadSettings().autoSpeak);
 
   // Persist on every toggle so the values survive a navigation away.
   useEffect(() => {
@@ -125,8 +187,11 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
       enabledFacets: [...enabled],
       randomOrder,
       includeSubchars,
+      sessionSize,
+      autoSpeak,
     });
-  }, [enabled, randomOrder, includeSubchars]);
+    setAutoSpeakEnabled(autoSpeak);
+  }, [enabled, randomOrder, includeSubchars, sessionSize, autoSpeak]);
 
   const toggleFacet = (f: Facet) => {
     setEnabled((prev) => {
@@ -143,7 +208,13 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
   );
 
   const start = () => {
-    onStart({ enabledFacets: expandFacets(enabled), randomOrder, includeSubchars });
+    onStart({
+      enabledFacets: expandFacets(enabled),
+      randomOrder,
+      includeSubchars,
+      sessionSize,
+      autoSpeak,
+    });
   };
 
   return (
@@ -156,6 +227,20 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
         <span className="review-progress">{totalDue} due</span>
       </div>
       <div className="review-body launch-body">
+        {onJustStart && (
+          <button
+            type="button"
+            className="review-btn review-btn-reveal launch-just-start"
+            onClick={onJustStart}
+            disabled={totalDue === 0 && siftCount === 0 && learnCount === 0}
+          >
+            <span className="launch-just-start-label">▶ Just start</span>
+            <span className="launch-just-start-hint">
+              One tap: {siftCount >= SIFT_FLOW_MIN ? "quick sift, then " : ""}your usual drills
+              {learnCount > 0 ? ", then a couple of new words" : ""}.
+            </span>
+          </button>
+        )}
         <div className="launch-section">
           <div className="launch-section-title">Drill types</div>
           <div className="launch-options">
@@ -184,6 +269,22 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
           </div>
         </div>
         <div className="launch-section">
+          <div className="launch-section-title">Session size</div>
+          <div className="launch-size-row">
+            {SESSION_SIZES.map((n) => (
+              <button
+                key={n ?? "all"}
+                type="button"
+                className={`sort-pill${sessionSize === n ? " is-active" : ""}`}
+                onClick={() => setSessionSize(n)}
+                aria-pressed={sessionSize === n}
+              >
+                {n === null ? "All" : n}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="launch-section">
           <div className="launch-section-title">Order</div>
           <button
             type="button"
@@ -201,6 +302,66 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
             </span>
           </button>
         </div>
+        <div className="launch-section">
+          <div className="launch-section-title">Sound</div>
+          <button
+            type="button"
+            className={`launch-option${autoSpeak ? " is-on" : ""}`}
+            onClick={() => setAutoSpeak((v) => !v)}
+            aria-pressed={autoSpeak}
+          >
+            <span className="launch-option-row">
+              <span className="launch-option-check">{autoSpeak ? "●" : "○"}</span>
+              <span className="launch-option-label">Speak answers automatically</span>
+            </span>
+            <span className="launch-option-hint">
+              On (default): every reveal plays the word&apos;s audio. Off: only the 🔊 buttons
+              speak.
+            </span>
+          </button>
+        </div>
+        {(onStartForge || onStartPairs || onStartChain) && (
+          <div className="launch-section">
+            <div className="launch-section-title">Games</div>
+            <div className="launch-games-col">
+              {onStartForge && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartForge}
+                  disabled={!forgeReady}
+                >
+                  <span className="launch-game-name">⚒ Forge</span>
+                  <span className="launch-game-hint">Smush characters into words you know</span>
+                </button>
+              )}
+              {onStartPairs && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartPairs}
+                  disabled={!pairsReady}
+                >
+                  <span className="launch-game-name">🀄 Pairs</span>
+                  <span className="launch-game-hint">Memory match — hanzi against meanings</span>
+                </button>
+              )}
+              {onStartChain && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartChain}
+                  disabled={!chainReady}
+                >
+                  <span className="launch-game-name">⛓ Chain</span>
+                  <span className="launch-game-hint">
+                    接龙 — link words by their last character
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="launch-section">
           <div className="launch-section-title">Scope</div>
           <button
@@ -228,10 +389,32 @@ export function ReviewLaunch({ facetCounts, totalDue, onStart, onClose }: Props)
           onClick={start}
           disabled={visibleDue === 0}
         >
-          {visibleDue > SESSION_LIMIT
-            ? `Start review · ${SESSION_LIMIT} of ${visibleDue} cards`
+          {sessionSize !== null && visibleDue > sessionSize
+            ? `Start review · ${sessionSize} of ${visibleDue} cards`
             : `Start review · ${visibleDue} cards`}
         </button>
+        {onStartLearn && (
+          <button
+            type="button"
+            className="review-btn"
+            onClick={() => onStartLearn(sessionSize)}
+            disabled={learnCount === 0}
+            title="A lesson, not a test: each word is introduced with sound, component breakdown, and your related words. No grading."
+          >
+            Learn · {Math.min(sessionSize ?? learnCount, learnCount)} words
+          </button>
+        )}
+        {onStartSift && (
+          <button
+            type="button"
+            className="review-btn"
+            onClick={onStartSift}
+            disabled={siftCount === 0}
+            title="Triage: swipe right = I know this (counts as done in every drill today); swipe left = keep for practice, hidden from Sift until tomorrow."
+          >
+            Sift · {siftCount} due words
+          </button>
+        )}
       </div>
     </div>
   );

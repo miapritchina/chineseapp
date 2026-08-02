@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { HanziGlyph } from "./ui/HanziGlyph";
 
 interface Props {
@@ -12,13 +12,15 @@ interface Props {
   // one. Caller decides what to do with the rating; advance happens
   // via the tap-anywhere overlay after the quiz completes.
   onGrade: (rating: RatingName) => void;
+  // Open the EntitySheet for the traced character (post-completion).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Production drill — "write the character that means X." Reveals the
 // meaning + pinyin as the prompt, then the user traces the strokes via
 // <HanziGlyph mode="quiz">. Auto-grades on completion based on stroke
 // mistakes; Skip lives in the page header.
-export function ProductionCard({ char, charData, onGrade }: Props) {
+export function ProductionCard({ char, charData, onGrade, onOpenEntity }: Props) {
   const [done, setDone] = useState<{ mistakes: number } | null>(null);
   const [mistakes, setMistakes] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export function ProductionCard({ char, charData, onGrade }: Props) {
   // Speak the prompt when the drill mounts so the user knows what to
   // write, and stop any pending speech on unmount.
   useEffect(() => {
-    speak(char);
+    autoSpeak(char);
     return () => stopSpeech();
   }, [char]);
 
@@ -87,6 +89,18 @@ export function ProductionCard({ char, charData, onGrade }: Props) {
                 ? "Perfect — no mistakes."
                 : `${done.mistakes} mistake${done.mistakes === 1 ? "" : "s"}.`}
             </div>
+            {onOpenEntity && (
+              <button
+                type="button"
+                className="production-explore is-explorable"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEntity(char);
+                }}
+              >
+                {char} · explore →
+              </button>
+            )}
             <div className="drill-tap-hint">Tap anywhere to continue →</div>
           </>
         )}

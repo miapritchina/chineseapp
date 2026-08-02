@@ -21,8 +21,9 @@ number never changes, even if the ADR is superseded.
 | 0009 | [Char data static, word data in DB](0009-chars-static-words-in-db.md) | Accepted |
 | 0010 | [Ref-mirrored cards map in `useReview`](0010-ref-mirrored-cards-map-in-usereview.md) | Accepted |
 | 0011 | [Two-tier status model (Saved / Learned)](0011-two-tier-status-model.md) | Accepted |
-| 0012 | [No daily cap; repeat-until-correct; one grade per card](0012-no-daily-cap-repeat-until-correct.md) | One-grade half superseded by ADR-0013; no-cap + retry halves stand |
+| 0012 | [No daily cap; repeat-until-correct; one grade per card](0012-no-daily-cap-repeat-until-correct.md) | Only the no-cap half stands (one-grade → ADR-0013, retry → ADR-0014) |
 | 0013 | [Separate meaning + sound grades on the one recognition card](0013-split-meaning-sound-grades-on-one-card.md) | Accepted |
+| 0014 | [No same-day retry after Again](0014-no-same-day-retry.md) | Accepted |
 
 ## Writing a new ADR
 

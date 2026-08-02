@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Word } from "../lib/types";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { pickGlossOptions } from "../lib/drillGen";
 import { useCharsCtx } from "../state/contexts";
 
@@ -11,13 +11,15 @@ interface Props {
   glossPool: string[];
   onGotIt: () => void;
   onMissed: () => void;
+  // Open the EntitySheet for a tapped character (post-answer).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Drill 1 (owner's idea): a real word the user has NOT saved, built
 // entirely from characters inside their saved words. v103: pick the
 // meaning among 4 options; the reveal shows each character as a
 // pinyin → hanzi → meaning stack (the sheet treatment).
-export function WordInferenceCard({ word, glossPool, onGotIt, onMissed }: Props) {
+export function WordInferenceCard({ word, glossPool, onGotIt, onMissed, onOpenEntity }: Props) {
   const { chars } = useCharsCtx();
   const gloss = (word.definitions || []).slice(0, 2).join("; ") || "(no dictionary entry)";
   const [options] = useState(() => pickGlossOptions(gloss, glossPool));
@@ -25,7 +27,7 @@ export function WordInferenceCard({ word, glossPool, onGotIt, onMissed }: Props)
   const isCorrect = picked !== null && picked === gloss;
 
   useEffect(() => {
-    if (picked !== null) speak(word.word);
+    if (picked !== null) autoSpeak(word.word);
   }, [picked, word.word]);
   useEffect(() => () => stopSpeech(), []);
 
@@ -44,7 +46,22 @@ export function WordInferenceCard({ word, glossPool, onGotIt, onMissed }: Props)
         <div className="phonetic-tap-prompt">
           New word from your characters — what does it mean?
         </div>
-        <div className="inference-hanzi">{word.word}</div>
+        <div
+          className={`inference-hanzi${picked !== null && onOpenEntity ? " is-explorable" : ""}`}
+          onClick={
+            picked !== null && onOpenEntity
+              ? (e) => {
+                  e.stopPropagation();
+                  onOpenEntity(word.word);
+                }
+              : undefined
+          }
+        >
+          {word.word}
+        </div>
+        {/* Pinyin shows BEFORE answering (owner request, v110) — the
+            word is new, sound is fair help for guessing the meaning. */}
+        <div className="review-pinyin">{word.pinyin}</div>
         {picked === null ? (
           options ? (
             <div className="inference-options">
@@ -101,13 +118,24 @@ export function WordInferenceCard({ word, glossPool, onGotIt, onMissed }: Props)
                 })}
               </div>
             )}
-            <div className="review-pinyin review-pinyin-lg">{word.pinyin}</div>
-            {/* Per-character breakdown — the sheet's pinyin/hanzi/meaning stacks. */}
+            {/* Per-character breakdown — the sheet's pinyin/hanzi/meaning
+                stacks; each piece opens that character's sheet. */}
             <div className="classic-phrase inference-breakdown">
               {[...word.word].map((c, i) => {
                 const cd = chars?.[c];
                 return (
-                  <span className="sheet-etym-piece" key={`${c}-${i}`}>
+                  <span
+                    className={`sheet-etym-piece${onOpenEntity ? " is-explorable" : ""}`}
+                    key={`${c}-${i}`}
+                    onClick={
+                      onOpenEntity
+                        ? (e) => {
+                            e.stopPropagation();
+                            onOpenEntity(c);
+                          }
+                        : undefined
+                    }
+                  >
                     <span className="sheet-etym-piece-pinyin">{cd?.pinyin ?? ""}</span>
                     <span className="sheet-etym-glyph">{c}</span>
                     <span className="sheet-etym-piece-meaning">{cd?.definitions?.[0] ?? ""}</span>

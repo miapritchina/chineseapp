@@ -41,7 +41,7 @@ on:
 env:
   PROJECT_REF: oigbbgtzzqiceetasayy
   MGMT_API: https://api.supabase.com/v1
-  SITE_URL: https://decobots.github.io/Ai-/
+  SITE_URL: https://miapritchina.github.io/chineseapp/
 
 jobs:
   setup:

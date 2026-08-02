@@ -64,6 +64,7 @@ deploy. See `watchos/README.md`.
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
 | Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices | Live; insert from `useReview`, select from `useWordInference` |
 | Supabase `user_classic_progress` | Furthest-read 三字经 couplet (v101) — scroll-tracked bookmark, max(local, remote) merge | Live; `useClassicProgress` |
+| Supabase `user_shares` | Profile share tokens (v110): one stable 12-char token per account; `get_profile_words(token)` resolves to the owner's LIVE saved set (SECURITY DEFINER), so a `?share=` link imports the profile as it is at click time. `words` column = courtesy snapshot for pre-v110 clients (`get_shared_words`) | Live; share flow in `App.tsx`, import in `useAutoImport` |
 
 The split is deliberate — see [ADR-0009](../decisions/0009-chars-static-words-in-db.md).
 The user-data policy is [ADR-0001](../decisions/0001-supabase-source-of-truth.md).
@@ -177,7 +178,25 @@ The same damped-credit math powers the **passive-view credit**
 `applyCascadeCredit` to its own meaning/sound rows, capped at 2 days
 (`PASSIVE_CAP_DAYS`), no rep recorded, throttled to once per item per
 day (`chinese.passiveCredit` localStorage log). Browsing counts a
-little; it never replaces answering.
+little; it never replaces answering. Suppressed while a review
+session is active (v110) — drills open sheets for tapped glyphs, and
+crediting the current card would push it out of the due queue before
+it was graded. Learn mode (`LearnPage`, material from `lib/learn.ts`)
+reuses the same credit as its "introduced" marker: a finished lesson
+card nudges the word's schedule without recording a rep.
+
+Sift mode (v113, `SiftPage` + `lib/sift.ts`) is grading, not credit:
+a right-swipe applies a real Good to every facet of the word that is
+due at that moment. Left-swipes live in a day-stamped localStorage
+list (`chinese.siftKept`) — per-day ephemeral, the same local-only
+carve-out as the old daily new-card counter.
+
+"Just start" (v114, `lib/flow.ts`) chains the three surfaces from one
+tap: sift stage when ≥ 20 due (capped at 15) → review with the saved
+settings → a 2-word Learn lesson. App holds the remaining-stage queue;
+each page takes an optional `onComplete` (wired only while a next
+stage exists) that fires when its deck drains. Backing out of a stage
+clears the queue.
 
 ### Queue + leech interleaving
 
@@ -188,11 +207,14 @@ activity **interleave**, not a grouped run: `interleaveByActivity`
 most-overdue first within each group, the neediest group leading each
 cycle; `wordInference` rotates last (synthetic dueAt). The Shuffle
 toggle replaces this with a full random order. Cards graded Again
-re-enter the session queue until answered without Again. Sessions are
-capped at 25 cards UI-side (v107, `SESSION_LIMIT` in ReviewPage — a
-frozen first-25 set, so the session genuinely ends; scheduling is
-untouched since every card grades individually), and exiting a
-session returns to the launch screen, not the home page. `lapses ≥ 6` items with cluster
+leave the session and come back tomorrow — FSRS schedules an Again
+exactly 24 h out ([ADR-0014](../decisions/0014-no-same-day-retry.md);
+the v102 repeat-until-correct rule is retired). Session
+size is chosen on the launch screen (v110: 10 / 25 / 50 / All,
+default 25, persisted) — a frozen first-N set UI-side, so the
+session genuinely ends; scheduling is untouched since every card
+grades individually. Exiting a session returns to the launch screen,
+not the home page. `lapses ≥ 6` items with cluster
 entries still get side-by-side disambig ([ADR-0006](../decisions/0006-daily-cap-and-leech-interleave.md), leech half).
 
 ---
@@ -230,9 +252,9 @@ Two patterns coexist:
   `{ kind: "word"|"char", key, view?: "sheet"|"tree" }` — `view`
   defaults to `"sheet"` (EntitySheet); `"tree"` renders the full d3
   `TreeModal`.
-- **Top-level pages** (`#/review`, `#/phonetics`, `#/classic`, `#/sentence`): a
-  plain `hashchange` listener in `App.tsx` toggles a flag. No modal-
-  stack involvement.
+- **Top-level pages** (`#/review`, `#/explore`, `#/classic`,
+  `#/sentence`, `#/stats`): a plain `hashchange` listener in
+  `App.tsx` toggles a flag. No modal-stack involvement.
 
 The combined recognition card has a launch screen (`ReviewLaunch`)
 between `#/review` and the actual review session — `App.tsx` holds

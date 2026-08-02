@@ -11,6 +11,165 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Games get their own launch section (v119):** Forge / Pairs /
+  Chain moved out of the bottom action bar (where they squeezed into
+  one row) into a "Games" section in the scrollable body — one
+  full-width button per game with a one-line description.
+- **Forge is now a word game (v118, Smush-style):** the component
+  forge didn't land — replaced. The tray now scatters the characters
+  of your saved two-character words (duplicates are real tiles); tap
+  two to smush them into ANY saved word, either order. Cross-
+  combinations count (学 from 学生 + 习 = 学习). Round ends when
+  nothing combines; an empty tray is a perfect clear. Misses counted,
+  still nothing graded.
+
+### Added
+- **⛓ 词语接龙 word chain (v117):** third game — the next word must
+  start with the previous word's last character (学生 → 生日 → 日子),
+  picked among 4 tiles from the saved set. A wrong tap breaks the
+  chain (with the intended link revealed); exhausting the pool is a
+  perfect chain. Score = links; best-this-visit shown.
+
+### Added
+- **Games (v116):** two owner-picked games on the workout launch
+  screen, pure play — nothing is graded. **⚒ Forge:** loose
+  components scatter in a tray; tap a valid pair to forge a character
+  you know (讠 + 青 = 请) — forged characters line up with reading +
+  meaning and speak. **🀄 Pairs:** classic memory match, six hanzi
+  tiles against their meanings (due words first), moves + time score,
+  deal again.
+
+### Added
+- **Stats page (v115):** hamburger → Stats. Words collected + learned
+  + due now, a word-strength breakdown (solid / growing / shaky / not
+  started by FSRS stability), and — signed in — reviews-per-day bars
+  for the last 14 days with today's count and the current streak
+  (reads `user_review_log`).
+- **Tree button on Learn cards (v115):** each per-character panel in
+  a lesson gets the ⤢ button that opens the full d3 decomposition
+  tree, same as the sheet's.
+
+### Changed
+- **Sift hero (v115):** the character now renders at full hero size
+  with real air around it, and the dotted "explorable" underline is
+  gone app-wide (it read as ugly noise; glyphs stay tappable).
+- **Component formula (v115):** sound components now show meaning too
+  — 特 = 牛 cow + 寺 sì *temple*, not just the bare reading.
+- **Cross-reference glosses resolved (v115):** definitions like
+  "erhua variant of 一塊|一块[yīkuài]" now render as "casual 儿-form
+  of 一块: lump; piece" — the referenced word's real meaning is
+  fetched and inlined (sheet, recognition reveal, Sift, Learn,
+  reverse/cloze prompts).
+
+### Added
+- **"Just start" (v114):** one-tap session on the launch screen — a
+  quick Sift pass first when ≥ 20 words are due (capped at 15), then
+  the usual mixed drills with the saved settings, then a 2-word Learn
+  lesson. Stages auto-advance as each deck drains; backing out
+  cancels the rest.
+- **Brush font (v114):** hamburger toggle that renders big hanzi in
+  Kaiti (brush-form, built into iOS/macOS — zero download). Persisted
+  per device.
+- **Component formula in the EntitySheet (v114):** single characters
+  now show the Learn-style role-colored one-liner (请 = 讠 speech +
+  青 qīng) right under the header; each piece opens its own sheet.
+- **Sound toggle (v114):** "Speak answers automatically" on the
+  launch screen (default on) now gates every drill's auto-play; Sift
+  cards also speak their word as they appear. 🔊 buttons always work.
+
+### Changed
+- **Ink-and-paper tokens (v114):** light background warmed a step
+  (`--bg` #faf6ee), accent nudged to seal-stamp vermillion
+  (`--accent` #c3272b).
+
+### Added
+- **Sift — Tinder-style triage (v113):** for working through a big
+  due backlog fast. "Sift · N due words" on the launch screen shows
+  each due word with pinyin and meaning visible (a self-judgement,
+  not a test); swipe right / ✓ = "I know this" — grades Good on every
+  facet of the word that's due today, clearing it from all of today's
+  workouts with proper rescheduling; swipe left / ✗ = keep for
+  practice — no schedule change, hidden from Sift until tomorrow but
+  still due in the other drills. The deck runs strongest-words-first
+  so the easy yeses come fast. (Per-day left-swipe list is local-only,
+  like the old per-day counter.)
+
+### Fixed
+- **Setup Supabase workflow pointed auth at a dead URL:** `SITE_URL`
+  still read `decobots.github.io/Ai-/` (pre-rename, pre-transfer), so
+  every run PATCHed a stale redirect URL + allow-list into Supabase
+  auth config. Now `miapritchina.github.io/chineseapp/`. Sign-in was
+  unaffected (OTP codes, no link clicking), but email links would have
+  404ed. Stale `decobots` URLs in README / CLAUDE.md / vite comment
+  updated too.
+
+### Changed
+- **No same-day retry after a mistake (v112,
+  [ADR-0014](docs/decisions/0014-no-same-day-retry.md)):** a card
+  answered wrong now leaves the session and comes back tomorrow (the
+  scheduler puts an Again exactly 24 h out) instead of re-queuing in
+  the same session — an immediate retry only tests short-term memory.
+  Session totals no longer grow after mistakes.
+- **Etymology boilerplate stripped (v112):** template sentences like
+  "Phonosemantic compound. 口 represents the meaning and 厅 represents
+  the sound." and bare "Simplified form of 聽." no longer render in
+  character descriptions (Learn cards, entity sheet, decomposition
+  tree) — they repeat what the role-colored component formula already
+  shows and bury the genuinely helpful notes ("The right side looks
+  like 斤 (axe) but is actually a corruption of 厅."). Longer
+  simplified-form sentences that carry real content are kept; when
+  nothing survives, the "Originally: …" line steps in.
+
+### Fixed
+- **Learn card: word cut off at the top and no touch scrolling
+  (v112, BUG-19):** the drill body centers its content (a centered
+  flex child that overflows clips above the scroll origin) and
+  wasn't a working iOS scroll surface. The lesson is now its own
+  scroll container — same pattern as Explore/Classic — so it starts
+  at the top and scrolls with momentum.
+- **Wrong answer could freeze the drill (v111, BUG-18):** after a
+  mistake, tapping to continue advanced the counter but kept showing
+  the answered card whenever the retry resurfaced immediately (short
+  queue / last card) — the retry copy shared the old card's React
+  key, so the drill never reset. Cards are now keyed per attempt, and
+  fast double-taps can no longer double-grade an attempt.
+
+### Added
+- **Learn mode (v110):** an exercise that teaches instead of testing.
+  "Learn · N words" on the review launch screen walks your
+  never-reviewed (then weakest) words through lesson cards: word +
+  pinyin + audio, each character broken into role-colored components
+  (请 = 讠 speech + 青 qīng) with the dictionary's etymology story,
+  plus related words you already know. No grading — finishing a card
+  marks the word "introduced" (small schedule nudge, no repetition),
+  so its first real review comes soon but not cold. Every glyph opens
+  its sheet.
+
+### Changed
+- **Session size is your choice (v110):** the launch screen offers
+  10 / 25 / 50 / All (default 25, remembered) — replaces the fixed
+  25-card session from v107.
+- **New-word drill shows pinyin before answering (v110):** the word
+  is new — its sound is fair help for guessing the meaning.
+- **Every character in every drill is explorable (v110):** once a
+  card is answered/revealed, tapping any glyph — the recognition
+  focal card, reverse/cloze/sweep option tiles, the New-word
+  breakdown, cluster words, confusable-compare cells, the traced
+  character — opens its bottom sheet over the session (dotted
+  underline marks tappable glyphs where they aren't already cards).
+  Close the sheet and the card is exactly where you left it. The
+  passive-view credit does NOT apply to sheets opened mid-review —
+  it would have silently completed the current card before grading.
+- **Sharing shares the profile, not a snapshot (v110, migration
+  0013):** "Share my words" now hands out ONE stable short link per
+  account. Opening it imports the sharer's saved words **as they are
+  at that moment** — resolved live via a new `get_profile_words` RPC
+  — so re-opening the same link later picks up everything saved
+  since. Words are no longer encoded into the URL when signed in;
+  the inline-blob link remains only as the signed-out fallback, and
+  old links (short and inline) keep working.
+
 ### Added
 - **Explore page (v109,
   [spec](docs/product/explore-page.md)):** one browsing surface for

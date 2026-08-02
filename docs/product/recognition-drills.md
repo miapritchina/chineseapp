@@ -29,8 +29,10 @@ Design constraints shared by all drills:
 saved whose every character appears in their saved words — e.g. saved
 电话 + 大脑 → show 电脑. v103: the user picks the meaning among 4
 options (distractor glosses from their other words); the reveal shows
-each character as a pinyin → hanzi → meaning stack. Correct pick →
-cascade credit; wrong → nothing.
+each character as a pinyin → hanzi → meaning stack. v110: pinyin is
+visible BEFORE answering (the word is new; sound is fair help), and
+the post-answer breakdown pieces open each character's sheet. Correct
+pick → cascade credit; wrong → nothing.
 
 - **Material:** ordered pairs of the user's known characters (from the
   most recently saved words, capped) probed against the dictionary via
@@ -77,6 +79,76 @@ v107 wording note: the prompt says "contains 青" — the decoys never
 contain the component, so the task is visual component-spotting, and
 framing it as a sound drill oversold it. (The familyTransfer drill
 this once extended was retired in v107 — owner saw no value in it.)
+
+## Learn mode (v110 — teaches, never tests)
+
+Owner ask: "an exercise whose goal is not to test my knowledge but to
+teach me." A lesson session from the review launch screen ("Learn ·
+N words"): material = never-reviewed saved words first (newest saves
+leading), then weakest by recognition stability (`lib/learn.ts`),
+capped by the chosen session size. Each card: the word with pinyin +
+audio → per-character cards with role-colored component formulas
+(请 = 讠 speech + 青 qīng) and the dictionary's etymology notes →
+"You already know" related saved words → Continue. No grading
+anywhere; finishing a card applies the passive-view credit
+("introduced": stability nudge, due ≤ +2 days, no rep) so the first
+real test comes soon but not cold. Every glyph opens its EntitySheet.
+
+## Sift (v113 — triage, not practice)
+
+Owner ask: 1000+ due words across drills, many already well known —
+"it would be faster to sift through them and leave exercise only for
+words which I actually need to work on." A launch-screen deck
+("Sift · N due words") over words with anything due, strongest first
+(`lib/sift.ts`). Everything visible up front. Swipe right / ✓ →
+Good on EVERY due facet of the word (it "counts as repeated in all
+workouts today"; normal FSRS rescheduling, cascade included). Swipe
+left / ✗ → no schedule change; hidden from Sift until tomorrow
+(localStorage `chinese.siftKept`, day-stamped) while staying due in
+the other drills.
+
+## "Just start" flow (v114 — one tap, zero decisions)
+
+Launch-screen primary button that builds the whole session from the
+saved settings (`lib/flow.ts` planFlow): a quick Sift pass first when
+the backlog is fat (≥ 20 due words, capped at 15 cards), then the
+normal mixed review session, then a 2-word Learn lesson when there's
+anything to learn. Each stage auto-advances into the next when its
+deck drains (`onComplete`, wired only while a next stage exists — the
+last stage keeps its natural end screen). Backing out of any stage
+cancels the rest of the flow.
+
+Session-wide sound setting (v114): "Speak answers automatically"
+(default on, persisted with the review settings) gates every drill's
+auto-play — reveals, Sift cards, Learn lesson openings. The 🔊 replay
+buttons always work regardless.
+
+## Games (v116 — play, not practice)
+
+Owner picked two from a proposed list (word chain, tone sniper,
+forge, pairs, sprint, scramble). Both are launch-screen buttons and
+write NO FSRS state — pure exposure.
+
+- **⚒ Forge** (`lib/forge.ts` + `ForgePage`): Smush-style word game
+  (v118 — the original component-forge version didn't land with the
+  owner and was replaced). Tray = the characters of ~7 saved 2-char
+  words, duplicates as real tiles; tap two to smush into ANY saved
+  word (either order, tapped order wins — 蜂蜜/蜜蜂). Cross-
+  combinations count. Round ends when no pair combines; empty tray =
+  perfect clear. Formed words line up with pinyin + gloss + audio.
+- **🀄 Pairs** (`lib/pairs.ts` + `PairsPage`): 6-pair memory board,
+  hanzi tiles vs meaning tiles, material due-words-first. Mismatch
+  flips back; match locks green + speaks. Score = moves + seconds;
+  matched words are tappable into their sheets at the end.
+
+- **⛓ Chain / 词语接龙** (v117, `lib/chain.ts` + `ChainPage`): grow a
+  chain of saved words, each starting with the previous word's last
+  character; 4 tiles per step, exactly one valid. Wrong tap breaks
+  the chain (intended link revealed); pool exhaustion = perfect
+  chain. Best-this-visit only — no persistence.
+
+Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
+sentence scramble.
 
 ## Backlog (in TODO.md)
 

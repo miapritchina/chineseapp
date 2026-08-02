@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { pickReverseOptions } from "../lib/drillGen";
 import { Entity } from "./Entity";
 import { useCharsCtx } from "../state/contexts";
@@ -11,11 +11,19 @@ interface Props {
   savedWords: string[];
   // Tap correct → Good, tap wrong → Again (reveal first, advance on tap).
   onGrade: (rating: RatingName) => void;
+  // Open the EntitySheet for a tapped option (post-answer).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Drill 2: gloss → pick the hanzi. Distractors are scored to be
 // confusable: shared character > same length > shared component.
-export function ReverseRecognitionCard({ answer, gloss, savedWords, onGrade }: Props) {
+export function ReverseRecognitionCard({
+  answer,
+  gloss,
+  savedWords,
+  onGrade,
+  onOpenEntity,
+}: Props) {
   const { chars } = useCharsCtx();
   const [options] = useState(() =>
     pickReverseOptions(
@@ -30,7 +38,7 @@ export function ReverseRecognitionCard({ answer, gloss, savedWords, onGrade }: P
   const isCorrect = picked !== null && picked === answer;
 
   useEffect(() => {
-    if (picked !== null) speak(answer);
+    if (picked !== null) autoSpeak(answer);
   }, [picked, answer]);
   useEffect(() => () => stopSpeech(), []);
 
@@ -79,7 +87,15 @@ export function ReverseRecognitionCard({ answer, gloss, savedWords, onGrade }: P
                 showStatus={false}
                 ariaLabel={w}
                 className={`reverse-pick ${flash}`.trim()}
-                onTap={picked === null ? () => setPicked(w) : undefined}
+                // Before answering a tap IS the answer; afterwards it
+                // opens the word's sheet for exploring.
+                onTap={
+                  picked === null
+                    ? () => setPicked(w)
+                    : onOpenEntity
+                      ? () => onOpenEntity(w)
+                      : undefined
+                }
               />
             );
           })}

@@ -2,13 +2,15 @@
   color-scheme: light dark;
   /* Surface scale: page bg → elevated panel → inset/well. --card-bg is the
      brightest (white-ish) surface for content cards. */
-  --bg: #faf8f4;
+  /* v114 ink-and-paper pass: bg warmed a step toward paper, accent
+     nudged to seal-stamp vermillion (朱红). */
+  --bg: #faf6ee;
   --surface: #fefdfb;
   --card-bg: #ffffff;
-  --surface-2: #f0ece4;
+  --surface-2: #f0ebe0;
   --text: #1d1b18;
   --muted: #6b6359;
-  --accent: #b12a2a;
+  --accent: #c3272b;
   --border: #e4dfd5;
 
   /* Decomposition role palette — Dong Chinese convention.
@@ -1093,6 +1095,24 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Drill glyphs that open the EntitySheet once the card is answered
+   (v110). No visual marker (v115, owner: the dotted underline was
+   ugly noise) — tapping glyphs is learned behavior by now. */
+.is-explorable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.production-explore {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 14px;
+  margin-top: 10px;
+}
+
 /* Disambiguation card — side-by-side comparison of confusable cluster
    members. Shown once per session before a leech-marked card surfaces. */
 .disambig-root {
@@ -2171,7 +2191,9 @@ body {
 .modal-root {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  /* Above the sheet (70): the tree opens from the sheet, which can
+     itself sit over a full-screen page since v110. */
+  z-index: 75;
   display: none;
   background: var(--bg);
   flex-direction: column;
@@ -3195,7 +3217,9 @@ body {
 .sheet-root {
   position: fixed;
   inset: 0;
-  z-index: 55;
+  /* Above the full-screen pages (60) since v110 — drills open the
+     sheet for any tapped character mid-session. */
+  z-index: 70;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -3632,4 +3656,562 @@ body {
   .sheet-grip-zone {
     padding-top: 8px;
   }
+}
+
+/* Session-size pills on the review launch screen (v110). */
+.launch-size-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Learn mode (v110) — lesson cards that teach instead of test. */
+.learn-body {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  /* The lesson is its OWN scroll container (like .explore-body /
+     .classic-body, which scroll fine on iOS): align-self stretch
+     escapes .review-body's vertical centering — a centered flex child
+     that overflows clips above the scroll origin and iOS wouldn't
+     touch-scroll the shell body at all (owner reports, v112). */
+  align-self: stretch;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 4px 24px;
+}
+.learn-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.learn-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: calc(var(--hanzi-hero, 120px) * 0.7);
+  line-height: 1.15;
+}
+.learn-char {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.learn-char-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.learn-char-glyph {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+}
+.learn-char-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.learn-char-pinyin {
+  color: var(--muted);
+  font-size: var(--body);
+}
+.learn-char-def {
+  font-size: var(--body);
+}
+.learn-pieces {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--heading-2);
+}
+.learn-piece-plus {
+  color: var(--muted);
+}
+.learn-note {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.learn-related {
+  display: flex;
+  flex-direction: column;
+}
+.learn-continue {
+  align-self: center;
+  margin-top: 4px;
+}
+
+/* Sift — Tinder-style triage (v113). */
+.sift-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+  padding: 18px 12px;
+  border-radius: 16px;
+  transition: background 0.15s;
+}
+.sift-card.is-know {
+  background: var(--feedback-correct-bg, rgba(46, 125, 50, 0.12));
+}
+.sift-card.is-keep {
+  background: var(--surface-2);
+}
+.sift-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  /* The glyph IS the page (v115): full hero size, generous air. */
+  font-size: calc(var(--hanzi-hero, 120px) * var(--hanzi-scale, 1));
+  line-height: 1.15;
+  margin: 26px 0 14px;
+  max-width: 100%;
+}
+.sift-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* "Just start" flow (v114). */
+.launch-just-start {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  width: 100%;
+  padding: 14px 16px;
+}
+.launch-just-start-label {
+  font-size: var(--heading-1);
+  font-weight: 600;
+}
+.launch-just-start-hint {
+  font-size: var(--caption);
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* EntitySheet component formula (v114) — the Learn-style one-liner
+   right under the header. */
+.sheet-formula {
+  display: flex;
+  justify-content: center;
+  margin: 2px 0 4px;
+}
+.sheet-formula .learn-pieces {
+  font-size: var(--heading-1);
+}
+
+/* Brush-form hanzi (v114): html.brush-hanzi swaps big glyphs to Kaiti
+   (built into iOS/macOS; serif fallback elsewhere). --font-hanzi is
+   the shared hook — classes already reference it with an inherit
+   fallback; the hardcoded PingFang ones are overridden below. */
+.brush-hanzi {
+  --font-hanzi: "Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "AR PL UKai CN", serif;
+}
+.brush-hanzi .review-hanzi,
+.brush-hanzi .sheet-glyph-text,
+.brush-hanzi .sheet-glyph-fallback,
+.brush-hanzi .inference-hanzi,
+.brush-hanzi .cluster-cell-hanzi,
+.brush-hanzi .classic-glyph,
+.brush-hanzi .disambig-cell-glyph,
+.brush-hanzi .phonetic-tap-glyph,
+.brush-hanzi .sheet-etym-glyph,
+.brush-hanzi .sheet-saved-hanzi,
+.brush-hanzi .cloze-word,
+.brush-hanzi .result-row .r-hanzi {
+  font-family: var(--font-hanzi);
+}
+.hamburger-brush-sample {
+  font-family: "Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "AR PL UKai CN", serif;
+  font-size: 18px;
+  margin-left: 2px;
+}
+
+/* Stats page (v115). */
+.stats-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 18px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.stats-hero {
+  text-align: center;
+  padding-top: 10px;
+}
+.stats-hero-number {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+}
+.stats-hero-label {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: var(--body);
+}
+.stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stats-strength-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 2px;
+}
+.stats-strength-seg {
+  min-width: 4px;
+}
+.stats-strength-seg.is-solid,
+.stats-dot.is-solid {
+  background: var(--status-learned);
+}
+.stats-strength-seg.is-growing,
+.stats-dot.is-growing {
+  background: var(--status-saved);
+}
+.stats-strength-seg.is-shaky,
+.stats-dot.is-shaky {
+  background: var(--status-review);
+}
+.stats-strength-seg.is-fresh,
+.stats-dot.is-fresh {
+  background: var(--border);
+}
+.stats-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stats-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--body);
+}
+.stats-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.stats-legend-label {
+  flex: 1;
+}
+.stats-legend-count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stats-summary-row {
+  display: flex;
+  gap: 18px;
+  font-size: var(--body);
+  color: var(--muted);
+}
+.stats-summary-row b {
+  color: var(--text);
+  font-size: 18px;
+}
+.stats-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 90px;
+  padding-top: 6px;
+}
+.stats-bar-slot {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.stats-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--surface-2);
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface-2));
+}
+.stats-bar.is-today {
+  background: var(--accent);
+}
+.stats-bars-caption {
+  font-size: var(--caption);
+  color: var(--muted);
+}
+.stats-hint {
+  color: var(--muted);
+  font-size: var(--body);
+}
+
+/* Games (v116): Forge + Pairs. */
+.launch-games-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.launch-game-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  width: 100%;
+  padding: 12px 14px;
+}
+.launch-game-name {
+  font-weight: 600;
+}
+.launch-game-hint {
+  font-size: var(--caption);
+  font-weight: 400;
+  color: var(--muted);
+}
+.forge-body,
+.pairs-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 16px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.forge-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 360px;
+}
+.forge-piece {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+  width: 76px;
+  height: 76px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s,
+    border-color 0.12s,
+    opacity 0.2s;
+}
+.forge-piece.is-selected {
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+.forge-piece.is-consumed {
+  opacity: 0;
+  pointer-events: none;
+}
+.forge-piece.is-wrong {
+  animation: forge-shake 0.4s;
+  border-color: var(--grade-again);
+}
+@keyframes forge-shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.forge-done-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.forge-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--status-learned);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  max-width: 150px;
+}
+.forge-result-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-medium);
+  line-height: 1.1;
+}
+.forge-result-meta {
+  font-size: var(--caption);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.forge-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.forge-end-title {
+  font-size: var(--heading-1);
+  font-weight: 600;
+}
+.pairs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+.pairs-tile {
+  min-height: 92px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 22px;
+  padding: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.pairs-tile.is-up {
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: var(--body);
+  line-height: 1.3;
+  word-break: break-word;
+}
+.pairs-tile.is-up.is-hanzi {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-medium);
+}
+.pairs-tile.is-matched {
+  border-color: var(--status-learned);
+  opacity: 0.75;
+}
+.pairs-status {
+  color: var(--muted);
+  font-size: var(--caption);
+}
+.pairs-review-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 词语接龙 word chain (v117). */
+.chain-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 16px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.chain-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-height: 34vh;
+  overflow-y: auto;
+  width: 100%;
+}
+.chain-word-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chain-arrow {
+  color: var(--muted);
+}
+.chain-word {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-small);
+  line-height: 1.2;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chain-word.is-head {
+  font-size: var(--hanzi-medium);
+  border-color: var(--accent);
+}
+.chain-link-char {
+  color: var(--accent);
+  font-weight: 600;
+}
+.chain-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+.chain-option {
+  font-family: var(--font-hanzi, inherit);
+  font-size: calc(var(--hanzi-large) * var(--hanzi-scale, 1));
+  line-height: 1.15;
+  min-height: 92px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chain-reveal {
+  color: var(--muted);
+  font-size: var(--body);
+  text-align: center;
+}
+.chain-best {
+  color: var(--muted);
+  font-size: var(--caption);
 }

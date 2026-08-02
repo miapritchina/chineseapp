@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Word, Char } from "../lib/types";
 import type { RatingName } from "../lib/fsrs";
-import { speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, speak, stopSpeech } from "../lib/speech";
+import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { GradeButtons } from "./ui/GradeButtons";
 import { Entity } from "./Entity";
 
@@ -14,6 +15,8 @@ interface Props {
   // separately on the same reveal. Reported together once both are
   // picked; the parent applies each to its FSRS row.
   onGraded: (meaning: RatingName, sound: RatingName) => void;
+  // Open the EntitySheet for the focal item (post-reveal).
+  onOpenEntity?: (key: string) => void;
 }
 
 // Recognition card. Tap anywhere to reveal (pinyin + meaning + audio),
@@ -21,7 +24,13 @@ interface Props {
 // moment the second row is picked, no extra tap. A horizontal swipe is
 // the fast path: it applies one rating to BOTH rows (right → Good,
 // left → Again).
-export function CombinedRecognitionCard({ itemKey, word, charData, onGraded }: Props) {
+export function CombinedRecognitionCard({
+  itemKey,
+  word,
+  charData,
+  onGraded,
+  onOpenEntity,
+}: Props) {
   const [revealed, setRevealed] = useState(false);
   const [meaningGrade, setMeaningGrade] = useState<RatingName | null>(null);
   const [soundGrade, setSoundGrade] = useState<RatingName | null>(null);
@@ -29,14 +38,13 @@ export function CombinedRecognitionCard({ itemKey, word, charData, onGraded }: P
   const gradedRef = useRef(false);
 
   const pinyin = word?.pinyin ?? charData?.pinyin ?? "";
-  const gloss = word
-    ? (word.definitions || []).slice(0, 3).join("; ")
-    : (charData?.definitions || []).slice(0, 3).join("; ");
+  const defs = useResolvedDefs(word ? word.definitions || [] : charData?.definitions || []);
+  const gloss = defs.slice(0, 3).join("; ");
 
   // Speak the answer on reveal. Stop pending speech on unmount.
   useEffect(() => {
     if (!revealed) return;
-    speak(itemKey);
+    autoSpeak(itemKey);
   }, [revealed, itemKey]);
   useEffect(() => () => stopSpeech(), []);
 
@@ -103,6 +111,10 @@ export function CombinedRecognitionCard({ itemKey, word, charData, onGraded }: P
           showPinyin={false}
           showMeaning={false}
           ariaLabel={itemKey}
+          // Post-reveal the answer is out — tapping the glyph opens
+          // its sheet for exploring (pre-reveal it stays inert so the
+          // tap-anywhere reveal keeps working).
+          onTap={revealed && onOpenEntity ? () => onOpenEntity(itemKey) : undefined}
         />
         {!revealed && <div className="review-tap-hint">Tap anywhere to reveal</div>}
         {revealed && (
