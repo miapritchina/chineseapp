@@ -12,6 +12,13 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Chain now asks for meanings (v120):** picking among hanzi tiles
+  was solvable by matching the link character without knowing any of
+  the words. The four options are now English meanings — "which of
+  your words starts with 生 and means…" — and the hanzi is revealed
+  only when you pick right. A wrong pick shows what you tapped and
+  the word the chain wanted. Words with no dictionary gloss are kept
+  out of the deck.
 - **Games get their own launch section (v119):** Forge / Pairs /
   Chain moved out of the bottom action bar (where they squeezed into
   one row) into a "Games" section in the scrollable body — one
