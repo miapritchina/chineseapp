@@ -4188,18 +4188,21 @@ body {
   color: var(--accent);
   font-weight: 600;
 }
+/* Options are MEANINGS (v120) — a readable text list, not glyph tiles. */
 .chain-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 100%;
 }
 .chain-option {
-  font-family: var(--font-hanzi, inherit);
-  font-size: calc(var(--hanzi-large) * var(--hanzi-scale, 1));
-  line-height: 1.15;
-  min-height: 92px;
-  border-radius: 16px;
+  font: inherit;
+  font-size: var(--body);
+  line-height: 1.35;
+  text-align: left;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--card-bg);
   color: var(--text);
