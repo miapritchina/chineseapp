@@ -4188,26 +4188,46 @@ body {
   color: var(--accent);
   font-weight: 600;
 }
-/* Options are MEANINGS (v120) — a readable text list, not glyph tiles. */
-.chain-options {
+/* Build-the-word tray (v121) — the link char plus what you've tapped,
+   over a scatter of loose characters (shares .forge-piece tiles). */
+.chain-build {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
+  align-items: center;
+  gap: 6px;
+  min-height: 72px;
 }
-.chain-option {
-  font: inherit;
-  font-size: var(--body);
-  line-height: 1.35;
-  text-align: left;
-  min-height: 56px;
-  padding: 12px 14px;
-  border-radius: 14px;
+.chain-build-link,
+.chain-build-char {
+  font-family: var(--font-hanzi, inherit);
+  font-size: var(--hanzi-large);
+  line-height: 1.1;
+  padding: 4px 10px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text);
+  background: var(--surface);
+}
+.chain-build-link {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.chain-build-slot {
+  font-size: var(--hanzi-medium);
+  color: var(--muted);
+}
+.chain-build-clear {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  padding: 6px;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+}
+.chain-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 360px;
 }
 .chain-reveal {
   color: var(--muted);

@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDictCtx, useSavedCtx } from "../state/contexts";
 import { autoSpeak, stopSpeech } from "../lib/speech";
-import { chainPool, nextChainStep, pickChainStart, type ChainStep } from "../lib/chain";
-import { resolveCrossRefs } from "../lib/gloss";
+import {
+  chainBuildState,
+  chainPool,
+  nextChainStep,
+  pickChainStart,
+  type ChainStep,
+} from "../lib/chain";
 import { PageHeader } from "./ui/PageHeader";
 import { EmptyState } from "./ui/EmptyState";
 
@@ -11,71 +16,54 @@ interface Props {
   onOpenEntity?: (key: string) => void;
 }
 
-const GLOSS_MAX = 60;
-
 // 词语接龙 (v117): grow a chain of the user's words, each starting
 // with the previous word's last character.
 //
-// v120 (owner: "I can choose the word with the correct start
-// character even if I have not the slightest idea what it is"): the
-// options are MEANINGS, not hanzi. You have to recall which of your
-// words begins with the link character AND means that — the hanzi
-// only appears once you're right. Still a game: nothing is graded.
+// v121 (owner: "give a bunch of characters from which I can build the
+// next word"): nothing is offered to recognize — no candidate words,
+// no meanings. The link character is on the board and you build the
+// continuation from a tray of loose characters. Any of your unused
+// words starting with the link counts; a character that leads nowhere
+// breaks the chain. Still a game — nothing is graded.
 export function ChainPage({ onClose, onOpenEntity }: Props) {
   const { savedList } = useSavedCtx();
   const { findWord, ensureCached } = useDictCtx();
-  const saved = useMemo(() => chainPool(savedList.map((s) => s.word)), [savedList]);
-
-  const glossOf = (w: string) => {
-    const defs = resolveCrossRefs(findWord(w)?.definitions ?? [], findWord);
-    const g = defs[0] ?? "";
-    return g.length > GLOSS_MAX ? g.slice(0, GLOSS_MAX - 1) + "…" : g;
-  };
-
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    void ensureCached(saved).then(() => {
-      if (!cancelled) setHydrated(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [saved, ensureCached]);
-
-  // Only words whose meaning we can show can be played — an option
-  // with no gloss would be a blank tile.
-  const pool = useMemo(
-    () => (hydrated ? saved.filter((w) => glossOf(w)) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [saved, hydrated, findWord],
-  );
+  const pool = useMemo(() => chainPool(savedList.map((s) => s.word)), [savedList]);
 
   const [chain, setChain] = useState<string[]>([]);
   const [step, setStep] = useState<ChainStep | null>(null);
-  const [wrongPick, setWrongPick] = useState<string | null>(null);
+  // Characters tapped so far for the word in progress (after the link).
+  const [built, setBuilt] = useState("");
+  const [usedTiles, setUsedTiles] = useState<number[]>([]);
+  const [wrongTile, setWrongTile] = useState<number | null>(null);
   const [best, setBest] = useState(0);
   const chainEndRef = useRef<HTMLDivElement>(null);
 
-  const startRun = (from: string[] = pool) => {
-    const start = pickChainStart(from);
-    setWrongPick(null);
+  // Glosses are only shown for words already in the chain, so this is
+  // a background nicety, not gating.
+  useEffect(() => {
+    void ensureCached(pool.slice(0, 60));
+  }, [pool, ensureCached]);
+
+  const startRun = () => {
+    const start = pickChainStart(pool);
+    setBuilt("");
+    setUsedTiles([]);
+    setWrongTile(null);
     setChain(start ? [start] : []);
-    setStep(start ? nextChainStep(start, from, new Set([start])) : null);
+    setStep(start ? nextChainStep(start, pool, new Set([start])) : null);
     if (start) autoSpeak(start);
   };
 
-  // Deal once the dictionary has landed.
   const dealtRef = useRef(false);
   useEffect(() => {
     if (dealtRef.current || pool.length < 5) return;
     dealtRef.current = true;
-    startRun(pool);
+    startRun();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pool]);
   useEffect(() => () => stopSpeech(), []);
 
-  // Keep the newest link visible as the chain grows.
   useEffect(() => {
     chainEndRef.current?.scrollIntoView({ block: "nearest" });
   }, [chain.length]);
@@ -84,15 +72,6 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
   useEffect(() => {
     if (score > best) setBest(score);
   }, [score, best]);
-
-  if (!hydrated) {
-    return (
-      <div className="review-root">
-        <PageHeader onBack={onClose} tag="Chain" progress="" />
-        <EmptyState variant="review" title="Dealing…" hint="" />
-      </div>
-    );
-  }
 
   if (pool.length < 5 || (chain.length === 0 && !step)) {
     return (
@@ -107,26 +86,35 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
     );
   }
 
-  const broken = wrongPick !== null;
+  const broken = wrongTile !== null;
   const deadEnd = !broken && step === null && chain.length > 0;
   const over = broken || deadEnd;
-  const answer = step ? (step.options.find((w) => w.startsWith(step.link)) ?? null) : null;
-  // A distractor that happens to share the answer's gloss would make a
-  // "wrong" tap look right — drop those.
-  const options = step
-    ? step.options.filter((w) => w === answer || glossOf(w) !== glossOf(answer ?? ""))
-    : [];
 
-  const pick = (w: string) => {
+  const tapTile = (i: number) => {
     if (!step || over) return;
-    if (w === answer) {
-      const nextChain = [...chain, w];
-      setChain(nextChain);
-      setStep(nextChainStep(w, pool, new Set(nextChain)));
-      autoSpeak(w);
-    } else {
-      setWrongPick(w);
+    const next = built + step.tray[i];
+    const state = chainBuildState(step.link, next, step.answers);
+    if (state === "dead") {
+      setWrongTile(i);
+      return;
     }
+    if (state === "building") {
+      setBuilt(next);
+      setUsedTiles((prev) => [...prev, i]);
+      return;
+    }
+    const word = step.link + next;
+    const nextChain = [...chain, word];
+    setChain(nextChain);
+    setBuilt("");
+    setUsedTiles([]);
+    setStep(nextChainStep(word, pool, new Set(nextChain)));
+    autoSpeak(word);
+  };
+
+  const clearBuild = () => {
+    setBuilt("");
+    setUsedTiles([]);
   };
 
   return (
@@ -162,14 +150,33 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
 
         {step && !over && (
           <>
-            <div className="phonetic-tap-prompt">
-              Which of your words starts with <span className="chain-link-char">{step.link}</span>{" "}
-              and means…
+            <div className="phonetic-tap-prompt">Build a word that starts with</div>
+            <div className="chain-build">
+              <span className="chain-build-link">{step.link}</span>
+              {[...built].map((c, i) => (
+                <span key={`${c}-${i}`} className="chain-build-char">
+                  {c}
+                </span>
+              ))}
+              {!built && <span className="chain-build-slot">＋</span>}
+              {built && (
+                <button type="button" className="chain-build-clear" onClick={clearBuild}>
+                  ✕
+                </button>
+              )}
             </div>
-            <div className="chain-options">
-              {options.map((w) => (
-                <button key={w} type="button" className="chain-option" onClick={() => pick(w)}>
-                  {glossOf(w)}
+            <div className="chain-tray">
+              {step.tray.map((c, i) => (
+                <button
+                  key={`${c}-${i}`}
+                  type="button"
+                  className={`forge-piece${usedTiles.includes(i) ? " is-consumed" : ""}${
+                    wrongTile === i ? " is-wrong" : ""
+                  }`}
+                  onClick={() => tapTile(i)}
+                  disabled={usedTiles.includes(i)}
+                >
+                  {c}
                 </button>
               ))}
             </div>
@@ -183,25 +190,21 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
                 ? `Perfect chain — the pool ran dry at ${score}! 🐉`
                 : `Chain broken at ${score}.`}
             </div>
-            {broken && answer && (
+            {broken && step && (
               <div className="chain-reveal">
-                That was <b>{wrongPick}</b> — the chain wanted{" "}
+                No word of yours starts with {step.link + built + step.tray[wrongTile!]}. It wanted{" "}
                 <button
                   type="button"
                   className="chain-word"
-                  onClick={onOpenEntity ? () => onOpenEntity(answer) : undefined}
+                  onClick={onOpenEntity ? () => onOpenEntity(step.answers[0]) : undefined}
                 >
-                  {answer}
+                  {step.answers[0]}
                 </button>{" "}
-                {glossOf(answer)}.
+                {(findWord(step.answers[0])?.definitions ?? [])[0] ?? ""}
               </div>
             )}
             <div className="chain-best">Best this visit: {best}</div>
-            <button
-              type="button"
-              className="review-btn review-btn-reveal"
-              onClick={() => startRun(pool)}
-            >
+            <button type="button" className="review-btn review-btn-reveal" onClick={startRun}>
               New chain
             </button>
           </div>
