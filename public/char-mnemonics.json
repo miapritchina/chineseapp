@@ -1,1 +1,13 @@
-{}
+{
+  "忘": {
+    "char": "忘",
+    "pinyin": "wàng",
+    "gloss": "to forget",
+    "mnemonic": "忘 = 亡 (to flee) over 心 (the heart): a thought flees the heart, and once it has left, you've forgotten it.",
+    "components": ["心 heart — meaning", "亡 flee/die (wáng) — sound"],
+    "illustrationPrompt": "Traditional Chinese ink-wash painting (水墨), loose expressive black brush strokes with natural bleed and dry-brush texture, soft grey ink washes, on a warm off-white rice-paper background. Minimal and calm, a single subject, lots of empty space. One small vermilion-red seal stamp with an abstract seal-script mark in a corner — the only color in the piece. No text, no letters, no Chinese characters anywhere in the image. Hand-painted, elegant. Subject: a single heart painted in one confident ink stroke, with a thin wisp of ink lifting away from the top of the heart, thinning and dissolving into the empty paper — a thought escaping and being forgotten.",
+    "imageFile": "char-images/5fd8.png",
+    "style": "ink-seal",
+    "status": "draft"
+  }
+}
