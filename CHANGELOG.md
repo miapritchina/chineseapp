@@ -11,6 +11,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Character mnemonic studio (dev skill):** `.claude/skills/mnemonic/` — an
+  interactive loop to co-author each character's memory story and its ink-wash
+  (水墨) illustration prompt with the owner, grounded in the real
+  `data-chars.json` decomposition. Locked entries land in
+  `public/char-mnemonics.json`; generated images will live at
+  `public/char-images/<codepoint>.png`. Card display wiring still to come.
+
 ### Changed
 - **Chain: build the next word from loose characters (v121):**
   nothing is offered to recognize any more — no candidate words, no
