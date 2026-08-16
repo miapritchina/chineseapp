@@ -12,7 +12,7 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
-- **Exercise-system rebalance, stages 1–4** ([plan](docs/product/exercise-system-rebalance.md)):
+- **Exercise-system rebalance, stages 1–4 (v122)** ([plan](docs/product/exercise-system-rebalance.md)):
   drill grades now reflect how much evidence each drill actually
   provides.
   - **Cluster recall grades what you actually knew:** the single
