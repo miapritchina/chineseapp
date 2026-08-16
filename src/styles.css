@@ -3853,29 +3853,23 @@ body {
   font-size: var(--heading-1);
 }
 
-/* Brush-form hanzi (v114): html.brush-hanzi swaps big glyphs to a Kai
-   face. Native Kaiti where Safari can see it (macOS), the LXGW WenKai
-   webfont everywhere else (v132 — iOS ships Kaiti as document-support
-   only, so the CSS names silently failed there; App lazy-loads the
-   sliced webfont when the toggle is on). --font-hanzi is the shared
-   hook — glyph classes reference it with an inherit fallback; the
-   hardcoded PingFang ones are overridden below. */
-.brush-hanzi {
-  --font-hanzi: "Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "LXGW WenKai", "AR PL UKai CN", serif;
-}
-.brush-hanzi .sheet-glyph-text,
-.brush-hanzi .sheet-glyph-fallback,
-.brush-hanzi .inference-hanzi,
-.brush-hanzi .classic-glyph,
-.brush-hanzi .sheet-etym-glyph,
-.brush-hanzi .sheet-saved-hanzi,
-.brush-hanzi .cloze-word,
-.brush-hanzi .sweep-hero-glyph,
-.brush-hanzi .result-row .r-hanzi {
-  font-family: var(--font-hanzi);
+/* Hanzi display fonts (v133, was the v114 brush toggle): --font-hanzi
+   is the one hook. App sets it on <html> for the chosen font (see
+   lib/fonts.ts) and drill pages set it per card for random-font mode;
+   every big-glyph class resolves it with an inherit fallback. */
+.sheet-glyph-text,
+.sheet-glyph-fallback,
+.inference-hanzi,
+.classic-glyph,
+.sheet-etym-glyph,
+.sheet-saved-hanzi,
+.cloze-word,
+.sweep-hero-glyph,
+.result-row .r-hanzi {
+  font-family: var(--font-hanzi, inherit);
 }
 .hamburger-brush-sample {
-  font-family: "Kaiti SC", "Kaiti TC", STKaiti, KaiTi, "LXGW WenKai", "AR PL UKai CN", serif;
+  font-family: var(--font-hanzi, inherit);
   font-size: 18px;
   margin-left: 2px;
 }

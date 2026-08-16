@@ -10,9 +10,12 @@ interface Props {
   statsHref?: string | null;
   onShareWords?: () => void;
   wordCount?: number;
-  // Brush-form hanzi display pref (v114).
-  brushFont?: boolean;
-  onToggleBrushFont?: () => void;
+  // Hanzi display font (v133): current label; tapping cycles faces.
+  hanziFontLabel?: string;
+  onCycleHanziFont?: () => void;
+  // Random font per drill card (v133).
+  randomFont?: boolean;
+  onToggleRandomFont?: () => void;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
@@ -27,8 +30,10 @@ export function HamburgerMenu({
   statsHref = null,
   onShareWords,
   wordCount = 0,
-  brushFont = false,
-  onToggleBrushFont,
+  hanziFontLabel,
+  onCycleHanziFont,
+  randomFont = false,
+  onToggleRandomFont,
 }: Props) {
   const { open, setOpen, ref: wrapperRef } = usePopover<HTMLDivElement>();
 
@@ -122,18 +127,31 @@ export function HamburgerMenu({
             {wordCount > 0 && <span className="hamburger-soon">{wordCount}</span>}
           </button>
         )}
-        {onToggleBrushFont && (
+        {onCycleHanziFont && (
+          <button
+            type="button"
+            role="menuitem"
+            className="hamburger-item"
+            onClick={onCycleHanziFont}
+            title="Tap to cycle through the hanzi display fonts"
+          >
+            <span>
+              Font <span className="hamburger-brush-sample">书</span>
+            </span>
+            <span className="hamburger-soon">{hanziFontLabel}</span>
+          </button>
+        )}
+        {onToggleRandomFont && (
           <button
             type="button"
             role="menuitemcheckbox"
-            aria-checked={brushFont}
+            aria-checked={randomFont}
             className="hamburger-item"
-            onClick={onToggleBrushFont}
+            onClick={onToggleRandomFont}
+            title="Each drill card renders in a different font, so recognition doesn't overfit one typeface"
           >
-            <span>
-              Brush font <span className="hamburger-brush-sample">书</span>
-            </span>
-            <span className="hamburger-soon">{brushFont ? "on" : "off"}</span>
+            <span>Random font in drills</span>
+            <span className="hamburger-soon">{randomFont ? "on" : "off"}</span>
           </button>
         )}
         <div className="hamburger-divider" />
