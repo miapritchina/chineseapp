@@ -16,12 +16,15 @@ interface Props {
   // facet except production (a recognition self-report can't clear a
   // writing card), clearing the word from today's other workouts.
   onKnow: (word: string) => void;
-  // Swipe left: keep for practice — no schedule change, but hidden
-  // from Sift until tomorrow (persisted by the parent). A left-swipe
-  // also opens the word's lesson (v125, owner request): "I don't know
-  // this" is exactly the moment to teach it. No schedule nudge — the
-  // word must stay due in today's drills.
+  // Swipe left: keep for practice — hidden from Sift until tomorrow
+  // (persisted by the parent). A left-swipe also opens the word's
+  // lesson (v125, owner request): "I don't know this" is exactly the
+  // moment to teach it.
   onKeep: (word: string) => void;
+  // Finished the lesson (v126): the parent credits the exposure and
+  // snoozes the word to tomorrow — having just studied it, re-testing
+  // minutes later would measure nothing.
+  onLessonDone?: (word: string) => void;
   onOpenEntity?: (key: string) => void;
   // Open the full d3 decomposition tree for a character (lesson view).
   onOpenTree?: (char: string) => void;
@@ -40,6 +43,7 @@ export function SiftPage({
   onClose,
   onKnow,
   onKeep,
+  onLessonDone,
   onOpenEntity,
   onOpenTree,
   onComplete,
@@ -120,7 +124,10 @@ export function SiftPage({
         <LearnCard
           word={lesson}
           continueLabel={current ? "Got it · keep sifting" : "Got it · finish"}
-          onContinue={() => setLesson(null)}
+          onContinue={() => {
+            onLessonDone?.(lesson);
+            setLesson(null);
+          }}
           onOpenEntity={(key) => onOpenEntity?.(key)}
           onOpenTree={onOpenTree}
         />

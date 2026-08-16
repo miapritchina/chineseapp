@@ -131,6 +131,14 @@ export function applyCascadeCredit(
   };
 }
 
+// Schedule-only snooze: floor the due date at `until` without touching
+// stability, reps, or state. Used after a Sift lesson (v126) — a word
+// the user just studied shouldn't be re-tested minutes later.
+export function snoozeCard(card: SerializedCard, until: Date): SerializedCard {
+  if (new Date(card.due).getTime() >= until.getTime()) return card;
+  return { ...card, due: until.toISOString() };
+}
+
 export function isDue(card: SerializedCard, now: Date = new Date()): boolean {
   return new Date(card.due).getTime() <= now.getTime();
 }

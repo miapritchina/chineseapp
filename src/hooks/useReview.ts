@@ -5,6 +5,7 @@ import {
   gradeCard,
   isDue,
   seedCard,
+  snoozeCard,
   type RatingName,
   type SerializedCard,
 } from "../lib/fsrs";
@@ -724,6 +725,35 @@ export function useReview({
     [userId, chars, applyCards],
   );
 
+  // Push every still-due row of an item out to `hours` from now
+  // (v126): a schedule-only snooze — no grade, no rep, no stability
+  // change. Used after a Sift lesson so a word the user just studied
+  // isn't re-tested minutes later; it comes back tomorrow.
+  const snoozeItem = useCallback(
+    (itemKey: string, hours = 24) => {
+      const until = new Date(Date.now() + hours * 3600000);
+      const next = new Map(cardsRef.current);
+      const changed: ReviewCard[] = [];
+      for (const [id, row] of next) {
+        if (row.itemKey !== itemKey) continue;
+        const newCard = snoozeCard(row.card, until);
+        if (newCard === row.card) continue;
+        const newRow: ReviewCard = {
+          ...row,
+          card: newCard,
+          dueAt: new Date(newCard.due).getTime(),
+        };
+        next.set(id, newRow);
+        changed.push(newRow);
+      }
+      if (changed.length === 0) return;
+      applyCards(next);
+      remoteUpsert(changed);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, applyCards],
+  );
+
   // Apply a real Again to a specific child of a parent that just failed.
   // Used by the "what threw you?" affordance after a parent Again grade.
   const attributeFailure = useCallback(
@@ -769,6 +799,7 @@ export function useReview({
     dueCards,
     grade,
     gradeCluster,
+    snoozeItem,
     attributeFailure,
     recordInference,
     creditPassiveView,
