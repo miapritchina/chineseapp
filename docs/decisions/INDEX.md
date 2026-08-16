@@ -23,7 +23,8 @@ number never changes, even if the ADR is superseded.
 | 0011 | [Two-tier status model (Saved / Learned)](0011-two-tier-status-model.md) | Accepted |
 | 0012 | [No daily cap; repeat-until-correct; one grade per card](0012-no-daily-cap-repeat-until-correct.md) | Only the no-cap half stands (one-grade → ADR-0013, retry → ADR-0014) |
 | 0013 | [Separate meaning + sound grades on the one recognition card](0013-split-meaning-sound-grades-on-one-card.md) | Accepted |
-| 0014 | [No same-day retry after Again](0014-no-same-day-retry.md) | Accepted |
+| 0014 | [No same-day retry after Again](0014-no-same-day-retry.md) | Accepted (Focus mode excepted — ADR-0015) |
+| 0015 | [Focus mode repeats problem words within one session](0015-focus-mode-same-session-repetition.md) | Accepted |
 
 ## Writing a new ADR
 

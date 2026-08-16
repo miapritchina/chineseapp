@@ -36,6 +36,7 @@ import {
 } from "./components/ReviewLaunch";
 import { LearnPage } from "./components/LearnPage";
 import { SiftPage } from "./components/SiftPage";
+import { FocusPage } from "./components/FocusPage";
 import { SentenceStudio } from "./components/SentenceStudio";
 import { StatsPage } from "./components/StatsPage";
 import { ForgePage } from "./components/ForgePage";
@@ -54,6 +55,7 @@ import { useState } from "react";
 import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
+import { problemWords, FOCUS_POOL } from "./lib/focus";
 import { isDue } from "./lib/fsrs";
 import { planFlow, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
 import { setAutoSpeakEnabled } from "./lib/speech";
@@ -151,6 +153,29 @@ export function App() {
 
   // Sift mode (v113): the active triage deck; null = not sifting.
   const [siftWords, setSiftWords] = useState<string[] | null>(null);
+  // Focus mode (v127): the active problem-word session; null = closed.
+  const [focusWords, setFocusWords] = useState<string[] | null>(null);
+  // Problem words: seen ≥8 times, still lapsing, stability < 7d —
+  // ranked worst first (lib/focus.ts).
+  const problemPool = useMemo(() => {
+    const FACETS = ["meaningRecognition", "soundRecognition", "reverseRecognition", "clozeChar"];
+    return problemWords(
+      saved.savedList.map((s) => s.word),
+      (w) => {
+        const rows = [];
+        for (const facet of FACETS) {
+          const r = reviewState.cards.get(`word|${facet}|${w}`);
+          if (!r) continue;
+          rows.push({
+            reps: r.card.reps ?? 0,
+            lapses: r.card.lapses ?? 0,
+            stability: r.card.stability ?? 0,
+          });
+        }
+        return rows;
+      },
+    );
+  }, [saved.savedList, reviewState.cards]);
   // Words left-swiped in Sift today — hidden from Sift until tomorrow,
   // still due everywhere else. Per-day ephemeral, so localStorage-only
   // (same carve-out as the old per-day new-card counter).
@@ -551,7 +576,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v126"
+          version="chinese v127"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -573,7 +598,7 @@ export function App() {
         </div>
       </header>
 
-      {showReview && !reviewLaunched && !learnWords && !siftWords && !gameOpen && (
+      {showReview && !reviewLaunched && !learnWords && !siftWords && !focusWords && !gameOpen && (
         <ReviewLaunch
           totalDue={dueCards.length}
           facetCounts={{
@@ -589,6 +614,8 @@ export function App() {
           onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
           siftCount={siftableWords.length}
           onStartSift={() => setSiftWords(siftableWords)}
+          focusCount={problemPool.length}
+          onStartFocus={() => setFocusWords(problemPool.slice(0, FOCUS_POOL))}
           onJustStart={justStart}
           forgeReady={forgeReady}
           onStartForge={() => setGameOpen("forge")}
@@ -626,6 +653,18 @@ export function App() {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
           }}
+        />
+      )}
+      {showReview && focusWords && (
+        <FocusPage
+          words={focusWords}
+          onClose={() => setFocusWords(null)}
+          onGrade={(key, rating, kind, facet, score) => grade(key, rating, kind, facet, score)}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+          onOpenTree={(c) => push({ kind: "char", key: c, view: "tree" })}
         />
       )}
       {showReview && siftWords && (

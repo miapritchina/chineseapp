@@ -212,6 +212,16 @@ studied. Left-swipes live in a day-stamped localStorage
 list (`chinese.siftKept`) — per-day ephemeral, the same local-only
 carve-out as the old daily new-card counter.
 
+Focus mode (v127, `lib/focus.ts` + `FocusPage`, [ADR-0015](../decisions/0015-focus-mode-same-session-repetition.md))
+is attention for **problem words** — total reps ≥ 8 across a word's
+FSRS rows, still lapsing (≥ 4 lapses or ≥ 30% lapse rate), stability
+under 7 days — ranked worst-first. A session takes the top 5:
+every word's lesson (`LearnCard`), then a practice re-test (reverse,
+no FSRS write), then a graded test (cloze for multi-char, reverse for
+single-char) — rounds interleaved so repetitions are spaced within
+the session. Only the graded test writes (via the percent path); a
+failed one ends with a mnemonic nudge that opens the word's sheet.
+
 "Just start" (v114, `lib/flow.ts`) chains surfaces from one tap:
 review with the saved settings → a 2-word Learn lesson. Sift was
 dropped from the chain in v123 (owner call: Sift is standalone triage

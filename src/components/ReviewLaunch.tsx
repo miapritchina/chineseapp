@@ -138,6 +138,9 @@ interface Props {
   // whole point is bulk-clearing a big backlog.
   siftCount?: number;
   onStartSift?: () => void;
+  // Focus mode (v127): problem words — high exposure, still failing.
+  focusCount?: number;
+  onStartFocus?: () => void;
   // "Just start" (v114): one tap, App builds the whole session
   // (drills → learn) from the saved settings. Sift left the chain in
   // v123 — it's standalone triage, not a workout stage.
@@ -163,6 +166,8 @@ export function ReviewLaunch({
   onStartLearn,
   siftCount = 0,
   onStartSift,
+  focusCount = 0,
+  onStartFocus,
   onJustStart,
   forgeReady = false,
   onStartForge,
@@ -413,6 +418,17 @@ export function ReviewLaunch({
             title="Triage: swipe right = I know this (counts as done in every drill today); swipe left = keep for practice, hidden from Sift until tomorrow."
           >
             Sift · {siftCount} due words
+          </button>
+        )}
+        {onStartFocus && (
+          <button
+            type="button"
+            className="review-btn"
+            onClick={onStartFocus}
+            disabled={focusCount === 0}
+            title="Attention for problem words — seen many times, still failing. Each gets its lesson, a practice re-test, and one graded test, spaced within the session."
+          >
+            Focus · {focusCount} problem words
           </button>
         )}
       </div>

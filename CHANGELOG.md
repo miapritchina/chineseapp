@@ -11,6 +11,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Focus mode (v127):** finds problem words — seen 8+ times, still
+  failing (4+ lapses or a 30%+ lapse rate), never stabilizing — and
+  gives the worst 5 concentrated attention: each word's lesson, then
+  a practice re-test, then one graded test, spaced within the session
+  ([ADR-0015](docs/decisions/0015-focus-mode-same-session-repetition.md)).
+  Only the final test touches the schedule; failing it prompts for a
+  memory hook. Launch-screen button shows the current problem count.
+
 ### Changed
 - **Sift's lesson counts as seeing the word (v126):** finishing the
   lesson after a left-swipe now gives the same "introduced" credit
