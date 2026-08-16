@@ -12,6 +12,11 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Reverse drill options stack in one column (v124):** the
+  choose-1-of-4 card looked too much like cluster recall's grid of 4
+  related words. The four options are now full-width rows, so
+  "pick the answer" and "recall each of these" read as different
+  tasks at a glance.
 - **"Just start" no longer opens with Sift (v123):** Sift is triage —
   sifting out words that are too simple — not a workout, so the
   one-tap flow now goes straight into the drills (then the Learn
