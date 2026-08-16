@@ -91,28 +91,41 @@ stage 5 is a new drill; stage 6 is a direction, not scheduled work.
   Writing".
 - Tests: right-swipe leaves the production row due.
 
-### Stage 3 — Honest grade mapping per drill
+### Stage 3 — Percent scoring for auto-graded drills
 
-*Fixes leaks 4, 5, 6.*
+*Fixes leaks 4, 5, 6. Owner decision (Aug 16): hybrid percent →
+grade. Auto-graded drills compute a 0–100% score; thresholds map it
+to an FSRS rating at the boundary; the raw percent is logged.
+Self-graded cards (combined recognition) keep the Again/Good/Easy
+buttons — humans can't calibrate percentages, and ts-fsrs only
+accepts the four discrete ratings anyway.*
 
+- **`scoreToRating(pct)` in `lib/fsrs.ts`** — one shared threshold
+  map: `100% → Good`, `≥75% → Hard`, `<75% → Again`. (No `Easy` from
+  auto-graded drills: hint-rich formats never provide recall-strength
+  evidence.)
+- **Per-drill score functions** (pure, in `drillGen.ts`, unit-tested):
+  - *Reverse / cloze / audio-first*: correct pick = 100%, wrong = 0%.
+    Binary today, but routed through the same `scoreToRating` path so
+    later refinements (e.g. response-time discounts) are one-line.
+  - *Family sweep*: `hits / (members + wrongTaps)` — 5/6 recalled
+    with no decoys ≈ 83% → `Hard` instead of today's full lapse.
+  - *Production*: `1 − distinctWrongStrokes / strokeCount`, so a
+    clean trace → 100% → `Good` (not `Easy`), a couple of misses on a
+    long character costs less than on 三.
+  - *Cluster recall* (revisits stage 1): per-member score is binary
+    (missed or not), mapped per member.
 - **Cloze**: hide the gloss until after the pick (it becomes the
   reveal, alongside the audio). Cloze then tests orthographic /
   collocational knowledge — a genuinely distinct facet from reverse.
-- **Family sweep partial credit**: exact set → `Good`; one wrong or
-  one missed (but not both) → `Hard`; worse → `Again`.
-- **Production**: clean trace → `Good` (not `Easy`); ≤2 distinct wrong
-  strokes → `Hard`; more → `Again`. Rationale: HanziWriter quiz gives
-  stroke hints after misses and the prompt is rich, so a clean trace
-  is not recall-strength evidence.
-- **MC wrong answer** (reverse, cloze): grade `Hard` instead of
-  `Again` **when the card's own lapses are already ≥ 2** — caps leech
-  noise from mis-taps — otherwise keep `Again`. (Alternative: always
-  `Again` but exempt MC facets from leech counting; pick one at
-  implementation time, prefer the simpler grade-side rule.)
-- `GradeButtons` gains an optional `Hard` in the ratings array where
-  needed; no UI change on the combined card (owner-facing scale stays
-  Again/Good/Easy).
-- Tests: one per new mapping.
+- **Log the raw percent**: additive migration adds a nullable
+  `score` column to `user_review_log`; drill grades insert it, self-
+  graded rows leave it null. This preserves the continuous signal for
+  future parameter tuning without touching the scheduler contract.
+- **Leech noise**: with `<75% → Again` a single MC mis-tap still
+  lapses; cap the noise by grading `Hard` instead of `Again` on MC
+  facets when the card's lapses are already ≥ 2.
+- Tests: one per score function + the threshold map + log shape.
 
 ### Stage 4 — Cascade bookkeeping fixes
 
@@ -135,8 +148,7 @@ the sound-facet drill rather than a meaning-drill variant.*
   word among 4 confusable saved-word options (reuse
   `pickReverseOptions`, biasing distractors toward same/similar pinyin
   when data allows).
-- Grades the `soundRecognition` row (correct → `Good`, wrong → per
-  stage-3 rule). Recognition-pair dedup in `ReviewPage` must not
+- Grades the `soundRecognition` row through the stage-3 percent path. Recognition-pair dedup in `ReviewPage` must not
   collapse it with the combined card the same session.
 - Fold into `ReverseRecognitionCard` as a prompt mode (per the
   existing TODO note) to avoid a new component.
@@ -160,7 +172,7 @@ revisit only if stages 1–5 don't dissolve the imbalance in practice.
 |---|---|---|---|
 | 1 Cluster grading | S–M | Low | — |
 | 2 Sift exclusion | S | Low | — |
-| 3 Grade mappings | M | Low | — |
+| 3 Percent scoring | M | Low (adds one additive migration) | — |
 | 4 Cascade bookkeeping | S | Low (sync-sensitive, test well) | — |
 | 5 Audio-first drill | M | Medium | 3 (grade rule) |
 | 6 Maturity ladder | XL | High | evaluate after 1–5 |

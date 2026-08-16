@@ -12,8 +12,9 @@ until superseded.
 - **[`exercise-system-rebalance.md`](exercise-system-rebalance.md)** —
   Aug 16 2026. Review of the drill system's proficiency imbalance
   (weak-evidence grades leaking across FSRS rows) + staged fix plan:
-  cluster grading, Sift/production exclusion, honest per-drill grade
-  mappings, cascade bookkeeping, audio-first drill. **Proposed —
+  cluster grading, Sift/production exclusion, percent scoring for
+  auto-graded drills (mapped to FSRS ratings at the boundary),
+  cascade bookkeeping, audio-first drill. **Proposed —
   awaiting owner sign-off.**
 
 - **[`explore-page.md`](explore-page.md)** — July 19 2026. One
