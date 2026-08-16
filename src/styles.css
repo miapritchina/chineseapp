@@ -1330,6 +1330,10 @@ body {
 .cluster-cell > .entity {
   flex: 1;
 }
+.learn-hero-actions {
+  display: flex;
+  gap: 8px;
+}
 .cluster-miss-chip {
   position: absolute;
   top: 6px;
