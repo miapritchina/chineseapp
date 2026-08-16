@@ -11,6 +11,7 @@ import {
 import type { Char, ItemKind, Facet } from "../lib/types";
 export type { ItemKind, Facet } from "../lib/types";
 import { componentClosure } from "../lib/componentSearch";
+import { planClusterGrades, type ClusterMemberResult } from "../lib/drillGen";
 import { useReconcileTriggers } from "./useReconcileTriggers";
 
 const FSRS_KEY = "chinese.fsrs.v1";
@@ -423,20 +424,40 @@ export function useReview({
   // Append one row to the review log — the raw material for future
   // FSRS parameter optimization (user_fsrs_state only keeps CURRENT
   // card state). Fire-and-forget; a missing table degrades silently.
-  const logReview = (row: ReviewCard, rating: RatingName) => {
+  // Auto-graded drills pass their raw 0–1 score alongside the rating;
+  // per ADR-0005 the insert retries without `score` if the column
+  // migration hasn't landed yet.
+  const logReview = (row: ReviewCard, rating: RatingName, score?: number) => {
     if (!userId) return;
+    const base = {
+      user_id: userId,
+      item_key: row.itemKey,
+      item_kind: row.itemKind,
+      facet: row.facet,
+      rating,
+      prev_card: row.card,
+    };
+    const payload = score === undefined ? base : { ...base, score };
     void supabase
       .from("user_review_log")
-      .insert({
-        user_id: userId,
-        item_key: row.itemKey,
-        item_kind: row.itemKind,
-        facet: row.facet,
-        rating,
-        prev_card: row.card,
-      })
+      .insert(payload)
       .then(({ error }) => {
-        if (error && !/relation .*user_review_log.*does not exist/i.test(error.message || "")) {
+        if (!error) return;
+        if (score !== undefined && /column/i.test(error.message || "")) {
+          void supabase
+            .from("user_review_log")
+            .insert(base)
+            .then(({ error: retryErr }) => {
+              if (
+                retryErr &&
+                !/relation .*user_review_log.*does not exist/i.test(retryErr.message || "")
+              ) {
+                console.warn("review log insert failed:", retryErr);
+              }
+            });
+          return;
+        }
+        if (!/relation .*user_review_log.*does not exist/i.test(error.message || "")) {
           console.warn("review log insert failed:", error);
         }
       });
@@ -477,6 +498,7 @@ export function useReview({
         ...childRow,
         card: newChildCard,
         dueAt: new Date(newChildCard.due).getTime(),
+        lastReviewAt: now.getTime(),
         cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
       };
       next.set(childId, newChild);
@@ -544,6 +566,7 @@ export function useReview({
             ...row,
             card: newCard,
             dueAt: new Date(newCard.due).getTime(),
+            lastReviewAt: now.getTime(),
             cascadeReviews: (row.cascadeReviews ?? 0) + 1,
           };
           next.set(id, newRow);
@@ -573,6 +596,7 @@ export function useReview({
       rating: RatingName,
       kind: ItemKind = FIRST_KIND,
       facet: Facet = MEANING_FACET,
+      score?: number,
     ) => {
       const now = new Date();
       const parentId = rowId(itemKey, kind, facet);
@@ -610,7 +634,7 @@ export function useReview({
       };
       next.set(parentId, newParent);
       changed.push(newParent);
-      logReview(parentRow, rating);
+      logReview(parentRow, rating, score);
 
       // 2. Cascade to component closure.
       const cascade =
@@ -619,6 +643,80 @@ export function useReview({
         changed.push(...cascadeToClosure(itemKey, next, now));
       }
 
+      applyCards(next);
+      remoteUpsert(changed);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, chars, applyCards],
+  );
+
+  // Grade a cluster-recall outcome (stage 1 of the exercise-system
+  // rebalance): each member is graded from what the user reported
+  // (missed → Again, recalled → Good), only rows due NOW are touched,
+  // and cascade credit is applied at most once per component across
+  // the whole cluster — not once per member.
+  const gradeCluster = useCallback(
+    (results: ClusterMemberResult[]) => {
+      const now = new Date();
+      const prev = cardsRef.current;
+      const isRowDue = (word: string, facet: Facet) => {
+        const row = prev.get(rowId(word, "word", facet));
+        return !!row && isDue(row.card, now);
+      };
+      const closureOf = (word: string) => componentClosure(word, chars);
+      const plan = planClusterGrades(results, isRowDue, closureOf);
+      if (plan.grades.length === 0 && plan.cascadeTargets.length === 0) return;
+
+      const next = new Map(prev);
+      const changed: ReviewCard[] = [];
+      for (const g of plan.grades) {
+        const id = rowId(g.word, "word", g.facet);
+        const row = next.get(id);
+        if (!row) continue;
+        const newCard = gradeCard(row.card, g.rating, now);
+        const newRow: ReviewCard = {
+          ...row,
+          card: newCard,
+          dueAt: new Date(newCard.due).getTime(),
+          lastReviewAt: now.getTime(),
+          directReviews: (row.directReviews ?? 0) + 1,
+        };
+        next.set(id, newRow);
+        changed.push(newRow);
+        logReview(row, g.rating, g.rating === "Good" ? 1 : 0);
+      }
+      for (const childKey of plan.cascadeTargets) {
+        const childId = rowId(childKey, "char", MEANING_FACET);
+        let childRow = next.get(childId);
+        if (!childRow) {
+          const seeded = seedCard(now);
+          childRow = {
+            itemKey: childKey,
+            itemKind: "char",
+            facet: MEANING_FACET,
+            card: seeded,
+            dueAt: new Date(seeded.due).getTime(),
+            lastReviewAt: null,
+            directReviews: 0,
+            cascadeReviews: 0,
+          };
+        }
+        const isDirect = (childRow.directReviews ?? 0) > 0;
+        const newChildCard = applyCascadeCredit(
+          childRow.card,
+          isDirect ? null : CASCADE_CAP_DAYS,
+          now,
+        );
+        const newChild: ReviewCard = {
+          ...childRow,
+          card: newChildCard,
+          dueAt: new Date(newChildCard.due).getTime(),
+          lastReviewAt: now.getTime(),
+          cascadeReviews: (childRow.cascadeReviews ?? 0) + 1,
+        };
+        next.set(childId, newChild);
+        changed.push(newChild);
+      }
       applyCards(next);
       remoteUpsert(changed);
     },
@@ -670,6 +768,7 @@ export function useReview({
     cards,
     dueCards,
     grade,
+    gradeCluster,
     attributeFailure,
     recordInference,
     creditPassiveView,

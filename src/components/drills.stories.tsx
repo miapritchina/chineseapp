@@ -52,7 +52,7 @@ export const ReverseRecognition: StoryObj = {
         answer="你好"
         gloss="hello; hi"
         savedWords={savedWords}
-        onGrade={() => {}}
+        onScore={() => {}}
       />
     </Shell>
   ),
@@ -61,7 +61,7 @@ export const ReverseRecognition: StoryObj = {
 export const ClozeChar: StoryObj = {
   render: () => (
     <Shell tag="Cloze">
-      <ClozeCharCard word="你好" gloss="hello; hi" savedWords={savedWords} onGrade={() => {}} />
+      <ClozeCharCard word="你好" gloss="hello; hi" savedWords={savedWords} onScore={() => {}} />
     </Shell>
   ),
 };
@@ -73,7 +73,7 @@ export const FamilySweep: StoryObj = {
         component={PHONETIC_COMPONENTS[0]}
         pool={PHONETIC_COMPONENTS}
         charExists={(c) => !!CHARS[c]}
-        onGrade={() => {}}
+        onScore={() => {}}
       />
     </Shell>
   ),
@@ -92,7 +92,7 @@ export const ClusterRecall: StoryObj = {
 export const Production: StoryObj = {
   render: () => (
     <Shell tag="Write">
-      <ProductionCard char="请" charData={CHARS["请"]} onGrade={() => {}} />
+      <ProductionCard char="请" charData={CHARS["请"]} onScore={() => {}} />
     </Shell>
   ),
 };

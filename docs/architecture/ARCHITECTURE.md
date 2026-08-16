@@ -51,7 +51,7 @@ connection badges.
 | `public/sanzijing.json` | 三字经 standard edition (178 numbered couplets) + Giles 1900 translation + modern interpretation | Static; curated from Wikisource/ctext (v100–v101) |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
-| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices | Live; insert from `useReview`, select from `useWordInference` |
+| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices. Auto-graded drills also store their raw 0–1 `score` (additive column, migration 0014; null for self-graded rows) | Live; insert from `useReview`, select from `useWordInference` |
 | Supabase `user_classic_progress` | Furthest-read 三字经 couplet (v101) — scroll-tracked bookmark, max(local, remote) merge | Live; `useClassicProgress` |
 | Supabase `user_shares` | Profile share tokens (v110): one stable 12-char token per account; `get_profile_words(token)` resolves to the owner's LIVE saved set (SECURITY DEFINER), so a `?share=` link imports the profile as it is at click time. `words` column = courtesy snapshot for pre-v110 clients (`get_shared_words`) | Live; share flow in `App.tsx`, import in `useAutoImport` |
 
@@ -136,9 +136,28 @@ facets beyond meaning/sound sort after meaning/sound in the due queue
 
 `clusterRecall` (v107) is the second synthetic facet: one card per
 cluster of related saved words (`buildClusters` in drillGen, computed
-in App), no FSRS row of its own — the single group grade is applied
-to every member's meaning+sound rows. It replaced the standalone
-Cluster recall page/button.
+in App), no FSRS row of its own. Since the exercise-system rebalance
+the single group grade is gone: the card collects which members were
+missed (✗ chip per revealed word) and `useReview.gradeCluster` grades
+each member individually — missed → Again, recalled → Good — touching
+only meaning/sound rows that are **due now**, with cascade credit
+deduped to once per component across the whole cluster
+(`planClusterGrades` in drillGen). It replaced the standalone Cluster
+recall page/button.
+
+**Auto-graded drills score, they don't rate** (rebalance stage 3):
+reverse, cloze, family sweep and production report a 0–1 performance
+score (`familySweepScore`, `productionScore` in drillGen — sweep is
+hits/(members+wrongTaps), production is 1−wrongStrokes/strokeCount);
+`scoreToRating` in `lib/fsrs.ts` is the single boundary mapping it to
+an FSRS rating (1 → Good, ≥0.75 → Hard, else Again — never Easy:
+hint-rich formats aren't recall-strength evidence). A wrong pick on
+the two multiple-choice drills grades Hard instead of Again once the
+card has lapses ≥ 2, so 25%-guess-floor mis-taps stop feeding leech
+detection. The raw score is logged to `user_review_log.score`
+(additive column, migration 0014; self-graded rows leave it null).
+The cloze card hides the word's gloss until after the pick — with it
+visible the drill collapsed into reverse recognition.
 
 `recognition` is a legacy facet name from pre-v66 cards; the load path
 renames them to `meaningRecognition` in memory. `phoneticTap`,
@@ -161,6 +180,11 @@ The two-dispatch same-tick write is what forced
 
 Good/Easy on a word damp-credits every constituent char. Again does
 not cascade. See [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md).
+Credit bookkeeping (rebalance stage 4): `applyCascadeCredit` stamps
+`last_review` (so the sync merge's recency tie-break keeps the
+credited row instead of reverting it to a stale remote copy) but
+preserves `state`/`learning_steps`/`reps`/`lapses` — a never-reviewed
+card stays New and its first real grade schedules as a first review.
 
 The same damped-credit math powers the **passive-view credit**
 (v108): opening a saved item's EntitySheet applies
@@ -176,7 +200,8 @@ card nudges the word's schedule without recording a rep.
 
 Sift mode (v113, `SiftPage` + `lib/sift.ts`) is grading, not credit:
 a right-swipe applies a real Good to every facet of the word that is
-due at that moment. Left-swipes live in a day-stamped localStorage
+due at that moment — except `production` (rebalance stage 2): a
+recognition self-report can't clear a writing card. Left-swipes live in a day-stamped localStorage
 list (`chinese.siftKept`) — per-day ephemeral, the same local-only
 carve-out as the old daily new-card counter.
 

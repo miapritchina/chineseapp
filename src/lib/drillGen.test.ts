@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   buildFamilySweep,
+  familySweepScore,
   inferencePairs,
   interleaveByActivity,
   knownChars,
   pickClozeTask,
   pickGlossOptions,
   pickReverseOptions,
+  planClusterGrades,
+  productionScore,
 } from "./drillGen";
 
 // Deterministic "random": always 0 → shuffles become identity,
@@ -163,5 +166,103 @@ describe("interleaveByActivity", () => {
       row("meaningRecognition", 4, "a"),
     ]);
     expect(out.map((r) => r.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("familySweepScore", () => {
+  it("full sweep with no decoys is 1", () => {
+    expect(familySweepScore(["请", "情", "清"], ["请", "情", "清"])).toBe(1);
+  });
+  it("a missed member earns partial credit, not zero", () => {
+    expect(familySweepScore(["请", "情", "清"], ["请", "情"])).toBeCloseTo(2 / 3);
+  });
+  it("wrong taps grow the denominator", () => {
+    expect(familySweepScore(["请", "情", "清"], ["请", "情", "清", "很"])).toBeCloseTo(3 / 4);
+  });
+  it("empty selection is 0", () => {
+    expect(familySweepScore(["请", "情", "清"], [])).toBe(0);
+  });
+});
+
+describe("productionScore", () => {
+  it("is proportional to stroke count", () => {
+    expect(productionScore(10, 0)).toBe(1);
+    expect(productionScore(10, 2)).toBeCloseTo(0.8);
+    expect(productionScore(3, 1)).toBeCloseTo(2 / 3);
+  });
+  it("never goes below 0", () => {
+    expect(productionScore(2, 5)).toBe(0);
+  });
+  it("falls back to mistake thresholds without stroke data", () => {
+    expect(productionScore(null, 0)).toBe(1);
+    expect(productionScore(null, 2)).toBe(0.8);
+    expect(productionScore(null, 3)).toBe(0);
+  });
+});
+
+describe("planClusterGrades", () => {
+  const closures = new Map<string, string[]>([
+    ["请求", ["请", "求", "讠", "青"]],
+    ["情况", ["情", "况", "忄", "青"]],
+    ["清水", ["清", "水", "氵", "青"]],
+  ]);
+  const closureOf = (w: string) => closures.get(w) ?? [];
+
+  it("grades missed members Again and the rest Good, both facets", () => {
+    const plan = planClusterGrades(
+      [
+        { word: "请求", missed: false },
+        { word: "情况", missed: true },
+      ],
+      () => true,
+      closureOf,
+    );
+    expect(plan.grades).toContainEqual({
+      word: "请求",
+      facet: "meaningRecognition",
+      rating: "Good",
+    });
+    expect(plan.grades).toContainEqual({ word: "请求", facet: "soundRecognition", rating: "Good" });
+    expect(plan.grades).toContainEqual({
+      word: "情况",
+      facet: "meaningRecognition",
+      rating: "Again",
+    });
+    expect(plan.grades).toHaveLength(4);
+  });
+
+  it("skips rows that are not due", () => {
+    const plan = planClusterGrades(
+      [{ word: "请求", missed: false }],
+      (_w, facet) => facet === "meaningRecognition",
+      closureOf,
+    );
+    expect(plan.grades).toEqual([{ word: "请求", facet: "meaningRecognition", rating: "Good" }]);
+  });
+
+  it("dedupes cascade targets shared across members and excludes missed members' closures", () => {
+    const plan = planClusterGrades(
+      [
+        { word: "请求", missed: false },
+        { word: "清水", missed: false },
+        { word: "情况", missed: true },
+      ],
+      () => true,
+      closureOf,
+    );
+    // 青 shared by both Good members appears once; 情况's closure absent.
+    expect(plan.cascadeTargets.filter((t) => t === "青")).toHaveLength(1);
+    expect(plan.cascadeTargets).not.toContain("忄");
+    expect(plan.cascadeTargets).toContain("讠");
+    expect(plan.cascadeTargets).toContain("氵");
+  });
+
+  it("no cascade when meaning row is not due", () => {
+    const plan = planClusterGrades(
+      [{ word: "请求", missed: false }],
+      (_w, facet) => facet === "soundRecognition",
+      closureOf,
+    );
+    expect(plan.cascadeTargets).toEqual([]);
   });
 });

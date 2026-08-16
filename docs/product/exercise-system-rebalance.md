@@ -1,6 +1,6 @@
 # Exercise-system rebalance — plan
 
-**Status:** Proposed (awaiting owner sign-off) · **Date:** 2026-08-16
+**Status:** Stages 1–4 built (Aug 16 2026) · stage 5 backlog (TODO P2) · stage 6 direction only · **Date:** 2026-08-16
 
 Owner observation: the exercise system feels unbalanced — not all
 exercise types manifest the same proficiency in knowing a word.
@@ -64,7 +64,7 @@ Each stage is independently shippable, lands green (`npm test`), and
 bumps the version on merge. Stages 1–4 are small surgical changes;
 stage 5 is a new drill; stage 6 is a direction, not scheduled work.
 
-### Stage 1 — Cluster recall: grade what you actually knew
+### Stage 1 — Cluster recall: grade what you actually knew ✅ Built
 
 *Fixes leaks 1 + C3.*
 
@@ -80,7 +80,7 @@ stage 5 is a new drill; stage 6 is a direction, not scheduled work.
 - Tests: drillGen/useReview-level — missed member gets `Again`, non-due
   rows untouched, shared component credited once.
 
-### Stage 2 — Sift right-swipe stops clearing production
+### Stage 2 — Sift right-swipe stops clearing production ✅ Built
 
 *Fixes leak 2.*
 
@@ -91,7 +91,7 @@ stage 5 is a new drill; stage 6 is a direction, not scheduled work.
   Writing".
 - Tests: right-swipe leaves the production row due.
 
-### Stage 3 — Percent scoring for auto-graded drills
+### Stage 3 — Percent scoring for auto-graded drills ✅ Built
 
 *Fixes leaks 4, 5, 6. Owner decision (Aug 16): hybrid percent →
 grade. Auto-graded drills compute a 0–100% score; thresholds map it
@@ -127,7 +127,7 @@ accepts the four discrete ratings anyway.*
   facets when the card's lapses are already ≥ 2.
 - Tests: one per score function + the threshold map + log shape.
 
-### Stage 4 — Cascade bookkeeping fixes
+### Stage 4 — Cascade bookkeeping fixes ✅ Built
 
 *Fixes C1 + C2. No behavior change visible to the owner.*
 

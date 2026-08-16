@@ -230,6 +230,80 @@ export function interleaveByActivity<T extends { facet: string; dueAt: number }>
   return out;
 }
 
+// Per-drill 0–1 performance scores (stage 3 of the exercise-system
+// rebalance). Mapped to an FSRS rating at the boundary via
+// fsrs.scoreToRating; the raw score is also logged for future tuning.
+
+// Family sweep: hits over (members + wrong taps) — recalling 5/6 with
+// no decoys tapped is ~0.83 (Hard), not a full lapse.
+export function familySweepScore(members: string[], selected: Iterable<string>): number {
+  const memberSet = new Set(members);
+  let hits = 0;
+  let wrong = 0;
+  for (const c of selected) {
+    if (memberSet.has(c)) hits++;
+    else wrong++;
+  }
+  const denom = memberSet.size + wrong;
+  return denom > 0 ? hits / denom : 0;
+}
+
+// Production: mistakes cost proportionally to character length, so a
+// couple of misses on a long character costs less than on 三. Null
+// strokeCount (stroke data unavailable) falls back to the old
+// distinct-mistake thresholds expressed as scores.
+export function productionScore(strokeCount: number | null, wrongStrokes: number): number {
+  if (strokeCount && strokeCount > 0) {
+    return Math.max(0, 1 - wrongStrokes / strokeCount);
+  }
+  if (wrongStrokes === 0) return 1;
+  return wrongStrokes <= 2 ? 0.8 : 0;
+}
+
+export interface ClusterMemberResult {
+  word: string;
+  missed: boolean;
+}
+
+export interface ClusterGradePlan {
+  grades: {
+    word: string;
+    facet: "meaningRecognition" | "soundRecognition";
+    rating: "Good" | "Again";
+  }[];
+  // Chars/components to receive ONE damped cascade credit each —
+  // union across all correctly-recalled members, so a component
+  // shared by two members isn't credited twice for one card.
+  cascadeTargets: string[];
+}
+
+// Cluster recall grading (stage 1): each member is graded from what
+// the user actually reported (missed → Again, recalled → Good), and
+// only rows that are due now are touched — non-due rows weren't part
+// of today's workout.
+export function planClusterGrades(
+  results: ClusterMemberResult[],
+  isRowDue: (word: string, facet: "meaningRecognition" | "soundRecognition") => boolean,
+  closureOf: (word: string) => Iterable<string>,
+): ClusterGradePlan {
+  const grades: ClusterGradePlan["grades"] = [];
+  const members = new Set(results.map((r) => r.word));
+  const targets = new Set<string>();
+  for (const r of results) {
+    const rating = r.missed ? ("Again" as const) : ("Good" as const);
+    for (const facet of ["meaningRecognition", "soundRecognition"] as const) {
+      if (!isRowDue(r.word, facet)) continue;
+      grades.push({ word: r.word, facet, rating });
+      if (facet === "meaningRecognition" && rating === "Good") {
+        for (const child of closureOf(r.word)) {
+          if (!members.has(child)) targets.add(child);
+        }
+      }
+    }
+  }
+  return { grades, cascadeTargets: [...targets] };
+}
+
 export interface FamilySweepTask {
   component: string;
   members: string[];
