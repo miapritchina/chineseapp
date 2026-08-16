@@ -4,6 +4,7 @@ import { detectPos, POS_COLOR, POS_LABEL } from "../lib/pos";
 import { hanziScaleStyle } from "../lib/hanzi";
 import { StatusButton } from "./StatusButton";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
+import { useResolvedDefs } from "../hooks/useResolvedDefs";
 
 // Unified character/word tile (redesign §0). One component, five sizes,
 // consistent visual DNA: pinyin (top) → hanzi (center) → meaning
@@ -71,10 +72,13 @@ export function Entity({
   const charData = chars[key];
 
   const pinyin = resolvedWord?.pinyin ?? charData?.pinyin ?? "";
-  const defs =
+  // "variant of X" cross-refs resolve to X's actual meaning (owner:
+  // a bare cross-reference explains nothing).
+  const defs = useResolvedDefs(
     resolvedWord?.definitions && resolvedWord.definitions.length > 0
       ? resolvedWord.definitions
-      : (charData?.definitions ?? []);
+      : (charData?.definitions ?? []),
+  );
   const meaning = defs[0] ?? "";
 
   // Defaults follow the size tier; explicit props override.

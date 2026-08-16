@@ -25,6 +25,8 @@ interface Props {
   ) => void;
   onOpenEntity: (key: string) => void;
   onOpenTree?: (char: string) => void;
+  // Explore-from-here on the lesson card (v130): ends the session.
+  onExplore?: (kind: "word" | "char", key: string) => void;
 }
 
 // Focus mode (v127): attention for problem words — high exposure,
@@ -34,7 +36,7 @@ interface Props {
 // Practice answers write nothing; only the test round grades. A
 // failed test ends with a mnemonic nudge — a memory hook is the
 // best-evidenced leech treatment.
-export function FocusPage({ words, onClose, onGrade, onOpenEntity, onOpenTree }: Props) {
+export function FocusPage({ words, onClose, onGrade, onOpenEntity, onOpenTree, onExplore }: Props) {
   const { chars } = useCharsCtx();
   const { findWord, ensureCached } = useDictCtx();
   const { savedList } = useSavedCtx();
@@ -142,6 +144,7 @@ export function FocusPage({ words, onClose, onGrade, onOpenEntity, onOpenTree }:
           onContinue={advance}
           onOpenEntity={onOpenEntity}
           onOpenTree={onOpenTree}
+          onExplore={onExplore}
         />
       ) : current.kind === "practice" ? (
         // Practice round: objective re-test, nothing written.

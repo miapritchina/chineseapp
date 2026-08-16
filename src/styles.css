@@ -3722,6 +3722,13 @@ body {
   align-items: center;
   gap: 6px;
   text-align: center;
+  position: relative;
+  align-self: stretch;
+}
+.learn-hero-status {
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 .learn-hanzi {
   font-family: var(--font-hanzi, inherit);

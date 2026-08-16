@@ -12,6 +12,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Lesson page absorbs the bottom sheet (v130):** lesson, sheet, and
+  tree were three surfaces saying the same thing. The lesson page now
+  carries the sheet's elements — status star, part-of-speech chip,
+  related words grouped per character, the editable mnemonic
+  ("make it stick"), and "Explore from here" — so a lesson is the one
+  full study page (the tree stays as the visual view).
+- **No more bare "variant of X" meanings:** every meaning shown on an
+  Entity card or lesson line now resolves the cross-reference and
+  shows X's actual meaning (e.g. 么 shows "variant of 麼: suffix,
+  used to form interrogative 什么" instead of a dead reference).
 - **Drill design pass (v129):** bigger hanzi, terser prompts, more
   distinct layouts. Family sweep shows its component huge above the
   grid ("Tap all that contain:"); the cloze word grows to near-hero

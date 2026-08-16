@@ -576,7 +576,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v129"
+          version="chinese v130"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -667,6 +667,11 @@ export function App() {
           onOpenTree={(key) =>
             push({ kind: [...key].length > 1 ? "word" : "char", key, view: "tree" })
           }
+          onExplore={(kind, key) => {
+            setFocusWords(null);
+            setExploreFocus({ kind, key });
+            window.location.hash = "#/explore";
+          }}
         />
       )}
       {showReview && siftWords && (
@@ -703,6 +708,12 @@ export function App() {
             creditPassiveView(w);
             snoozeItem(w);
           }}
+          onExplore={(kind, key) => {
+            cancelFlow();
+            setSiftWords(null);
+            setExploreFocus({ kind, key });
+            window.location.hash = "#/explore";
+          }}
           onOpenTree={(key) =>
             push({ kind: [...key].length > 1 ? "word" : "char", key, view: "tree" })
           }
@@ -723,6 +734,12 @@ export function App() {
           onOpenTree={(key) =>
             push({ kind: [...key].length > 1 ? "word" : "char", key, view: "tree" })
           }
+          onExplore={(kind, key) => {
+            cancelFlow();
+            setLearnWords(null);
+            setExploreFocus({ kind, key });
+            window.location.hash = "#/explore";
+          }}
           onIntroduced={(w) => creditPassiveView(w)}
         />
       )}

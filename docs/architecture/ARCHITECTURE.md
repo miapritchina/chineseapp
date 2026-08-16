@@ -205,7 +205,11 @@ recognition self-report can't clear a writing card. A left-swipe ("I
 don't know this") opens the word's lesson inline — the same `LearnCard`
 Learn mode uses (extracted v125; since v128 its breakdown cards
 unfold their components in place, recursively, and the hero has a
-whole-word ⤢ tree button). Finishing the lesson counts as
+whole-word ⤢ tree button; since v130 it is the merged study surface,
+absorbing the sheet's status star, POS chip, per-char related-word
+columns, mnemonic section, and explore link — `Entity` and the lesson
+lines also resolve "variant of X" glosses to X's real meaning via
+`useResolvedDefs`/`resolveCrossRefs`). Finishing the lesson counts as
 having just seen the word (v126): the passive-view credit plus
 `snoozeItem` — a schedule-only floor (`snoozeCard` in `lib/fsrs.ts`)
 that moves every still-due row to tomorrow without touching stability,
