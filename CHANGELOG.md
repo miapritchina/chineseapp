@@ -12,6 +12,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Grade buttons say what you mean (v131):** Again/Good/Easy →
+  "Didn't know" / "Know" / "Confident" — the buttons describe your
+  relationship with the word; the FSRS rating names stay the data
+  vocabulary underneath.
+- **Color semantics enforced (v131):** red only for errors, green
+  only for correct answers; selecting before submitting (family
+  sweep tiles, forge pieces) is a neutral ink outline instead of the
+  red accent.
 - **Lesson page absorbs the bottom sheet (v130):** lesson, sheet, and
   tree were three surfaces saying the same thing. The lesson page now
   carries the sheet's elements — status star, part-of-speech chip,

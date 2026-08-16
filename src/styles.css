@@ -824,9 +824,11 @@ body {
 .sweep-confirm {
   margin-top: 10px;
 }
+/* Pre-submit selection is NEUTRAL ink (v131): red is reserved for
+   errors, green for correct answers. */
 .entity.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px var(--text);
 }
 
 /* 三字经 Classic page */
@@ -4066,7 +4068,7 @@ body {
     opacity 0.2s;
 }
 .forge-piece.is-selected {
-  border-color: var(--accent);
+  border-color: var(--text);
   transform: scale(1.08);
 }
 .forge-piece.is-consumed {
