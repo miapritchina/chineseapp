@@ -162,7 +162,7 @@ export function SiftPage({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className="phonetic-tap-prompt">Know it? Swipe right. Needs work? Swipe left.</div>
+        <div className="phonetic-tap-prompt">Swipe → know it · ← practice</div>
         <span
           className={`sift-hanzi${onOpenEntity ? " is-explorable" : ""}`}
           style={hanziScaleStyle(current)}

@@ -50,7 +50,7 @@ export function ClozeCharCard({ word, gloss, savedWords, onScore, onOpenEntity }
       onClick={picked !== null ? advance : undefined}
     >
       <div className="phonetic-tap-inner">
-        <div className="phonetic-tap-prompt">Which character completes the word?</div>
+        <div className="phonetic-tap-prompt">Fill the gap</div>
         <div className="cloze-word">
           {glyphs.map((g, i) =>
             i === task.maskIndex && picked === null ? (

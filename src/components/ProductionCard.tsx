@@ -72,7 +72,6 @@ export function ProductionCard({ char, charData, onScore, onOpenEntity }: Props)
       onClick={done ? advance : undefined}
     >
       <div className="phonetic-tap-inner">
-        <div className="phonetic-tap-prompt">Write the character that means…</div>
         <div className="production-prompt">
           <div className="production-prompt-pinyin">{pinyin}</div>
           <div className="production-prompt-gloss">{meaning || "(no gloss)"}</div>

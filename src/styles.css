@@ -747,7 +747,8 @@ body {
   margin-top: 6px;
 }
 .reverse-gloss {
-  font-size: var(--heading-2, 17px);
+  font-size: 22px;
+  font-weight: 600;
   text-align: center;
   max-width: 320px;
   line-height: 1.35;
@@ -775,7 +776,7 @@ body {
   --entity-hanzi-size: var(--hanzi-large);
 }
 .cloze-word {
-  font-size: calc(var(--hanzi-large, 56px));
+  font-size: calc(var(--hanzi-hero, 120px) * 0.65);
   line-height: 1.1;
   display: flex;
   gap: 4px;
@@ -793,6 +794,22 @@ body {
   justify-content: center;
   max-width: 380px;
 }
+/* The component being hunted, shown big above the grid (v129 design
+   pass: prompts shrink, hanzi grow). */
+.sweep-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.sweep-hero-glyph {
+  font-size: calc(var(--hanzi-hero, 120px) * 0.65);
+  line-height: 1.1;
+}
+.sweep-hero-pinyin {
+  font-size: 16px;
+  color: var(--muted);
+}
 /* v106 size pass: glyphs the user must pick or compare need reading
    size, not chip size (owner: sweep tiles "too small to be
    comfortable"). Doubled selectors outrank the per-size Entity rules
@@ -802,7 +819,7 @@ body {
 }
 .cluster-grid .entity,
 .disambig-grid .entity {
-  --entity-hanzi-size: var(--hanzi-medium);
+  --entity-hanzi-size: var(--hanzi-large);
 }
 .sweep-confirm {
   margin-top: 10px;
@@ -1319,6 +1336,9 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
 }
 /* Wrapper so the ✗ miss chip can overlay the Entity card without
    stealing its tap (reveal → open sheet). The missed state itself
