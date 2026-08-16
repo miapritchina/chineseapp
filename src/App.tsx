@@ -102,8 +102,15 @@ export function App() {
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
   });
-  const { dueCards, grade, gradeCluster, attributeFailure, recordInference, creditPassiveView } =
-    reviewState;
+  const {
+    dueCards,
+    grade,
+    gradeCluster,
+    snoozeItem,
+    attributeFailure,
+    recordInference,
+    creditPassiveView,
+  } = reviewState;
 
   // Weakest-first shelf sort: per saved word, the lower of the two
   // recognition cards' FSRS stability (never-reviewed = 0 = weakest).
@@ -544,7 +551,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v125"
+          version="chinese v126"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -648,6 +655,13 @@ export function App() {
             }
           }}
           onKeep={(w) => keepInSift(w)}
+          onLessonDone={(w) => {
+            // Same "introduced" credit Learn mode gives, plus a floor:
+            // every still-due row moves to tomorrow — the user just
+            // studied the word, re-testing it today measures nothing.
+            creditPassiveView(w);
+            snoozeItem(w);
+          }}
           onOpenTree={(c) => push({ kind: "char", key: c, view: "tree" })}
         />
       )}

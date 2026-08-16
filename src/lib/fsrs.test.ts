@@ -1,5 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { applyCascadeCredit, gradeCard, scoreToRating, seedCard } from "./fsrs";
+import { applyCascadeCredit, gradeCard, scoreToRating, seedCard, snoozeCard } from "./fsrs";
+
+describe("snoozeCard", () => {
+  const now = new Date("2026-08-16T12:00:00Z");
+  it("floors the due date without touching anything else", () => {
+    const card = seedCard(now); // due now
+    const until = new Date(now.getTime() + 24 * 3600000);
+    const snoozed = snoozeCard(card, until);
+    expect(snoozed.due).toBe(until.toISOString());
+    expect(snoozed.reps).toBe(card.reps);
+    expect(snoozed.stability).toBe(card.stability);
+    expect(snoozed.state).toBe(card.state);
+  });
+  it("leaves cards already due later untouched", () => {
+    const card = gradeCard(seedCard(now), "Good", now); // due days out
+    const until = new Date(now.getTime() + 24 * 3600000);
+    expect(snoozeCard(card, until)).toBe(card);
+  });
+});
 
 describe("scoreToRating", () => {
   it("maps the rebalance thresholds", () => {

@@ -12,6 +12,11 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Sift's lesson counts as seeing the word (v126):** finishing the
+  lesson after a left-swipe now gives the same "introduced" credit
+  Learn mode gives AND moves the word's remaining due cards to
+  tomorrow — you just studied it, so it isn't re-tested minutes
+  later. Nothing else about the schedule changes (no rep, no grade).
 - **Sift teaches what you don't know (v125):** left-swiping a word in
   Sift now opens the same lesson page Learn mode shows — sound,
   per-character breakdown with etymology, related words you already
