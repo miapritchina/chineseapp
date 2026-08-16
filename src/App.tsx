@@ -251,8 +251,13 @@ export function App() {
     setAutoSpeakEnabled(loadSettings().autoSpeak);
   }, []);
   // Brush-form hanzi (v114): Kaiti is built into iOS/macOS, so this is
-  // a zero-download font swap on the big glyphs. Display pref only —
-  // localStorage, not user data.
+  // a font swap on the big glyphs. Display pref only — localStorage,
+  // not user data. Native Kai fonts are "document support only" on
+  // iOS (invisible to Safari CSS — the v114 toggle silently did
+  // nothing there), so enabling the toggle also loads the LXGW WenKai
+  // webfont: unicode-range-sliced woff2 from jsdelivr, so only the
+  // slices for glyphs actually on screen download, and the existing
+  // SW jsdelivr rule caches them for offline.
   const [brushFont, setBrushFont] = useState<boolean>(() => {
     try {
       return localStorage.getItem("chinese.brushFont") === "1";
@@ -262,6 +267,13 @@ export function App() {
   });
   useEffect(() => {
     document.documentElement.classList.toggle("brush-hanzi", brushFont);
+    if (brushFont && !document.getElementById("brush-font-css")) {
+      const link = document.createElement("link");
+      link.id = "brush-font-css";
+      link.rel = "stylesheet";
+      link.href = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css";
+      document.head.appendChild(link);
+    }
     try {
       localStorage.setItem("chinese.brushFont", brushFont ? "1" : "0");
     } catch {
@@ -576,7 +588,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v131"
+          version="chinese v132"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"

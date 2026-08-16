@@ -11,6 +11,18 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **Brush font now actually changes the glyphs on iPhone (v132):**
+  iOS ships Kaiti as a "document support only" font that Safari CSS
+  cannot see, so the v114 toggle silently did nothing on the phone.
+  Turning it on now lazy-loads the LXGW WenKai webfont (sliced —
+  only the glyphs on screen download; cached by the service worker
+  for offline). Native Kaiti still wins where available (macOS).
+- **No more white plate behind the drill hero (v132):** the
+  recognition card's focal character sits directly on the page
+  background like every other big glyph; the dark-mode ink pin that
+  white tile required (BUG-13) is gone with it.
+
 ### Changed
 - **Grade buttons say what you mean (v131):** Again/Good/Easy →
   "Didn't know" / "Know" / "Confident" — the buttons describe your
