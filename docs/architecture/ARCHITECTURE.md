@@ -203,7 +203,9 @@ a right-swipe applies a real Good to every facet of the word that is
 due at that moment — except `production` (rebalance stage 2): a
 recognition self-report can't clear a writing card. A left-swipe ("I
 don't know this") opens the word's lesson inline — the same `LearnCard`
-Learn mode uses (extracted v125). Finishing the lesson counts as
+Learn mode uses (extracted v125; since v128 its breakdown cards
+unfold their components in place, recursively, and the hero has a
+whole-word ⤢ tree button). Finishing the lesson counts as
 having just seen the word (v126): the passive-view credit plus
 `snoozeItem` — a schedule-only floor (`snoozeCard` in `lib/fsrs.ts`)
 that moves every still-due row to tomorrow without touching stability,

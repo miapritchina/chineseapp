@@ -12,6 +12,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **Lesson breakdown unfolds in place, any depth (v128):** every
+  character card in a lesson (Learn mode, Sift lessons, Focus) now
+  has a ▾ button that splices its components into the list right
+  below it, indented — and those components can be unfolded further,
+  layer after layer. The whole word also gets its own ⤢ tree button
+  next to replay, opening the full decomposition tree.
 - **Focus mode (v127):** finds problem words — seen 8+ times, still
   failing (4+ lapses or a 30%+ lapse rate), never stabilizing — and
   gives the worst 5 concentrated attention: each word's lesson, then
