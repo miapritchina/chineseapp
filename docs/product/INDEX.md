@@ -9,6 +9,13 @@ others are reference snapshots.
 These describe work the project intends to do. Treat as authoritative
 until superseded.
 
+- **[`exercise-system-rebalance.md`](exercise-system-rebalance.md)** —
+  Aug 16 2026. Review of the drill system's proficiency imbalance
+  (weak-evidence grades leaking across FSRS rows) + staged fix plan:
+  cluster grading, Sift/production exclusion, honest per-drill grade
+  mappings, cascade bookkeeping, audio-first drill. **Proposed —
+  awaiting owner sign-off.**
+
 - **[`explore-page.md`](explore-page.md)** — July 19 2026. One
   Explore surface (focus stack + breadcrumb, saved-set connection
   badges) replacing the Network, Components, and Phonetics pages.
