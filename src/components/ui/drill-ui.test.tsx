@@ -14,7 +14,7 @@ describe("GradeButtons", () => {
         <GradeButtons onPick={onPick} />
       </div>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Good" }));
+    fireEvent.click(screen.getByRole("button", { name: "Know" }));
     expect(onPick).toHaveBeenCalledWith("Good");
     expect(onParent).not.toHaveBeenCalled();
   });
@@ -27,7 +27,7 @@ describe("GradeButtons", () => {
         <GradeButtons onPick={onPick} locked />
       </div>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Easy" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confident" }));
     expect(onPick).not.toHaveBeenCalled();
     expect(onParent).toHaveBeenCalledTimes(1);
   });

@@ -12,6 +12,13 @@ import type { RatingName } from "../../lib/fsrs";
 // swallowed and `onPick` fires.
 
 const DEFAULT_RATINGS: RatingName[] = ["Again", "Good", "Easy"];
+// Owner-facing labels (v131): the FSRS rating names stay the data
+// vocabulary, but the buttons describe the relationship with the word.
+const DEFAULT_LABELS: Partial<Record<RatingName, string>> = {
+  Again: "Didn't know",
+  Good: "Know",
+  Easy: "Confident",
+};
 const RATING_CLS: Record<RatingName, string> = {
   Again: "review-btn-again",
   Good: "review-btn-good",
@@ -41,7 +48,7 @@ export function GradeButtons({ onPick, ratings = DEFAULT_RATINGS, labels, picked
             onPick(r);
           }}
         >
-          {labels?.[r] ?? r}
+          {labels?.[r] ?? DEFAULT_LABELS[r] ?? r}
         </button>
       ))}
     </>
