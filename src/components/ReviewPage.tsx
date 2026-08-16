@@ -5,7 +5,7 @@ import { PageHeader } from "./ui/PageHeader";
 import { EmptyState } from "./ui/EmptyState";
 import { DrillShell } from "./ui/DrillShell";
 import type { Facet, ItemKind } from "../hooks/useReview";
-import type { RatingName } from "../lib/fsrs";
+import { scoreToRating, type RatingName } from "../lib/fsrs";
 import { CombinedRecognitionCard } from "./CombinedRecognitionCard";
 import { ClusterRecallCard } from "./ClusterRecallCard";
 import { ProductionCard } from "./ProductionCard";
@@ -15,7 +15,7 @@ import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
-import { interleaveByActivity } from "../lib/drillGen";
+import { interleaveByActivity, type ClusterMemberResult } from "../lib/drillGen";
 import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
@@ -39,7 +39,18 @@ interface Props {
   // Full card map. Used to force-surface cluster members on leech via
   // the active-interleaving rule.
   cards?: Map<string, ReviewCard>;
-  onGrade: (itemKey: string, rating: RatingName, kind?: ItemKind, facet?: Facet) => void;
+  // Auto-graded drills also pass their raw 0–1 score for logging
+  // (rebalance stage 3); self-graded cards omit it.
+  onGrade: (
+    itemKey: string,
+    rating: RatingName,
+    kind?: ItemKind,
+    facet?: Facet,
+    score?: number,
+  ) => void;
+  // Cluster recall outcome — per-member grades, deduped cascade
+  // (rebalance stage 1).
+  onGradeCluster?: (results: ClusterMemberResult[]) => void;
   onAttributeFailure?: (childKey: string) => void;
   onClose: () => void;
   // Flow mode (v114): called when the queue drains, instead of the
@@ -83,6 +94,7 @@ export function ReviewPage({
   dueCards,
   cards,
   onGrade,
+  onGradeCluster,
   onAttributeFailure,
   onClose,
   onComplete,
@@ -366,14 +378,23 @@ export function ReviewPage({
   // Guard against fast double-taps re-grading the same attempt (the
   // drill stays mounted until the next render).
   const lastGradedRef = useRef<string | null>(null);
-  const handleDrillGrade = useCallback(
-    (rating: RatingName) => {
+  // Auto-graded drills hand up a 0–1 score; the rating boundary lives
+  // here so the MC leech-noise rule can see the card's lapses: a wrong
+  // pick on a 4-option drill is 25%-guess-floor evidence, so once a
+  // card is already lapsing (≥2) it grades Hard, not another lapse.
+  const handleDrillScore = useCallback(
+    (score: number) => {
       if (!current) return;
       const k = cardKey(current);
       if (lastGradedRef.current === k) return;
       lastGradedRef.current = k;
       const cur = current;
-      onGrade(cur.itemKey, rating, cur.itemKind, cur.facet);
+      let rating = scoreToRating(score);
+      const isMultipleChoice = cur.facet === "reverseRecognition" || cur.facet === "clozeChar";
+      if (rating === "Again" && isMultipleChoice && (cur.card.lapses ?? 0) >= 2) {
+        rating = "Hard";
+      }
+      onGrade(cur.itemKey, rating, cur.itemKind, cur.facet, score);
       onGradedAdvance();
     },
     [current, onGrade, onGradedAdvance],
@@ -506,7 +527,7 @@ export function ReviewPage({
           answer={current.itemKey}
           gloss={glossOf(current.itemKey)}
           savedWords={savedWords}
-          onGrade={handleDrillGrade}
+          onScore={handleDrillScore}
           onOpenEntity={onOpenEntity}
         />
       </DrillShell>
@@ -528,7 +549,7 @@ export function ReviewPage({
           word={current.itemKey}
           gloss={glossOf(current.itemKey)}
           savedWords={savedWords}
-          onGrade={handleDrillGrade}
+          onScore={handleDrillScore}
           onOpenEntity={onOpenEntity}
         />
       </DrillShell>
@@ -554,7 +575,7 @@ export function ReviewPage({
             component={comp}
             pool={phoneticComponents}
             charExists={(c) => !!chars?.[c]}
-            onGrade={handleDrillGrade}
+            onScore={handleDrillScore}
             onOpenEntity={onOpenEntity}
           />
         )}
@@ -592,7 +613,7 @@ export function ReviewPage({
             key={cardKey(current)}
             char={current.itemKey}
             charData={cd}
-            onGrade={handleDrillGrade}
+            onScore={handleDrillScore}
             onOpenEntity={onOpenEntity}
           />
         </div>
@@ -615,11 +636,8 @@ export function ReviewPage({
         <ClusterRecallCard
           key={cardKey(current)}
           cluster={clusterWords}
-          onGraded={(rating) => {
-            for (const w of clusterWords) {
-              onGrade(w, rating, "word", "meaningRecognition");
-              onGrade(w, rating, "word", "soundRecognition");
-            }
+          onGraded={(results) => {
+            onGradeCluster?.(results);
             advanceWithoutGrading(current);
           }}
           onOpenEntity={onOpenEntity}

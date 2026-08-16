@@ -12,7 +12,8 @@ interface Props {
   words: string[];
   onClose: () => void;
   // Swipe right: "I know this" — the parent grades Good on every due
-  // facet, clearing the word from all of today's workouts.
+  // facet except production (a recognition self-report can't clear a
+  // writing card), clearing the word from today's other workouts.
   onKnow: (word: string) => void;
   // Swipe left: keep for practice — no schedule change, but hidden
   // from Sift until tomorrow (persisted by the parent).
@@ -93,7 +94,7 @@ export function SiftPage({ words, onClose, onKnow, onKeep, onOpenEntity, onCompl
         <EmptyState
           variant="review"
           title="Sifted through."
-          hint="Right-swiped words are done for today everywhere; left-swiped ones stay in the drills."
+          hint="Right-swiped words are done for today everywhere except Writing; left-swiped ones stay in the drills."
         />
       </div>
     );

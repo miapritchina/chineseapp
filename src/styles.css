@@ -1311,38 +1311,38 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+/* Wrapper so the ✗ miss chip can overlay the Entity card without
+   stealing its tap (reveal → open sheet). The missed state itself
+   reuses .entity.is-wrong. */
 .cluster-cell {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 10px;
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  font: inherit;
-  text-align: center;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 110px;
 }
-.cluster-cell.is-revealed {
-  border-color: var(--accent);
+.cluster-cell > .entity {
+  flex: 1;
 }
-.cluster-cell-hanzi {
-  font-family: "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", system-ui, sans-serif;
-  font-size: 36px;
-  line-height: 1;
-  font-weight: 500;
-}
-.cluster-cell-pinyin {
+.cluster-miss-chip {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
   font-size: 14px;
-  color: var(--muted);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.cluster-cell-gloss {
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.3;
+.cluster-miss-chip.is-on {
+  background: var(--feedback-wrong, #b91c1c);
+  border-color: var(--feedback-wrong, #b91c1c);
+  color: #fff;
 }
 
 /* Combined recognition card (v71): meaning + sound on one surface,

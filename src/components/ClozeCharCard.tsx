@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { RatingName } from "../lib/fsrs";
 import { autoSpeak, stopSpeech } from "../lib/speech";
 import { clusterFor } from "../lib/confusionClusters";
 import { pickClozeTask } from "../lib/drillGen";
@@ -9,15 +8,19 @@ interface Props {
   word: string;
   gloss: string;
   savedWords: string[];
-  onGrade: (rating: RatingName) => void;
+  // 0–1 performance score (binary: correct pick = 1, wrong = 0).
+  onScore: (score: number) => void;
   // Open the EntitySheet for a tapped character (post-answer).
   onOpenEntity?: (key: string) => void;
 }
 
 // Drill 3: the word with one character masked; pick the missing char.
 // Distractors come from the masked char's confusion cluster when it
-// has one, padded from the user's other saved characters.
-export function ClozeCharCard({ word, gloss, savedWords, onGrade, onOpenEntity }: Props) {
+// has one, padded from the user's other saved characters. The gloss is
+// hidden until after the pick (rebalance stage 3) — with it visible
+// the drill collapsed into reverse recognition; without it, cloze
+// tests orthographic/collocational knowledge, a distinct facet.
+export function ClozeCharCard({ word, gloss, savedWords, onScore, onOpenEntity }: Props) {
   const [task] = useState(() => pickClozeTask(word, savedWords, clusterFor));
   const [picked, setPicked] = useState<string | null>(null);
   const isCorrect = picked !== null && task !== null && picked === task.answer;
@@ -38,7 +41,7 @@ export function ClozeCharCard({ word, gloss, savedWords, onGrade, onOpenEntity }
   const glyphs = [...word];
   const advance = () => {
     if (picked === null) return;
-    onGrade(isCorrect ? "Good" : "Again");
+    onScore(isCorrect ? 1 : 0);
   };
 
   return (
@@ -74,7 +77,7 @@ export function ClozeCharCard({ word, gloss, savedWords, onGrade, onOpenEntity }
             ),
           )}
         </div>
-        <div className="review-gloss">{gloss || "(no dictionary entry)"}</div>
+        {picked !== null && <div className="review-gloss">{gloss || "(no dictionary entry)"}</div>}
         <div className="phonetic-tap-row">
           {task.options.map((c) => {
             const isThisAnswer = c === task.answer;

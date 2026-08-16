@@ -12,6 +12,34 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Exercise-system rebalance, stages 1–4 (v122)** ([plan](docs/product/exercise-system-rebalance.md)):
+  drill grades now reflect how much evidence each drill actually
+  provides.
+  - **Cluster recall grades what you actually knew:** the single
+    group grade ("Knew most" → Good for everyone) is gone — mark
+    missed words with a ✗ chip and each member is graded
+    individually (missed → Again). Only rows due right now are
+    touched, and a component shared by several cluster members gets
+    cascade credit once, not once per member.
+  - **Sift right-swipe no longer clears the Writing card:** "I know
+    this" is a recognition self-report; the production drill stays
+    due.
+  - **Auto-graded drills score in percent, rate at the boundary:**
+    reverse/cloze/family-sweep/production compute a 0–1 score mapped
+    to FSRS ratings (100% → Good, ≥75% → Hard, else Again — never
+    Easy). Family sweep gets partial credit (5/6 recalled is no
+    longer a full lapse); production mistakes cost proportionally to
+    stroke count; a clean trace earns Good instead of Easy; wrong
+    picks on the two multiple-choice drills grade Hard once a card
+    is already lapsing (≥2), so mis-taps stop feeding leech
+    detection. Raw scores land in a new additive
+    `user_review_log.score` column (migration 0014).
+  - **Cloze hides the gloss until after the pick** — with it visible
+    the drill was reverse recognition in disguise; now it tests
+    knowing which character belongs in the word.
+  - **Cascade credit survives sync:** credited cards stamp
+    `last_review` so a re-sync can't revert the boost, and a
+    never-reviewed card now stays New until its first real grade.
 - **Chain: build the next word from loose characters (v121):**
   nothing is offered to recognize any more — no candidate words, no
   meanings. The link character sits on the build row and you produce

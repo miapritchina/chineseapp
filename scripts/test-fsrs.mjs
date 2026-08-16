@@ -104,9 +104,11 @@ function cascade(prev, capDays, now) {
     ...result,
     stability: dampedS,
     due: new Date(dueMs),
+    state: prev.state,
+    learning_steps: prev.learning_steps,
     reps: prev.reps,
     lapses: prev.lapses,
-    last_review: prev.last_review,
+    last_review: now,
   };
 }
 
@@ -133,19 +135,28 @@ test("cascade credit yields stability between prev and full-Good", () => {
   );
 });
 
-test("cascade credit does NOT bump reps or lapses or last_review", () => {
+test("cascade credit does NOT bump reps, lapses, or state — but stamps last_review", () => {
   const now = new Date("2026-05-08T12:00:00Z");
   let c = scheduler.next(createEmptyCard(now), now, Rating.Good).card;
   const reps0 = c.reps;
   const lapses0 = c.lapses;
-  const lastReview0 = c.last_review;
-  const cascaded = cascade(c, null, c.due);
+  const state0 = c.state;
+  const at = c.due;
+  const cascaded = cascade(c, null, at);
   assert.equal(cascaded.reps, reps0);
   assert.equal(cascaded.lapses, lapses0);
-  assert.equal(
-    cascaded.last_review?.getTime?.() ?? null,
-    lastReview0?.getTime?.() ?? null,
-  );
+  assert.equal(cascaded.state, state0, "state is preserved, not advanced");
+  // Stamped so the sync merge's recency tie-break keeps the credited
+  // row instead of reverting it to a stale remote copy.
+  assert.equal(cascaded.last_review.getTime(), at.getTime());
+});
+
+test("cascade credit keeps a never-reviewed card in the New state", () => {
+  const now = new Date("2026-05-08T12:00:00Z");
+  const c = createEmptyCard(now);
+  const cascaded = cascade(c, 7, now);
+  assert.equal(cascaded.state, 0, "State.New preserved");
+  assert.equal(cascaded.reps, 0);
 });
 
 test("cascade with cap=null lets stability run free past 7 days", () => {

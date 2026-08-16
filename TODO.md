@@ -33,7 +33,7 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 
 | Item | Notes |
 |---|---|
-| **Remaining drill candidates** — audio-first + speed sprint | Drills 1–4 shipped v98 ([spec](docs/product/recognition-drills.md)). Left: **audio-first** (TTS-only prompt → pick the hanzi; fold into ReverseRecognitionCard as a prompt mode) and **speed sprint** (timed binary pass over reps>0 cards, no FSRS writes). |
+| **Remaining drill candidates** — audio-first + speed sprint | Drills 1–4 shipped v98 ([spec](docs/product/recognition-drills.md)). Left: **audio-first** (TTS-only prompt → pick the hanzi; fold into ReverseRecognitionCard as a prompt mode; doubles as [rebalance stage 5](docs/product/exercise-system-rebalance.md) — grades `soundRecognition` via the percent path) and **speed sprint** (timed binary pass over reps>0 cards, no FSRS writes). |
 | **Graph performance + usability** | [Redesign spec §4G](docs/product/chinese-app-ux-redesign.md#4g-graph-pages--performance--usability). Reduce node count by default; larger tap targets; WebGL renderer if available. |
 | Cross-device deletion propagation | Tombstone column or "wholesale replace" pass. [Open work in ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | Fix [BUG-4](BUGS.md) (hamburger dismiss) | Cosmetic; touchstart listener + non-reflow close. |

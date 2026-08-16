@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { RatingName } from "../lib/fsrs";
 import { autoSpeak, stopSpeech } from "../lib/speech";
 import { pickReverseOptions } from "../lib/drillGen";
 import { Entity } from "./Entity";
@@ -9,8 +8,9 @@ interface Props {
   answer: string;
   gloss: string;
   savedWords: string[];
-  // Tap correct → Good, tap wrong → Again (reveal first, advance on tap).
-  onGrade: (rating: RatingName) => void;
+  // 0–1 performance score (binary here: correct pick = 1, wrong = 0).
+  // The parent maps it to an FSRS rating via scoreToRating.
+  onScore: (score: number) => void;
   // Open the EntitySheet for a tapped option (post-answer).
   onOpenEntity?: (key: string) => void;
 }
@@ -21,7 +21,7 @@ export function ReverseRecognitionCard({
   answer,
   gloss,
   savedWords,
-  onGrade,
+  onScore,
   onOpenEntity,
 }: Props) {
   const { chars } = useCharsCtx();
@@ -54,7 +54,7 @@ export function ReverseRecognitionCard({
 
   const advance = () => {
     if (picked === null) return;
-    onGrade(isCorrect ? "Good" : "Again");
+    onScore(isCorrect ? 1 : 0);
   };
 
   return (

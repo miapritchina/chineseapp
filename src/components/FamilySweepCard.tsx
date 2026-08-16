@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import type { RatingName } from "../lib/fsrs";
 import { autoSpeak, stopSpeech } from "../lib/speech";
-import { buildFamilySweep } from "../lib/drillGen";
+import { buildFamilySweep, familySweepScore } from "../lib/drillGen";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import { Entity } from "./Entity";
 
@@ -9,15 +8,17 @@ interface Props {
   component: PhoneticComponent;
   pool: PhoneticComponent[];
   charExists: (char: string) => boolean;
-  onGrade: (rating: RatingName) => void;
+  // 0–1 performance score: hits / (members + wrong taps), so a near-
+  // miss earns partial credit instead of a full lapse (rebalance
+  // stage 3).
+  onScore: (score: number) => void;
   // Open the EntitySheet for a tapped character (post-confirm).
   onOpenEntity?: (key: string) => void;
 }
 
 // Drill 4: spot the component — tap every character built with it;
-// decoys come from other components' families. Exact set → Good,
-// anything else → Again.
-export function FamilySweepCard({ component, pool, charExists, onGrade, onOpenEntity }: Props) {
+// decoys come from other components' families.
+export function FamilySweepCard({ component, pool, charExists, onScore, onOpenEntity }: Props) {
   const [task] = useState(() => buildFamilySweep(component, pool, charExists));
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [confirmed, setConfirmed] = useState(false);
@@ -52,7 +53,7 @@ export function FamilySweepCard({ component, pool, charExists, onGrade, onOpenEn
 
   const advance = () => {
     if (!confirmed) return;
-    onGrade(exact ? "Good" : "Again");
+    onScore(familySweepScore(task.members, selected));
   };
 
   return (

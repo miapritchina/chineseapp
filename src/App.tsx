@@ -102,7 +102,8 @@ export function App() {
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
   });
-  const { dueCards, grade, attributeFailure, recordInference, creditPassiveView } = reviewState;
+  const { dueCards, grade, gradeCluster, attributeFailure, recordInference, creditPassiveView } =
+    reviewState;
 
   // Weakest-first shelf sort: per saved word, the lower of the two
   // recognition cards' FSRS stability (never-reviewed = 0 = weakest).
@@ -544,7 +545,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v121"
+          version="chinese v122"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -637,8 +638,11 @@ export function App() {
             // Good on every facet of this word that is due right now —
             // "counts as repeated in all workouts today". Non-due rows
             // are untouched (they weren't in today's workouts anyway).
+            // Production is exempt (rebalance stage 2): a recognition
+            // self-report can't clear a writing card.
             const now = new Date();
             for (const row of reviewState.cards.values()) {
+              if (row.facet === "production") continue;
               if (row.itemKey === w && isDue(row.card, now)) {
                 grade(w, "Good", row.itemKind, row.facet);
               }
@@ -679,7 +683,8 @@ export function App() {
           randomOrder={reviewLaunched.randomOrder}
           includeSubchars={reviewLaunched.includeSubchars}
           sessionSize={reviewLaunched.sessionSize}
-          onGrade={(key, rating, kind, facet) => grade(key, rating, kind, facet)}
+          onGrade={(key, rating, kind, facet, score) => grade(key, rating, kind, facet, score)}
+          onGradeCluster={gradeCluster}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={() => {
             cancelFlow();

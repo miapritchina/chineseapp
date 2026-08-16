@@ -2,13 +2,7 @@
 // renders; we instantiate it once. Card storage shape is just a plain
 // serialized version of ts-fsrs's Card with Date fields → ISO strings.
 
-import {
-  fsrs,
-  createEmptyCard,
-  Rating,
-  type Card,
-  type Grade,
-} from "ts-fsrs";
+import { fsrs, createEmptyCard, Rating, type Card, type Grade } from "ts-fsrs";
 
 // FSRS-6, retention 0.9. `enable_short_term: false` disables the intraday
 // "learning steps" (the default ["1m","10m"]) — without it, a brand-new
@@ -20,6 +14,15 @@ import {
 const scheduler = fsrs({ enable_short_term: false });
 
 export type RatingName = "Again" | "Hard" | "Good" | "Easy";
+
+// Auto-graded drills compute a 0–1 performance score; this is the one
+// boundary where it becomes an FSRS rating. Never Easy — hint-rich
+// drill formats don't provide recall-strength evidence.
+export function scoreToRating(score: number): RatingName {
+  if (score >= 1) return "Good";
+  if (score >= 0.75) return "Hard";
+  return "Again";
+}
 
 const RATING_BY_NAME: Record<RatingName, Grade> = {
   Again: Rating.Again,
@@ -95,8 +98,12 @@ export function gradeCard(
 //   3. Optionally caps the new due date so a never-directly-reviewed item
 //      can't graduate past `capDays`. The plan calls for a 7-day cap on
 //      first cascade credit.
-//   4. Leaves `reps`, `lapses`, and `last_review` untouched — this is not
-//      a direct review and shouldn't pretend to be one.
+//   4. Leaves `reps` and `lapses` untouched — this is not a direct
+//      review and shouldn't pretend to be one. `state`/`learning_steps`
+//      are preserved too, so a never-reviewed card stays New and its
+//      first real grade schedules as a first review. `last_review` IS
+//      stamped: the sync merge breaks equal-reps ties by recency, so
+//      an unstamped credit would lose to the stale remote row.
 export function applyCascadeCredit(
   prev: SerializedCard,
   capDays: number | null,
@@ -116,9 +123,11 @@ export function applyCascadeCredit(
     ...result,
     stability: dampedS,
     due: new Date(dueMs).toISOString(),
+    state: prev.state,
+    learning_steps: prev.learning_steps,
     reps: prev.reps,
     lapses: prev.lapses,
-    last_review: prev.last_review,
+    last_review: now.toISOString(),
   };
 }
 
