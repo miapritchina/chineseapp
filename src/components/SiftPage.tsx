@@ -28,6 +28,8 @@ interface Props {
   onOpenEntity?: (key: string) => void;
   // Open the full d3 decomposition tree for a character (lesson view).
   onOpenTree?: (char: string) => void;
+  // Explore-from-here on the lesson card (v130): ends the session.
+  onExplore?: (kind: "word" | "char", key: string) => void;
   // Flow mode (v114): called when the deck is exhausted, instead of
   // showing the end state — the parent advances to the next stage.
   onComplete?: () => void;
@@ -46,6 +48,7 @@ export function SiftPage({
   onLessonDone,
   onOpenEntity,
   onOpenTree,
+  onExplore,
   onComplete,
 }: Props) {
   const { chars } = useCharsCtx();
@@ -130,6 +133,7 @@ export function SiftPage({
           }}
           onOpenEntity={(key) => onOpenEntity?.(key)}
           onOpenTree={onOpenTree}
+          onExplore={onExplore}
         />
       </DrillShell>
     );

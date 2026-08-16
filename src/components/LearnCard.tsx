@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
-import { wordsSharingChar } from "../lib/explore";
 import { cleanEtymologyNotes } from "../lib/etymology";
 import { autoSpeak, speak } from "../lib/speech";
-import { Entity } from "./Entity";
+import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
+import { detectPos, POS_COLOR, POS_LABEL } from "../lib/pos";
+import type { Word } from "../lib/types";
+import { StatusButton } from "./StatusButton";
 import { CharFormula } from "./ui/CharFormula";
+import { RelatedWordsColumns } from "./sheet/RelatedWordsColumns";
+import { MnemonicSection } from "./sheet/MnemonicSection";
 import { useResolvedDefs } from "../hooks/useResolvedDefs";
 
 interface Props {
@@ -16,25 +20,35 @@ interface Props {
   // Open the full d3 decomposition tree — for the whole word (hero
   // button, v128) or a single character.
   onOpenTree?: (key: string) => void;
+  // Jump into the Explore page focused on this word (v130 — the
+  // sheet's "Explore from here" merged in; ends the session).
+  onExplore?: (kind: "word" | "char", key: string) => void;
 }
 
-// One word's lesson: sound → per-character breakdown (components with
-// role colors + the dictionary's etymology notes) → the owner's
-// related words → Continue. Extracted from LearnPage (v125) so Sift
-// can teach a word the user just marked as unknown. Since v128 every
-// breakdown card can be uncollapsed in place: its components join the
-// list as the next entries, indented, themselves expandable — any
-// number of layers deep.
-export function LearnCard({ word, continueLabel, onContinue, onOpenEntity, onOpenTree }: Props) {
+// One word's lesson page. Since v130 this is the merged study surface
+// (owner: lesson + sheet + tree said the same thing three ways — the
+// sheet's elements now live HERE): status star, POS chip, sound →
+// per-character breakdown (expandable in place, any depth — v128) →
+// related words per character → mnemonic → explore link. Extracted
+// from LearnPage in v125; also used by Sift lessons and Focus.
+export function LearnCard({
+  word,
+  continueLabel,
+  onContinue,
+  onOpenEntity,
+  onOpenTree,
+  onExplore,
+}: Props) {
   const { chars } = useCharsCtx();
-  const { findWord } = useDictCtx();
-  const { savedList } = useSavedCtx();
+  const { findWord, ensureCached } = useDictCtx();
+  const { getStatus, setStatus } = useSavedCtx();
   // Characters whose components are unfolded into the list.
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
-  const savedWords = useMemo(() => savedList.map((s) => s.word), [savedList]);
   const entry = findWord(word);
   const heroDefs = useResolvedDefs(entry?.definitions ?? chars?.[word]?.definitions ?? []);
+  const pos = heroDefs.length > 0 ? detectPos({ word, definitions: heroDefs } as Word) : null;
+  const isMulti = [...word].length > 1;
 
   // Hear the word as its lesson opens.
   useEffect(() => {
@@ -66,11 +80,27 @@ export function LearnCard({ word, continueLabel, onContinue, onOpenEntity, onOpe
   };
   for (const c of glyphs) visit(c, 0, new Set([c]));
 
-  const related = wordsSharingChar(word, savedWords).slice(0, 6);
+  // Per-character glosses with "variant of X" resolved; one background
+  // fetch covers every cross-ref target in the visible list.
+  const itemTargetsKey = useMemo(
+    () => items.flatMap(({ char: c }) => crossRefTargets(chars?.[c]?.definitions ?? [])).join("\n"),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items.map((i) => i.char).join(""), chars],
+  );
+  useEffect(() => {
+    if (itemTargetsKey) void ensureCached(itemTargetsKey.split("\n"));
+  }, [itemTargetsKey, ensureCached]);
 
   return (
     <div className="learn-body" key={word}>
       <div className="learn-hero">
+        <div className="learn-hero-status">
+          <StatusButton
+            status={getStatus(word)}
+            variant="iconLg"
+            onChange={(next) => setStatus(word, next)}
+          />
+        </div>
         <span
           className="learn-hanzi is-explorable"
           onClick={() => onOpenEntity(word)}
@@ -82,7 +112,15 @@ export function LearnCard({ word, continueLabel, onContinue, onOpenEntity, onOpe
         <div className="review-pinyin review-pinyin-lg">
           {entry?.pinyin ?? chars?.[word]?.pinyin ?? ""}
         </div>
-        <div className="review-gloss">{heroDefs.slice(0, 3).join("; ")}</div>
+        <div className="review-gloss">
+          {pos && (
+            <span className="sheet-pos" style={{ color: POS_COLOR[pos] }}>
+              {POS_LABEL[pos].toUpperCase()}
+            </span>
+          )}
+          {pos && <span className="sheet-defs-sep"> • </span>}
+          {heroDefs.slice(0, 3).join("; ")}
+        </div>
         <div className="learn-hero-actions">
           <button type="button" className="review-tap-replay" onClick={() => speak(word)}>
             🔊 replay
@@ -102,6 +140,7 @@ export function LearnCard({ word, continueLabel, onContinue, onOpenEntity, onOpe
         const canExpand = pieces.some((p) => chars?.[p.char]);
         const isOpen = expanded.has(c);
         const note = cleanEtymologyNotes(cd.notes);
+        const def = resolveCrossRefs(cd.definitions ?? [], findWord)[0] ?? "";
         return (
           <div
             className="learn-char"
@@ -119,7 +158,7 @@ export function LearnCard({ word, continueLabel, onContinue, onOpenEntity, onOpe
               </span>
               <span className="learn-char-meta">
                 <span className="learn-char-pinyin">{cd.pinyin}</span>
-                <span className="learn-char-def">{cd.definitions?.[0] ?? ""}</span>
+                <span className="learn-char-def">{def}</span>
               </span>
               {canExpand && (
                 <button
@@ -156,21 +195,26 @@ export function LearnCard({ word, continueLabel, onContinue, onOpenEntity, onOpe
         );
       })}
 
-      {related.length > 0 && (
-        <div className="learn-related">
-          <div className="launch-section-title">You already know</div>
-          <div className="explore-cards">
-            {related.map((w) => (
-              <Entity
-                key={w}
-                itemKey={w}
-                size="sm"
-                showStatus={false}
-                onTap={() => onOpenEntity(w)}
-              />
-            ))}
-          </div>
-        </div>
+      <RelatedWordsColumns wordKey={word} onOpenWord={onOpenEntity} />
+
+      <MnemonicSection
+        itemKey={word}
+        isMultiCharWord={isMulti}
+        pinyin={entry?.pinyin ?? chars?.[word]?.pinyin ?? ""}
+        defs={heroDefs}
+        charData={chars?.[word]}
+        word={entry}
+        chars={chars ?? {}}
+      />
+
+      {onExplore && (
+        <button
+          type="button"
+          className="sheet-network-link"
+          onClick={() => onExplore(isMulti ? "word" : "char", word)}
+        >
+          Explore from here →
+        </button>
       )}
 
       <button

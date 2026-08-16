@@ -14,6 +14,8 @@ interface Props {
   onOpenEntity: (key: string) => void;
   // Open the full d3 decomposition tree for a character (v115).
   onOpenTree?: (char: string) => void;
+  // Explore-from-here on the lesson card (v130): ends the session.
+  onExplore?: (kind: "word" | "char", key: string) => void;
   // Called once per finished lesson card — applies the small
   // passive-style schedule nudge ("introduced", not "answered").
   onIntroduced: (word: string) => void;
@@ -32,6 +34,7 @@ export function LearnPage({
   onClose,
   onOpenEntity,
   onOpenTree,
+  onExplore,
   onIntroduced,
   onComplete,
 }: Props) {
@@ -78,6 +81,7 @@ export function LearnPage({
         }}
         onOpenEntity={onOpenEntity}
         onOpenTree={onOpenTree}
+        onExplore={onExplore}
       />
     </DrillShell>
   );
