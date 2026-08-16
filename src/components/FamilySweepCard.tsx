@@ -62,10 +62,10 @@ export function FamilySweepCard({ component, pool, charExists, onScore, onOpenEn
       onClick={confirmed ? advance : undefined}
     >
       <div className="phonetic-tap-inner">
-        <div className="phonetic-tap-prompt">
-          Tap every character that contains{" "}
+        <div className="phonetic-tap-prompt">Tap all that contain:</div>
+        <div className="sweep-hero">
           <span
-            className={onOpenEntity ? "is-explorable" : undefined}
+            className={`sweep-hero-glyph${onOpenEntity ? " is-explorable" : ""}`}
             onClick={
               onOpenEntity
                 ? (e) => {
@@ -77,7 +77,7 @@ export function FamilySweepCard({ component, pool, charExists, onScore, onOpenEn
           >
             {component.char}
           </span>
-          {component.pinyin ? ` (${component.pinyin})` : ""}
+          {component.pinyin && <span className="sweep-hero-pinyin">{component.pinyin}</span>}
         </div>
         <div className="phonetic-tap-row sweep-grid">
           {task.grid.map((c) => {

@@ -171,8 +171,8 @@ Dark overrides: Correct → `#6dba84` / `rgba(109,186,132,0.15)` / `#6dba84`; Wr
 
 | Token | Value | Role |
 |---|---|---|
-| `--hanzi-hero` | `120px` | review drill focal character |
-| `--hanzi-large` | `52px` | EntitySheet header, shelf cards |
+| `--hanzi-hero` | `120px` | review drill focal character; ×0.65 for the cloze word and sweep hero component (v129) |
+| `--hanzi-large` | `52px` | EntitySheet header, shelf cards; drill pick / cluster / disambig glyphs (v129 size pass) |
 | `--hanzi-medium` | `36px` | search results, word bank, component preview |
 | `--hanzi-small` | `22px` | phonetics preview, inline refs |
 | `--heading-1` | `20px` | section headers |

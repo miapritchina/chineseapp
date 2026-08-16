@@ -63,7 +63,7 @@ export function ReverseRecognitionCard({
       onClick={picked !== null ? advance : undefined}
     >
       <div className="phonetic-tap-inner">
-        <div className="phonetic-tap-prompt">Which word means…</div>
+        <div className="phonetic-tap-prompt">Translate:</div>
         <div className="reverse-gloss">{gloss || "(no dictionary entry)"}</div>
         <div className="phonetic-tap-row reverse-row">
           {options.map((w) => {

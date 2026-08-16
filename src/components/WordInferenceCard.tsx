@@ -43,9 +43,7 @@ export function WordInferenceCard({ word, glossPool, onGotIt, onMissed, onOpenEn
       onClick={picked !== null ? advance : undefined}
     >
       <div className="phonetic-tap-inner">
-        <div className="phonetic-tap-prompt">
-          New word from your characters — what does it mean?
-        </div>
+        <div className="phonetic-tap-prompt">Guess the meaning</div>
         <div
           className={`inference-hanzi${picked !== null && onOpenEntity ? " is-explorable" : ""}`}
           onClick={

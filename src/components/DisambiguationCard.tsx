@@ -20,7 +20,7 @@ export function DisambiguationCard({ focus, neighbors, onContinue, onOpenEntity 
   const all = [focus, ...neighbors];
   return (
     <div className="disambig-root">
-      <div className="disambig-banner">Confusable cluster — compare before answering.</div>
+      <div className="disambig-banner">Easily confused — compare.</div>
       <div className="disambig-grid">
         {all.map((c, i) => (
           <Entity

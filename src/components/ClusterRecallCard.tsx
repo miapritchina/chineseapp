@@ -36,9 +36,7 @@ export function ClusterRecallCard({ cluster, onGraded, onOpenEntity }: Props) {
   return (
     <div className="phonetic-tap">
       <div className="phonetic-tap-inner">
-        <div className="phonetic-tap-prompt">
-          Related words — recall meaning and sound before tapping each one.
-        </div>
+        <div className="phonetic-tap-prompt">Recall each, then tap to check</div>
         <div className="cluster-grid">
           {cluster.map((w) => {
             const isRevealed = revealed.has(w);

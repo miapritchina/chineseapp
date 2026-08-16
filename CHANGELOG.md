@@ -11,6 +11,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Drill design pass (v129):** bigger hanzi, terser prompts, more
+  distinct layouts. Family sweep shows its component huge above the
+  grid ("Tap all that contain:"); the cloze word grows to near-hero
+  size ("Fill the gap"); cluster/confusable cards get large glyphs on
+  full-width cells; Reverse says just "Translate:" with the gloss
+  bold and larger; the Write drill drops its redundant prompt line
+  (the header tag already says Write); inference says "Guess the
+  meaning"; Sift's swipe hint shrinks to one line.
+
 ### Added
 - **Lesson breakdown unfolds in place, any depth (v128):** every
   character card in a lesson (Learn mode, Sift lessons, Focus) now
