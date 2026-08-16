@@ -201,7 +201,10 @@ card nudges the word's schedule without recording a rep.
 Sift mode (v113, `SiftPage` + `lib/sift.ts`) is grading, not credit:
 a right-swipe applies a real Good to every facet of the word that is
 due at that moment — except `production` (rebalance stage 2): a
-recognition self-report can't clear a writing card. Left-swipes live in a day-stamped localStorage
+recognition self-report can't clear a writing card. A left-swipe ("I
+don't know this") opens the word's lesson inline — the same `LearnCard`
+Learn mode uses (extracted v125) — with no schedule nudge, so the word
+stays due in today's drills. Left-swipes live in a day-stamped localStorage
 list (`chinese.siftKept`) — per-day ephemeral, the same local-only
 carve-out as the old daily new-card counter.
 

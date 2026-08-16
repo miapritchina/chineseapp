@@ -544,7 +544,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v124"
+          version="chinese v125"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -648,6 +648,7 @@ export function App() {
             }
           }}
           onKeep={(w) => keepInSift(w)}
+          onOpenTree={(c) => push({ kind: "char", key: c, view: "tree" })}
         />
       )}
       {showReview && learnWords && (

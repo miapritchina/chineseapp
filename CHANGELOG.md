@@ -12,6 +12,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Sift teaches what you don't know (v125):** left-swiping a word in
+  Sift now opens the same lesson page Learn mode shows — sound,
+  per-character breakdown with etymology, related words you already
+  know — before the next sift card. No schedule change: the word
+  still stays in today's drills. (`LearnCard` extracted from
+  `LearnPage` and reused.)
 - **Reverse drill options stack in one column (v124):** the
   choose-1-of-4 card looked too much like cluster recall's grid of 4
   related words. The four options are now full-width rows, so
