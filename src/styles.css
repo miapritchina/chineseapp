@@ -752,12 +752,21 @@ body {
   max-width: 320px;
   line-height: 1.35;
 }
+/* Single column (owner request, v124): the 4 pick-one options stacked
+   vertically so the drill reads differently from cluster recall's
+   2-column grid of 4 related words. */
 .reverse-row {
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
 .reverse-pick {
   min-width: 108px;
+  width: 100%;
 }
 /* Picking hanzi is the whole task — show them at card size, not chip
    size (owner request, v105). Doubled selector to outrank .entity-sm,

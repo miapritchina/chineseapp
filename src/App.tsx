@@ -544,7 +544,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v123"
+          version="chinese v124"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
