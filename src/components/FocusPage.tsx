@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 import { buildFocusQueue } from "../lib/focus";
+import { pickDrillFontStack } from "../lib/fonts";
 import { scoreToRating, type RatingName } from "../lib/fsrs";
 import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
 import type { Facet, ItemKind } from "../lib/types";
@@ -25,6 +26,9 @@ interface Props {
   ) => void;
   onOpenEntity: (key: string) => void;
   onOpenTree?: (char: string) => void;
+  // Random font per card (v133) — practice/test steps only; lessons
+  // stay in the chosen reading font.
+  randomFont?: boolean;
   // Explore-from-here on the lesson card (v130): ends the session.
   onExplore?: (kind: "word" | "char", key: string) => void;
 }
@@ -36,7 +40,15 @@ interface Props {
 // Practice answers write nothing; only the test round grades. A
 // failed test ends with a mnemonic nudge — a memory hook is the
 // best-evidenced leech treatment.
-export function FocusPage({ words, onClose, onGrade, onOpenEntity, onOpenTree, onExplore }: Props) {
+export function FocusPage({
+  words,
+  onClose,
+  onGrade,
+  onOpenEntity,
+  onOpenTree,
+  onExplore,
+  randomFont,
+}: Props) {
   const { chars } = useCharsCtx();
   const { findWord, ensureCached } = useDictCtx();
   const { savedList } = useSavedCtx();
@@ -121,9 +133,14 @@ export function FocusPage({ words, onClose, onGrade, onOpenEntity, onOpenTree, o
 
   const stepKey = `${current.kind}|${current.word}`;
   const isMulti = [...current.word].length > 1;
+  const fontStyle =
+    randomFont && current.kind !== "lesson"
+      ? ({ "--font-hanzi": pickDrillFontStack(stepKey, current.word) } as React.CSSProperties)
+      : undefined;
 
   return (
     <DrillShell
+      style={fontStyle}
       tag={
         current.kind === "lesson"
           ? "Focus · learn"

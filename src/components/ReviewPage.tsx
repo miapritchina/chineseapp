@@ -16,6 +16,7 @@ import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import { interleaveByActivity, type ClusterMemberResult } from "../lib/drillGen";
+import { pickDrillFontStack } from "../lib/fonts";
 import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
@@ -77,6 +78,9 @@ interface Props {
   // null/undefined = everything due). UI-side only: grading is
   // per-card, so scheduling is untouched.
   sessionSize?: number | null;
+  // Random font per card (v133): each card renders its glyphs in a
+  // deterministic-random face so recognition doesn't overfit one font.
+  randomFont?: boolean;
 }
 
 // Stable id for a card across the (kind, facet, key) tuple. Used to mark
@@ -108,6 +112,7 @@ export function ReviewPage({
   randomOrder,
   includeSubchars,
   sessionSize,
+  randomFont,
 }: Props) {
   const { chars } = useCharsCtx();
   const { findWord, ensureCached } = useDictCtx();
@@ -422,6 +427,11 @@ export function ReviewPage({
   }
 
   const word = current.itemKind === "word" ? findWord(current.itemKey) : null;
+  // Random-font mode: one deterministic face per card, guarded by a
+  // glyph-coverage check (lib/fonts.ts).
+  const fontStyle = randomFont
+    ? ({ "--font-hanzi": pickDrillFontStack(rid(current), current.itemKey) } as React.CSSProperties)
+    : undefined;
   const charData = chars?.[current.itemKey];
   const progressIndex = total - queue.length + 1;
 
@@ -479,6 +489,7 @@ export function ReviewPage({
   if (current.facet === "wordInference") {
     return (
       <DrillShell
+        style={fontStyle}
         tag="New word"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -516,6 +527,7 @@ export function ReviewPage({
   if (current.facet === "reverseRecognition") {
     return (
       <DrillShell
+        style={fontStyle}
         tag="Reverse"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -538,6 +550,7 @@ export function ReviewPage({
   if (current.facet === "clozeChar") {
     return (
       <DrillShell
+        style={fontStyle}
         tag="Cloze"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -561,6 +574,7 @@ export function ReviewPage({
     const comp = phoneticComponentsByChar?.get(current.itemKey);
     return (
       <DrillShell
+        style={fontStyle}
         tag="Family sweep"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -627,6 +641,7 @@ export function ReviewPage({
     const clusterWords = current.itemKey.split("+");
     return (
       <DrillShell
+        style={fontStyle}
         tag="Cluster"
         onClose={onClose}
         progressIndex={progressIndex}
@@ -668,7 +683,7 @@ export function ReviewPage({
   };
 
   return (
-    <div className="review-root">
+    <div className="review-root" style={fontStyle}>
       <PageHeader
         onBack={onClose}
         tag={current.itemKind === "word" ? "Word" : "Character"}

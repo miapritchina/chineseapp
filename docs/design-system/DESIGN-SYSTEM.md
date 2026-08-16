@@ -167,6 +167,13 @@ Dark overrides: Correct → `#6dba84` / `rgba(109,186,132,0.15)` / `#6dba84`; Wr
 
 ### 3.2 Type scale
 
+**Hanzi font hook (v133):** `--font-hanzi` is the single custom
+property every big-glyph class resolves (with an `inherit` fallback).
+`lib/fonts.ts` holds the six-face registry (System / Kai / FangSong /
+Ming / JiXiang Song / WeiBei — subsetted woff2 in `public/fonts/`);
+App sets the var on `<html>` for the chosen font, drill pages set it
+per card for random-font mode.
+
 **Canonical scale tokens** (defined in `styles.css :root`, added in the v90 UX pass — prefer these over raw px in new work):
 
 | Token | Value | Role |

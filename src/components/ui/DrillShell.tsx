@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { PageHeader } from "./PageHeader";
 
 // Shared chrome for a review drill: header (back + tag + progress +
@@ -11,13 +11,15 @@ interface Props {
   total: number;
   onClose: () => void;
   onSkip: () => void;
+  // Per-card CSS vars (random-font mode sets --font-hanzi here).
+  style?: CSSProperties;
   children: ReactNode;
 }
 
-export function DrillShell({ tag, progressIndex, total, onClose, onSkip, children }: Props) {
+export function DrillShell({ tag, progressIndex, total, onClose, onSkip, style, children }: Props) {
   const pct = total > 0 ? Math.min(100, Math.max(0, ((progressIndex - 1) / total) * 100)) : 0;
   return (
-    <div className="review-root">
+    <div className="review-root" style={style}>
       <PageHeader
         onBack={onClose}
         tag={tag}

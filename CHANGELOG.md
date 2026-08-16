@@ -11,6 +11,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Six hanzi fonts + random-font drills (v133):** the Brush toggle
+  became a font picker — System, Kai 楷体, FangSong 仿宋, Ming 明體,
+  JiXiang Song 吉祥宋, WeiBei 魏碑 (owner-supplied faces, subsetted
+  to the app's ~10k characters, self-hosted, downloaded only when
+  used and cached offline). A separate "Random font in drills"
+  switch renders every drill card in a deterministic-random face so
+  recognition stops overfitting one typeface; fonts that can't cover
+  a card's characters are skipped automatically.
+
 ### Fixed
 - **Brush font now actually changes the glyphs on iPhone (v132):**
   iOS ships Kaiti as a "document support only" font that Safari CSS

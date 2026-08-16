@@ -56,6 +56,7 @@ import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
 import { problemWords, FOCUS_POOL } from "./lib/focus";
+import { ensureAllFontFaces, ensureFontFace, fontById, nextFontId } from "./lib/fonts";
 import { isDue } from "./lib/fsrs";
 import { planFlow, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
 import { setAutoSpeakEnabled } from "./lib/speech";
@@ -251,35 +252,49 @@ export function App() {
     setAutoSpeakEnabled(loadSettings().autoSpeak);
   }, []);
   // Brush-form hanzi (v114): Kaiti is built into iOS/macOS, so this is
-  // a font swap on the big glyphs. Display pref only — localStorage,
-  // not user data. Native Kai fonts are "document support only" on
-  // iOS (invisible to Safari CSS — the v114 toggle silently did
-  // nothing there), so enabling the toggle also loads the LXGW WenKai
-  // webfont: unicode-range-sliced woff2 from jsdelivr, so only the
-  // slices for glyphs actually on screen download, and the existing
-  // SW jsdelivr rule caches them for offline.
-  const [brushFont, setBrushFont] = useState<boolean>(() => {
+  // Hanzi display font (v133, was the v114 brush toggle): six faces,
+  // self-hosted subsetted woff2 loaded on selection. Display pref
+  // only — localStorage, not user data. The legacy brushFont=1 pref
+  // migrates to the Kai face.
+  const [hanziFont, setHanziFont] = useState<string>(() => {
     try {
-      return localStorage.getItem("chinese.brushFont") === "1";
+      const stored = localStorage.getItem("chinese.hanziFont");
+      if (stored) return stored;
+      return localStorage.getItem("chinese.brushFont") === "1" ? "kai" : "system";
+    } catch {
+      return "system";
+    }
+  });
+  // Random font per drill card (v133): each card renders in a
+  // deterministic-random face so recognition doesn't overfit one font.
+  const [randomFont, setRandomFont] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("chinese.randomFontDrills") === "1";
     } catch {
       return false;
     }
   });
   useEffect(() => {
-    document.documentElement.classList.toggle("brush-hanzi", brushFont);
-    if (brushFont && !document.getElementById("brush-font-css")) {
-      const link = document.createElement("link");
-      link.id = "brush-font-css";
-      link.rel = "stylesheet";
-      link.href = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css";
-      document.head.appendChild(link);
-    }
+    const font = fontById(hanziFont);
+    ensureFontFace(font, import.meta.env.BASE_URL);
+    if (font.stack) document.documentElement.style.setProperty("--font-hanzi", font.stack);
+    else document.documentElement.style.removeProperty("--font-hanzi");
     try {
-      localStorage.setItem("chinese.brushFont", brushFont ? "1" : "0");
+      localStorage.setItem("chinese.hanziFont", hanziFont);
     } catch {
       /* ignore */
     }
-  }, [brushFont]);
+  }, [hanziFont]);
+  useEffect(() => {
+    // Random mode needs every face resident so the per-card coverage
+    // check (document.fonts.check) can say yes.
+    if (randomFont) ensureAllFontFaces(import.meta.env.BASE_URL);
+    try {
+      localStorage.setItem("chinese.randomFontDrills", randomFont ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [randomFont]);
 
   // --- Deep links: #/c/:char and #/w/:word open the EntitySheet. ---
   const stackRef = useRef(stack);
@@ -588,7 +603,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v132"
+          version="chinese v133"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -596,8 +611,10 @@ export function App() {
           statsHref="#/stats"
           onShareWords={shareMyWords}
           wordCount={saved.savedList.length}
-          brushFont={brushFont}
-          onToggleBrushFont={() => setBrushFont((v) => !v)}
+          hanziFontLabel={fontById(hanziFont).label}
+          onCycleHanziFont={() => setHanziFont((id) => nextFontId(id))}
+          randomFont={randomFont}
+          onToggleRandomFont={() => setRandomFont((v) => !v)}
         />
         <h1>中文</h1>
         <div className="topbar-end">
@@ -670,6 +687,7 @@ export function App() {
       {showReview && focusWords && (
         <FocusPage
           words={focusWords}
+          randomFont={randomFont}
           onClose={() => setFocusWords(null)}
           onGrade={(key, rating, kind, facet, score) => grade(key, rating, kind, facet, score)}
           onOpenEntity={(key) => {
@@ -771,6 +789,7 @@ export function App() {
           randomOrder={reviewLaunched.randomOrder}
           includeSubchars={reviewLaunched.includeSubchars}
           sessionSize={reviewLaunched.sessionSize}
+          randomFont={randomFont}
           onGrade={(key, rating, kind, facet, score) => grade(key, rating, kind, facet, score)}
           onGradeCluster={gradeCluster}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}

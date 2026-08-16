@@ -58,6 +58,17 @@ export default defineConfig({
             },
           },
           {
+            // Self-hosted hanzi display fonts (v133) — big subsetted
+            // woff2, too heavy to precache; cached on first use.
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.includes('/fonts/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'hanzi-fonts',
+              expiration: { maxEntries: 8 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             // hanzi-writer bundle and per-character stroke data from
             // jsdelivr.
             urlPattern: ({ url }) => url.hostname === 'cdn.jsdelivr.net',
