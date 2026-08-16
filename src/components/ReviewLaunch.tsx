@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Facet } from "../hooks/useReview";
 import { setAutoSpeakEnabled } from "../lib/speech";
-import { SIFT_FLOW_MIN } from "../lib/flow";
 
 export interface ReviewSettings {
   enabledFacets: Facet[];
@@ -140,7 +139,8 @@ interface Props {
   siftCount?: number;
   onStartSift?: () => void;
   // "Just start" (v114): one tap, App builds the whole session
-  // (sift → drills → learn) from the saved settings.
+  // (drills → learn) from the saved settings. Sift left the chain in
+  // v123 — it's standalone triage, not a workout stage.
   onJustStart?: () => void;
   // Games (v116): pure play, no grading.
   forgeReady?: boolean;
@@ -232,11 +232,11 @@ export function ReviewLaunch({
             type="button"
             className="review-btn review-btn-reveal launch-just-start"
             onClick={onJustStart}
-            disabled={totalDue === 0 && siftCount === 0 && learnCount === 0}
+            disabled={totalDue === 0 && learnCount === 0}
           >
             <span className="launch-just-start-label">▶ Just start</span>
             <span className="launch-just-start-hint">
-              One tap: {siftCount >= SIFT_FLOW_MIN ? "quick sift, then " : ""}your usual drills
+              One tap: your usual drills
               {learnCount > 0 ? ", then a couple of new words" : ""}.
             </span>
           </button>

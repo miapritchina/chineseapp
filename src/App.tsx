@@ -55,7 +55,7 @@ import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
 import { isDue } from "./lib/fsrs";
-import { planFlow, SIFT_STAGE_CAP, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
+import { planFlow, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
 import { setAutoSpeakEnabled } from "./lib/speech";
 
 const SEARCH_DEBOUNCE_MS = 200;
@@ -277,12 +277,11 @@ export function App() {
   const [flowQueue, setFlowQueue] = useState<FlowStage[]>([]);
 
   const openStage = (stage: FlowStage) => {
-    if (stage === "sift") setSiftWords(siftableWords.slice(0, SIFT_STAGE_CAP));
-    else if (stage === "review") setReviewLaunched(loadStartSettings());
+    if (stage === "review") setReviewLaunched(loadStartSettings());
     else setLearnWords(learnableWords.slice(0, LEARN_STAGE_COUNT));
   };
   const justStart = () => {
-    const stages = planFlow(siftableWords.length, learnableWords.length);
+    const stages = planFlow(learnableWords.length);
     setFlowQueue(stages.slice(1));
     openStage(stages[0]);
   };
@@ -545,7 +544,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v122"
+          version="chinese v123"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"

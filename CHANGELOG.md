@@ -12,6 +12,10 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **"Just start" no longer opens with Sift (v123):** Sift is triage —
+  sifting out words that are too simple — not a workout, so the
+  one-tap flow now goes straight into the drills (then the Learn
+  lesson). Sift keeps its own launch button.
 - **Exercise-system rebalance, stages 1–4 (v122)** ([plan](docs/product/exercise-system-rebalance.md)):
   drill grades now reflect how much evidence each drill actually
   provides.

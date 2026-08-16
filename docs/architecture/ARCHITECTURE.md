@@ -205,12 +205,14 @@ recognition self-report can't clear a writing card. Left-swipes live in a day-st
 list (`chinese.siftKept`) — per-day ephemeral, the same local-only
 carve-out as the old daily new-card counter.
 
-"Just start" (v114, `lib/flow.ts`) chains the three surfaces from one
-tap: sift stage when ≥ 20 due (capped at 15) → review with the saved
-settings → a 2-word Learn lesson. App holds the remaining-stage queue;
-each page takes an optional `onComplete` (wired only while a next
-stage exists) that fires when its deck drains. Backing out of a stage
-clears the queue.
+"Just start" (v114, `lib/flow.ts`) chains surfaces from one tap:
+review with the saved settings → a 2-word Learn lesson. Sift was
+dropped from the chain in v123 (owner call: Sift is standalone triage
+for sifting out too-simple words, not a workout stage — it keeps its
+own launch button). App holds the remaining-stage queue; each page
+takes an optional `onComplete` (wired only while a next stage exists)
+that fires when its deck drains. Backing out of a stage clears the
+queue.
 
 ### Queue + leech interleaving
 
