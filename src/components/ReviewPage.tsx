@@ -129,6 +129,20 @@ export function ReviewPage({
   // back-to-back when one of them lapses past LEECH_LAPSES.
   const [promotedCluster, setPromotedCluster] = useState<Set<string>>(() => new Set());
 
+  // "Include word characters" (v135, owner request — was "cascaded
+  // sub-characters"): the toggle surfaces the CHARACTERS of saved
+  // multi-char words (你好 → 你, 好), not the deep component closure.
+  // Cascade credit still flows to components; they just never surface
+  // as cards of their own.
+  const constituentChars = new Set<string>();
+  if (includeSubchars) {
+    for (const s of savedList) {
+      const glyphs = [...s.word];
+      if (glyphs.length < 2) continue;
+      for (const c of glyphs) if (!savedKeys?.has(c)) constituentChars.add(c);
+    }
+  }
+
   // Visible queue = dueCards minus this-session skips, filtered by the
   // launch settings.
   const filtered = dueCards.filter((c) => {
@@ -140,18 +154,17 @@ export function ReviewPage({
         return false;
       }
     }
-    // Cascade-seeded sub-character cards (kind=char with a recognition
-    // facet, NOT in the user's saved set) are off by default — the user
-    // can opt in via the launch screen.
-    if (!includeSubchars) {
-      const isCascadeRecognition =
-        c.itemKind === "char" &&
-        (c.facet === "meaningRecognition" ||
-          c.facet === "soundRecognition" ||
-          c.facet === "recognition");
-      if (isCascadeRecognition && !(savedKeys && savedKeys.has(c.itemKey))) {
-        return false;
-      }
+    // Char-kind recognition cards the user never explicitly saved:
+    // off by default; with the toggle on, only word constituents pass
+    // (deep components stay hidden).
+    const isCascadeRecognition =
+      c.itemKind === "char" &&
+      (c.facet === "meaningRecognition" ||
+        c.facet === "soundRecognition" ||
+        c.facet === "recognition");
+    if (isCascadeRecognition && !(savedKeys && savedKeys.has(c.itemKey))) {
+      if (!includeSubchars) return false;
+      if (!constituentChars.has(c.itemKey)) return false;
     }
     return true;
   });
@@ -209,6 +222,28 @@ export function ReviewPage({
       seen.add(rid(row));
     }
   }
+  // Word constituents with no FSRS row at all (never cascade-seeded)
+  // still surface when the toggle is on: synthesized as due-now rows;
+  // grading seeds their real card on demand (useReview.grade). Chars
+  // with an existing row respect their FSRS schedule instead.
+  const constituentRows: ReviewCard[] = [];
+  if (includeSubchars && cards) {
+    for (const c of constituentChars) {
+      if (cards.has(`char|meaningRecognition|${c}`) || cards.has(`char|recognition|${c}`)) {
+        continue;
+      }
+      const row: ReviewCard = {
+        itemKey: c,
+        itemKind: "char",
+        facet: "meaningRecognition",
+        card: INFERENCE_CARD,
+        dueAt: Date.now(),
+        lastReviewAt: null,
+      };
+      if (!skipped.has(rid(row))) constituentRows.push(row);
+    }
+  }
+
   // Drill-1 inference words: synthetic rows appended at the end of the
   // queue (they have no FSRS state; grading routes to onInferenceResult
   // instead of onGrade).
@@ -248,8 +283,13 @@ export function ReviewPage({
   // groups, most-overdue first within each — NOT a shuffle. The
   // Shuffle toggle still randomizes fully via the position map below.
   const mixed = randomOrder
-    ? [...dedupedFiltered, ...inferenceRows, ...clusterRows]
-    : interleaveByActivity([...dedupedFiltered, ...inferenceRows, ...clusterRows]);
+    ? [...dedupedFiltered, ...constituentRows, ...inferenceRows, ...clusterRows]
+    : interleaveByActivity([
+        ...dedupedFiltered,
+        ...constituentRows,
+        ...inferenceRows,
+        ...clusterRows,
+      ]);
 
   // Freeze the session to the first `sessionSize` cards seen (v107;
   // owner-chosen since v110, null = no cap). Cards that leave the set
