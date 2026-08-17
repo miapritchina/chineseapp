@@ -5,8 +5,9 @@ import { setAutoSpeakEnabled } from "../lib/speech";
 export interface ReviewSettings {
   enabledFacets: Facet[];
   randomOrder: boolean;
-  // Off by default: hide cascade-seeded char cards (sub-characters of
-  // saved words that the user never explicitly saved) from the queue.
+  // "Include word characters" (v135 — key name kept for stored
+  // settings compat): each character of a saved multi-char word gets
+  // its own recognition card. Off by default.
   includeSubchars: boolean;
   // Cards per session (v110, owner-chosen; null = everything due).
   sessionSize: number | null;
@@ -377,12 +378,11 @@ export function ReviewLaunch({
           >
             <span className="launch-option-row">
               <span className="launch-option-check">{includeSubchars ? "●" : "○"}</span>
-              <span className="launch-option-label">Include cascaded sub-characters</span>
+              <span className="launch-option-label">Include word characters</span>
             </span>
             <span className="launch-option-hint">
-              Off (default): only the words you saved + drills on their direct components surface.
-              On: cascaded sub-character recognition cards (e.g. 豕 from saving 家) join the queue
-              too.
+              On: each character of your multi-character words gets its own recognition card (你好 →
+              你 and 好). Off (default): only the words you saved surface.
             </span>
           </button>
         </div>

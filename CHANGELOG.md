@@ -11,6 +11,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **"Include word characters" (v135):** the launch toggle that used
+  to surface deep cascade components (豕 from 家) now does what its
+  name says — each character of your multi-character words joins the
+  queue as its own recognition card (你好 → 你 and 好), even before
+  it has any review history. Deep components no longer surface as
+  cards (they still receive cascade credit quietly).
+
 ### Fixed
 - **笑 no longer means "variant of 笑" (v134):** CC-CEDICT has two
   entries with the same simplified form (咲 "old variant of 笑" and 笑
