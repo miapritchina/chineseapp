@@ -11,6 +11,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **笑 no longer means "variant of 笑" (v134):** CC-CEDICT has two
+  entries with the same simplified form (咲 "old variant of 笑" and 笑
+  "to laugh"), and the seed pipeline's duplicate rule kept the
+  pointer entry, erasing "to laugh" from the dictionary — same story
+  for every simplified form shadowed by a variant entry. The dedup
+  now prefers the entry with real definitions (`scripts/seed-rules.mjs`,
+  regression-tested), and the words table was re-seeded.
+
 ### Added
 - **Six hanzi fonts + random-font drills (v133):** the Brush toggle
   became a font picker — System, Kai 楷体, FangSong 仿宋, Ming 明體,
