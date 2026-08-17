@@ -14,6 +14,7 @@
 
 import { createRequire } from "node:module";
 import { createClient } from "@supabase/supabase-js";
+import { dedupBySimp, isOnlyCrossRef } from "./seed-rules.mjs";
 
 const require = createRequire(import.meta.url);
 const lex = require("chinese-lexicon");
@@ -33,12 +34,6 @@ const BATCH_SIZE = 500;
 
 function isProperNoun(entry) {
   return /^[A-Z]/.test(entry.pinyin || "");
-}
-
-function isOnlyCrossRef(entry) {
-  const defs = entry.definitions || [];
-  if (defs.length === 0) return true;
-  return defs.every((d) => /^see /i.test(d) || /^variant of /i.test(d));
 }
 
 function cleanDefinitions(defs) {
@@ -61,14 +56,10 @@ function buildAllEntries() {
     if (ar !== br) return ar - br;
     return a.simp.localeCompare(b.simp);
   });
-  const seen = new Set();
-  const out = [];
-  for (const e of filtered) {
-    if (seen.has(e.simp)) continue;
-    seen.add(e.simp);
-    out.push(e);
-  }
-  return out;
+  // Duplicate simp forms keep the entry with real definitions — see
+  // seed-rules.mjs (the 笑/咲 bug: the "old variant of 笑" row used to
+  // win and erase "to laugh" from the dictionary).
+  return dedupBySimp(filtered);
 }
 
 function toRow(entry) {

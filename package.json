@@ -9,7 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "npm run test:scripts && npm run test:unit",
-    "test:scripts": "node scripts/test-component-search.mjs && node scripts/test-fsrs.mjs && node scripts/test-review-seeding.mjs && node scripts/test-phonetic-components.mjs && node scripts/test-confusion-clusters.mjs && node scripts/test-pinyin.mjs && node scripts/test-mnemonics.mjs && node scripts/test-cluster-recall.mjs && node scripts/test-pos.mjs && node scripts/test-share.mjs && node scripts/test-sanzijing.mjs",
+    "test:scripts": "node scripts/test-component-search.mjs && node scripts/test-seed-rules.mjs && node scripts/test-fsrs.mjs && node scripts/test-review-seeding.mjs && node scripts/test-phonetic-components.mjs && node scripts/test-confusion-clusters.mjs && node scripts/test-pinyin.mjs && node scripts/test-mnemonics.mjs && node scripts/test-cluster-recall.mjs && node scripts/test-pos.mjs && node scripts/test-share.mjs && node scripts/test-sanzijing.mjs",
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
