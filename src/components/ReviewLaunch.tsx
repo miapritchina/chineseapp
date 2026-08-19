@@ -60,9 +60,10 @@ export const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string; fun
     hint: "Trace the character that matches a meaning + sound prompt. Auto-graded by stroke mistakes via Hanzi Writer. Surfaces for saved single characters.",
   },
 ];
-// Facets the launch screen knows about — used to scrub stale entries
-// (e.g. the retired phoneticTap / componentSound) from saved settings.
-const KNOWN_FACETS = new Set<Facet>(ALL_FACET_OPTIONS.map((o) => o.facet));
+// Facets the launch screen offers as toggles — used to scrub stale
+// entries (retired facets, and the fun facets which moved to the
+// Games section in v141) from saved settings.
+const KNOWN_FACETS = new Set<Facet>(ALL_FACET_OPTIONS.filter((o) => !o.fun).map((o) => o.facet));
 
 // Default-on facet: the recognition card. Everything else is opt-in.
 const DEFAULT_FACETS: Facet[] = ["meaningRecognition"];
@@ -162,6 +163,10 @@ interface Props {
   onStartPairs?: () => void;
   chainReady?: boolean;
   onStartChain?: () => void;
+  newWordsReady?: boolean;
+  onStartNewWords?: () => void;
+  sweepReady?: boolean;
+  onStartSweep?: () => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -187,6 +192,10 @@ export function ReviewLaunch({
   onStartPairs,
   chainReady = false,
   onStartChain,
+  newWordsReady = false,
+  onStartNewWords,
+  sweepReady = false,
+  onStartSweep,
   onStart,
   onClose,
 }: Props) {
@@ -286,10 +295,6 @@ export function ReviewLaunch({
           <div className="launch-options">
             {ALL_FACET_OPTIONS.filter((o) => !o.fun).map(renderFacetOption)}
           </div>
-          <div className="launch-section-title">Just for fun · ungraded</div>
-          <div className="launch-options">
-            {ALL_FACET_OPTIONS.filter((o) => o.fun).map(renderFacetOption)}
-          </div>
         </div>
         <div className="launch-section">
           <div className="launch-section-title">Session size</div>
@@ -343,10 +348,37 @@ export function ReviewLaunch({
             </span>
           </button>
         </div>
-        {(onStartForge || onStartPairs || onStartChain) && (
+        {(onStartForge || onStartPairs || onStartChain || onStartNewWords || onStartSweep) && (
           <div className="launch-section">
             <div className="launch-section-title">Games</div>
             <div className="launch-games-col">
+              {onStartNewWords && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartNewWords}
+                  disabled={!newWordsReady}
+                >
+                  <span className="launch-game-name">✨ New words</span>
+                  <span className="launch-game-hint">
+                    Real words you haven&apos;t saved, built from your characters — guess the
+                    meaning or build the hanzi
+                  </span>
+                </button>
+              )}
+              {onStartSweep && (
+                <button
+                  type="button"
+                  className="review-btn launch-game-btn"
+                  onClick={onStartSweep}
+                  disabled={!sweepReady}
+                >
+                  <span className="launch-game-name">🧹 Family sweep</span>
+                  <span className="launch-game-hint">
+                    Tap every character built with a component — random components each round
+                  </span>
+                </button>
+              )}
               {onStartForge && (
                 <button
                   type="button"

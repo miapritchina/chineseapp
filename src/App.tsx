@@ -655,7 +655,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v140"
+          version="chinese v141"
           reviewHref="#/review"
           reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
           exploreHref="#/explore"
@@ -698,6 +698,22 @@ export function App() {
           onStartPairs={() => setGameOpen("pairs")}
           chainReady={chainReady}
           onStartChain={() => setGameOpen("chain")}
+          newWordsReady={inferenceWords.length > 0}
+          onStartNewWords={() =>
+            setReviewLaunched({
+              ...loadStartSettings(),
+              enabledFacets: ["wordInference"],
+              sessionSize: null,
+            })
+          }
+          sweepReady={sweepComponents.length > 0}
+          onStartSweep={() =>
+            setReviewLaunched({
+              ...loadStartSettings(),
+              enabledFacets: ["familySweep"],
+              sessionSize: null,
+            })
+          }
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
         />
