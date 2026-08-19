@@ -7,7 +7,7 @@ import { useSaved } from "./hooks/useSaved";
 import { useModalStack, parseHash } from "./hooks/useModalStack";
 import { useAuth } from "./hooks/useAuth";
 import { useReview } from "./hooks/useReview";
-import { usePhoneticComponents } from "./hooks/usePhoneticComponents";
+import { usePhoneticComponents, type PhoneticComponent } from "./hooks/usePhoneticComponents";
 import { useMnemonics } from "./hooks/useMnemonics";
 import { useWordInference } from "./hooks/useWordInference";
 import { useSanzijing } from "./hooks/useSanzijing";
@@ -64,6 +64,8 @@ import { planFlow, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
 import { setAutoSpeakEnabled } from "./lib/speech";
 
 const SEARCH_DEBOUNCE_MS = 200;
+// Components dealt per Family sweep game (v142).
+const SWEEP_GAME_SIZE = 12;
 
 export function App() {
   const dict = useDictionary();
@@ -162,14 +164,17 @@ export function App() {
   // available; the badge counts down a modest expectation instead.
   const [dailyDone, setDailyDone] = useState<number>(() => loadDailyDone());
   const noteCardDone = () => setDailyDone(bumpDailyDone());
-  // Family sweep pool (v137): the sweep is a game over ALL usable
-  // components now — a fresh random sample each app session.
-  const sweepComponents = useMemo(() => {
-    const usable = (phonetics.components ?? []).filter(
-      (c) => (c.family ?? []).filter((f) => f && f !== c.char && charsData.chars[f]).length >= 3,
-    );
-    return shuffle(usable).slice(0, 4);
-  }, [phonetics.components, charsData.chars]);
+  // Family sweep (v137): a game over ALL usable components.
+  const sweepPool = useMemo(
+    () =>
+      (phonetics.components ?? []).filter(
+        (c) => (c.family ?? []).filter((f) => f && f !== c.char && charsData.chars[f]).length >= 3,
+      ),
+    [phonetics.components, charsData.chars],
+  );
+  // The active game's hand: a fresh random sample dealt on each launch
+  // (v142 — 4-per-app-session was the old side-dish portion).
+  const [sweepBatch, setSweepBatch] = useState<PhoneticComponent[]>([]);
   // Problem items (lib/focus.ts): words seen ≥8 times but still
   // lapsing, plus — v136 — CHARACTERS with repeated attributed/direct
   // failures that never stabilized (they may not be saved as words at
@@ -289,9 +294,9 @@ export function App() {
       }, {}),
       wordInference: inferenceWords.length,
       clusterRecall: clusters.length,
-      familySweep: sweepComponents.length,
+      familySweep: sweepPool.length,
     }),
-    [dueCards, inferenceWords.length, clusters.length, sweepComponents.length],
+    [dueCards, inferenceWords.length, clusters.length, sweepPool.length],
   );
 
   // Wake the Supabase project early to mask cold-start latency.
@@ -655,7 +660,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v141"
+          version="chinese v142"
           reviewHref="#/review"
           reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
           exploreHref="#/explore"
@@ -706,14 +711,15 @@ export function App() {
               sessionSize: null,
             })
           }
-          sweepReady={sweepComponents.length > 0}
-          onStartSweep={() =>
+          sweepReady={sweepPool.length > 0}
+          onStartSweep={() => {
+            setSweepBatch(shuffle(sweepPool).slice(0, SWEEP_GAME_SIZE));
             setReviewLaunched({
               ...loadStartSettings(),
               enabledFacets: ["familySweep"],
               sessionSize: null,
-            })
-          }
+            });
+          }}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
         />
@@ -848,7 +854,7 @@ export function App() {
             recordInference(w, gotIt);
           }}
           clusters={clusters}
-          sweepComponents={sweepComponents}
+          sweepComponents={sweepBatch}
           onCardDone={noteCardDone}
           phoneticComponents={phonetics.components}
           phoneticComponentsByChar={phonetics.byChar}
