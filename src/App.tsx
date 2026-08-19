@@ -241,6 +241,12 @@ export function App() {
   const siftableWords = useMemo(() => {
     const dueKeys = new Set<string>();
     for (const row of reviewState.cards.values()) {
+      // Word-kind rows only (v140): char-kind rows (production, and
+      // cascaded/attributed character cards) aren't sift material — a
+      // right-swipe deliberately doesn't clear production, so counting
+      // them made Sift advertise hundreds of words while the drills
+      // honestly had zero (owner-reported).
+      if (row.itemKind !== "word") continue;
       if (isDue(row.card)) dueKeys.add(row.itemKey);
     }
     return siftPool(
@@ -649,7 +655,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v139"
+          version="chinese v140"
           reviewHref="#/review"
           reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
           exploreHref="#/explore"
