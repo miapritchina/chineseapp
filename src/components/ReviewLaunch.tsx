@@ -411,7 +411,9 @@ export function ReviewLaunch({
           onClick={start}
           disabled={visibleDue === 0}
         >
-          {`Start review · ${sessionSize !== null ? Math.min(sessionSize, visibleDue) : visibleDue} cards`}
+          {visibleDue === 0
+            ? "All caught up for today ✓"
+            : `Start review · ${sessionSize !== null ? Math.min(sessionSize, visibleDue) : visibleDue} cards`}
         </button>
         {onStartLearn && (
           <button

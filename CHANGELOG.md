@@ -12,6 +12,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Fixed
+- **Sift stopped advertising phantom words (v140):** after a big sift
+  session, Sift still showed hundreds of "due words" while Start
+  honestly said 0 — those words' only due rows were character-kind
+  (mostly Write, which a right-swipe deliberately leaves alone), so
+  sifting them again would change nothing. Sift now counts only
+  word-level due rows. And a genuinely clear day reads "All caught up
+  for today ✓" (plus a ✓ on the goal counter) instead of the
+  confusing "Start review · 0 cards".
 - **Stats history was stuck at 1000 reviews (v139):** the review-log
   query silently hit PostgREST's 1000-row response cap and, being
   unordered, returned the OLDEST rows of the window — heavy weeks
