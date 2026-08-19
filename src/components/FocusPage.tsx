@@ -29,6 +29,8 @@ interface Props {
   // Cloze knows which character failed — attribute it automatically
   // (v136), feeding the problem-character pool.
   onAttributeFailure?: (childKey: string) => void;
+  // Counts toward the daily goal (v137) — one per graded test.
+  onCardDone?: () => void;
   // Random font per card (v133) — practice/test steps only; lessons
   // stay in the chosen reading font.
   randomFont?: boolean;
@@ -51,6 +53,7 @@ export function FocusPage({
   onOpenTree,
   onExplore,
   onAttributeFailure,
+  onCardDone,
   randomFont,
 }: Props) {
   const { chars } = useCharsCtx();
@@ -186,6 +189,7 @@ export function FocusPage({
           savedWords={savedWords}
           onScore={(score, failedChar) => {
             onGrade(current.word, scoreToRating(score), "word", "clozeChar", score);
+            onCardDone?.();
             if (score < 1) {
               if (failedChar) onAttributeFailure?.(failedChar);
               setHookWord(current.word);
@@ -208,6 +212,7 @@ export function FocusPage({
             } else {
               onGrade(current.word, scoreToRating(score), "char", "meaningRecognition", score);
             }
+            onCardDone?.();
             if (score < 1) setHookWord(current.word);
             else advance();
           }}

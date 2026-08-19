@@ -18,7 +18,7 @@ export interface ReviewSettings {
 const SETTINGS_KEY = "chinese.reviewSettings";
 
 // The drill types offered on the launch screen.
-const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
+const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string; fun?: boolean }[] = [
   {
     facet: "meaningRecognition",
     label: "Recognition",
@@ -27,7 +27,8 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
   {
     facet: "wordInference",
     label: "New words",
-    hint: "A real word you have NOT saved, built from characters you know — guess its meaning. Correct guesses credit the characters.",
+    fun: true,
+    hint: "Just for fun — doesn't count as review. Real words you have NOT saved, built from your characters: guess the meaning, or build the hanzi from a tray. Correct answers still credit the characters.",
   },
   {
     facet: "reverseRecognition",
@@ -42,7 +43,8 @@ const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string }[] = [
   {
     facet: "familySweep",
     label: "Family sweep",
-    hint: "Spot the component: tap every character built with a component you saved — decoys included.",
+    fun: true,
+    hint: "Just for fun — ungraded. Random components each session (all 250, not only saved ones): tap every character built with one, decoys included.",
   },
   {
     facet: "clusterRecall",
@@ -130,6 +132,10 @@ interface Props {
   // about to study before tapping Start.
   facetCounts: Record<string, number>;
   totalDue: number;
+  // Daily goal (v137): cards done today / the modest expectation. The
+  // backlog stays available; only the framing changes.
+  dailyDone?: number;
+  dailyGoal?: number;
   // Learn mode (v110): how many saved words qualify for a lesson, and
   // the launcher — receives the chosen session size so App can cap
   // the lesson the same way review sessions are capped.
@@ -163,6 +169,8 @@ interface Props {
 export function ReviewLaunch({
   facetCounts,
   totalDue,
+  dailyDone = 0,
+  dailyGoal = 0,
   learnCount = 0,
   onStartLearn,
   siftCount = 0,
@@ -208,10 +216,33 @@ export function ReviewLaunch({
     });
   };
 
-  const visibleDue = ALL_FACET_OPTIONS.filter((o) => enabled.has(o.facet)).reduce(
+  const visibleDue = ALL_FACET_OPTIONS.filter((o) => enabled.has(o.facet) && !o.fun).reduce(
     (n, o) => n + (facetCounts[o.facet] || 0),
     0,
   );
+
+  const renderFacetOption = (o: (typeof ALL_FACET_OPTIONS)[number]) => {
+    // Recognition surfaces ONE card per word even when both facet rows
+    // are due — count words, not rows.
+    const count = facetCounts[o.facet] || 0;
+    const isOn = enabled.has(o.facet);
+    return (
+      <button
+        key={o.facet}
+        type="button"
+        className={`launch-option${isOn ? " is-on" : ""}`}
+        onClick={() => toggleFacet(o.facet)}
+        aria-pressed={isOn}
+      >
+        <span className="launch-option-row">
+          <span className="launch-option-check">{isOn ? "●" : "○"}</span>
+          <span className="launch-option-label">{o.label}</span>
+          <span className="launch-option-count">{count}</span>
+        </span>
+        <span className="launch-option-hint">{o.hint}</span>
+      </button>
+    );
+  };
 
   const start = () => {
     onStart({
@@ -230,7 +261,11 @@ export function ReviewLaunch({
           ← Done
         </button>
         <span className="review-kind-tag">Review</span>
-        <span className="review-progress">{totalDue} due</span>
+        <span className="review-progress">
+          {dailyGoal > 0
+            ? `${Math.min(dailyDone, dailyGoal)} / ${dailyGoal} today`
+            : `${totalDue} due`}
+        </span>
       </div>
       <div className="review-body launch-body">
         {onJustStart && (
@@ -250,28 +285,11 @@ export function ReviewLaunch({
         <div className="launch-section">
           <div className="launch-section-title">Drill types</div>
           <div className="launch-options">
-            {ALL_FACET_OPTIONS.map((o) => {
-              // Recognition surfaces ONE card per word even when both
-              // facet rows are due — count words, not rows.
-              const count = facetCounts[o.facet] || 0;
-              const isOn = enabled.has(o.facet);
-              return (
-                <button
-                  key={o.facet}
-                  type="button"
-                  className={`launch-option${isOn ? " is-on" : ""}`}
-                  onClick={() => toggleFacet(o.facet)}
-                  aria-pressed={isOn}
-                >
-                  <span className="launch-option-row">
-                    <span className="launch-option-check">{isOn ? "●" : "○"}</span>
-                    <span className="launch-option-label">{o.label}</span>
-                    <span className="launch-option-count">{count}</span>
-                  </span>
-                  <span className="launch-option-hint">{o.hint}</span>
-                </button>
-              );
-            })}
+            {ALL_FACET_OPTIONS.filter((o) => !o.fun).map(renderFacetOption)}
+          </div>
+          <div className="launch-section-title">Just for fun · ungraded</div>
+          <div className="launch-options">
+            {ALL_FACET_OPTIONS.filter((o) => o.fun).map(renderFacetOption)}
           </div>
         </div>
         <div className="launch-section">

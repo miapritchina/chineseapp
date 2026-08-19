@@ -11,6 +11,7 @@ import { ClusterRecallCard } from "./ClusterRecallCard";
 import { ProductionCard } from "./ProductionCard";
 import { DisambiguationCard } from "./DisambiguationCard";
 import { WordInferenceCard } from "./WordInferenceCard";
+import { WordBuildCard } from "./WordBuildCard";
 import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
@@ -69,8 +70,14 @@ interface Props {
   // Cluster recall (v107): pre-built clusters of related saved words;
   // each becomes one synthetic card in the queue.
   clusters?: string[][];
+  // Family sweep (v137): a game, not an exercise — random components
+  // sampled per session by App, ungraded.
+  sweepComponents?: PhoneticComponent[];
   phoneticComponents?: PhoneticComponent[];
   phoneticComponentsByChar?: Map<string, PhoneticComponent>;
+  // Counts toward the daily goal (v137) — called once per genuinely
+  // graded card. The fun facets (inference, sweep) never call it.
+  onCardDone?: () => void;
   // From the launch screen. If absent, all facets are enabled.
   enabledFacets?: Set<Facet>;
   randomOrder?: boolean;
@@ -107,8 +114,10 @@ export function ReviewPage({
   inferenceWords,
   onInferenceResult,
   clusters,
+  sweepComponents,
   phoneticComponents,
   phoneticComponentsByChar,
+  onCardDone,
   enabledFacets,
   randomOrder,
   includeSubchars,
@@ -281,6 +290,24 @@ export function ReviewPage({
     }
   }
 
+  // Family sweep (v137): synthetic rows over App's per-session random
+  // component sample — a game, ungraded, rotates last like the other
+  // synthetic facets.
+  const sweepRows: ReviewCard[] = [];
+  if ((!enabledFacets || enabledFacets.has("familySweep")) && sweepComponents) {
+    for (const comp of sweepComponents) {
+      const row: ReviewCard = {
+        itemKey: comp.char,
+        itemKind: "component",
+        facet: "familySweep",
+        card: INFERENCE_CARD,
+        dueAt: 0,
+        lastReviewAt: null,
+      };
+      if (!skipped.has(rid(row))) sweepRows.push(row);
+    }
+  }
+
   // Promoted cards prepend the queue (right after the current leech card).
   // Mix activity types by default (v106): round-robin across drill
   // groups, most-overdue first within each — NOT a shuffle. The
@@ -401,7 +428,8 @@ export function ReviewPage({
     setRevealed(false);
     setAttribTarget(null);
     setAttribPicked(new Set());
-  }, []);
+    onCardDone?.();
+  }, [onCardDone]);
 
   // Stable per-render handler for the recognition reveal-card grade
   // buttons. Captures the current card's identity at click time, so a
@@ -459,7 +487,6 @@ export function ReviewPage({
           [...cur.itemKey].length > 1
         ) {
           setAttribTarget(cur.itemKey);
-          setDoneCount((n) => n + 1);
           setRevealed(false);
           return;
         }
@@ -605,6 +632,23 @@ export function ReviewPage({
       >
         {!word ? (
           <div className="review-empty-hint">Loading word…</div>
+        ) : [...current.itemKey].reduce((h, c) => h + c.charCodeAt(0), 0) % 2 === 1 ? (
+          // Build mode (v137): translation shown, assemble the hanzi
+          // from a character tray. Same reporting as guess mode.
+          <WordBuildCard
+            key={cardKey(current)}
+            word={word}
+            savedWords={savedWords}
+            onGotIt={() => {
+              onInferenceResult?.(current.itemKey, true);
+              advanceWithoutGrading(current);
+            }}
+            onMissed={() => {
+              onInferenceResult?.(current.itemKey, false);
+              advanceWithoutGrading(current);
+            }}
+            onOpenEntity={onOpenEntity}
+          />
         ) : (
           <WordInferenceCard
             key={cardKey(current)}
@@ -696,7 +740,9 @@ export function ReviewPage({
             component={comp}
             pool={phoneticComponents}
             charExists={(c) => !!chars?.[c]}
-            onScore={handleDrillScore}
+            // A game (v137): the score is feedback only, nothing is
+            // graded and it doesn't count toward the daily goal.
+            onScore={() => advanceWithoutGrading(current)}
             onOpenEntity={onOpenEntity}
           />
         )}
@@ -760,6 +806,7 @@ export function ReviewPage({
           cluster={clusterWords}
           onGraded={(results) => {
             onGradeCluster?.(results);
+            onCardDone?.();
             advanceWithoutGrading(current);
           }}
           onOpenEntity={onOpenEntity}

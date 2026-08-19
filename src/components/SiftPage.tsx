@@ -25,6 +25,8 @@ interface Props {
   // snoozes the word to tomorrow — having just studied it, re-testing
   // minutes later would measure nothing.
   onLessonDone?: (word: string) => void;
+  // Counts toward the daily goal (v137) — one per decided card.
+  onCardDone?: () => void;
   onOpenEntity?: (key: string) => void;
   // Open the full d3 decomposition tree for a character (lesson view).
   onOpenTree?: (char: string) => void;
@@ -46,6 +48,7 @@ export function SiftPage({
   onKnow,
   onKeep,
   onLessonDone,
+  onCardDone,
   onOpenEntity,
   onOpenTree,
   onExplore,
@@ -84,6 +87,7 @@ export function SiftPage({
     const w = current;
     if (verdict === "know") onKnow(w);
     else onKeep(w);
+    onCardDone?.();
     setFlash(verdict);
     window.setTimeout(() => {
       decidedRef.current = false;

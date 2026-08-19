@@ -21,7 +21,11 @@ import { inferencePairs } from "../lib/drillGen";
 // INFERENCE_COOLDOWN_DAYS before it may rotate back in.
 
 const PROBE_CHUNK = 150;
-const POOL_CAP = 30;
+// v137 (owner: "I know 500 words and it says 26 new words available.
+// Laughable."): pair the 60 most recent distinct chars (was 36) and
+// keep up to 100 discovered words in the pool (was 30).
+const CHAR_CAP = 60;
+const POOL_CAP = 100;
 const SEEN_KEY = "chinese.inferenceSeen";
 export const INFERENCE_COOLDOWN_DAYS = 14;
 const COOLDOWN_MS = INFERENCE_COOLDOWN_DAYS * 86400000;
@@ -122,7 +126,7 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
     // re-probe) — a cleanup-based cancel would kill the in-flight probe
     // it just deduplicated against.
     void (async () => {
-      const candidates = inferencePairs(words);
+      const candidates = inferencePairs(words, CHAR_CAP);
       for (let i = 0; i < candidates.length; i += PROBE_CHUNK) {
         if (probedForRef.current !== signature) return;
         await ensureCached(candidates.slice(i, i + PROBE_CHUNK));

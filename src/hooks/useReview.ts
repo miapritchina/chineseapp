@@ -21,7 +21,14 @@ const FSRS_KEY = "chinese.fsrs.v1";
 // v85, familyTransfer v107) — they can never be enabled, so their rows
 // must not load, seed, or sync back in. Legacy rows may still exist in
 // localStorage / Supabase from before the drop.
-const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound", "familyTransfer"]);
+// familySweep joined the retired list in v137 — the sweep became an
+// ungraded game over ALL components (synthetic session rows, no FSRS).
+const RETIRED_FACETS = new Set<string>([
+  "phoneticTap",
+  "componentSound",
+  "familyTransfer",
+  "familySweep",
+]);
 const CASCADE_CAP_DAYS = 7;
 // Known-parts head start (v136): a brand-new multi-char word whose
 // every constituent character already has this much stability starts
@@ -188,22 +195,6 @@ export function useReview({
           itemKey: key,
           itemKind: "word",
           facet: "clozeChar",
-        });
-      }
-    }
-    // familySweep: one card per saved phonetic component with ≥3
-    // family members that exist in data-chars.
-    if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0) {
-      for (const key of scheduledKeys) {
-        if ([...key].length !== 1) continue;
-        const comp = phoneticComponentsByChar.get(key);
-        if (!comp?.family) continue;
-        const usable = comp.family.filter((f) => f && f !== comp.char && chars[f]);
-        if (usable.length < 3) continue;
-        out.set(rowId(key, "component", "familySweep"), {
-          itemKey: key,
-          itemKind: "component",
-          facet: "familySweep",
         });
       }
     }

@@ -121,12 +121,18 @@ kinds, seven scheduled facets (plus one session-only drill):
 | word | `soundRecognition` | combined recognition card (same surface) | every saved word |
 | word | `reverseRecognition` | gloss → pick the hanzi (v98) | every saved word |
 | word | `clozeChar` | masked-char pick (v98) | saved words with ≥2 chars |
-| component | `familySweep` | spot-the-component grid (v98; reworded v107 — tap every character containing the component) | saved phonetic components with ≥3 usable family members |
+| component | `familySweep` | spot-the-component grid — since v137 an UNGRADED game: synthetic session rows over a random sample of ALL usable components, no FSRS state (rows retired) | 4 random components per app session |
 | char | `production` | Hanzi Writer trace quiz | every saved single character (v99; was ✒ Wrote tier) |
 
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
 has no FSRS row: unsaved words built from known chars — a correct
-guess cascade-credits the constituent char cards. Since v104 an
+answer cascade-credits the constituent char cards. A game, not review
+(v137): excluded from due counts and the daily goal. Pool pairs the
+60 most recent distinct chars, keeps up to 100 words (was 36/30 —
+"I know 500 words and it says 26 new words. Laughable."). Each word
+randomly renders as guess-the-meaning OR build-the-word
+(`WordBuildCard`: translation shown, assemble the hanzi from a tray
+of its characters + decoys). Since v104 an
 answered word (right OR wrong) is done and rests for 14 days: recorded
 immediately in localStorage (`chinese.inferenceSeen`) and logged to
 `user_review_log` under the `wordInference` facet, which signed-in
@@ -248,7 +254,14 @@ queue.
 ### Queue + leech interleaving
 
 No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —
-everything due surfaces. Since v106 the default session order is an
+everything due surfaces. The EXPECTATION is softer since v137: the
+hamburger badge counts down a modest daily goal (`lib/dailyGoal.ts`,
+30 graded cards/day, localStorage day counter fed by review, Sift and
+Focus) instead of shouting the whole backlog, and the launch header
+shows "done / goal today". Doing more stays one tap away — ADR-0012's
+availability guarantee is untouched. The fun facets (wordInference,
+familySweep) are grouped separately on the launch screen, excluded
+from the "due" arithmetic, and never count toward the goal. Since v106 the default session order is an
 activity **interleave**, not a grouped run: `interleaveByActivity`
 (drillGen) round-robins across drill groups (meaning/sound unified),
 most-overdue first within each group, the neediest group leading each
