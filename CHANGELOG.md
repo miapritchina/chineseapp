@@ -11,6 +11,26 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Character↔word attention loop (v136,
+  [ADR-0016](docs/decisions/0016-character-word-attention-loop.md)):**
+  - *Blame the characters:* after missing a multi-character word
+    (recognition or Reverse), the "Which characters threw you?" panel
+    lets you mark any number of them; Fill-the-gap attributes its
+    masked character automatically. Each mark is a real Again on that
+    character's own card.
+  - *Problem characters in Focus:* characters blamed repeatedly that
+    never stabilize join the Focus pool — even when they're not saved
+    as words. A Focus session teaches and re-tests them like any
+    problem word.
+  - *Known-parts head start:* a newly saved word whose every
+    character is already strong (≥7 days stability, cascade-earned
+    counts) starts a few days out instead of due immediately — words
+    of well-known characters need less attention.
+  - *Urgent-first ordering:* words containing a problem character
+    lead their group in the session queue, so attention lands where
+    failure is likeliest.
+
 ### Changed
 - **"Include word characters" (v135):** the launch toggle that used
   to surface deep cascade components (豕 from 家) now does what its

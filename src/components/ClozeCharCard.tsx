@@ -8,8 +8,10 @@ interface Props {
   word: string;
   gloss: string;
   savedWords: string[];
-  // 0–1 performance score (binary: correct pick = 1, wrong = 0).
-  onScore: (score: number) => void;
+  // 0–1 performance score (binary: correct pick = 1, wrong = 0). On a
+  // miss the masked character is reported too — cloze knows exactly
+  // which character failed, so attribution is automatic (v136).
+  onScore: (score: number, failedChar?: string) => void;
   // Open the EntitySheet for a tapped character (post-answer).
   onOpenEntity?: (key: string) => void;
 }
@@ -41,7 +43,8 @@ export function ClozeCharCard({ word, gloss, savedWords, onScore, onOpenEntity }
   const glyphs = [...word];
   const advance = () => {
     if (picked === null) return;
-    onScore(isCorrect ? 1 : 0);
+    if (isCorrect) onScore(1);
+    else onScore(0, task.answer);
   };
 
   return (

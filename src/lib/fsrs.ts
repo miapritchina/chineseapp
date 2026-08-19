@@ -131,6 +131,27 @@ export function applyCascadeCredit(
   };
 }
 
+// Known-parts head start (v136): the minimum constituent-character
+// stability of a multi-char word, or null when any character has no
+// review history (no prior — the word starts due-now like before).
+// Callers give a brand-new word a damped cascade-style credit when
+// every part is already strong: words built from well-known characters
+// need less attention than words hiding a problem character.
+export function knownPartsStability(
+  word: string,
+  stabilityOf: (char: string) => number | null,
+): number | null {
+  const glyphs = [...new Set(word)];
+  if (glyphs.length < 2) return null;
+  let min = Infinity;
+  for (const c of glyphs) {
+    const s = stabilityOf(c);
+    if (s === null) return null;
+    min = Math.min(min, s);
+  }
+  return min;
+}
+
 // Schedule-only snooze: floor the due date at `until` without touching
 // stability, reps, or state. Used after a Sift lesson (v126) — a word
 // the user just studied shouldn't be re-tested minutes later.

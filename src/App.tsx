@@ -55,7 +55,7 @@ import { useState } from "react";
 import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
-import { problemWords, FOCUS_POOL } from "./lib/focus";
+import { problemWords, problemChars, FOCUS_POOL } from "./lib/focus";
 import { ensureAllFontFaces, ensureFontFace, fontById, nextFontId } from "./lib/fonts";
 import { isDue } from "./lib/fsrs";
 import { planFlow, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
@@ -156,11 +156,13 @@ export function App() {
   const [siftWords, setSiftWords] = useState<string[] | null>(null);
   // Focus mode (v127): the active problem-word session; null = closed.
   const [focusWords, setFocusWords] = useState<string[] | null>(null);
-  // Problem words: seen ≥8 times, still lapsing, stability < 7d —
-  // ranked worst first (lib/focus.ts).
+  // Problem items (lib/focus.ts): words seen ≥8 times but still
+  // lapsing, plus — v136 — CHARACTERS with repeated attributed/direct
+  // failures that never stabilized (they may not be saved as words at
+  // all). Worst first, words leading.
   const problemPool = useMemo(() => {
     const FACETS = ["meaningRecognition", "soundRecognition", "reverseRecognition", "clozeChar"];
-    return problemWords(
+    const words = problemWords(
       saved.savedList.map((s) => s.word),
       (w) => {
         const rows = [];
@@ -176,7 +178,22 @@ export function App() {
         return rows;
       },
     );
-  }, [saved.savedList, reviewState.cards]);
+    const charRows = new Map();
+    for (const row of reviewState.cards.values()) {
+      if (row.itemKind !== "char") continue;
+      if (row.facet !== "meaningRecognition" && row.facet !== "soundRecognition") continue;
+      if (saved.saved?.has(row.itemKey)) continue; // saved chars are covered as words
+      const arr = charRows.get(row.itemKey) ?? [];
+      arr.push({
+        reps: row.card.reps ?? 0,
+        lapses: row.card.lapses ?? 0,
+        stability: row.card.stability ?? 0,
+      });
+      charRows.set(row.itemKey, arr);
+    }
+    const chars = problemChars([...charRows.keys()], (c) => charRows.get(c) ?? []);
+    return [...words, ...chars.filter((c) => !words.includes(c))];
+  }, [saved.savedList, saved.saved, reviewState.cards]);
   // Words left-swiped in Sift today — hidden from Sift until tomorrow,
   // still due everywhere else. Per-day ephemeral, so localStorage-only
   // (same carve-out as the old per-day new-card counter).
@@ -603,7 +620,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v135"
+          version="chinese v136"
           reviewHref="#/review"
           reviewBadge={dueCards.length}
           exploreHref="#/explore"
@@ -688,6 +705,7 @@ export function App() {
         <FocusPage
           words={focusWords}
           randomFont={randomFont}
+          onAttributeFailure={(c) => attributeFailure(c)}
           onClose={() => setFocusWords(null)}
           onGrade={(key, rating, kind, facet, score) => grade(key, rating, kind, facet, score)}
           onOpenEntity={(key) => {

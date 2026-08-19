@@ -16,6 +16,7 @@ import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import { interleaveByActivity, type ClusterMemberResult } from "../lib/drillGen";
+import { FOCUS_MAX_STABILITY_DAYS, PROBLEM_CHAR_MIN_LAPSES } from "../lib/focus";
 import { pickDrillFontStack } from "../lib/fonts";
 import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
@@ -119,6 +120,8 @@ export function ReviewPage({
   const { saved: savedKeys, savedList } = useSavedCtx();
   const [revealed, setRevealed] = useState(false);
   const [attribTarget, setAttribTarget] = useState<string | null>(null);
+  // Multi-select (v136): characters blamed on the attribution panel.
+  const [attribPicked, setAttribPicked] = useState<Set<string>>(() => new Set());
   // Cards the user has explicitly skipped this session; filtered out of
   // the visible queue so they don't keep surfacing.
   const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
@@ -339,7 +342,6 @@ export function ReviewPage({
     // setState during render is OK here — these are state resets aligned
     // with the rendered identity, not loops.
     if (revealed) setRevealed(false);
-    if (attribTarget) setAttribTarget(null);
   }
 
   // Hydrate the next few words in the background so reveal is instant.
@@ -398,6 +400,7 @@ export function ReviewPage({
     setDoneCount((n) => n + 1);
     setRevealed(false);
     setAttribTarget(null);
+    setAttribPicked(new Set());
   }, []);
 
   // Stable per-render handler for the recognition reveal-card grade
@@ -405,13 +408,18 @@ export function ReviewPage({
   // (handleRecognitionGrade lived here pre-v71; replaced by the inline
   // CombinedRecognitionCard's dual-row grading in the default branch.)
 
-  const handleAttribute = useCallback(
-    (childKey: string) => {
-      onAttributeFailure?.(childKey);
-      onGradedAdvance();
-    },
-    [onAttributeFailure, onGradedAdvance],
-  );
+  const toggleAttrib = useCallback((c: string) => {
+    setAttribPicked((prev) => {
+      const n = new Set(prev);
+      if (n.has(c)) n.delete(c);
+      else n.add(c);
+      return n;
+    });
+  }, []);
+  const confirmAttrib = useCallback(() => {
+    for (const c of attribPicked) onAttributeFailure?.(c);
+    onGradedAdvance();
+  }, [attribPicked, onAttributeFailure, onGradedAdvance]);
 
   // Again → the card re-enters the session queue at the end (fresh
   // position); any other grade clears its pending retry.
@@ -428,7 +436,7 @@ export function ReviewPage({
   // pick on a 4-option drill is 25%-guess-floor evidence, so once a
   // card is already lapsing (≥2) it grades Hard, not another lapse.
   const handleDrillScore = useCallback(
-    (score: number) => {
+    (score: number, failedChar?: string) => {
       if (!current) return;
       const k = cardKey(current);
       if (lastGradedRef.current === k) return;
@@ -440,9 +448,25 @@ export function ReviewPage({
         rating = "Hard";
       }
       onGrade(cur.itemKey, rating, cur.itemKind, cur.facet, score);
+      if (score < 1 && onAttributeFailure) {
+        // Cloze knows exactly which character failed — attribute it
+        // silently (v136). Reverse can't tell, so ask.
+        if (failedChar) {
+          onAttributeFailure(failedChar);
+        } else if (
+          cur.facet === "reverseRecognition" &&
+          cur.itemKind === "word" &&
+          [...cur.itemKey].length > 1
+        ) {
+          setAttribTarget(cur.itemKey);
+          setDoneCount((n) => n + 1);
+          setRevealed(false);
+          return;
+        }
+      }
       onGradedAdvance();
     },
-    [current, onGrade, onGradedAdvance],
+    [current, onGrade, onGradedAdvance, onAttributeFailure],
   );
 
   const handleSkipCurrent = useCallback(() => {
@@ -450,8 +474,51 @@ export function ReviewPage({
   }, [current, advanceWithoutGrading]);
 
   useEffect(() => {
-    if (!current && onComplete) onComplete();
-  }, [current, onComplete]);
+    if (!current && !attribTarget && onComplete) onComplete();
+  }, [current, attribTarget, onComplete]);
+
+  // Failure attribution (v57, multi-select since v136): after a missed
+  // multi-char word, blame any subset of its characters — each takes a
+  // real Again on its own card, feeding the problem-character pool.
+  // Early return: the graded card has already left the queue beneath us.
+  if (attribTarget && onAttributeFailure) {
+    return (
+      <div className="review-root">
+        <PageHeader onBack={onClose} tag="Which characters?" progress="" />
+        <div className="review-body">
+          <div className="review-attrib">
+            <div className="review-attrib-title">Which characters threw you?</div>
+            <div className="review-attrib-row">
+              {[...attribTarget].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`review-attrib-pick${attribPicked.has(c) ? " is-on" : ""}`}
+                  aria-pressed={attribPicked.has(c)}
+                  onClick={() => toggleAttrib(c)}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <div className="combined-grade-row">
+              <button type="button" className="review-attrib-skip" onClick={onGradedAdvance}>
+                Skip
+              </button>
+              <button
+                type="button"
+                className="review-btn review-btn-good"
+                disabled={attribPicked.size === 0}
+                onClick={confirmAttrib}
+              >
+                Mark {attribPicked.size > 0 ? attribPicked.size : ""} as problem
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!current) {
     return (
@@ -732,36 +799,15 @@ export function ReviewPage({
       />
       <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">
-        {attribTarget ? (
-          <div className="review-attrib">
-            <div className="review-attrib-title">What threw you?</div>
-            <div className="review-attrib-row">
-              {[...attribTarget].map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className="review-attrib-pick"
-                  onClick={() => handleAttribute(c)}
-                >
-                  {c}
-                </button>
-              ))}
-              <button type="button" className="review-attrib-skip" onClick={onGradedAdvance}>
-                Skip
-              </button>
-            </div>
-          </div>
-        ) : (
-          <CombinedRecognitionCard
-            key={cardKey(current)}
-            itemKey={current.itemKey}
-            itemKind={current.itemKind}
-            word={word}
-            charData={charData}
-            onGraded={handleCombinedGraded}
-            onOpenEntity={onOpenEntity}
-          />
-        )}
+        <CombinedRecognitionCard
+          key={cardKey(current)}
+          itemKey={current.itemKey}
+          itemKind={current.itemKind}
+          word={word}
+          charData={charData}
+          onGraded={handleCombinedGraded}
+          onOpenEntity={onOpenEntity}
+        />
       </div>
     </div>
   );

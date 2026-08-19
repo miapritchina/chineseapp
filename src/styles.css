@@ -460,6 +460,13 @@ body {
   background: var(--surface-2);
   outline: none;
 }
+/* Multi-select (v136): picked = neutral ink outline (selection is
+   never red/green pre-submit). */
+.review-attrib-pick.is-on {
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px var(--text);
+  background: var(--surface-2);
+}
 .review-attrib-skip {
   margin-left: auto;
   background: transparent;

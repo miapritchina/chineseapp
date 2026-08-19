@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { applyCascadeCredit, gradeCard, scoreToRating, seedCard, snoozeCard } from "./fsrs";
+import {
+  applyCascadeCredit,
+  gradeCard,
+  knownPartsStability,
+  scoreToRating,
+  seedCard,
+  snoozeCard,
+} from "./fsrs";
 
 describe("snoozeCard", () => {
   const now = new Date("2026-08-16T12:00:00Z");
@@ -78,5 +85,22 @@ describe("applyCascadeCredit", () => {
     expect(credited.reps).toBe(card.reps);
     expect(credited.lapses).toBe(card.lapses);
     expect(credited.state).toBe(card.state);
+  });
+});
+
+describe("knownPartsStability", () => {
+  const stab = new Map([
+    ["你", 20],
+    ["好", 9],
+  ]);
+  const lookup = (c: string) => stab.get(c) ?? null;
+  it("returns the minimum constituent stability", () => {
+    expect(knownPartsStability("你好", lookup)).toBe(9);
+  });
+  it("null when any character has no history", () => {
+    expect(knownPartsStability("你们", lookup)).toBeNull();
+  });
+  it("null for single characters — no parts to know", () => {
+    expect(knownPartsStability("你", lookup)).toBeNull();
   });
 });
