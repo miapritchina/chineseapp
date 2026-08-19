@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { WordInferenceCard } from "./WordInferenceCard";
+import { WordBuildCard } from "./WordBuildCard";
 import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
@@ -38,6 +39,19 @@ export const WordInference: StoryObj = {
       <WordInferenceCard
         word={WORDS["中国"]}
         glossPool={["hello; hi", "to study; to learn", "friend"]}
+        onGotIt={() => {}}
+        onMissed={() => {}}
+      />
+    </Shell>
+  ),
+};
+
+export const WordBuild: StoryObj = {
+  render: () => (
+    <Shell tag="New word">
+      <WordBuildCard
+        word={WORDS["中国"]}
+        savedWords={savedWords}
         onGotIt={() => {}}
         onMissed={() => {}}
       />

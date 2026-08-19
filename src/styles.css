@@ -1363,6 +1363,13 @@ body {
   display: flex;
   gap: 8px;
 }
+/* Build-the-word tray (v137): consumed chips keep their footprint so
+   the tray doesn't reflow under the finger. */
+.wordbuild-used {
+  width: 56px;
+  height: 60px;
+  visibility: hidden;
+}
 .cluster-miss-chip {
   position: absolute;
   top: 6px;

@@ -52,10 +52,11 @@ import { encodeWords, makeShareToken, shareUrl } from "./lib/share";
 
 import type { Word, ModalEntry } from "./lib/types";
 import { useState } from "react";
-import { buildClusters } from "./lib/drillGen";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
 import { problemWords, problemChars, FOCUS_POOL } from "./lib/focus";
+import { DAILY_GOAL, bumpDailyDone, loadDailyDone } from "./lib/dailyGoal";
+import { buildClusters, shuffle } from "./lib/drillGen";
 import { ensureAllFontFaces, ensureFontFace, fontById, nextFontId } from "./lib/fonts";
 import { isDue } from "./lib/fsrs";
 import { planFlow, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
@@ -156,6 +157,18 @@ export function App() {
   const [siftWords, setSiftWords] = useState<string[] | null>(null);
   // Focus mode (v127): the active problem-word session; null = closed.
   const [focusWords, setFocusWords] = useState<string[] | null>(null);
+  // Daily goal (v137): graded cards done today. The backlog stays
+  // available; the badge counts down a modest expectation instead.
+  const [dailyDone, setDailyDone] = useState<number>(() => loadDailyDone());
+  const noteCardDone = () => setDailyDone(bumpDailyDone());
+  // Family sweep pool (v137): the sweep is a game over ALL usable
+  // components now — a fresh random sample each app session.
+  const sweepComponents = useMemo(() => {
+    const usable = (phonetics.components ?? []).filter(
+      (c) => (c.family ?? []).filter((f) => f && f !== c.char && charsData.chars[f]).length >= 3,
+    );
+    return shuffle(usable).slice(0, 4);
+  }, [phonetics.components, charsData.chars]);
   // Problem items (lib/focus.ts): words seen ≥8 times but still
   // lapsing, plus — v136 — CHARACTERS with repeated attributed/direct
   // failures that never stabilized (they may not be saved as words at
@@ -620,9 +633,9 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v136"
+          version="chinese v137"
           reviewHref="#/review"
-          reviewBadge={dueCards.length}
+          reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
           exploreHref="#/explore"
           classicHref="#/classic"
           statsHref="#/stats"
@@ -647,6 +660,8 @@ export function App() {
       {showReview && !reviewLaunched && !learnWords && !siftWords && !focusWords && !gameOpen && (
         <ReviewLaunch
           totalDue={dueCards.length}
+          dailyDone={dailyDone}
+          dailyGoal={DAILY_GOAL}
           facetCounts={{
             ...dueCards.reduce<Record<string, number>>((acc, c) => {
               const f = c.facet === "recognition" ? "meaningRecognition" : c.facet;
@@ -655,6 +670,7 @@ export function App() {
             }, {}),
             wordInference: inferenceWords.length,
             clusterRecall: clusters.length,
+            familySweep: sweepComponents.length,
           }}
           learnCount={learnableWords.length}
           onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
@@ -705,6 +721,7 @@ export function App() {
         <FocusPage
           words={focusWords}
           randomFont={randomFont}
+          onCardDone={noteCardDone}
           onAttributeFailure={(c) => attributeFailure(c)}
           onClose={() => setFocusWords(null)}
           onGrade={(key, rating, kind, facet, score) => grade(key, rating, kind, facet, score)}
@@ -749,6 +766,7 @@ export function App() {
             }
           }}
           onKeep={(w) => keepInSift(w)}
+          onCardDone={noteCardDone}
           onLessonDone={(w) => {
             // Same "introduced" credit Learn mode gives, plus a floor:
             // every still-due row moves to tomorrow — the user just
@@ -801,6 +819,8 @@ export function App() {
             recordInference(w, gotIt);
           }}
           clusters={clusters}
+          sweepComponents={sweepComponents}
+          onCardDone={noteCardDone}
           phoneticComponents={phonetics.components}
           phoneticComponentsByChar={phonetics.byChar}
           enabledFacets={new Set(reviewLaunched.enabledFacets)}

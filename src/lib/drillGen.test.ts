@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildFamilySweep,
+  buildWordTray,
   familySweepScore,
   inferencePairs,
   interleaveByActivity,
@@ -275,5 +276,20 @@ describe("interleaveByActivity urgent rows", () => {
     ];
     const out = interleaveByActivity(rows, (r) => r.itemKey.includes("什"));
     expect(out.map((r) => r.id)).toEqual(["urgent", "calm"]);
+  });
+});
+
+describe("buildWordTray", () => {
+  it("tray holds the word's glyphs (duplicates kept) plus decoys", () => {
+    const task = buildWordTray("妈妈", ["妈妈", "你好", "中国", "学习"], rand0);
+    expect(task).not.toBeNull();
+    expect(task!.chars).toEqual(["妈", "妈"]);
+    expect(task!.tray.filter((c) => c === "妈")).toHaveLength(2);
+    expect(task!.tray.length).toBeGreaterThan(2);
+    for (const d of task!.tray) expect(["妈", "你", "好", "中", "国", "学", "习"]).toContain(d);
+  });
+  it("null for single-char words or too few decoys", () => {
+    expect(buildWordTray("好", ["好"], rand0)).toBeNull();
+    expect(buildWordTray("你好", ["你好"], rand0)).toBeNull();
   });
 });

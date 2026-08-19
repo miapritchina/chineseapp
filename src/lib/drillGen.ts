@@ -203,7 +203,7 @@ export function buildClusters(
 // group holding the most overdue card overall. wordInference and
 // clusterRecall rows are synthetic (dueAt 0), so they always rotate
 // last.
-const SYNTHETIC_FACETS = new Set(["wordInference", "clusterRecall"]);
+const SYNTHETIC_FACETS = new Set(["wordInference", "clusterRecall", "familySweep"]);
 
 export function interleaveByActivity<T extends { facet: string; dueAt: number }>(
   rows: T[],
@@ -309,6 +309,34 @@ export function planClusterGrades(
     }
   }
   return { grades, cascadeTargets: [...targets] };
+}
+
+export interface WordBuildTask {
+  // The word's glyphs in answer order (duplicates kept — 妈妈 needs 妈
+  // twice in the tray).
+  chars: string[];
+  tray: string[];
+}
+
+// Build-the-word game (v137): translation shown, assemble the hanzi
+// from a tray of the word's characters plus decoys from the user's
+// known characters. Null when there aren't enough decoys to make it a
+// puzzle.
+export function buildWordTray(
+  word: string,
+  savedWords: string[],
+  rand: Rand = Math.random,
+  decoyCount = 4,
+): WordBuildTask | null {
+  const glyphs = [...word];
+  if (glyphs.length < 2) return null;
+  const inWord = new Set(glyphs);
+  const decoys = shuffle(
+    knownChars(savedWords, 100).filter((c) => !inWord.has(c)),
+    rand,
+  ).slice(0, decoyCount);
+  if (decoys.length < 2) return null;
+  return { chars: glyphs, tray: shuffle([...glyphs, ...decoys], rand) };
 }
 
 export interface FamilySweepTask {

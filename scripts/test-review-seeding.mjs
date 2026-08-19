@@ -38,20 +38,6 @@ function expectedCards(savedWords, phoneticComponentsByChar = null, chars = {}) 
       });
     }
   }
-  if (phoneticComponentsByChar && phoneticComponentsByChar.size > 0 && chars) {
-    for (const key of savedWords) {
-      if ([...key].length !== 1) continue;
-      const comp = phoneticComponentsByChar.get(key);
-      if (!comp?.family) continue;
-      const usable = comp.family.filter((f) => f && f !== comp.char && chars[f]);
-      if (usable.length < 3) continue;
-      out.set(`component|familySweep|${key}`, {
-        itemKey: key,
-        itemKind: "component",
-        facet: "familySweep",
-      });
-    }
-  }
   for (const key of savedWords) {
     if ([...key].length !== 1) continue;
     out.set(`char|production|${key}`, {
@@ -86,22 +72,11 @@ test("multi-char saved word additionally seeds a cloze card", () => {
   assert.ok(m.has("word|clozeChar|你好"));
 });
 
-test("familySweep seeds only for components with 3+ usable family members", () => {
-  const byChar = new Map([
-    ["青", { char: "青", family: ["请", "情", "晴", "清"] }],
-    ["尔", { char: "尔", family: ["你", "您"] }],
-  ]);
-  const chars = { 请: {}, 情: {}, 晴: {}, 清: {}, 你: {}, 您: {} };
-  const m = expectedCards(["青", "尔"], byChar, chars);
-  assert.ok(m.has("component|familySweep|青"));
-  assert.equal(m.has("component|familySweep|尔"), false); // only 2 members
-});
-
-test("familySweep ignores family members missing from data-chars", () => {
-  const byChar = new Map([["青", { char: "青", family: ["请", "情", "晴"] }]]);
-  const chars = { 请: {}, 情: {} }; // 晴 missing → only 2 usable
+test("familySweep never seeds FSRS rows (retired v137 — the sweep is an ungraded game)", () => {
+  const byChar = new Map([["青", { char: "青", family: ["请", "情", "晴", "清"] }]]);
+  const chars = { 请: {}, 情: {}, 晴: {}, 清: {} };
   const m = expectedCards(["青"], byChar, chars);
-  assert.equal(m.has("component|familySweep|青"), false);
+  assert.equal([...m.keys()].some((k) => k.includes("familySweep")), false);
 });
 
 test("retired phoneticTap facet never seeds", () => {

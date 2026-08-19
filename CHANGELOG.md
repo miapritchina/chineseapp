@@ -12,6 +12,26 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **Daily goal instead of backlog dread (v137):** the review badge
+  now counts down a modest 30-cards-a-day goal (fed by review, Sift
+  and Focus) instead of showing the whole 1000+ backlog; the launch
+  screen shows "done / goal today". Everything due stays one tap away
+  — only the expectation changed, not availability.
+- **Build-the-word mode (v137):** New-words cards randomly flip
+  between guess-the-meaning and the new build mode — translation
+  shown, assemble the hanzi from a tray of its characters plus
+  decoys. Clean build credits the characters like a correct guess.
+
+### Changed
+- **New words + Family sweep are games now (v137):** both live under
+  "Just for fun · ungraded" on the launch screen, don't count as due
+  review and don't feed the daily goal. Family sweep stopped grading
+  entirely, dropped its FSRS rows, and draws 4 random components per
+  session from ALL 250 (it used to cycle the same few saved ones with
+  the same words).
+- **New-words pool ×3+ (v137):** candidate pairs now come from your
+  60 most recent distinct characters (was 36) and the pool holds up
+  to 100 discovered words (was 30).
 - **Character↔word attention loop (v136,
   [ADR-0016](docs/decisions/0016-character-word-attention-loop.md)):**
   - *Blame the characters:* after missing a multi-character word
