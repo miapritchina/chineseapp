@@ -26,6 +26,9 @@ interface Props {
   ) => void;
   onOpenEntity: (key: string) => void;
   onOpenTree?: (char: string) => void;
+  // Cloze knows which character failed — attribute it automatically
+  // (v136), feeding the problem-character pool.
+  onAttributeFailure?: (childKey: string) => void;
   // Random font per card (v133) — practice/test steps only; lessons
   // stay in the chosen reading font.
   randomFont?: boolean;
@@ -47,11 +50,12 @@ export function FocusPage({
   onOpenEntity,
   onOpenTree,
   onExplore,
+  onAttributeFailure,
   randomFont,
 }: Props) {
   const { chars } = useCharsCtx();
   const { findWord, ensureCached } = useDictCtx();
-  const { savedList } = useSavedCtx();
+  const { savedList, saved } = useSavedCtx();
   const [queue] = useState(() => buildFocusQueue(words));
   const [index, setIndex] = useState(0);
   // Post-test mnemonic nudge for a word whose graded test failed.
@@ -180,10 +184,12 @@ export function FocusPage({
           word={current.word}
           gloss={glossOf(current.word)}
           savedWords={savedWords}
-          onScore={(score) => {
+          onScore={(score, failedChar) => {
             onGrade(current.word, scoreToRating(score), "word", "clozeChar", score);
-            if (score < 1) setHookWord(current.word);
-            else advance();
+            if (score < 1) {
+              if (failedChar) onAttributeFailure?.(failedChar);
+              setHookWord(current.word);
+            } else advance();
           }}
           onOpenEntity={onOpenEntity}
         />
@@ -194,7 +200,14 @@ export function FocusPage({
           gloss={glossOf(current.word)}
           savedWords={savedWords}
           onScore={(score) => {
-            onGrade(current.word, scoreToRating(score), "word", "reverseRecognition", score);
+            // Problem CHARACTERS (v136) aren't saved as words — their
+            // grade lands on the char-kind row that made them a
+            // problem, so Focus progress clears them from the pool.
+            if (saved?.has(current.word)) {
+              onGrade(current.word, scoreToRating(score), "word", "reverseRecognition", score);
+            } else {
+              onGrade(current.word, scoreToRating(score), "char", "meaningRecognition", score);
+            }
             if (score < 1) setHookWord(current.word);
             else advance();
           }}

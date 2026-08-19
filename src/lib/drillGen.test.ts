@@ -266,3 +266,14 @@ describe("planClusterGrades", () => {
     expect(plan.cascadeTargets).toEqual([]);
   });
 });
+
+describe("interleaveByActivity urgent rows", () => {
+  it("urgent rows lead their group regardless of due date", () => {
+    const rows = [
+      { facet: "meaningRecognition", dueAt: 1, id: "calm", itemKey: "你好" },
+      { facet: "meaningRecognition", dueAt: 9, id: "urgent", itemKey: "什么" },
+    ];
+    const out = interleaveByActivity(rows, (r) => r.itemKey.includes("什"));
+    expect(out.map((r) => r.id)).toEqual(["urgent", "calm"]);
+  });
+});

@@ -180,6 +180,14 @@ The two-dispatch same-tick write is what forced
 
 Good/Easy on a word damp-credits every constituent char. Again does
 not cascade. See [ADR-0004](../decisions/0004-cascade-credit-on-good-not-again.md).
+The loop closed upward in v136 ([ADR-0016](../decisions/0016-character-word-attention-loop.md)):
+failure attribution is multi-select and covers Reverse (cloze
+attributes its masked char automatically); characters with ≥3 lapses
+and <7d stability are **problem characters** — they join the Focus
+pool (graded on their char-kind rows) and words containing them lead
+the session queue's interleave groups; and a brand-new word whose
+every character already has ≥7d stability seeds with one damped
+cascade credit (`knownPartsStability`) instead of due-now.
 Credit bookkeeping (rebalance stage 4): `applyCascadeCredit` stamps
 `last_review` (so the sync merge's recency tie-break keeps the
 credited row instead of reverting it to a stale remote copy) but

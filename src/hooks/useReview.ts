@@ -4,6 +4,7 @@ import {
   applyCascadeCredit,
   gradeCard,
   isDue,
+  knownPartsStability,
   seedCard,
   snoozeCard,
   type RatingName,
@@ -22,6 +23,12 @@ const FSRS_KEY = "chinese.fsrs.v1";
 // localStorage / Supabase from before the drop.
 const RETIRED_FACETS = new Set<string>(["phoneticTap", "componentSound", "familyTransfer"]);
 const CASCADE_CAP_DAYS = 7;
+// Known-parts head start (v136): a brand-new multi-char word whose
+// every constituent character already has this much stability starts
+// with one damped cascade-style credit instead of due-now — words of
+// well-known characters need less attention than words hiding a
+// problem character.
+const KNOWN_PARTS_MIN_STABILITY_DAYS = 7;
 // Passive-view credit (v108): opening a saved item's sheet counts a
 // LITTLE — half a Good's stability gain (the cascade damping), due
 // pushed at most this many days, reps untouched. Throttled to one
@@ -238,9 +245,31 @@ export function useReview({
     }
 
     const newSeeds: ReviewCard[] = [];
+    // Head-start eligibility per word key, computed once against the
+    // pre-existing char rows (chars get rows via cascade, attribution,
+    // and word-character reviews — never in this seeding pass).
+    const headStartCache = new Map<string, boolean>();
+    const hasHeadStart = (key: string): boolean => {
+      let v = headStartCache.get(key);
+      if (v === undefined) {
+        // Cascade-earned stability counts too — a char repeatedly
+        // credited through other words IS known, even if never
+        // directly graded.
+        const minStab = knownPartsStability(key, (c) => {
+          const r = next.get(rowId(c, "char", MEANING_FACET));
+          return r ? (r.card.stability ?? 0) : null;
+        });
+        v = minStab !== null && minStab >= KNOWN_PARTS_MIN_STABILITY_DAYS;
+        headStartCache.set(key, v);
+      }
+      return v;
+    };
     for (const [id, target] of expectedCards) {
       if (!next.has(id)) {
-        const seeded = seedCard();
+        let seeded = seedCard();
+        if (target.itemKind === "word" && hasHeadStart(target.itemKey)) {
+          seeded = applyCascadeCredit(seeded, CASCADE_CAP_DAYS);
+        }
         const row: ReviewCard = {
           itemKey: target.itemKey,
           itemKind: target.itemKind,

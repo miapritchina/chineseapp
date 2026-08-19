@@ -205,7 +205,13 @@ export function buildClusters(
 // last.
 const SYNTHETIC_FACETS = new Set(["wordInference", "clusterRecall"]);
 
-export function interleaveByActivity<T extends { facet: string; dueAt: number }>(rows: T[]): T[] {
+export function interleaveByActivity<T extends { facet: string; dueAt: number }>(
+  rows: T[],
+  // Urgent rows (v136: words containing a problem character) lead
+  // their group regardless of due date — attention goes to the words
+  // most likely to fail first.
+  isUrgent?: (row: T) => boolean,
+): T[] {
   const keyOf = (f: string) =>
     f === "meaningRecognition" || f === "soundRecognition" || f === "recognition"
       ? "recognition"
@@ -217,7 +223,8 @@ export function interleaveByActivity<T extends { facet: string; dueAt: number }>
     if (g) g.push(r);
     else groups.set(k, [r]);
   }
-  for (const g of groups.values()) g.sort((a, b) => a.dueAt - b.dueAt);
+  const u = (r: T) => (isUrgent?.(r) ? 1 : 0);
+  for (const g of groups.values()) g.sort((a, b) => u(b) - u(a) || a.dueAt - b.dueAt);
   const urgency = (k: string) => (SYNTHETIC_FACETS.has(k) ? Infinity : groups.get(k)![0].dueAt);
   const order = [...groups.keys()].sort((a, b) => urgency(a) - urgency(b));
   const out: T[] = [];

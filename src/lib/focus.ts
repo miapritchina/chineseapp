@@ -47,6 +47,32 @@ export function problemWords(savedWords: string[], rowsOf: (word: string) => Foc
   return scored.map((s) => s.word);
 }
 
+// Problem CHARACTERS (v136): single chars accumulate rows via failure
+// attribution ("what threw you?") and word-character reviews — mostly
+// Agains, so the word-level reps floor would never let them qualify.
+// A char is a problem once it's been blamed/failed repeatedly and
+// still isn't stable.
+export const PROBLEM_CHAR_MIN_LAPSES = 3;
+
+export function isProblemChar(rows: FocusRow[]): boolean {
+  if (rows.length === 0) return false;
+  const lapses = rows.reduce((n, r) => n + r.lapses, 0);
+  const minStability = Math.min(...rows.map((r) => r.stability));
+  return lapses >= PROBLEM_CHAR_MIN_LAPSES && minStability < FOCUS_MAX_STABILITY_DAYS;
+}
+
+// Ranked worst-first by raw lapses.
+export function problemChars(charKeys: string[], rowsOf: (char: string) => FocusRow[]): string[] {
+  const scored: { char: string; lapses: number }[] = [];
+  for (const c of charKeys) {
+    const rows = rowsOf(c);
+    if (!isProblemChar(rows)) continue;
+    scored.push({ char: c, lapses: rows.reduce((n, r) => n + r.lapses, 0) });
+  }
+  scored.sort((a, b) => b.lapses - a.lapses);
+  return scored.map((s) => s.char);
+}
+
 export type FocusStepKind = "lesson" | "practice" | "test";
 
 export interface FocusStep {
