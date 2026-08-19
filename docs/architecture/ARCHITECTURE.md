@@ -127,9 +127,11 @@ kinds, seven scheduled facets (plus one session-only drill):
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
 has no FSRS row: unsaved words built from known chars — a correct
 answer cascade-credits the constituent char cards. A game, not review
-(v137): excluded from due counts and the daily goal. Pool pairs the
-60 most recent distinct chars, keeps up to 100 words (was 36/30 —
-"I know 500 words and it says 26 new words. Laughable."). Each word
+(v137): excluded from due counts and the daily goal. Pool comes from the
+`words_from_chars` RPC (v138, migration 0015): every real two-char
+word buildable from the user's WHOLE character set, one query, up to
+150 in rotation, fresh×old combinations first (client pair-probe over
+recent chars remains the ADR-0005 fallback). Each word
 randomly renders as guess-the-meaning OR build-the-word
 (`WordBuildCard`: translation shown, assemble the hanzi from a tray
 of its characters + decoys). Since v104 an

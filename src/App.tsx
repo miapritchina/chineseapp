@@ -633,7 +633,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v137"
+          version="chinese v138"
           reviewHref="#/review"
           reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
           exploreHref="#/explore"

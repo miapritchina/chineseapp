@@ -311,6 +311,18 @@ export function planClusterGrades(
   return { grades, cascadeTargets: [...targets] };
 }
 
+// Order the new-words pool so fresh×old combinations lead (v138,
+// owner: "it is super fun to combine a newly learned character with
+// an old one — my favorite game"): words containing at least one
+// recently-learned character first, then common-words-first.
+export function orderInferencePool<T extends { word: string; rank?: number | null }>(
+  words: T[],
+  recentChars: Set<string>,
+): T[] {
+  const recency = (w: T) => ([...w.word].some((c) => recentChars.has(c)) ? 0 : 1);
+  return words.slice().sort((a, b) => recency(a) - recency(b) || (a.rank ?? 1e9) - (b.rank ?? 1e9));
+}
+
 export interface WordBuildTask {
   // The word's glyphs in answer order (duplicates kept — 妈妈 needs 妈
   // twice in the tray).
