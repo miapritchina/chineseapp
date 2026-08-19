@@ -17,8 +17,11 @@ export interface ReviewSettings {
 
 const SETTINGS_KEY = "chinese.reviewSettings";
 
-// The drill types offered on the launch screen.
-const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string; fun?: boolean }[] = [
+// The drill types offered on the launch screen. Exported (v139) so
+// the Stats page can render the due-by-drill breakdown — the counts
+// left the launch screen (owner: numbers = pressure; stats = numbers
+// welcome).
+export const ALL_FACET_OPTIONS: { facet: Facet; label: string; hint: string; fun?: boolean }[] = [
   {
     facet: "meaningRecognition",
     label: "Recognition",
@@ -222,9 +225,6 @@ export function ReviewLaunch({
   );
 
   const renderFacetOption = (o: (typeof ALL_FACET_OPTIONS)[number]) => {
-    // Recognition surfaces ONE card per word even when both facet rows
-    // are due — count words, not rows.
-    const count = facetCounts[o.facet] || 0;
     const isOn = enabled.has(o.facet);
     return (
       <button
@@ -237,7 +237,6 @@ export function ReviewLaunch({
         <span className="launch-option-row">
           <span className="launch-option-check">{isOn ? "●" : "○"}</span>
           <span className="launch-option-label">{o.label}</span>
-          <span className="launch-option-count">{count}</span>
         </span>
         <span className="launch-option-hint">{o.hint}</span>
       </button>
@@ -412,9 +411,7 @@ export function ReviewLaunch({
           onClick={start}
           disabled={visibleDue === 0}
         >
-          {sessionSize !== null && visibleDue > sessionSize
-            ? `Start review · ${sessionSize} of ${visibleDue} cards`
-            : `Start review · ${visibleDue} cards`}
+          {`Start review · ${sessionSize !== null ? Math.min(sessionSize, visibleDue) : visibleDue} cards`}
         </button>
         {onStartLearn && (
           <button

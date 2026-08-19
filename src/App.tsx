@@ -30,6 +30,7 @@ import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
 import {
   ReviewLaunch,
+  ALL_FACET_OPTIONS,
   loadSettings,
   loadStartSettings,
   type ReviewSettings,
@@ -270,6 +271,21 @@ export function App() {
         phonetics.byChar,
       ),
     [saved.savedList, phonetics.byChar],
+  );
+
+  // Per-facet due counts (v139): off the launch screen, onto Stats.
+  const facetDueCounts = useMemo<Record<string, number>>(
+    () => ({
+      ...dueCards.reduce<Record<string, number>>((acc, c) => {
+        const f = c.facet === "recognition" ? "meaningRecognition" : c.facet;
+        acc[f] = (acc[f] || 0) + 1;
+        return acc;
+      }, {}),
+      wordInference: inferenceWords.length,
+      clusterRecall: clusters.length,
+      familySweep: sweepComponents.length,
+    }),
+    [dueCards, inferenceWords.length, clusters.length, sweepComponents.length],
   );
 
   // Wake the Supabase project early to mask cold-start latency.
@@ -633,7 +649,7 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v138"
+          version="chinese v139"
           reviewHref="#/review"
           reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
           exploreHref="#/explore"
@@ -662,16 +678,7 @@ export function App() {
           totalDue={dueCards.length}
           dailyDone={dailyDone}
           dailyGoal={DAILY_GOAL}
-          facetCounts={{
-            ...dueCards.reduce<Record<string, number>>((acc, c) => {
-              const f = c.facet === "recognition" ? "meaningRecognition" : c.facet;
-              acc[f] = (acc[f] || 0) + 1;
-              return acc;
-            }, {}),
-            wordInference: inferenceWords.length,
-            clusterRecall: clusters.length,
-            familySweep: sweepComponents.length,
-          }}
+          facetCounts={facetDueCounts}
           learnCount={learnableWords.length}
           onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
           siftCount={siftableWords.length}
@@ -868,6 +875,10 @@ export function App() {
           learnedCount={saved.learned.size}
           dueCount={dueWordCount}
           stabilities={saved.savedList.map((e) => weakness.get(e.word) ?? 0)}
+          facetDue={ALL_FACET_OPTIONS.map((o) => ({
+            label: o.fun ? `${o.label} (fun)` : o.label,
+            count: facetDueCounts[o.facet] || 0,
+          }))}
           onClose={() => closeHashPage("#/stats")}
         />
       )}
