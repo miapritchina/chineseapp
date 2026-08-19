@@ -10,6 +10,9 @@ interface Props {
   dueCount: number;
   // Per saved word: min recognition stability (0 = never reviewed).
   stabilities: number[];
+  // Due-by-drill breakdown (v139) — the counts that used to sit on the
+  // launch screen live here now, where numbers are welcome.
+  facetDue?: { label: string; count: number }[];
   onClose: () => void;
 }
 
@@ -25,6 +28,7 @@ export function StatsPage({
   learnedCount,
   dueCount,
   stabilities,
+  facetDue,
   onClose,
 }: Props) {
   const [timestamps, setTimestamps] = useState<number[] | null>(null);
@@ -40,13 +44,27 @@ export function StatsPage({
         const since = new Date();
         since.setDate(since.getDate() - (HISTORY_DAYS - 1));
         since.setHours(0, 0, 0, 0);
-        const { data, error } = await supabase
-          .from("user_review_log")
-          .select("reviewed_at")
-          .gte("reviewed_at", since.toISOString())
-          .limit(10000);
-        if (cancelled || error || !data) return;
-        setTimestamps(data.map((r: { reviewed_at: string }) => Date.parse(r.reviewed_at)));
+        // PostgREST caps every response at 1000 rows regardless of
+        // .limit() — an unordered single query returned the OLDEST
+        // 1000 of the window, so heavy weeks rendered as one giant
+        // bar on day one and "0 today" (owner-reported). Page through
+        // newest-first instead.
+        const PAGE = 1000;
+        const all: number[] = [];
+        for (let page = 0; page < 20; page++) {
+          const { data, error } = await supabase
+            .from("user_review_log")
+            .select("reviewed_at")
+            .gte("reviewed_at", since.toISOString())
+            .order("reviewed_at", { ascending: false })
+            .range(page * PAGE, page * PAGE + PAGE - 1);
+          if (cancelled || error || !data) return;
+          for (const r of data as { reviewed_at: string }[]) {
+            all.push(Date.parse(r.reviewed_at));
+          }
+          if (data.length < PAGE) break;
+        }
+        if (!cancelled) setTimestamps(all);
       } catch {
         /* offline / table missing — history section shows its hint */
       }
@@ -106,6 +124,22 @@ export function StatsPage({
             ))}
           </div>
         </section>
+
+        {facetDue && facetDue.some((f) => f.count > 0) && (
+          <section className="stats-section">
+            <div className="launch-section-title">Due by drill</div>
+            <div className="stats-legend">
+              {facetDue
+                .filter((f) => f.count > 0)
+                .map((f) => (
+                  <div className="stats-legend-row" key={f.label}>
+                    <span className="stats-legend-label">{f.label}</span>
+                    <span className="stats-legend-count">{f.count}</span>
+                  </div>
+                ))}
+            </div>
+          </section>
+        )}
 
         <section className="stats-section">
           <div className="launch-section-title">Last {HISTORY_DAYS} days</div>

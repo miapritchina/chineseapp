@@ -11,7 +11,18 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **Stats history was stuck at 1000 reviews (v139):** the review-log
+  query silently hit PostgREST's 1000-row response cap and, being
+  unordered, returned the OLDEST rows of the window — heavy weeks
+  rendered as one giant bar on day one and "0 today". The query now
+  pages through newest-first, so the last-14-days chart is honest.
+
 ### Changed
+- **No more counts on the launch screen (v139):** the per-drill due
+  chips and the "50 of 802 cards" denominator are gone — the header's
+  "N / 30 today" is the only number left. The full breakdown moved to
+  the Stats page ("Due by drill"), where numbers are welcome.
 - **New-words game over your WHOLE character set (v138):** the 60-
   character limit is gone — a new `words_from_chars` database function
   finds every real two-character word buildable from all your
