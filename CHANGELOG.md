@@ -11,6 +11,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **New-words game over your WHOLE character set (v138):** the 60-
+  character limit is gone — a new `words_from_chars` database function
+  finds every real two-character word buildable from all your
+  characters in one query (migration 0015; the old client-side pair
+  probe stays as fallback until it deploys). Words that combine a
+  freshly learned character with an older one lead the pool — that
+  cross-pollination is the point of the game.
+
 ### Added
 - **Daily goal instead of backlog dread (v137):** the review badge
   now counts down a modest 30-cards-a-day goal (fed by review, Sift

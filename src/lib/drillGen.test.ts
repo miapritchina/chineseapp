@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildFamilySweep,
+  orderInferencePool,
   buildWordTray,
   familySweepScore,
   inferencePairs,
@@ -291,5 +292,17 @@ describe("buildWordTray", () => {
   it("null for single-char words or too few decoys", () => {
     expect(buildWordTray("好", ["好"], rand0)).toBeNull();
     expect(buildWordTray("你好", ["你好"], rand0)).toBeNull();
+  });
+});
+
+describe("orderInferencePool", () => {
+  it("words containing a recently-learned char lead, then rank", () => {
+    const pool = [
+      { word: "中国", rank: 50 },
+      { word: "票房", rank: 900 },
+      { word: "票据", rank: 3000 },
+    ];
+    const out = orderInferencePool(pool, new Set(["票"]));
+    expect(out.map((w) => w.word)).toEqual(["票房", "票据", "中国"]);
   });
 });

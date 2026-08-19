@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Word } from "../lib/types";
 import { supabase } from "../lib/supabase";
-import { inferencePairs } from "../lib/drillGen";
+import { inferencePairs, knownChars, orderInferencePool } from "../lib/drillGen";
 
 // Discovers real, unsaved words built entirely from characters the
 // user already knows (drill 1 — see docs/product/recognition-drills.md).
@@ -21,11 +21,17 @@ import { inferencePairs } from "../lib/drillGen";
 // INFERENCE_COOLDOWN_DAYS before it may rotate back in.
 
 const PROBE_CHUNK = 150;
-// v137 (owner: "I know 500 words and it says 26 new words available.
-// Laughable."): pair the 60 most recent distinct chars (was 36) and
-// keep up to 100 discovered words in the pool (was 30).
-const CHAR_CAP = 60;
-const POOL_CAP = 100;
+// v138: the pool is discovered server-side (words_from_chars RPC) from
+// the user's ENTIRE character set in one query — no more 60-char cap;
+// combining a brand-new character with any old one is the whole fun.
+// The v137 client-side pair-probe stays as the fallback while the
+// migration lags (ADR-0005).
+const ALL_CHAR_CAP = 1200;
+const RPC_MAX = 500;
+const FALLBACK_CHAR_CAP = 60;
+// Chars from the most recent saves — words containing one lead the pool.
+const RECENT_CHAR_COUNT = 20;
+const POOL_CAP = 150;
 const SEEN_KEY = "chinese.inferenceSeen";
 export const INFERENCE_COOLDOWN_DAYS = 14;
 const COOLDOWN_MS = INFERENCE_COOLDOWN_DAYS * 86400000;
@@ -126,7 +132,24 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
     // re-probe) — a cleanup-based cancel would kill the in-flight probe
     // it just deduplicated against.
     void (async () => {
-      const candidates = inferencePairs(words, CHAR_CAP);
+      // Preferred path (v138): one RPC over the WHOLE character set.
+      const allChars = knownChars(words, ALL_CHAR_CAP);
+      const { data, error } = await supabase.rpc("words_from_chars", {
+        chars: allChars,
+        max_results: RPC_MAX,
+      });
+      if (!error && Array.isArray(data)) {
+        const keys = (data as { word: string }[]).map((r) => r.word);
+        for (let i = 0; i < keys.length; i += PROBE_CHUNK) {
+          if (probedForRef.current !== signature) return;
+          await ensureCached(keys.slice(i, i + PROBE_CHUNK));
+        }
+        if (probedForRef.current === signature) setProbedKeys(keys);
+        return;
+      }
+      // Fallback (function not deployed yet, ADR-0005): the v137
+      // client-side pair probe over recent characters.
+      const candidates = inferencePairs(words, FALLBACK_CHAR_CAP);
       for (let i = 0; i < candidates.length; i += PROBE_CHUNK) {
         if (probedForRef.current !== signature) return;
         await ensureCached(candidates.slice(i, i + PROBE_CHUNK));
@@ -143,12 +166,21 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
     const found = probedKeys
       .map((k) => findWord(k))
       .filter((w): w is Word => !!w && !saved.has(w.word) && (seen.get(w.word) ?? 0) <= cutoff);
-    // Common words first; rotate by a per-session random offset so
-    // each session starts somewhere new without the order jumping
-    // mid-session (a shuffle here would reorder whenever the
-    // dictionary cache updates).
-    found.sort((a, b) => (a.rank ?? 1e9) - (b.rank ?? 1e9));
-    const capped = found.slice(0, POOL_CAP);
+    // Fresh×old combinations lead (v138), then common words; rotate by
+    // a per-session random offset so each session starts somewhere new
+    // without the order jumping mid-session (a shuffle here would
+    // reorder whenever the dictionary cache updates).
+    const recentChars = new Set(
+      knownChars(
+        savedList
+          .slice()
+          .sort((a, b) => b.savedAt - a.savedAt)
+          .map((s) => s.word),
+        RECENT_CHAR_COUNT,
+      ),
+    );
+    const ordered = orderInferencePool(found, recentChars);
+    const capped = ordered.slice(0, POOL_CAP);
     if (capped.length === 0) return [];
     const offset = Math.floor(rotationRef.current * capped.length) % capped.length;
     return [...capped.slice(offset), ...capped.slice(0, offset)];
