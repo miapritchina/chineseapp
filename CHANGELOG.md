@@ -12,6 +12,10 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Family sweep deals a real hand (v142):** the game was still using
+  its old side-dish portion — 4 random components picked once per app
+  load, so every session replayed the same 4. Each launch now deals a
+  fresh random 12 from the whole usable pool.
 - **New words and Family sweep are game cards now (v141):** they left
   the drill-toggle list and sit in the Games section next to Forge /
   Pairs / Chain — tap the card to play a session of just that game.

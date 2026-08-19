@@ -121,7 +121,7 @@ kinds, seven scheduled facets (plus one session-only drill):
 | word | `soundRecognition` | combined recognition card (same surface) | every saved word |
 | word | `reverseRecognition` | gloss → pick the hanzi (v98) | every saved word |
 | word | `clozeChar` | masked-char pick (v98) | saved words with ≥2 chars |
-| component | `familySweep` | spot-the-component grid — since v137 an UNGRADED game: synthetic session rows over a random sample of ALL usable components, no FSRS state (rows retired) | 4 random components per app session |
+| component | `familySweep` | spot-the-component grid — since v137 an UNGRADED game: synthetic session rows over a random sample of ALL usable components, no FSRS state (rows retired) | 12 random components dealt fresh per game launch (v142) |
 | char | `production` | Hanzi Writer trace quiz | every saved single character (v99; was ✒ Wrote tier) |
 
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
