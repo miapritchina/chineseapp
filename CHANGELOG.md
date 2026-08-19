@@ -11,6 +11,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **New words and Family sweep are game cards now (v141):** they left
+  the drill-toggle list and sit in the Games section next to Forge /
+  Pairs / Chain — tap the card to play a session of just that game.
+  Stored settings that had only the fun toggles enabled (which made
+  Start read "All caught up" while word reviews were actually due)
+  are scrubbed, so Recognition comes back as the default drill.
+
 ### Fixed
 - **Sift stopped advertising phantom words (v140):** after a big sift
   session, Sift still showed hundreds of "due words" while Start

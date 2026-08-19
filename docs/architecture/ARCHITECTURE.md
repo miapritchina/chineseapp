@@ -262,8 +262,10 @@ hamburger badge counts down a modest daily goal (`lib/dailyGoal.ts`,
 Focus) instead of shouting the whole backlog, and the launch header
 shows "done / goal today". Doing more stays one tap away — ADR-0012's
 availability guarantee is untouched. The fun facets (wordInference,
-familySweep) are grouped separately on the launch screen, excluded
-from the "due" arithmetic, and never count toward the goal. Since v106 the default session order is an
+familySweep) live in the launch screen's Games section since v141 —
+tapping their card starts a single-facet session (like Chain/Forge/
+Pairs); they are no longer drill toggles, are excluded from the "due"
+arithmetic, and never count toward the goal. Since v106 the default session order is an
 activity **interleave**, not a grouped run: `interleaveByActivity`
 (drillGen) round-robins across drill groups (meaning/sound unified),
 most-overdue first within each group, the neediest group leading each
