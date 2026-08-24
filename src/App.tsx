@@ -25,6 +25,7 @@ import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
 import { BugReportModal } from "./components/BugReportModal";
+import { BugReportButton } from "./components/BugReportButton";
 import { buildBugContext } from "./lib/bugReport";
 import { ReviewPage } from "./components/ReviewPage";
 import { FlashcardsPage } from "./components/FlashcardsPage";
@@ -71,7 +72,7 @@ const SEARCH_DEBOUNCE_MS = 200;
 // Components dealt per Family sweep game (v142).
 const SWEEP_GAME_SIZE = 12;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v145";
+const APP_VERSION = "chinese v146";
 
 export function App() {
   const dict = useDictionary();
@@ -96,6 +97,8 @@ export function App() {
   const setShowClassic = useUIStore((s) => s.setShowClassic);
   const showSignIn = useUIStore((s) => s.showSignIn);
   const setShowSignIn = useUIStore((s) => s.setShowSignIn);
+  const showBugReport = useUIStore((s) => s.showBugReport);
+  const setShowBugReport = useUIStore((s) => s.setShowBugReport);
 
   const [searchResults, setSearchResults] = useState<Word[]>([]);
 
@@ -395,8 +398,6 @@ export function App() {
 
   // Launch screen state. null = haven't started yet.
   const [reviewLaunched, setReviewLaunched] = useState<ReviewSettings | null>(null);
-  // Bug report modal (v144). Open = report form; null = closed.
-  const [bugReportOpen, setBugReportOpen] = useState(false);
   // "Explore from here" target handed from the EntitySheet.
   const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
   // Learn mode (v110): the active lesson's words; null = no lesson.
@@ -705,10 +706,10 @@ export function App() {
           onCycleHanziFont={() => setHanziFont((id) => nextFontId(id))}
           randomFont={randomFont}
           onToggleRandomFont={() => setRandomFont((v) => !v)}
-          onReportBug={() => setBugReportOpen(true)}
         />
         <h1>中文</h1>
         <div className="topbar-end">
+          <BugReportButton />
           <AuthButton
             user={auth.user}
             loading={auth.loading}
@@ -980,7 +981,7 @@ export function App() {
         />
       )}
 
-      {bugReportOpen && (
+      {showBugReport && (
         <BugReportModal
           userId={auth.user?.id ?? null}
           context={buildBugContext({
@@ -989,7 +990,7 @@ export function App() {
             sentenceMode: searchMode === "sentence",
             version: APP_VERSION,
           })}
-          onClose={() => setBugReportOpen(false)}
+          onClose={() => setShowBugReport(false)}
         />
       )}
 

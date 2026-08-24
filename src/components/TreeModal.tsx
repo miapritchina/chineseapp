@@ -3,6 +3,7 @@ import type { ModalEntry, Word } from "../lib/types";
 import { buildCharTree, buildWordTree } from "../lib/tree";
 import { DecompositionTree } from "./DecompositionTree";
 import { StatusButton } from "./StatusButton";
+import { BugReportButton } from "./BugReportButton";
 import { useCharsCtx, useSavedCtx } from "../state/contexts";
 
 interface Props {
@@ -48,6 +49,7 @@ export function TreeModal({ entry, word, stackLen, onPop, onNodeClick }: Props) 
             variant="iconLg"
             onChange={(next) => setStatus(entry.key, next)}
           />
+          <BugReportButton className="header-bug" />
         </div>
       </div>
       <div className="modal-body">
