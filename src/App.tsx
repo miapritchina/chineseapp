@@ -25,6 +25,8 @@ import { AuthButton } from "./components/AuthButton";
 import { SignInModal } from "./components/SignInModal";
 import { HamburgerMenu } from "./components/HamburgerMenu";
 import { ReviewPage } from "./components/ReviewPage";
+import { FlashcardsPage } from "./components/FlashcardsPage";
+import { flashcardDeck } from "./lib/flashcards";
 import { ComponentTable } from "./components/ComponentTable";
 import { ExplorePage, type ExploreFocus } from "./components/ExplorePage";
 import { ClassicPage } from "./components/ClassicPage";
@@ -156,6 +158,12 @@ export function App() {
     () => typeof window !== "undefined" && window.location.hash === "#/stats",
   );
 
+  // Flashcards / Browse (v144): low-pressure flip deck, routed via
+  // #/cards like the other full pages.
+  const [showCards, setShowCards] = useState<boolean>(
+    () => typeof window !== "undefined" && window.location.hash === "#/cards",
+  );
+
   // Sift mode (v113): the active triage deck; null = not sifting.
   const [siftWords, setSiftWords] = useState<string[] | null>(null);
   // Focus mode (v127): the active problem-word session; null = closed.
@@ -272,6 +280,22 @@ export function App() {
     }
     return due.size;
   }, [saved.savedList, reviewState.cards]);
+
+  // Flashcards deck (v144): due words first (weakest first), then the
+  // weakest not-yet-due words as filler — see lib/flashcards.ts. Uses
+  // the same weakness map and word-kind due check as Sift/Stats.
+  const flashcardWords = useMemo(() => {
+    const dueWords = new Set<string>();
+    for (const row of reviewState.cards.values()) {
+      if (row.itemKind !== "word") continue;
+      if (isDue(row.card)) dueWords.add(row.itemKey);
+    }
+    return flashcardDeck(
+      saved.savedList.map((s) => s.word),
+      (w) => dueWords.has(w),
+      (w) => weakness.get(w) ?? 0,
+    );
+  }, [saved.savedList, reviewState.cards, weakness]);
 
   // Cluster-recall material (v107, a drill type since the standalone
   // page was folded into the session queue).
@@ -420,6 +444,7 @@ export function App() {
       setShowExplore(window.location.hash === "#/explore");
       setShowClassic(window.location.hash === "#/classic");
       setShowStats(window.location.hash === "#/stats");
+      setShowCards(window.location.hash === "#/cards");
       if (window.location.hash === "#/sentence") {
         setSearchMode("sentence");
         history.replaceState(history.state, "", location.pathname + location.search);
@@ -450,6 +475,7 @@ export function App() {
       if (target === "#/explore") setShowExplore(false);
       if (target === "#/classic") setShowClassic(false);
       if (target === "#/stats") setShowStats(false);
+      if (target === "#/cards") setShowCards(false);
     }
   };
 
@@ -660,9 +686,10 @@ export function App() {
     >
       <header className="topbar">
         <HamburgerMenu
-          version="chinese v143"
+          version="chinese v144"
           reviewHref="#/review"
           reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
+          cardsHref="#/cards"
           exploreHref="#/explore"
           classicHref="#/classic"
           statsHref="#/stats"
@@ -908,6 +935,22 @@ export function App() {
             count: facetDueCounts[o.facet] || 0,
           }))}
           onClose={() => closeHashPage("#/stats")}
+        />
+      )}
+
+      {showCards && (
+        <FlashcardsPage
+          words={flashcardWords}
+          onClose={() => closeHashPage("#/cards")}
+          onOpenEntity={(key) => {
+            if ([...key].length > 1) void openWord(key);
+            else openChar(key);
+          }}
+          onGrade={(word, rating) => {
+            grade(word, rating, "word", "meaningRecognition");
+            grade(word, rating, "word", "soundRecognition");
+          }}
+          onBrowse={(word) => creditPassiveView(word)}
         />
       )}
 

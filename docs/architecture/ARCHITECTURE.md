@@ -244,6 +244,18 @@ single-char) — rounds interleaved so repetitions are spaced within
 the session. Only the graded test writes (via the percent path); a
 failed one ends with a mnemonic nudge that opens the word's sheet.
 
+Flashcards (v144, `FlashcardsPage` + `lib/flashcards.ts`, `#/cards`)
+is the low-pressure counterpart to the graded workout: flip a card to
+see pinyin + meaning + audio, no obligation to answer. The deck is
+spaced-repetition ordered — everything due now (weakest first, min
+recognition stability), then the weakest not-yet-due words as filler,
+dropping the well-mastered (stability ≥ `FLASHCARD_MASTERED_STABILITY_DAYS`)
+so browsing never degrades into the boring known words. It adds no new
+persisted state: an optional per-card rating grades the word's
+`meaningRecognition` + `soundRecognition` rows through the normal
+`grade` path (cascade and all), and advancing without rating applies
+the same passive-view credit as opening a sheet.
+
 "Just start" (v114, `lib/flow.ts`) chains surfaces from one tap:
 review with the saved settings → a 2-word Learn lesson. Sift was
 dropped from the chain in v123 (owner call: Sift is standalone triage
@@ -317,7 +329,7 @@ Two patterns coexist:
   `{ kind: "word"|"char", key, view?: "sheet"|"tree" }` — `view`
   defaults to `"sheet"` (EntitySheet); `"tree"` renders the full d3
   `TreeModal`.
-- **Top-level pages** (`#/review`, `#/explore`, `#/classic`,
+- **Top-level pages** (`#/review`, `#/cards`, `#/explore`, `#/classic`,
   `#/sentence`, `#/stats`): a plain `hashchange` listener in
   `App.tsx` toggles a flag. No modal-stack involvement.
 

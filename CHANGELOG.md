@@ -11,6 +11,19 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Flashcards (v144):** a low-pressure flip deck for just *looking* at
+  saved words — no graded-workout pressure. Tap to flip (hanzi → pinyin
+  + meaning + audio); rating is optional. The deck is spaced-repetition
+  ordered so it leads with what's worth seeing: everything due now
+  (weakest first), then the weakest not-yet-due words as filler, and the
+  well-mastered ones are dropped — fixing the "it kept showing me words
+  I already know" complaint that killed plain flashcards. Reachable from
+  the hamburger menu (`#/cards`). Reuses existing FSRS state — an
+  optional rating grades the recognition rows, a plain Next gives the
+  small passive-view credit — so no new persisted data. See
+  `lib/flashcards.ts`, `FlashcardsPage`.
+
 ### Changed
 - **Review launch declutters (v143):** session size is now a slider
   (5 → 100 in steps of 5, then an "All" stop) that the app remembers,

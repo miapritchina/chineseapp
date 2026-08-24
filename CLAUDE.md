@@ -21,11 +21,11 @@ https://miapritchina.github.io/chineseapp/. Mobile-first; iPhone Safari in
 "PWA / offline".
 
 **One React surface** since v109: search, saved-words shelf,
-decomposition tree, SRS review drills, the 三字经 reader, Sentence
-Studio, and the Explore page (focus-stack browsing of words ↔
-characters ↔ components — replaced the old Cytoscape network/
-components graph pages and the Phonetics list; see
-docs/product/explore-page.md).
+decomposition tree, SRS review drills, the low-pressure Flashcards flip
+deck (v144), the 三字经 reader, Sentence Studio, and the Explore page
+(focus-stack browsing of words ↔ characters ↔ components — replaced the
+old Cytoscape network/ components graph pages and the Phonetics list;
+see docs/product/explore-page.md).
 
 ### Data persistence policy (do not weaken)
 
@@ -73,6 +73,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── HamburgerMenu            Top-bar drawer (Review / Phonetics / Network …)
 │   │   ├── StatusButton             4-tier status dropdown shared by every place
 │   │   ├── ReviewPage               Full-screen SRS surface, routes by facet
+│   │   ├── FlashcardsPage           Low-pressure flip deck (#/cards) — SRS-ordered, optional grade
 │   │   ├── ClusterRecallCard        Drill: recall a group of related saved words
 │   │   ├── SiftPage                 Tinder-style triage over the due backlog
 │   │   ├── StatsPage                Words/strength/review-history stats (#/stats)
@@ -108,6 +109,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │       ├── fsrs.ts                  ts-fsrs wrapper + cascade math
 │       ├── flow.ts                  "Just start" stage planner (sift → review → learn)
 │       ├── sift.ts                  Sift triage pool (due words, strongest first)
+│       ├── flashcards.ts            Flashcards deck (due first, then weakest not-due filler)
 │       ├── learn.ts                 Learn-mode material picker
 │       ├── share.ts                 profile share links (?share=token → live saved set)
 │       └── supabase.ts              Client + wakeUp ping
