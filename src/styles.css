@@ -1770,6 +1770,58 @@ body {
   text-align: center;
 }
 
+/* Bug report (v144) — reuses the popup + signin-form shell. */
+.bugreport-note {
+  width: 100%;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  outline: none;
+  resize: vertical;
+  min-height: 84px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.bugreport-note:focus {
+  border-color: var(--accent);
+}
+.bugreport-details-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.bugreport-context {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.bugreport-context dt {
+  font-weight: 500;
+}
+.bugreport-context dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.bugreport-ua {
+  font-size: 11px;
+}
+
 /* Search */
 .search-bar {
   position: sticky;

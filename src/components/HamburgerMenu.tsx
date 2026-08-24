@@ -17,6 +17,7 @@ interface Props {
   // Random font per drill card (v133).
   randomFont?: boolean;
   onToggleRandomFont?: () => void;
+  onReportBug?: () => void;
 }
 
 // Hamburger menu in the top bar's left slot. Holds page navigation + the
@@ -36,6 +37,7 @@ export function HamburgerMenu({
   onCycleHanziFont,
   randomFont = false,
   onToggleRandomFont,
+  onReportBug,
 }: Props) {
   const { open, setOpen, ref: wrapperRef } = usePopover<HTMLDivElement>();
 
@@ -164,6 +166,19 @@ export function HamburgerMenu({
           >
             <span>Random font in drills</span>
             <span className="hamburger-soon">{randomFont ? "on" : "off"}</span>
+          </button>
+        )}
+        {onReportBug && (
+          <button
+            type="button"
+            role="menuitem"
+            className="hamburger-item"
+            onClick={() => {
+              onReportBug();
+              setOpen(false);
+            }}
+          >
+            <span>Report a bug 🐞</span>
           </button>
         )}
         <div className="hamburger-divider" />

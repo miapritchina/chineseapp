@@ -12,6 +12,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **In-app bug reports (v145):** a "Report a bug 🐞" item in the
+  hamburger menu opens a one-field form — type what went wrong, tap
+  Send, done. Each report auto-captures the surface you're on (page /
+  active word or char), the build version, viewport, device UA, and
+  timestamp, so no screenshot is needed. Reports land in a new Supabase
+  `bug_reports` table (RLS: anon + signed-in may insert, owner-only
+  read); triage from the dashboard. New: `lib/bugReport.ts`,
+  `hooks/useBugReport.ts`, `components/BugReportModal.tsx`, migration
+  `0016_bug_reports.sql`.
 - **Flashcards (v144):** a low-pressure flip deck for just *looking* at
   saved words — no graded-workout pressure. Tap to flip (hanzi → pinyin
   + meaning + audio); rating is optional. The deck is spaced-repetition
