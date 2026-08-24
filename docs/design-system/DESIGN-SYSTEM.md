@@ -482,7 +482,7 @@ Retired drill (facet = familyTransfer) — owner saw no value. Component deleted
 
 ### 7.22 ReviewLaunch
 
-**What:** Drill-type toggles + settings before starting review. **Where:** Intermediate screen between `#/review` and the actual session. **Classes:** `.launch-body`, `.launch-section`, `.launch-options`, `.launch-option`.
+**What:** Drill-type toggles, a session-size slider, and set-and-forget settings (tucked behind an `Options` disclosure) before starting review. **Where:** Intermediate screen between `#/review` and the actual session. **Classes:** `.launch-body`, `.launch-section`, `.launch-options`, `.launch-option`, `.launch-size-slider` (+ `.launch-size-head` / `.launch-size-value` / `.launch-size-scale`), `.launch-options-details` / `.launch-options-summary`.
 
 ### 7.23 AuthButton + SignInModal
 

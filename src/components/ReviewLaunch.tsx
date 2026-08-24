@@ -127,9 +127,21 @@ function saveSettings(s: ReviewSettings) {
   }
 }
 
-// Session-size choices (v110). null = everything due.
-const SESSION_SIZES: (number | null)[] = [10, 25, 50, null];
+// Session size (v143): a slider instead of fixed pills. Steps of 5 up
+// to SLIDER_MAX; the far-right stop past the max means "everything due"
+// (stored as null). null = everything due.
+const SESSION_SIZE_STEP = 5;
+const SESSION_SIZE_MAX = 100;
+const SLIDER_ALL = SESSION_SIZE_MAX + SESSION_SIZE_STEP;
 const DEFAULT_SESSION_SIZE = 25;
+
+// The standalone Learn button is a lesson, not a review session, so it
+// no longer rides the session-size slider (v143) — a fixed batch.
+export const LEARN_WORD_COUNT = 30;
+
+const sizeToSlider = (n: number | null): number =>
+  n === null ? SLIDER_ALL : Math.min(SESSION_SIZE_MAX, Math.max(SESSION_SIZE_STEP, n));
+const sliderToSize = (v: number): number | null => (v >= SLIDER_ALL ? null : v);
 
 interface Props {
   // Counts of due cards per facet — shown so the user knows what they're
@@ -297,56 +309,27 @@ export function ReviewLaunch({
           </div>
         </div>
         <div className="launch-section">
-          <div className="launch-section-title">Session size</div>
-          <div className="launch-size-row">
-            {SESSION_SIZES.map((n) => (
-              <button
-                key={n ?? "all"}
-                type="button"
-                className={`sort-pill${sessionSize === n ? " is-active" : ""}`}
-                onClick={() => setSessionSize(n)}
-                aria-pressed={sessionSize === n}
-              >
-                {n === null ? "All" : n}
-              </button>
-            ))}
+          <div className="launch-size-head">
+            <span className="launch-section-title">Session size</span>
+            <span className="launch-size-value">
+              {sessionSize === null ? "All due" : `${sessionSize} cards`}
+            </span>
           </div>
-        </div>
-        <div className="launch-section">
-          <div className="launch-section-title">Order</div>
-          <button
-            type="button"
-            className={`launch-option${randomOrder ? " is-on" : ""}`}
-            onClick={() => setRandomOrder((v) => !v)}
-            aria-pressed={randomOrder}
-          >
-            <span className="launch-option-row">
-              <span className="launch-option-check">{randomOrder ? "●" : "○"}</span>
-              <span className="launch-option-label">Shuffle within session</span>
-            </span>
-            <span className="launch-option-hint">
-              Off (default): drill types take turns, most-needed cards first. On: fully random
-              order.
-            </span>
-          </button>
-        </div>
-        <div className="launch-section">
-          <div className="launch-section-title">Sound</div>
-          <button
-            type="button"
-            className={`launch-option${autoSpeak ? " is-on" : ""}`}
-            onClick={() => setAutoSpeak((v) => !v)}
-            aria-pressed={autoSpeak}
-          >
-            <span className="launch-option-row">
-              <span className="launch-option-check">{autoSpeak ? "●" : "○"}</span>
-              <span className="launch-option-label">Speak answers automatically</span>
-            </span>
-            <span className="launch-option-hint">
-              On (default): every reveal plays the word&apos;s audio. Off: only the 🔊 buttons
-              speak.
-            </span>
-          </button>
+          <input
+            type="range"
+            className="launch-size-slider"
+            min={SESSION_SIZE_STEP}
+            max={SLIDER_ALL}
+            step={SESSION_SIZE_STEP}
+            value={sizeToSlider(sessionSize)}
+            onChange={(e) => setSessionSize(sliderToSize(Number(e.target.value)))}
+            aria-label="Session size"
+            aria-valuetext={sessionSize === null ? "All due" : `${sessionSize} cards`}
+          />
+          <div className="launch-size-scale">
+            <span>{SESSION_SIZE_STEP}</span>
+            <span>All</span>
+          </div>
         </div>
         {(onStartForge || onStartPairs || onStartChain || onStartNewWords || onStartSweep) && (
           <div className="launch-section">
@@ -417,24 +400,56 @@ export function ReviewLaunch({
             </div>
           </div>
         )}
-        <div className="launch-section">
-          <div className="launch-section-title">Scope</div>
-          <button
-            type="button"
-            className={`launch-option${includeSubchars ? " is-on" : ""}`}
-            onClick={() => setIncludeSubchars((v) => !v)}
-            aria-pressed={includeSubchars}
-          >
-            <span className="launch-option-row">
-              <span className="launch-option-check">{includeSubchars ? "●" : "○"}</span>
-              <span className="launch-option-label">Include word characters</span>
-            </span>
-            <span className="launch-option-hint">
-              On: each character of your multi-character words gets its own recognition card (你好 →
-              你 and 好). Off (default): only the words you saved surface.
-            </span>
-          </button>
-        </div>
+        <details className="launch-options-details">
+          <summary className="launch-options-summary">Options</summary>
+          <div className="launch-options">
+            <button
+              type="button"
+              className={`launch-option${randomOrder ? " is-on" : ""}`}
+              onClick={() => setRandomOrder((v) => !v)}
+              aria-pressed={randomOrder}
+            >
+              <span className="launch-option-row">
+                <span className="launch-option-check">{randomOrder ? "●" : "○"}</span>
+                <span className="launch-option-label">Shuffle within session</span>
+              </span>
+              <span className="launch-option-hint">
+                Off (default): drill types take turns, most-needed cards first. On: fully random
+                order.
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`launch-option${autoSpeak ? " is-on" : ""}`}
+              onClick={() => setAutoSpeak((v) => !v)}
+              aria-pressed={autoSpeak}
+            >
+              <span className="launch-option-row">
+                <span className="launch-option-check">{autoSpeak ? "●" : "○"}</span>
+                <span className="launch-option-label">Speak answers automatically</span>
+              </span>
+              <span className="launch-option-hint">
+                On (default): every reveal plays the word&apos;s audio. Off: only the 🔊 buttons
+                speak.
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`launch-option${includeSubchars ? " is-on" : ""}`}
+              onClick={() => setIncludeSubchars((v) => !v)}
+              aria-pressed={includeSubchars}
+            >
+              <span className="launch-option-row">
+                <span className="launch-option-check">{includeSubchars ? "●" : "○"}</span>
+                <span className="launch-option-label">Include word characters</span>
+              </span>
+              <span className="launch-option-hint">
+                On: each character of your multi-character words gets its own recognition card (你好
+                → 你 and 好). Off (default): only the words you saved surface.
+              </span>
+            </button>
+          </div>
+        </details>
       </div>
       <div className="review-actions">
         <button
@@ -451,11 +466,11 @@ export function ReviewLaunch({
           <button
             type="button"
             className="review-btn"
-            onClick={() => onStartLearn(sessionSize)}
+            onClick={() => onStartLearn(LEARN_WORD_COUNT)}
             disabled={learnCount === 0}
             title="A lesson, not a test: each word is introduced with sound, component breakdown, and your related words. No grading."
           >
-            Learn · {Math.min(sessionSize ?? learnCount, learnCount)} words
+            Learn · {Math.min(LEARN_WORD_COUNT, learnCount)} words
           </button>
         )}
         {onStartSift && (

@@ -12,6 +12,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Review launch declutters (v143):** session size is now a slider
+  (5 → 100 in steps of 5, then an "All" stop) that the app remembers,
+  replacing the 10 / 25 / 50 / All pills. The three set-and-forget
+  settings (Shuffle order, Speak answers, Include word characters)
+  moved behind a collapsed **Options** disclosure so the main screen
+  stays to Just start → Drill types → size → Games → actions. The
+  standalone **Learn** button is now a fixed 30-word lesson, no longer
+  tied to the session-size slider.
 - **Family sweep deals a real hand (v142):** the game was still using
   its old side-dish portion — 4 random components picked once per app
   load, so every session replayed the same 4. Each launch now deals a

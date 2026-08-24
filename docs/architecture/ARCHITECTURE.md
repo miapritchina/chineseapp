@@ -274,8 +274,9 @@ toggle replaces this with a full random order. Cards graded Again
 leave the session and come back tomorrow — FSRS schedules an Again
 exactly 24 h out ([ADR-0014](../decisions/0014-no-same-day-retry.md);
 the v102 repeat-until-correct rule is retired). Session
-size is chosen on the launch screen (v110: 10 / 25 / 50 / All,
-default 25, persisted) — a frozen first-N set UI-side, so the
+size is chosen on the launch screen (v143: a slider, 5 → 100 in
+steps of 5 with a final "All" stop; default 25, persisted — replaced
+the v110 10 / 25 / 50 / All pills) — a frozen first-N set UI-side, so the
 session genuinely ends; scheduling is untouched since every card
 grades individually. Exiting a session returns to the launch screen,
 not the home page. `lapses ≥ 6` items with cluster
