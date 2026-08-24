@@ -26,3 +26,27 @@ type Story = StoryObj<typeof meta>;
 
 export const AllDrillTypes: Story = {};
 export const NothingDue: Story = { args: { totalDue: 0, facetCounts: {} } };
+
+export const FullLauncher: Story = {
+  args: {
+    dailyDone: 6,
+    dailyGoal: 20,
+    learnCount: 42,
+    siftCount: 14,
+    focusCount: 3,
+    onJustStart: () => {},
+    onStartLearn: () => {},
+    onStartSift: () => {},
+    onStartFocus: () => {},
+    forgeReady: true,
+    pairsReady: true,
+    chainReady: true,
+    newWordsReady: true,
+    sweepReady: true,
+    onStartForge: () => {},
+    onStartPairs: () => {},
+    onStartChain: () => {},
+    onStartNewWords: () => {},
+    onStartSweep: () => {},
+  },
+};

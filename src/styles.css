@@ -3707,10 +3707,61 @@ body {
 }
 
 /* Session-size pills on the review launch screen (v110). */
-.launch-size-row {
+.launch-size-head {
   display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 8px;
-  flex-wrap: wrap;
+}
+.launch-size-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.launch-size-slider {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.launch-size-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 2px;
+}
+
+/* Set-and-forget review settings, tucked behind a disclosure (v143) so
+   they stop crowding the launch screen. */
+.launch-options-details {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.launch-options-summary {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 4px;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.launch-options-summary::-webkit-details-marker {
+  display: none;
+}
+.launch-options-summary::after {
+  content: " ▸";
+}
+.launch-options-details[open] .launch-options-summary::after {
+  content: " ▾";
+}
+.launch-options-details[open] .launch-options {
+  margin-top: 8px;
 }
 
 /* Learn mode (v110) — lesson cards that teach instead of test. */

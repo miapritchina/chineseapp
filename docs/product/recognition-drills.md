@@ -84,9 +84,11 @@ this once extended was retired in v107 — owner saw no value in it.)
 
 Owner ask: "an exercise whose goal is not to test my knowledge but to
 teach me." A lesson session from the review launch screen ("Learn ·
-N words"): material = never-reviewed saved words first (newest saves
+30 words"): material = never-reviewed saved words first (newest saves
 leading), then weakest by recognition stability (`lib/learn.ts`),
-capped by the chosen session size. Each card: the word with pinyin +
+capped at a fixed 30 (v143 — the standalone Learn button no longer
+rides the session-size slider; it's a lesson, not a graded session).
+Each card: the word with pinyin +
 audio → per-character cards with role-colored component formulas
 (请 = 讠 speech + 青 qīng) and the dictionary's etymology notes →
 "You already know" related saved words → Continue. No grading
