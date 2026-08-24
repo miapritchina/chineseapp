@@ -1770,6 +1770,42 @@ body {
   text-align: center;
 }
 
+/* Bug report button (v146) — always-present in-bar icon on every surface
+   (top bar, drill/page headers via PageHeader, sheet + tree). */
+.bug-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.bug-btn:hover,
+.bug-btn:focus-visible {
+  background: var(--surface-2);
+  color: var(--text);
+  outline: none;
+}
+/* The header's right cluster hugs the right edge so the bug icon is always
+   in the top-right corner regardless of what else (progress, Skip) is there. */
+.header-right {
+  margin-left: auto;
+}
+/* On the entity sheet the corner buttons are absolutely positioned; sit the
+   bug icon just left of the × dismiss. */
+.sheet-bug {
+  position: absolute;
+  top: 16px;
+  right: 60px;
+  z-index: 3;
+}
+
 /* Bug report (v144) — reuses the popup + signin-form shell. */
 .bugreport-note {
   width: 100%;

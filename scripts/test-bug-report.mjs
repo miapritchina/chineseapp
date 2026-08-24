@@ -15,6 +15,8 @@ function describePage({ hash, top, sentenceMode }) {
   switch (hash) {
     case "#/review":
       return "Review";
+    case "#/cards":
+      return "Flashcards";
     case "#/explore":
       return "Explore";
     case "#/classic":
@@ -37,6 +39,7 @@ test("bare home hash → Home", () => {
 test("full-page routes map to their labels", () => {
   const cases = {
     "#/review": "Review",
+    "#/cards": "Flashcards",
     "#/explore": "Explore",
     "#/classic": "三字经 Classic",
     "#/stats": "Stats",

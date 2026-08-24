@@ -33,6 +33,8 @@ export function describePage({ hash, top, sentenceMode }: PageInput): string {
   switch (hash) {
     case "#/review":
       return "Review";
+    case "#/cards":
+      return "Flashcards";
     case "#/explore":
       return "Explore";
     case "#/classic":

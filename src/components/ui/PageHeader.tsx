@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
+import { BugReportButton } from "../BugReportButton";
 
 // Shared full-screen-page header: back button (left) + optional tag
 // (center) + optional progress or actions (right). Emits the existing
 // `.review-header` / `.back-btn` / `.review-kind-tag` / `.review-progress`
 // classes so it's a drop-in for the markup duplicated across ReviewPage,
-// ExplorePage, and the DrillFrame.
+// ExplorePage, and the DrillFrame. The bug-report icon rides the right
+// cluster so it's reachable from every full-screen surface (the hamburger
+// isn't — it's covered by these pages).
 interface Props {
   onBack: () => void;
   backLabel?: string;
@@ -31,18 +34,21 @@ export function PageHeader({
         {backLabel}
       </button>
       {tag != null && <span className="review-kind-tag">{tag}</span>}
-      {actions != null ? (
-        <div className="header-actions">{actions}</div>
-      ) : onSkip ? (
-        <div className="header-actions">
+      <div className="header-actions header-right">
+        {actions != null ? (
+          actions
+        ) : onSkip ? (
+          <>
+            <span className="review-progress">{progress}</span>
+            <button type="button" className="drill-skip drill-skip-header" onClick={onSkip}>
+              Skip
+            </button>
+          </>
+        ) : progress != null ? (
           <span className="review-progress">{progress}</span>
-          <button type="button" className="drill-skip drill-skip-header" onClick={onSkip}>
-            Skip
-          </button>
-        </div>
-      ) : (
-        <span className="review-progress">{progress}</span>
-      )}
+        ) : null}
+        <BugReportButton className="header-bug" />
+      </div>
     </div>
   );
 }

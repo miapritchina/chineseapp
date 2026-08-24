@@ -12,13 +12,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
-- **In-app bug reports (v145):** a "Report a bug 🐞" item in the
-  hamburger menu opens a one-field form — type what went wrong, tap
-  Send, done. Each report auto-captures the surface you're on (page /
-  active word or char), the build version, viewport, device UA, and
-  timestamp, so no screenshot is needed. Reports land in a new Supabase
-  `bug_reports` table (RLS: anon + signed-in may insert, owner-only
-  read); triage from the dashboard. New: `lib/bugReport.ts`,
+- **In-app bug reports (v145):** a one-field report form — type what
+  went wrong, tap Send, done. Each report auto-captures the surface
+  you're on (page / active word or char), the build version, viewport,
+  device UA, and timestamp, so no screenshot is needed. Reports land in
+  a new Supabase `bug_reports` table (RLS: anon + signed-in may insert,
+  owner-only read); triage from the dashboard. New: `lib/bugReport.ts`,
   `hooks/useBugReport.ts`, `components/BugReportModal.tsx`, migration
   `0016_bug_reports.sql`.
 - **Flashcards (v144):** a low-pressure flip deck for just *looking* at
@@ -34,6 +33,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   `lib/flashcards.ts`, `FlashcardsPage`.
 
 ### Changed
+- **Bug report is always one tap away (v146):** the report entry point
+  moved out of the hamburger menu — which is covered or replaced on
+  drills, sheets, and full-screen pages — to a small bug icon (SVG, not
+  an emoji) pinned to the top-right of every surface's bar. Added via
+  the shared `PageHeader` (covers all drills/games and the Explore /
+  Classic / Stats pages), the home top bar, and the entity sheet + tree
+  modal headers. New `BugReportButton` self-wires through the UI store
+  so any surface can drop it in without prop-drilling.
 - **Review launch declutters (v143):** session size is now a slider
   (5 → 100 in steps of 5, then an "All" stop) that the app remembers,
   replacing the 10 / 25 / 50 / All pills. The three set-and-forget

@@ -36,6 +36,11 @@ export interface UIState {
   // Sign-in modal.
   showSignIn: boolean;
   setShowSignIn: (b: boolean) => void;
+
+  // Bug report modal. Opened from the always-present in-bar bug icon on
+  // every surface, so it lives in the store rather than being prop-drilled.
+  showBugReport: boolean;
+  setShowBugReport: (b: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -57,4 +62,7 @@ export const useUIStore = create<UIState>((set) => ({
 
   showSignIn: false,
   setShowSignIn: (b) => set({ showSignIn: b }),
+
+  showBugReport: false,
+  setShowBugReport: (b) => set({ showBugReport: b }),
 }));

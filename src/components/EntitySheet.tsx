@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Word } from "../lib/types";
 import { StatusButton } from "./StatusButton";
+import { BugReportButton } from "./BugReportButton";
 import { detectPos } from "../lib/pos";
 import { useCharsCtx, useSavedCtx } from "../state/contexts";
 import { SheetHeader } from "./sheet/SheetHeader";
@@ -164,6 +165,7 @@ export function EntitySheet({
             </svg>
           </button>
         )}
+        <BugReportButton className="sheet-bug" />
         <button className="sheet-dismiss" type="button" aria-label="Close" onClick={onClose}>
           <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
             <path
