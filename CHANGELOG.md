@@ -32,6 +32,13 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   small passive-view credit — so no new persisted data. See
   `lib/flashcards.ts`, `FlashcardsPage`.
 
+### Fixed
+- **Bug button did nothing on drills and sheets (v147):** the report
+  modal (`.popup-root`, z-index 50) opened *behind* the full-screen
+  drill/page layer (60) and the entity sheet (70), so tapping the bug
+  icon on exactly the surfaces it was added for looked like a no-op.
+  Raised the modal to z-index 90 so it stacks above both.
+
 ### Changed
 - **Bug report is always one tap away (v146):** the report entry point
   moved out of the hamburger menu — which is covered or replaced on
