@@ -26,6 +26,7 @@ number never changes, even if the ADR is superseded.
 | 0014 | [No same-day retry after Again](0014-no-same-day-retry.md) | Accepted (Focus mode excepted — ADR-0015) |
 | 0015 | [Focus mode repeats problem words within one session](0015-focus-mode-same-session-repetition.md) | Accepted |
 | 0016 | [Character↔word attention loop](0016-character-word-attention-loop.md) | Accepted |
+| 0017 | [Flashcards is a derived view, not a new data feature](0017-flashcards-derived-no-new-state.md) | Accepted |
 
 ## Writing a new ADR
 
