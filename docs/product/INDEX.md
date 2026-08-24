@@ -9,6 +9,12 @@ others are reference snapshots.
 These describe work the project intends to do. Treat as authoritative
 until superseded.
 
+- **[`character-images.md`](character-images.md)** — Aug 24 2026.
+  Per-character mnemonics + 水墨 ink-wash illustrations, owner-curated
+  via the `/mnemonic` skill, stored in `public/char-mnemonics.json`.
+  Direction approved (ink+seal style, Recraft web, no baked-in text);
+  first entry (忘) in progress.
+
 - **[`explore-page.md`](explore-page.md)** — July 19 2026. One
   Explore surface (focus stack + breadcrumb, saved-set connection
   badges) replacing the Network, Components, and Phonetics pages.
