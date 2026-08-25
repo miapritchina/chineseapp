@@ -32,6 +32,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   small passive-view credit — so no new persisted data. See
   `lib/flashcards.ts`, `FlashcardsPage`.
 
+### Changed
+- **Documented how to triage in-app bug reports (v148):** new runbook
+  [`docs/architecture/bug-report-triage.md`](docs/architecture/bug-report-triage.md)
+  — where the `bug_reports` inbox lives, the row/context shape, why the
+  anon key can't read it (RLS owner-only; needs the Supabase dashboard
+  or a service-role key), ready-to-paste triage SQL, and the flow from a
+  raw report to a `BUG-NNN` in `BUGS.md`. Linked from `CLAUDE.md`,
+  `BUGS.md`, and the `bug_reports` row in `ARCHITECTURE.md`. No code
+  change.
+
 ### Fixed
 - **Bug button did nothing on drills and sheets (v147):** the report
   modal (`.popup-root`, z-index 50) opened *behind* the full-screen

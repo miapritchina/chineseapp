@@ -7,6 +7,13 @@ Move to "Fixed" when resolved (with the vNN it shipped in), then to
 ID format: `BUG-NNN`. Numbers are **immutable** — once assigned, never
 reused, even for fixed/withdrawn bugs.
 
+**In-app reports:** users file bugs from the app's 🐞 button into the
+Supabase `bug_reports` table. That table is the raw inbox; a report
+becomes a tracked defect only once it's given a `BUG-NNN` here. See
+[docs/architecture/bug-report-triage.md](docs/architecture/bug-report-triage.md)
+for how to read the inbox (the anon key can't — it needs the dashboard
+or a service-role key) and turn reports into rows below.
+
 Severity: **Critical** (data loss / app unusable) · **High** (core
 feature broken) · **Medium** (annoying but workarounds exist) ·
 **Low** (edge case) · **Cosmetic** (visual only)
