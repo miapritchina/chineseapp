@@ -1418,6 +1418,26 @@ body {
   max-width: 460px;
   text-align: center;
 }
+/* Flashcards (#118): anchor the hero near the top so revealing pinyin +
+   meaning grows the stack downward instead of shoving the character up. */
+.flashcard-surface {
+  align-items: flex-start;
+}
+.flashcard-surface .combined-card-stack {
+  padding-top: clamp(24px, 12vh, 110px);
+}
+/* Ghost grade buttons — pale, no red/green. This is a low-pressure deck;
+   the optional rating shouldn't shout (#118). */
+.flashcard-surface .combined-grade-row .review-btn {
+  color: var(--muted);
+  --grade-color: var(--border);
+}
+.flashcard-next-hint {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.4px;
+  opacity: 0.7;
+}
 .combined-replay {
   background: transparent;
   border: 1px solid var(--border);
