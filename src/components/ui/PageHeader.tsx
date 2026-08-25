@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BugReportButton } from "../BugReportButton";
+import { DrillHelp } from "./DrillHelp";
 
 // Shared full-screen-page header: back button (left) + optional tag
 // (center) + optional progress or actions (right). Emits the existing
@@ -18,6 +19,9 @@ interface Props {
   // out of the thumb zone — so it can't be hit by mistake while
   // grading (owner request, v105).
   onSkip?: () => void;
+  // Per-drill instructions behind a "?" popover in the header. Replaces
+  // the old transient on-card "tap to …" hints (owner request, v150).
+  help?: ReactNode;
 }
 
 export function PageHeader({
@@ -27,6 +31,7 @@ export function PageHeader({
   progress,
   actions,
   onSkip,
+  help,
 }: Props) {
   return (
     <div className="review-header">
@@ -47,6 +52,7 @@ export function PageHeader({
         ) : progress != null ? (
           <span className="review-progress">{progress}</span>
         ) : null}
+        {help != null && <DrillHelp>{help}</DrillHelp>}
         <BugReportButton className="header-bug" />
       </div>
     </div>

@@ -115,7 +115,6 @@ export function ProductionCard({ char, charData, onScore, onOpenEntity }: Props)
                 {char} · explore →
               </button>
             )}
-            <div className="drill-tap-hint">Tap anywhere to continue →</div>
           </>
         )}
       </div>

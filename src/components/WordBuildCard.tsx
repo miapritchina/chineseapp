@@ -120,7 +120,6 @@ export function WordBuildCard({ word, savedWords, onGotIt, onMissed, onOpenEntit
                 ? "Built clean — nice."
                 : `${mistakes} wrong tap${mistakes === 1 ? "" : "s"}.`}
             </div>
-            <div className="drill-tap-hint">Tap anywhere to continue →</div>
           </>
         )}
       </div>

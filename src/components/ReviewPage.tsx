@@ -19,6 +19,7 @@ import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
 import { interleaveByActivity, type ClusterMemberResult } from "../lib/drillGen";
 import { FOCUS_MAX_STABILITY_DAYS, PROBLEM_CHAR_MIN_LAPSES } from "../lib/focus";
 import { pickDrillFontStack } from "../lib/fonts";
+import { DRILL_HELP } from "../lib/drillHelp";
 import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
@@ -580,6 +581,7 @@ export function ReviewPage({
           tag="Confusable"
           progress={`${progressIndex} / ${total}`}
           onSkip={handleSkipCurrent}
+          help={DRILL_HELP.confusable}
         />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
@@ -629,6 +631,7 @@ export function ReviewPage({
         progressIndex={progressIndex}
         total={total}
         onSkip={handleSkipCurrent}
+        help={DRILL_HELP.newWord}
       >
         {!word ? (
           <div className="review-empty-hint">Loading word…</div>
@@ -684,6 +687,7 @@ export function ReviewPage({
         progressIndex={progressIndex}
         total={total}
         onSkip={handleSkipCurrent}
+        help={DRILL_HELP.reverse}
       >
         <ReverseRecognitionCard
           key={cardKey(current)}
@@ -707,6 +711,7 @@ export function ReviewPage({
         progressIndex={progressIndex}
         total={total}
         onSkip={handleSkipCurrent}
+        help={DRILL_HELP.cloze}
       >
         <ClozeCharCard
           key={cardKey(current)}
@@ -731,6 +736,7 @@ export function ReviewPage({
         progressIndex={progressIndex}
         total={total}
         onSkip={handleSkipCurrent}
+        help={DRILL_HELP.familySweep}
       >
         {!comp || !phoneticComponents ? (
           <div className="review-empty-hint">Loading family data…</div>
@@ -761,6 +767,7 @@ export function ReviewPage({
           progressIndex={progressIndex}
           total={total}
           onSkip={handleSkipCurrent}
+          help={DRILL_HELP.write}
         >
           <div className="review-empty-hint">Loading character data…</div>
         </DrillShell>
@@ -773,6 +780,7 @@ export function ReviewPage({
           tag="Write"
           progress={`${progressIndex} / ${total}`}
           onSkip={handleSkipCurrent}
+          help={DRILL_HELP.write}
         />
         <ReviewProgressBar index={progressIndex} total={total} />
         <div className="review-body">
@@ -800,6 +808,7 @@ export function ReviewPage({
         progressIndex={progressIndex}
         total={total}
         onSkip={handleSkipCurrent}
+        help={DRILL_HELP.cluster}
       >
         <ClusterRecallCard
           key={cardKey(current)}
@@ -843,6 +852,7 @@ export function ReviewPage({
         tag={current.itemKind === "word" ? "Word" : "Character"}
         progress={`${progressIndex} / ${total}`}
         onSkip={handleSkipCurrent}
+        help={DRILL_HELP.recognition}
       />
       <ReviewProgressBar index={progressIndex} total={total} />
       <div className="review-body">

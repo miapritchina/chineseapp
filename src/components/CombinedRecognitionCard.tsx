@@ -116,7 +116,6 @@ export function CombinedRecognitionCard({
           // tap-anywhere reveal keeps working).
           onTap={revealed && onOpenEntity ? () => onOpenEntity(itemKey) : undefined}
         />
-        {!revealed && <div className="review-tap-hint">Tap anywhere to reveal</div>}
         {revealed && (
           <>
             <div className="review-pinyin review-pinyin-lg">{pinyin}</div>

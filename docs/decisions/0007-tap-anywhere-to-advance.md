@@ -39,5 +39,7 @@ Audio is opt-in and timed by role:
 - The v75 fix was a bug in this contract: grade buttons unconditionally
   stopped propagation and blocked the post-grade tap-anywhere. Audit
   any `stopPropagation` call you add.
-- A "tap to continue" pulse hint exists but should be transient (fade
-  after ~1.5 s or first-occurrence only) — see UX redesign spec.
+- A "tap to continue" pulse hint used to sit on the drill surface. v150
+  removed all on-surface instruction hints (they flickered on every
+  reveal); per-drill instructions now live behind the header `?` popover
+  (`DrillHelp`). The tap-anywhere-to-advance contract itself is unchanged.

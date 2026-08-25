@@ -8,6 +8,7 @@ import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
 import { Entity } from "./Entity";
 import { GradeButtons } from "./ui/GradeButtons";
+import { DRILL_HELP } from "../lib/drillHelp";
 
 interface Props {
   // The deck, pre-ordered by the caller (lib/flashcards.ts).
@@ -61,6 +62,7 @@ export function FlashcardsPage({ words, onClose, onGrade, onBrowse }: Props) {
       progressIndex={index + 1}
       total={words.length}
       onSkip={advance}
+      help={DRILL_HELP.flashcards}
     >
       <FlashcardFace
         key={current}
@@ -124,7 +126,6 @@ function FlashcardFace({
           showMeaning={false}
           ariaLabel={itemKey}
         />
-        {!revealed && <div className="review-tap-hint">Tap anywhere to reveal</div>}
         {revealed && (
           <>
             <div className="review-pinyin review-pinyin-lg">{pinyin}</div>
@@ -149,7 +150,6 @@ function FlashcardFace({
                 />
               </div>
             </div>
-            <div className="flashcard-next-hint">Tap anywhere for the next card →</div>
           </>
         )}
       </div>

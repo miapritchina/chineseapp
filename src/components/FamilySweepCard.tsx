@@ -131,7 +131,6 @@ export function FamilySweepCard({ component, pool, charExists, onScore, onOpenEn
                 ? "All of them — nice."
                 : "Green = right, red = not family, outlined = missed."}
             </div>
-            <div className="drill-tap-hint">Tap anywhere to continue →</div>
           </>
         )}
       </div>

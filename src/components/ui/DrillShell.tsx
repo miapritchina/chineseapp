@@ -11,12 +11,23 @@ interface Props {
   total: number;
   onClose: () => void;
   onSkip: () => void;
+  // Per-drill instructions behind the header "?" popover.
+  help?: ReactNode;
   // Per-card CSS vars (random-font mode sets --font-hanzi here).
   style?: CSSProperties;
   children: ReactNode;
 }
 
-export function DrillShell({ tag, progressIndex, total, onClose, onSkip, style, children }: Props) {
+export function DrillShell({
+  tag,
+  progressIndex,
+  total,
+  onClose,
+  onSkip,
+  help,
+  style,
+  children,
+}: Props) {
   const pct = total > 0 ? Math.min(100, Math.max(0, ((progressIndex - 1) / total) * 100)) : 0;
   return (
     <div className="review-root" style={style}>
@@ -25,6 +36,7 @@ export function DrillShell({ tag, progressIndex, total, onClose, onSkip, style, 
         tag={tag}
         progress={`${progressIndex} / ${total}`}
         onSkip={onSkip}
+        help={help}
       />
       <div
         className="review-progress-bar"

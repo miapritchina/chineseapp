@@ -100,7 +100,6 @@ export function ReverseRecognitionCard({
             );
           })}
         </div>
-        {picked !== null && <div className="drill-tap-hint">Tap anywhere to continue →</div>}
       </div>
     </div>
   );

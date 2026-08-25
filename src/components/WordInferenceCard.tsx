@@ -141,7 +141,6 @@ export function WordInferenceCard({ word, glossPool, onGotIt, onMissed, onOpenEn
                 );
               })}
             </div>
-            <div className="drill-tap-hint">Tap anywhere to continue →</div>
           </>
         )}
       </div>
