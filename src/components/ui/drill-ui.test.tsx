@@ -3,6 +3,7 @@ import { createRef } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { GradeButtons } from "./GradeButtons";
 import { DrillShell } from "./DrillShell";
+import { DrillHelp } from "./DrillHelp";
 import { HanziGlyph, type HanziGlyphHandle } from "./HanziGlyph";
 
 describe("GradeButtons", () => {
@@ -66,6 +67,40 @@ describe("DrillShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip" }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onSkip).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("DrillHelp", () => {
+  it("hides the instructions until the ? is tapped, then closes on Escape", () => {
+    render(<DrillHelp>Tap to reveal, then rate it.</DrillHelp>);
+    expect(screen.queryByText("Tap to reveal, then rate it.")).toBeNull();
+
+    const btn = screen.getByRole("button", { name: "How this works" });
+    fireEvent.click(btn);
+    expect(screen.getByText("Tap to reveal, then rate it.")).toBeTruthy();
+    expect(btn.getAttribute("aria-expanded")).toBe("true");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByText("Tap to reveal, then rate it.")).toBeNull();
+    expect(btn.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("renders inside a PageHeader-style DrillShell and toggles", () => {
+    render(
+      <DrillShell
+        tag="Word"
+        progressIndex={1}
+        total={4}
+        onClose={() => {}}
+        onSkip={() => {}}
+        help="Tap the card to reveal pinyin and meaning."
+      >
+        <div>body</div>
+      </DrillShell>,
+    );
+    expect(screen.queryByText("Tap the card to reveal pinyin and meaning.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "How this works" }));
+    expect(screen.getByText("Tap the card to reveal pinyin and meaning.")).toBeTruthy();
   });
 });
 

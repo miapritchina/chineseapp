@@ -12,6 +12,17 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Calmer drills — no more flickering hints, no jumping hero (v150,
+  owner request):** removed the transient "tap to reveal / tap anywhere
+  to continue →" instructions that appeared and vanished on every reveal
+  across *all* exercises — the constant motion was distracting. In their
+  place every drill now has a small `?` in the header that opens a
+  per-exercise instructions popover, shown only when asked for. And the
+  fix that landed for Flashcards in v149 is now app-wide: every drill
+  surface is top-anchored, so the character (or prompt) stays put and the
+  answer grows *downward* into the space below instead of shoving the
+  hero up on reveal. New `DrillHelp` component + `src/lib/drillHelp.ts`;
+  `PageHeader` / `DrillShell` gained a `help` prop.
 - **Flashcards feel lighter (v149, from in-app report #118):** the deck
   is now tap-anywhere — one tap flips the card, the next tap advances;
   the explicit **Next →** button is gone. The optional Forgot / Knew it

@@ -229,7 +229,7 @@ The detailed per-class tables below are the historical/raw inventory; where a cl
 | 15 px | 500 | — | `.review-btn`, `.launch-option-label`, `.signin-submit`, `.search-bar input` (declared twice; also 16 px) |
 | 14 px | — | 1.4 | `.hamburger-item`, `.mnemonic-display`, `.status-menu-item`, `.phonetics-row-pinyin`, `.saved-empty`, `.component-sound-tones`, `.sheet-etym-note`, `.production-prompt-gloss`, `.composer-input`, `.sentence-cta` |
 | 13.5 px | — | — | `.result-row .r-pinyin` |
-| 13 px | — | — | `.review-progress`, `.review-tap-hint`, `.review-gloss-sm`, `.r-gloss`, `.sheet-saved-pinyin`, `.auth-button`, `.sheet-network-link`, `.review-attrib-skip`, `.review-tap-replay`, `.phonetic-tap-prompt`, `.cluster-prompt` |
+| 13 px | — | — | `.review-progress`, `.review-gloss-sm`, `.r-gloss`, `.sheet-saved-pinyin`, `.auth-button`, `.sheet-network-link`, `.review-attrib-skip`, `.review-tap-replay`, `.phonetic-tap-prompt`, `.cluster-prompt` |
 
 > `.review-pinyin-lg` is actually 32 px / weight 500 despite the "lg" suffix. This is the large-pinyin treatment for sound-recognition drills.
 
@@ -349,7 +349,6 @@ The app respects iOS safe areas throughout: `env(safe-area-inset-top)` on `.topb
 |---|---|---|---|
 | `sheet-rise` | `translateY(100%) → translateY(0)` | 0.26 s / `cubic-bezier(0.22, 1, 0.36, 1)` | Mobile bottom-sheet entrance |
 | `sheet-pop` | `translateY(10px) scale(0.98) opacity(0) → identity` | 0.18 s / `ease-out` | Desktop modal entrance |
-| `drill-tap-hint-pulse` | `opacity: 0.7 → 1 → 0.7` | 1.6 s / `ease-in-out` infinite | "Tap to continue" hint pulse |
 
 ### 5.2 Transitions
 
@@ -363,7 +362,7 @@ The app respects iOS safe areas throughout: `env(safe-area-inset-top)` on `.topb
 
 ### 5.3 Motion principles
 
-Per [ADR-0007](../decisions/0007-tap-anywhere-to-advance.md): **No auto-advance timers in drills.** All progression is user-initiated (tap-anywhere-to-advance). The "tap to continue" hint uses a subtle pulse animation (`drill-tap-hint-pulse`) rather than a static label — **design preference: hints should be transient** (fade after ~1.5–2 s or first-occurrence-only), not permanent on-screen text.
+Per [ADR-0007](../decisions/0007-tap-anywhere-to-advance.md): **No auto-advance timers in drills.** All progression is user-initiated (tap-anywhere-to-advance). **No instructional hint text on the drill surface** (v150): the old transient "tap to reveal / tap to continue" hints flickered in and out on every reveal and moved the layout — they were removed entirely. Per-drill instructions now live behind the header's `?` popover (`DrillHelp`), shown only when asked for.
 
 ---
 
@@ -442,11 +441,11 @@ The app uses two coexisting routing patterns: a **modal stack** (`useModalStack`
 
 ### 7.12 ReviewPage + DrillFrame
 
-**What:** Full-screen SRS review surface, routing by facet to sub-components. **Where:** `#/review`. **Internal helper:** `DrillFrame` — wraps each drill with header (back + tag + progress), body slot, and skip button. **Classes:** `.review-root`, `.review-header`, `.review-body`, `.review-actions`, `.review-card`, `.review-hanzi`, `.review-tap-hint`, `.review-pinyin`, `.review-gloss`, `.review-empty`, `.review-attrib`, `.drill-skip`, `.drill-skip-header`.
+**What:** Full-screen SRS review surface, routing by facet to sub-components. **Where:** `#/review`. **Internal helper:** `DrillFrame` — wraps each drill with header (back + tag + progress), body slot, and skip button. **Classes:** `.review-root`, `.review-header`, `.review-body`, `.review-actions`, `.review-card`, `.review-hanzi`, `.review-pinyin`, `.review-gloss`, `.review-empty`, `.review-attrib`, `.drill-skip`, `.drill-skip-header`, `.drill-help`, `.drill-help-btn`, `.drill-help-pop`.
 
 ### 7.13 CombinedRecognitionCard
 
-**What:** Dual-facet recognition card (meaning + sound). **Where:** ReviewPage (facet = meaningRecognition/soundRecognition). **Classes:** `.combined-card-surface`, `.combined-card-stack`, `.combined-grade-block`, `.combined-grade-label`, `.combined-grade-row`, `.drill-tap-hint`.
+**What:** Dual-facet recognition card (meaning + sound). **Where:** ReviewPage (facet = meaningRecognition/soundRecognition). **Classes:** `.combined-card-surface`, `.combined-card-stack`, `.combined-grade-block`, `.combined-grade-label`, `.combined-grade-row`. Top-anchored (v150): `align-items: flex-start` + a `padding-top` clamp on the stack, so the hero stays put and the answer grows downward on reveal.
 
 ### 7.14 PhoneticTapCard *(removed in v95)*
 
@@ -520,14 +519,19 @@ Ordered by leverage (most-duplicated / most-impactful first).
 
 **Absorbs:** The in-file `DrillFrame` helper in `ReviewPage.tsx` (`.review-root`, `.review-header`, `.review-body`, `.drill-skip-row`). Currently every drill (CombinedRecognition, PhoneticTap, ComponentSound, FamilyTransfer, Production, Disambiguation) shares this chrome but it's an unexported inner component.
 **Props:** `tag: string`, `progress: { current: number; total: number }`, `onClose`, `onSkip?`, `children`.
-**Design note:** ~~The skip button should only appear pre-answer.~~ v105: Skip moved into the header (`PageHeader onSkip`, `.drill-skip-header`) — always available, out of the thumb zone so it can't be tapped by mistake. The "tap to continue" hint (`.drill-tap-hint`) should be **transient** — fade out after ~1.5 s or show only on first occurrence, per the owner's preference against permanent instructional text.
+**Design note:** ~~The skip button should only appear pre-answer.~~ v105: Skip moved into the header (`PageHeader onSkip`, `.drill-skip-header`) — always available, out of the thumb zone so it can't be tapped by mistake. ~~The "tap to continue" hint should be transient.~~ v150: on-surface hint text removed entirely — instructions live behind the header `?` popover (`DrillHelp`).
 **Effort:** **S** — just export and parameterize `DrillFrame`.
 
 ### 8.4 `<PageHeader back tag progress actions?>` — Shared top bar ✅ *(shipped v91)*
 
 **Absorbs:** The header pattern from ReviewPage/DrillFrame (`.review-header`), TreeModal (`.modal-header`), PhoneticsPage, SentenceStudio — all use the same back-button + tag + progress layout with minor variations (some have action buttons on the right).
-**Props:** `onBack`, `tag?: string`, `progress?: string`, `actions?: ReactNode`.
+**Props:** `onBack`, `tag?: string`, `progress?: string`, `actions?: ReactNode`, `onSkip?`, `help?: ReactNode`.
 **Effort:** **S**
+
+### 8.6 `<DrillHelp>` — Header `?` instructions popover ✅ *(shipped v150)*
+
+**What:** A persistent `?` button in the drill header (rendered by `PageHeader` when a `help` prop is given, threaded through `DrillShell`). Tapping it opens a small popover (`.drill-help-pop`) with that drill's instructions; it dismisses on outside tap, `Escape`, or a re-tap. Replaced the transient on-surface hints. Per-drill copy lives in `src/lib/drillHelp.ts`.
+**Props:** `children: ReactNode` (the help content).
 
 ### 8.5 `<PillTabs>` — Horizontal pill strip
 
@@ -621,6 +625,6 @@ Some drill buttons stop event propagation (`e.stopPropagation()`) unconditionall
 
 `.search-bar input` declares `font-size: 16px` twice (lines overlap). Minor cleanup.
 
-### 9.8 Transient hint text
+### 9.8 Transient hint text — resolved (v150)
 
-The "Tap anywhere to continue" hint (`.drill-tap-hint`) currently pulses infinitely. Per the owner's preference: **design hints as transient** — fade out after ~1.5–2 s or show only on first-occurrence. Not yet implemented; a CSS-only fix would be changing the animation to `forwards` with a delay that ends at `opacity: 0`.
+The old "Tap anywhere to reveal / continue" hints (`.review-tap-hint`, `.drill-tap-hint`, `.flashcard-next-hint`) flickered in and out on every reveal and shifted the layout. Rather than tune the fade, the on-surface hints were **removed outright** and replaced by a persistent `?` popover in the drill header (`DrillHelp`, `src/lib/drillHelp.ts` for the per-drill copy). Nothing instructional now appears or disappears on the card itself.

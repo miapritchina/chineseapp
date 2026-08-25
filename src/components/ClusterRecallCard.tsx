@@ -84,24 +84,19 @@ export function ClusterRecallCard({ cluster, onGraded, onOpenEntity }: Props) {
             );
           })}
         </div>
-        {allRevealed ? (
-          <>
-            <div className="drill-tap-hint">Tap ✗ on the ones you didn’t know.</div>
-            <div className="combined-grade-row">
-              <button
-                type="button"
-                className="review-btn review-btn-good"
-                onClick={() => {
-                  stopSpeech();
-                  onGraded(cluster.map((w) => ({ word: w, missed: missed.has(w) })));
-                }}
-              >
-                {missed.size === 0 ? "Knew all" : `Continue (${missed.size} missed)`}
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="drill-tap-hint">Tap each card to reveal its answer.</div>
+        {allRevealed && (
+          <div className="combined-grade-row">
+            <button
+              type="button"
+              className="review-btn review-btn-good"
+              onClick={() => {
+                stopSpeech();
+                onGraded(cluster.map((w) => ({ word: w, missed: missed.has(w) })));
+              }}
+            >
+              {missed.size === 0 ? "Knew all" : `Continue (${missed.size} missed)`}
+            </button>
+          </div>
         )}
       </div>
     </div>

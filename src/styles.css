@@ -333,14 +333,6 @@ body {
   font-weight: 500;
   max-width: 100%;
 }
-.review-tap-hint {
-  font-size: 13px;
-  color: var(--muted);
-  letter-spacing: 0.5px;
-  /* Transient — visible briefly for first-timers, then fades and stays gone
-     (the card is still tappable anywhere). */
-  animation: drill-tap-hint-out 0.6s ease 2.2s forwards;
-}
 .review-pinyin {
   font-size: 22px;
   color: var(--muted);
@@ -556,7 +548,10 @@ body {
   align-self: stretch;
   width: 100%;
   display: flex;
-  align-items: center;
+  /* Top-anchored (owner request, v150): the prompt sits near the top so
+     revealing the answer/feedback grows downward instead of shifting the
+     whole card up. */
+  align-items: flex-start;
   justify-content: center;
   padding: 8px 16px 24px;
   text-align: center;
@@ -572,6 +567,7 @@ body {
   gap: 20px;
   width: 100%;
   max-width: 440px;
+  padding-top: clamp(20px, 8vh, 72px);
 }
 .phonetic-tap-prompt {
   font-size: 13px;
@@ -611,34 +607,6 @@ body {
   letter-spacing: 0.5px;
 }
 
-.drill-tap-hint {
-  margin-top: 14px;
-  font-size: 13px;
-  color: var(--accent);
-  letter-spacing: 0.4px;
-  font-weight: 500;
-  pointer-events: none;
-  /* Transient: pulses twice for attention, then fades out and stays gone —
-     no permanent on-screen instruction. (The card itself is still tappable
-     anywhere; the hint just isn't a fixture.) */
-  animation:
-    drill-tap-hint-pulse 1.6s ease-in-out 2 forwards,
-    drill-tap-hint-out 0.5s ease 3.2s forwards;
-}
-@keyframes drill-tap-hint-pulse {
-  0%,
-  100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-@keyframes drill-tap-hint-out {
-  to {
-    opacity: 0;
-  }
-}
 .phonetic-tap-pinyin {
   font-size: 18px;
   color: var(--muted);
@@ -1402,7 +1370,10 @@ body {
   align-self: stretch;
   width: 100%;
   display: flex;
-  align-items: center;
+  /* Top-anchored (owner request, v150): the hero sits near the top and
+     revealing pinyin + meaning grows the stack downward, so the character
+     never jumps up on reveal. */
+  align-items: flex-start;
   justify-content: center;
   padding: 8px 14px 24px;
   cursor: pointer;
@@ -1417,26 +1388,13 @@ body {
   width: 100%;
   max-width: 460px;
   text-align: center;
-}
-/* Flashcards (#118): anchor the hero near the top so revealing pinyin +
-   meaning grows the stack downward instead of shoving the character up. */
-.flashcard-surface {
-  align-items: flex-start;
-}
-.flashcard-surface .combined-card-stack {
-  padding-top: clamp(24px, 12vh, 110px);
+  padding-top: clamp(20px, 8vh, 72px);
 }
 /* Ghost grade buttons — pale, no red/green. This is a low-pressure deck;
    the optional rating shouldn't shout (#118). */
 .flashcard-surface .combined-grade-row .review-btn {
   color: var(--muted);
   --grade-color: var(--border);
-}
-.flashcard-next-hint {
-  font-size: 12px;
-  color: var(--muted);
-  letter-spacing: 0.4px;
-  opacity: 0.7;
 }
 .combined-replay {
   background: transparent;
@@ -1812,6 +1770,56 @@ body {
   color: var(--text);
   outline: none;
 }
+
+/* Drill help — a persistent "?" in the drill header that reveals the
+   per-drill instructions in a small popover (v150). Replaced the old
+   transient on-card "tap to …" hints so nothing flickers on the surface. */
+.drill-help {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.drill-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.drill-help-btn:hover,
+.drill-help-btn[aria-expanded="true"],
+.drill-help-btn:focus-visible {
+  background: var(--surface-2);
+  color: var(--text);
+  outline: none;
+}
+.drill-help-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 70;
+  width: max-content;
+  max-width: min(78vw, 300px);
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+  text-align: left;
+}
+
 /* The header's right cluster hugs the right edge so the bug icon is always
    in the top-right corner regardless of what else (progress, Skip) is there. */
 .header-right {
