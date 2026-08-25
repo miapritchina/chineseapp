@@ -7,6 +7,14 @@ Move to "Fixed" when resolved (with the vNN it shipped in), then to
 ID format: `BUG-NNN`. Numbers are **immutable** — once assigned, never
 reused, even for fixed/withdrawn bugs.
 
+**In-app reports:** users file bugs from the app's 🐞 button. Each one
+becomes a **GitHub issue labeled `bug-report`** (via Supabase +
+the `bug-reports-to-issues` Action) — that's where you read and triage
+them (`list_issues labels:["bug-report"]`). Promote a report to a
+tracked `BUG-NNN` here only if it's worth long-term tracking; small
+one-shot fixes can just close the issue. Full runbook:
+[docs/architecture/bug-report-triage.md](docs/architecture/bug-report-triage.md).
+
 Severity: **Critical** (data loss / app unusable) · **High** (core
 feature broken) · **Medium** (annoying but workarounds exist) ·
 **Low** (edge case) · **Cosmetic** (visual only)

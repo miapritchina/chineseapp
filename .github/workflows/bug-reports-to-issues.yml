@@ -1,0 +1,49 @@
+name: Bug reports → Issues
+
+# Turns rows in the Supabase `bug_reports` table (written by the app's in-app
+# 🐞 button) into GitHub issues labeled `bug-report`, so they can be read and
+# triaged here instead of only in the Supabase dashboard.
+#
+# It reads/marks rows through the Supabase Management API using the same
+# `supabaseapi` PAT that Setup Supabase uses (a `github-pages` environment
+# secret), and files issues with the workflow's built-in GITHUB_TOKEN.
+# Idempotent: only rows with github_issue IS NULL become issues, and each row
+# is stamped with its issue number, so a report is never filed twice.
+#
+# Requires GitHub Issues to be ENABLED (Settings → General → Features →
+# Issues). Until they are, the job no-ops with a warning.
+#
+# Triggers: every 30 min, plus manual (Run workflow) / on-demand dispatch.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: bug-reports-to-issues
+  cancel-in-progress: false
+
+env:
+  PROJECT_REF: oigbbgtzzqiceetasayy
+  MGMT_API: https://api.supabase.com/v1
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Sync bug reports → issues
+        env:
+          SUPABASE_PAT: ${{ secrets.supabaseapi }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/sync-bug-reports.mjs

@@ -72,7 +72,7 @@ const SEARCH_DEBOUNCE_MS = 200;
 // Components dealt per Family sweep game (v142).
 const SWEEP_GAME_SIZE = 12;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v147";
+const APP_VERSION = "chinese v148";
 
 export function App() {
   const dict = useDictionary();

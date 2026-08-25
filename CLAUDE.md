@@ -357,6 +357,7 @@ details.** Frame everything that way.
 | Living component docs (autodocs + token gallery) | `npm run storybook` (deployed at `/chineseapp/storybook/`) |
 | Current UX redesign goals | [`docs/product/chinese-app-ux-redesign.md`](docs/product/chinese-app-ux-redesign.md) |
 | Outstanding bugs | [`BUGS.md`](BUGS.md) |
+| Read/triage in-app user bug reports | [`docs/architecture/bug-report-triage.md`](docs/architecture/bug-report-triage.md) |
 | Active TODO list | [`TODO.md`](TODO.md) |
 | Release history | [`CHANGELOG.md`](CHANGELOG.md) |
 | UX redesign source spec | [`docs/product/qa-fix-prompt.md`](docs/product/qa-fix-prompt.md) |

@@ -17,9 +17,9 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   you're on (page / active word or char), the build version, viewport,
   device UA, and timestamp, so no screenshot is needed. Reports land in
   a new Supabase `bug_reports` table (RLS: anon + signed-in may insert,
-  owner-only read); triage from the dashboard. New: `lib/bugReport.ts`,
-  `hooks/useBugReport.ts`, `components/BugReportModal.tsx`, migration
-  `0016_bug_reports.sql`.
+  owner-only read); surfaced as GitHub issues (see below). New:
+  `lib/bugReport.ts`, `hooks/useBugReport.ts`,
+  `components/BugReportModal.tsx`, migration `0016_bug_reports.sql`.
 - **Flashcards (v144):** a low-pressure flip deck for just *looking* at
   saved words — no graded-workout pressure. Tap to flip (hanzi → pinyin
   + meaning + audio); rating is optional. The deck is spaced-repetition
@@ -31,6 +31,19 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   optional rating grades the recognition rows, a plain Next gives the
   small passive-view credit — so no new persisted data. See
   `lib/flashcards.ts`, `FlashcardsPage`.
+- **Bug reports now become GitHub issues (v148):** the in-app 🐞 button
+  wrote reports to a Supabase table nobody could read from a session —
+  useless for triage. New pipeline: the app still INSERTs to
+  `bug_reports` (all a public client can reach securely), then a GitHub
+  Action (`bug-reports-to-issues.yml` → `scripts/sync-bug-reports.mjs`)
+  pulls new rows via the existing `supabaseapi` Management PAT and files
+  one **GitHub issue labeled `bug-report`** per report, with the note +
+  full capture context in the body. Idempotent — each row is stamped
+  `github_issue`/`synced_at` (migration `0017`) so nothing double-files.
+  Runs every 30 min and on demand. Reports are now readable and
+  triageable as issues (`fixes #N` closes the loop). One-time setup:
+  enable Issues in repo Settings. Runbook + triage flow:
+  [`docs/architecture/bug-report-triage.md`](docs/architecture/bug-report-triage.md).
 
 ### Fixed
 - **Bug button did nothing on drills and sheets (v147):** the report
