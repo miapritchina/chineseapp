@@ -72,7 +72,7 @@ const SEARCH_DEBOUNCE_MS = 200;
 // Components dealt per Family sweep game (v142).
 const SWEEP_GAME_SIZE = 12;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v148";
+const APP_VERSION = "chinese v149";
 
 export function App() {
   const dict = useDictionary();
@@ -950,10 +950,6 @@ export function App() {
         <FlashcardsPage
           words={flashcardWords}
           onClose={() => closeHashPage("#/cards")}
-          onOpenEntity={(key) => {
-            if ([...key].length > 1) void openWord(key);
-            else openChar(key);
-          }}
           onGrade={(word, rating) => {
             grade(word, rating, "word", "meaningRecognition");
             grade(word, rating, "word", "soundRecognition");

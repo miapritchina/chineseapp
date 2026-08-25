@@ -13,7 +13,6 @@ interface Props {
   // The deck, pre-ordered by the caller (lib/flashcards.ts).
   words: string[];
   onClose: () => void;
-  onOpenEntity: (key: string) => void;
   // Optional self-grade on flip → a real FSRS grade on the word's
   // recognition rows. Skipping it keeps the mode pressure-free.
   onGrade: (word: string, rating: RatingName) => void;
@@ -26,7 +25,7 @@ interface Props {
 // graded review workout. Flip a card to see pinyin + meaning; grading is
 // optional. The deck is spaced-repetition ordered (lib/flashcards.ts) so
 // it leads with what's worth seeing instead of well-known words.
-export function FlashcardsPage({ words, onClose, onOpenEntity, onGrade, onBrowse }: Props) {
+export function FlashcardsPage({ words, onClose, onGrade, onBrowse }: Props) {
   const { ensureCached } = useDictCtx();
   const [index, setIndex] = useState(0);
   const current = words[index];
@@ -66,7 +65,6 @@ export function FlashcardsPage({ words, onClose, onOpenEntity, onGrade, onBrowse
       <FlashcardFace
         key={current}
         itemKey={current}
-        onOpenEntity={onOpenEntity}
         onGrade={(rating) => {
           onGrade(current, rating);
           advance();
@@ -82,12 +80,10 @@ export function FlashcardsPage({ words, onClose, onOpenEntity, onGrade, onBrowse
 
 function FlashcardFace({
   itemKey,
-  onOpenEntity,
   onGrade,
   onNext,
 }: {
   itemKey: string;
-  onOpenEntity: (key: string) => void;
   onGrade: (rating: RatingName) => void;
   onNext: () => void;
 }) {
@@ -107,17 +103,18 @@ function FlashcardFace({
 
   return (
     <div
-      className="combined-card-surface"
-      onClick={!revealed ? () => setRevealed(true) : undefined}
+      className="combined-card-surface flashcard-surface"
+      onClick={() => (revealed ? onNext() : setRevealed(true))}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (!revealed && (e.key === " " || e.key === "Enter")) {
+        if (e.key === " " || e.key === "Enter") {
           e.preventDefault();
-          setRevealed(true);
+          if (revealed) onNext();
+          else setRevealed(true);
         }
       }}
-      aria-label={revealed ? "Card revealed" : "Tap anywhere to reveal"}
+      aria-label={revealed ? "Tap anywhere for the next card" : "Tap anywhere to reveal"}
     >
       <div className="combined-card-stack">
         <Entity
@@ -126,7 +123,6 @@ function FlashcardFace({
           showPinyin={false}
           showMeaning={false}
           ariaLabel={itemKey}
-          onTap={revealed ? () => onOpenEntity(itemKey) : undefined}
         />
         {!revealed && <div className="review-tap-hint">Tap anywhere to reveal</div>}
         {revealed && (
@@ -153,13 +149,7 @@ function FlashcardFace({
                 />
               </div>
             </div>
-            <button
-              type="button"
-              className="review-btn review-btn-reveal learn-continue"
-              onClick={onNext}
-            >
-              Next →
-            </button>
+            <div className="flashcard-next-hint">Tap anywhere for the next card →</div>
           </>
         )}
       </div>

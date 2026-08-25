@@ -11,6 +11,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Flashcards feel lighter (v149, from in-app report #118):** the deck
+  is now tap-anywhere — one tap flips the card, the next tap advances;
+  the explicit **Next →** button is gone. The optional Forgot / Knew it
+  rating is ghosted (pale, no red/green) so it doesn't shout on a
+  low-pressure deck. And the character no longer jumps upward when the
+  meaning is revealed — the hero is anchored near the top and the answer
+  grows downward. First bug fixed through the new in-app → GitHub-issue
+  report pipeline.
+
 ### Added
 - **In-app bug reports (v145):** a one-field report form — type what
   went wrong, tap Send, done. Each report auto-captures the surface
