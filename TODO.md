@@ -35,6 +35,7 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 |---|---|
 | **Remaining drill candidates** — audio-first + speed sprint | Drills 1–4 shipped v98 ([spec](docs/product/recognition-drills.md)). Left: **audio-first** (TTS-only prompt → pick the hanzi; fold into ReverseRecognitionCard as a prompt mode; doubles as [rebalance stage 5](docs/product/exercise-system-rebalance.md) — grades `soundRecognition` via the percent path) and **speed sprint** (timed binary pass over reps>0 cards, no FSRS writes). |
 | **Graph performance + usability** | [Redesign spec §4G](docs/product/chinese-app-ux-redesign.md#4g-graph-pages--performance--usability). Reduce node count by default; larger tap targets; WebGL renderer if available. |
+| Audio still lags on iOS? (follow-up to v153) | The v153 warm-up assumes an `<audio>` request is served from the service worker's `tts-audio` cache. WebKit has historically not routed media-element requests through the SW, and the endpoint sends no cache headers, so on iOS the warm fetch may not be reused. If cards 2+ still lag on device: play from an `Audio` element preloaded during the warm-up, or serve the MP3s through our own origin (Supabase edge function) with cache headers + CORS, which would also allow blob playback. |
 | Cross-device deletion propagation | Tombstone column or "wholesale replace" pass. [Open work in ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | Fix [BUG-4](BUGS.md) (hamburger dismiss) | Cosmetic; touchstart listener + non-reflow close. |
 

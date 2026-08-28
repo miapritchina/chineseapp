@@ -66,13 +66,15 @@ import { buildClusters, shuffle } from "./lib/drillGen";
 import { ensureAllFontFaces, ensureFontFace, fontById, nextFontId } from "./lib/fonts";
 import { isDue } from "./lib/fsrs";
 import { planFlow, LEARN_STAGE_COUNT, type FlowStage } from "./lib/flow";
-import { setAutoSpeakEnabled } from "./lib/speech";
+import { prefetchSpeech, setAutoSpeakEnabled } from "./lib/speech";
 
 const SEARCH_DEBOUNCE_MS = 200;
 // Components dealt per Family sweep game (v142).
 const SWEEP_GAME_SIZE = 12;
+// Flashcards whose audio is fetched before the deck is even opened.
+const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v152";
+const APP_VERSION = "chinese v153";
 
 export function App() {
   const dict = useDictionary();
@@ -303,6 +305,13 @@ export function App() {
       (w) => weakness.get(w) ?? 0,
     );
   }, [saved.savedList, reviewState.cards, weakness]);
+
+  // The deck's first cards auto-play the moment they appear, and
+  // opening Flashcards leaves no time to fetch their audio — so warm
+  // it here, while the user is still on the home screen (v153).
+  useEffect(() => {
+    prefetchSpeech(flashcardWords.slice(0, FLASHCARD_AUDIO_WARM));
+  }, [flashcardWords]);
 
   // Cluster-recall material (v107, a drill type since the standalone
   // page was folded into the session queue).

@@ -12,6 +12,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Flashcard audio starts without the wait (v153, owner report):** the
+  word's MP3 was only requested when its card appeared, so the first
+  sound arrived about a second late — a round-trip to the China-hosted
+  TTS host. Audio is now fetched ahead of being needed: `App` warms the
+  first three cards of the deck while you're still on the home screen,
+  and the deck keeps five cards' audio warm as it advances, so a flip
+  never waits on the network. `index.html` also preconnects to
+  `dict.youdao.com`, which removes the DNS + TLS handshake from the
+  very first play. New `prefetchSpeech()` in `src/lib/speech.ts`; the
+  warm store is the service worker's existing `tts-audio` cache.
 - **CI checks mean something on a branch now (v152):** the Pages
   workflow declared the `github-pages` environment on its only job, and
   that environment is restricted to `claude/main` — so every feature
