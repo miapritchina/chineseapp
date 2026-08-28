@@ -40,9 +40,10 @@ The project's documentation lives in two places:
 
 ## Deployment
 
-Pushing to `claude/main` (default branch) triggers
-`.github/workflows/pages.yml`. It builds Vite + Storybook and
-publishes to GitHub Pages. Supabase
+`.github/workflows/pages.yml` runs on every branch: its `build` job
+tests and builds Vite + Storybook, so a red check is a real failure.
+Only `claude/main` runs the `deploy` job that publishes to GitHub
+Pages. Supabase
 migrations apply automatically on pushes that touch
 `supabase/migrations/**`.
 

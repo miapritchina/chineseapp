@@ -12,6 +12,16 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **CI checks mean something on a branch now (v152):** the Pages
+  workflow declared the `github-pages` environment on its only job, and
+  that environment is restricted to `claude/main` — so every feature
+  branch failed the gate in about a second, before building anything,
+  and every PR carried a red ✗ that had to be ignored. Split in two: a
+  `build` job that runs on all branches (install → `npm test` → Vite
+  build → Storybook build), and a `deploy` job that carries the
+  environment and runs only on `claude/main`. A red check on a branch is
+  now a real failure, and the test suite runs in CI rather than only in
+  the pre-commit hook.
 - **Flashcards speak on the front (v151, owner request):** a flashcard
   now plays its audio the moment the card appears, not on flip — so you
   hear the word while you're looking at the hanzi. Honours the same

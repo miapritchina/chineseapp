@@ -129,7 +129,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 ├── package.json                     react, d3, ts-fsrs, supabase-js, lz-string
 ├── vite.config.ts                   base path + vite-plugin-pwa (manifest, SW, caches)
 ├── tsconfig.json
-└── .github/workflows/pages.yml      Builds Vite + Storybook, publishes to Pages
+└── .github/workflows/pages.yml      build job (all branches) + deploy job (claude/main)
 ```
 
 ---
