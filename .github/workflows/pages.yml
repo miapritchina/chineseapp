@@ -15,11 +15,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  # Runs on every branch: a red check here means the branch genuinely
+  # doesn't build. The Pages environment only allows claude/main, so the
+  # deploy is a separate job — otherwise every feature branch failed at
+  # the environment gate before building anything.
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +31,9 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      - name: Test
+        run: npm test
 
       - name: Build
         run: npm run build
@@ -44,8 +48,19 @@ jobs:
           echo "Build OK - $(date)" > _site/build-info.txt
 
       - uses: actions/configure-pages@v4
+        if: github.ref == 'refs/heads/claude/main'
       - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/claude/main'
         with:
           path: _site
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/claude/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
