@@ -414,7 +414,13 @@ The app installs and runs offline from one service worker
   (CacheFirst 30 days — hanzi-writer + per-char stroke data);
   `dict.youdao.com` (CacheFirst 180 days — per-word TTS MP3s, v106:
   primary review audio, device Web Speech is the offline fallback —
-  see `src/lib/speech.ts`).
+  see `src/lib/speech.ts`). A cold MP3 costs a round-trip to a
+  China-hosted host — audible as a lag before an auto-played word — so
+  `prefetchSpeech()` warms this cache ahead of the surfaces that
+  auto-play (v153: the first Flashcards cards from `App`, then a
+  rolling lookahead as the deck advances) and `index.html`
+  preconnects to the host. The endpoint sends no CORS headers, so the
+  responses are opaque: they can be cached and played, never read.
 - **Not cached** — everything Supabase. User data stays cloud-first
   ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)); offline
   reads come from the hooks' own localStorage mirrors, not the SW.

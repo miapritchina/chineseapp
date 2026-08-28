@@ -141,6 +141,29 @@ export function speak(text: string, lang: string = "zh-CN"): void {
   }
 }
 
+// Words whose MP3 has already been asked for — a fetch in flight or a
+// finished one. Reset only by a reload, which is also when the service
+// worker's tts-audio cache outlives us anyway.
+const warmed = new Set<string>();
+
+/**
+ * Fetch the MP3s for `texts` ahead of time so a later speak() plays
+ * from the service worker's tts-audio cache instead of waiting on a
+ * Youdao round-trip — the audible lag when a card first appears.
+ * Fire-and-forget; a failure just leaves the word cold.
+ */
+export function prefetchSpeech(texts: string[]): void {
+  if (typeof window === "undefined" || typeof window.fetch !== "function") return;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+  for (const text of texts) {
+    if (!text || warmed.has(text)) continue;
+    warmed.add(text);
+    // no-cors: the endpoint sends no CORS headers, and the response is
+    // opaque — which is all the cache (and the audio element) needs.
+    void window.fetch(youdaoUrl(text), { mode: "no-cors" }).catch(() => warmed.delete(text));
+  }
+}
+
 // Auto-play preference (v114): drills speak answers on reveal unless
 // the owner turns Sound off on the launch screen. Explicit 🔊 taps
 // always go through speak() directly.

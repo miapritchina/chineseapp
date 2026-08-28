@@ -7,11 +7,12 @@ import { FlashcardsPage } from "./FlashcardsPage";
 
 vi.mock("../lib/speech", () => ({
   autoSpeak: vi.fn(),
+  prefetchSpeech: vi.fn(),
   speak: vi.fn(),
   stopSpeech: vi.fn(),
   firstReading: (s: string) => s,
 }));
-import { autoSpeak, speak } from "../lib/speech";
+import { autoSpeak, prefetchSpeech, speak } from "../lib/speech";
 
 const WORDS: Record<string, Word> = {
   好: {
@@ -82,6 +83,7 @@ function renderDeck() {
 describe("FlashcardsPage auto-play", () => {
   beforeEach(() => {
     vi.mocked(autoSpeak).mockClear();
+    vi.mocked(prefetchSpeech).mockClear();
     vi.mocked(speak).mockClear();
   });
 
@@ -105,5 +107,10 @@ describe("FlashcardsPage auto-play", () => {
     fireEvent.click(surface());
     expect(autoSpeak).toHaveBeenLastCalledWith("水");
     expect(autoSpeak).toHaveBeenCalledTimes(2);
+  });
+
+  it("warms the audio for cards ahead of the one on screen", () => {
+    renderDeck();
+    expect(prefetchSpeech).toHaveBeenCalledWith(["好", "水"]);
   });
 });

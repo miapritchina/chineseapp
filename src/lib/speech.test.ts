@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickVoice, firstReading, youdaoUrl } from "./speech";
+import { pickVoice, firstReading, prefetchSpeech, youdaoUrl } from "./speech";
 
 const v = (name: string, lang: string, localService = true) => ({ name, lang, localService });
 
@@ -48,5 +48,38 @@ describe("firstReading", () => {
   });
   it("passes plain input through", () => {
     expect(firstReading("hǎo")).toBe("hǎo");
+  });
+});
+
+describe("prefetchSpeech", () => {
+  const withFetch = (fn: (calls: string[]) => void, online = true) => {
+    const calls: string[] = [];
+    const realFetch = window.fetch;
+    Object.defineProperty(navigator, "onLine", { value: online, configurable: true });
+    window.fetch = ((url: string) => {
+      calls.push(String(url));
+      return Promise.resolve({});
+    }) as unknown as typeof window.fetch;
+    try {
+      fn(calls);
+    } finally {
+      window.fetch = realFetch;
+      delete (navigator as { onLine?: boolean }).onLine;
+    }
+  };
+
+  it("fetches each word's MP3 once, skipping blanks", () => {
+    withFetch((calls) => {
+      prefetchSpeech(["猫", "", "狗"]);
+      prefetchSpeech(["猫", "狗"]);
+      expect(calls).toEqual([youdaoUrl("猫"), youdaoUrl("狗")]);
+    });
+  });
+
+  it("does nothing while offline", () => {
+    withFetch((calls) => {
+      prefetchSpeech(["雨"]);
+      expect(calls).toEqual([]);
+    }, false);
   });
 });

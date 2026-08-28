@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useCharsCtx, useDictCtx } from "../state/contexts";
-import { autoSpeak, speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, prefetchSpeech, speak, stopSpeech } from "../lib/speech";
 import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import type { RatingName } from "../lib/fsrs";
 import { DrillShell } from "./ui/DrillShell";
@@ -9,6 +9,10 @@ import { PageHeader } from "./ui/PageHeader";
 import { Entity } from "./Entity";
 import { GradeButtons } from "./ui/GradeButtons";
 import { DRILL_HELP } from "../lib/drillHelp";
+
+// Cards whose audio is fetched ahead of the one on screen, so a flip
+// to the next card never waits on the network (v153).
+const AUDIO_LOOKAHEAD = 5;
 
 interface Props {
   // The deck, pre-ordered by the caller (lib/flashcards.ts).
@@ -33,6 +37,7 @@ export function FlashcardsPage({ words, onClose, onGrade, onBrowse }: Props) {
 
   useEffect(() => {
     void ensureCached(words.slice(index, index + 6));
+    prefetchSpeech(words.slice(index, index + AUDIO_LOOKAHEAD));
   }, [words, index, ensureCached]);
   useEffect(() => () => stopSpeech(), []);
 
