@@ -247,7 +247,10 @@ failed one ends with a mnemonic nudge that opens the word's sheet.
 
 Flashcards (v144, `FlashcardsPage` + `lib/flashcards.ts`, `#/cards`)
 is the low-pressure counterpart to the graded workout: flip a card to
-see pinyin + meaning + audio, no obligation to answer. The deck is
+see pinyin + meaning, no obligation to answer. Unlike the graded
+drills, audio auto-plays on the *front* of each card (v151) when Sound
+is on in the review settings — there's no answer to give away, and
+hearing the word with the hanzi is the point. The deck is
 spaced-repetition ordered — everything due now (weakest first, min
 recognition stability), then the weakest not-yet-due words as filler,
 dropping the well-mastered (stability ≥ `FLASHCARD_MASTERED_STABILITY_DAYS`)

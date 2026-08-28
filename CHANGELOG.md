@@ -12,6 +12,11 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Flashcards speak on the front (v151, owner request):** a flashcard
+  now plays its audio the moment the card appears, not on flip — so you
+  hear the word while you're looking at the hanzi. Honours the same
+  Sound toggle in the review settings as every other drill; the 🔊
+  replay button on the back is unchanged. Flip no longer re-speaks.
 - **Calmer drills — no more flickering hints, no jumping hero (v150,
   owner request):** removed the transient "tap to reveal / tap anywhere
   to continue →" instructions that appeared and vanished on every reveal

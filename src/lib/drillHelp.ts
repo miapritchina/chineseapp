@@ -7,7 +7,7 @@ export const DRILL_HELP = {
   recognition:
     "Tap the card to reveal the pinyin and meaning, then rate how well you knew each. Rating is optional — you can just tap through.",
   flashcards:
-    "Tap to flip the card, tap again for the next one. Rating is optional — this deck is just for a relaxed look.",
+    "Each card reads itself aloud (turn Sound off in review settings to mute). Tap to flip, tap again for the next one. Rating is optional — this deck is just for a relaxed look.",
   newWord:
     "A word you haven't saved yet, built from characters you already know. Pick its meaning (or build it from the tray), then tap anywhere to move on.",
   reverse: "Read the meaning, then tap the character that matches. Tap anywhere for the next card.",

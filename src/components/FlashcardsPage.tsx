@@ -99,9 +99,12 @@ function FlashcardFace({
   const defs = useResolvedDefs(word ? word.definitions || [] : charData?.definitions || []);
   const gloss = defs.slice(0, 3).join("; ");
 
+  // Unlike the graded drills, flashcards speak on the front — hearing
+  // the word alongside the hanzi is the point of the low-pressure deck,
+  // and there's no answer to give away.
   useEffect(() => {
-    if (revealed) autoSpeak(itemKey);
-  }, [revealed, itemKey]);
+    autoSpeak(itemKey);
+  }, [itemKey]);
 
   return (
     <div
