@@ -164,6 +164,15 @@ These are hard rules. Bend them only after asking.
   `claude/main`, watch the Pages run, and confirm the new `chinese
   vNN` label is live. Proposals and open design questions still wait
   for the owner; finished work does not.
+- **Never idle on finished work waiting for permission to ship.**
+  Standing consent: opening a PR to `claude/main` and merging it is
+  pre-approved for any task whose code is done, tested (`npm test`
+  green) and documented. Don't end a turn with "want me to open the
+  PR?" — open it, merge it, then report what shipped. Ship it even if
+  a device check is still outstanding; call the unverified bit out in
+  the reply instead of holding the deploy for it. This consent does
+  not extend to `main` (never pushed to directly), to force-pushes,
+  or to anything the owner has framed as a proposal.
 
 ### Review documentation before pushing
 
