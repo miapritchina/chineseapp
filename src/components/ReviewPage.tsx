@@ -23,6 +23,7 @@ import { DRILL_HELP } from "../lib/drillHelp";
 import { crossRefTargets, resolveCrossRefs } from "../lib/gloss";
 import type { PhoneticComponent } from "../hooks/usePhoneticComponents";
 import type { Word } from "../lib/types";
+import { prefetchSpeech } from "../lib/speech";
 
 // Placeholder FSRS state for the synthetic (non-FSRS) inference and
 // cluster rows.
@@ -378,6 +379,8 @@ export function ReviewPage({
   useEffect(() => {
     if (!current) return;
     const window = queue.slice(0, 5).map((c) => c.itemKey);
+    // Cluster cards key on a joined "a+b" string, which is not a word.
+    prefetchSpeech(window.filter((k) => !k.includes("+")));
     void ensureCached(window).then(() => {
       const targets = window.flatMap((k) => crossRefTargets(findWord(k)?.definitions ?? []));
       if (targets.length > 0) void ensureCached(targets);

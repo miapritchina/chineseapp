@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { autoSpeak, stopSpeech } from "../lib/speech";
 import { Entity } from "./Entity";
 
 interface Props {
@@ -18,6 +20,16 @@ interface Props {
 // regular review prompt for the focus char. No grading happens here.
 export function DisambiguationCard({ focus, neighbors, onContinue, onOpenEntity }: Props) {
   const all = [focus, ...neighbors];
+
+  // Nothing is graded here, so the focus character speaks as it appears
+  // (v154) — half of what makes a cluster confusable is whether the
+  // members sound alike. Keyed on the focus alone: `neighbors` is a
+  // fresh array each render and would re-fire the audio.
+  useEffect(() => {
+    autoSpeak(focus);
+    return () => stopSpeech();
+  }, [focus]);
+
   return (
     <div className="disambig-root">
       <div className="disambig-banner">Easily confused — compare.</div>

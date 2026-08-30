@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { useDictCtx } from "../state/contexts";
-import { stopSpeech } from "../lib/speech";
+import { prefetchSpeech, stopSpeech } from "../lib/speech";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
 import { LearnCard } from "./LearnCard";
+
+// Lesson words whose audio is fetched up front (v154) — each card
+// speaks on mount.
+const AUDIO_WARM = 5;
 
 interface Props {
   // The lesson's words, already ordered and capped by the caller.
@@ -44,6 +48,7 @@ export function LearnPage({
 
   useEffect(() => {
     void ensureCached(words);
+    prefetchSpeech(words.slice(0, AUDIO_WARM));
   }, [words, ensureCached]);
   useEffect(() => () => stopSpeech(), []);
 

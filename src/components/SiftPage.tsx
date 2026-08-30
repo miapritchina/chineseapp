@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useCharsCtx, useDictCtx } from "../state/contexts";
-import { autoSpeak, speak, stopSpeech } from "../lib/speech";
+import { autoSpeak, prefetchSpeech, speak, stopSpeech } from "../lib/speech";
 import { hanziScaleStyle } from "../lib/hanzi";
 import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
 import { LearnCard } from "./LearnCard";
+
+// Words whose audio is warmed ahead of the card on screen (v154).
+const AUDIO_LOOKAHEAD = 5;
 
 interface Props {
   // Words with something due today, strongest-first (App builds it).
@@ -68,6 +71,9 @@ export function SiftPage({
   useEffect(() => {
     if (current && !lesson) autoSpeak(current);
   }, [current, lesson]);
+  useEffect(() => {
+    prefetchSpeech(words.slice(index, index + AUDIO_LOOKAHEAD));
+  }, [words, index]);
   useEffect(() => () => stopSpeech(), []);
 
   useEffect(() => {
