@@ -26,6 +26,13 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
   Learn, so a reveal never waits on the network either. The rule is now
   written down in ARCHITECTURE.md and pinned by
   `src/components/drill-audio.test.tsx`.
+- **CI: branches stop cancelling each other (v154):** with the build job
+  now running everywhere (v152), the workflow's single global `pages`
+  concurrency group meant a push to any branch killed another branch's
+  in-flight build. The group is per-ref now — a new push still
+  supersedes its own branch's run — and the deploy job carries its own
+  global group so real deploys stay serialized and are never cancelled
+  halfway.
 - **Flashcard audio starts without the wait (v153, owner report):** the
   word's MP3 was only requested when its card appeared, so the first
   sound arrived about a second late — a round-trip to the China-hosted

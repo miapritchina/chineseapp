@@ -10,8 +10,11 @@ permissions:
   pages: write
   id-token: write
 
+# Per-branch: a new push supersedes that branch's in-flight run, but two
+# branches building at once no longer cancel each other (they did while
+# the group was global — v154).
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -58,6 +61,10 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/claude/main'
     runs-on: ubuntu-latest
+    # Real deploys still serialize, and none is cancelled halfway.
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
