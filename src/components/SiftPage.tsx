@@ -6,7 +6,6 @@ import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { DrillShell } from "./ui/DrillShell";
 import { EmptyState } from "./ui/EmptyState";
 import { PageHeader } from "./ui/PageHeader";
-import { LearnCard } from "./LearnCard";
 
 interface Props {
   // Words with something due today, strongest-first (App builds it).
@@ -16,22 +15,14 @@ interface Props {
   // facet except production (a recognition self-report can't clear a
   // writing card), clearing the word from today's other workouts.
   onKnow: (word: string) => void;
-  // Swipe left: keep for practice — hidden from Sift until tomorrow
-  // (persisted by the parent). A left-swipe also opens the word's
-  // lesson (v125, owner request): "I don't know this" is exactly the
-  // moment to teach it.
+  // Swipe left: "I don't know this" — keep for practice, hidden from
+  // Sift until tomorrow (persisted by the parent). Sift stays a fast
+  // triage pass (v154, owner request): no lesson interlude here — the
+  // drills are where the word actually gets taught.
   onKeep: (word: string) => void;
-  // Finished the lesson (v126): the parent credits the exposure and
-  // snoozes the word to tomorrow — having just studied it, re-testing
-  // minutes later would measure nothing.
-  onLessonDone?: (word: string) => void;
   // Counts toward the daily goal (v137) — one per decided card.
   onCardDone?: () => void;
   onOpenEntity?: (key: string) => void;
-  // Open the full d3 decomposition tree for a character (lesson view).
-  onOpenTree?: (char: string) => void;
-  // Explore-from-here on the lesson card (v130): ends the session.
-  onExplore?: (kind: "word" | "char", key: string) => void;
   // Flow mode (v114): called when the deck is exhausted, instead of
   // showing the end state — the parent advances to the next stage.
   onComplete?: () => void;
@@ -47,18 +38,13 @@ export function SiftPage({
   onClose,
   onKnow,
   onKeep,
-  onLessonDone,
   onCardDone,
   onOpenEntity,
-  onOpenTree,
-  onExplore,
   onComplete,
 }: Props) {
   const { chars } = useCharsCtx();
   const { findWord } = useDictCtx();
   const [index, setIndex] = useState(0);
-  // A left-swiped word's lesson, shown before the next sift card.
-  const [lesson, setLesson] = useState<string | null>(null);
   // Brief exit-direction flash so a swipe feels acknowledged.
   const [flash, setFlash] = useState<"know" | "keep" | null>(null);
   const decidedRef = useRef(false);
@@ -66,13 +52,13 @@ export function SiftPage({
   const current = words[index];
 
   useEffect(() => {
-    if (current && !lesson) autoSpeak(current);
-  }, [current, lesson]);
+    if (current) autoSpeak(current);
+  }, [current]);
   useEffect(() => () => stopSpeech(), []);
 
   useEffect(() => {
-    if (!current && !lesson && onComplete) onComplete();
-  }, [current, lesson, onComplete]);
+    if (!current && onComplete) onComplete();
+  }, [current, onComplete]);
 
   const word = current ? findWord(current) : null;
   const cd = current ? chars?.[current] : undefined;
@@ -92,7 +78,6 @@ export function SiftPage({
     window.setTimeout(() => {
       decidedRef.current = false;
       setFlash(null);
-      if (verdict === "keep") setLesson(w);
       setIndex((i) => i + 1);
     }, 160);
   };
@@ -115,33 +100,6 @@ export function SiftPage({
     if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     decide(dx > 0 ? "know" : "keep");
   };
-
-  // The lesson interlude for a just-left-swiped word — same card Learn
-  // mode uses. Rendered before the end state so the deck's last word
-  // still gets its lesson.
-  if (lesson) {
-    return (
-      <DrillShell
-        tag="Learn"
-        onClose={onClose}
-        progressIndex={Math.min(index + 1, words.length)}
-        total={words.length}
-        onSkip={() => setLesson(null)}
-      >
-        <LearnCard
-          word={lesson}
-          continueLabel={current ? "Got it · keep sifting" : "Got it · finish"}
-          onContinue={() => {
-            onLessonDone?.(lesson);
-            setLesson(null);
-          }}
-          onOpenEntity={(key) => onOpenEntity?.(key)}
-          onOpenTree={onOpenTree}
-          onExplore={onExplore}
-        />
-      </DrillShell>
-    );
-  }
 
   if (!current) {
     return (

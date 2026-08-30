@@ -219,21 +219,12 @@ Sift mode (v113, `SiftPage` + `lib/sift.ts`) is grading, not credit:
 a right-swipe applies a real Good to every facet of the word that is
 due at that moment — except `production` (rebalance stage 2): a
 recognition self-report can't clear a writing card. A left-swipe ("I
-don't know this") opens the word's lesson inline — the same `LearnCard`
-Learn mode uses (extracted v125; since v128 its breakdown cards
-unfold their components in place, recursively, and the hero has a
-whole-word ⤢ tree button; since v130 it is the merged study surface,
-absorbing the sheet's status star, POS chip, per-char related-word
-columns, mnemonic section, and explore link — `Entity` and the lesson
-lines also resolve "variant of X" glosses to X's real meaning via
-`useResolvedDefs`/`resolveCrossRefs`). Finishing the lesson counts as
-having just seen the word (v126): the passive-view credit plus
-`snoozeItem` — a schedule-only floor (`snoozeCard` in `lib/fsrs.ts`)
-that moves every still-due row to tomorrow without touching stability,
-reps, or state — so the word isn't re-tested minutes after being
-studied. Left-swipes live in a day-stamped localStorage
-list (`chinese.siftKept`) — per-day ephemeral, the same local-only
-carve-out as the old daily new-card counter.
+don't know this") just marks the word kept for practice — no lesson
+interlude (the v125–v153 inline `LearnCard` was dropped in v154, owner
+call: Sift stays a fast triage pass, the drills are where the word
+gets taught). Left-swipes live in a day-stamped localStorage list
+(`chinese.siftKept`) — per-day ephemeral, the same local-only carve-out
+as the old daily new-card counter.
 
 Focus mode (v127, `lib/focus.ts` + `FocusPage`, [ADR-0015](../decisions/0015-focus-mode-same-session-repetition.md))
 is attention for **problem words** — total reps ≥ 8 across a word's

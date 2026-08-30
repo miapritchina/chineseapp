@@ -74,7 +74,7 @@ const SWEEP_GAME_SIZE = 12;
 // Flashcards whose audio is fetched before the deck is even opened.
 const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v153";
+const APP_VERSION = "chinese v154";
 
 export function App() {
   const dict = useDictionary();
@@ -120,15 +120,8 @@ export function App() {
     chars: charsData.chars,
     phoneticComponentsByChar: phonetics.byChar,
   });
-  const {
-    dueCards,
-    grade,
-    gradeCluster,
-    snoozeItem,
-    attributeFailure,
-    recordInference,
-    creditPassiveView,
-  } = reviewState;
+  const { dueCards, grade, gradeCluster, attributeFailure, recordInference, creditPassiveView } =
+    reviewState;
 
   // Weakest-first shelf sort: per saved word, the lower of the two
   // recognition cards' FSRS stability (never-reviewed = 0 = weakest).
@@ -846,22 +839,6 @@ export function App() {
           }}
           onKeep={(w) => keepInSift(w)}
           onCardDone={noteCardDone}
-          onLessonDone={(w) => {
-            // Same "introduced" credit Learn mode gives, plus a floor:
-            // every still-due row moves to tomorrow — the user just
-            // studied the word, re-testing it today measures nothing.
-            creditPassiveView(w);
-            snoozeItem(w);
-          }}
-          onExplore={(kind, key) => {
-            cancelFlow();
-            setSiftWords(null);
-            setExploreFocus({ kind, key });
-            window.location.hash = "#/explore";
-          }}
-          onOpenTree={(key) =>
-            push({ kind: [...key].length > 1 ? "word" : "char", key, view: "tree" })
-          }
         />
       )}
       {showReview && learnWords && (

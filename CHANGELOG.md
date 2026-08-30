@@ -12,6 +12,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Sift's left-swipe drops its lesson interlude (v154, owner report):**
+  swiping "I don't know this" used to open the word's full `LearnCard`
+  lesson (status star, breakdown, related words, mnemonic) before the
+  next card — that made Sift a study stage, not the fast triage pass it
+  was meant to be. A left-swipe now just marks the word kept for
+  practice and moves straight to the next card; the drills are where
+  the word actually gets taught. Dropped `onLessonDone` (and the
+  `snoozeItem`/`creditPassiveView` call it made) along with `SiftPage`'s
+  unused `onOpenTree`/`onExplore` props.
 - **Flashcard audio starts without the wait (v153, owner report):** the
   word's MP3 was only requested when its card appeared, so the first
   sound arrived about a second late — a round-trip to the China-hosted
