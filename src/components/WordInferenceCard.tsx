@@ -26,9 +26,11 @@ export function WordInferenceCard({ word, glossPool, onGotIt, onMissed, onOpenEn
   const [picked, setPicked] = useState<string | null>(null);
   const isCorrect = picked !== null && picked === gloss;
 
+  // The prompt IS the hanzi and the answer is a meaning, so the sound
+  // gives nothing away — it arrives with the character (v154).
   useEffect(() => {
-    if (picked !== null) autoSpeak(word.word);
-  }, [picked, word.word]);
+    autoSpeak(word.word);
+  }, [word.word]);
   useEffect(() => () => stopSpeech(), []);
 
   const advance = () => {

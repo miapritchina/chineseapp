@@ -43,6 +43,7 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 
 | Item | Notes |
 |---|---|
+| `npm run lint` fails on main | One pre-existing error: `'Node' is not defined` in `src/hooks/usePopover.ts` — the eslint config is missing the DOM globals for that file. Cosmetic, but it makes the lint output useless as a gate. |
 | Phonetics page visual refresh | [Redesign spec §4H](docs/product/chinese-app-ux-redesign.md#4h-phonetics-page--needs-visual-refresh). |
 | EntitySheet etymology section more prominent | [Redesign spec §4E](docs/product/chinese-app-ux-redesign.md#4e-entitysheet--make-componentsetymology-more-prominent). Fold into Stage E. |
 | "Save sentence" button contrast | [Redesign spec §4J](docs/product/chinese-app-ux-redesign.md#4j-save-sentence-button-contrast). |

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { speak, stopSpeech } from "../lib/speech";
+import { useEffect, useState } from "react";
+import { autoSpeak, prefetchSpeech, stopSpeech } from "../lib/speech";
 import type { ClusterMemberResult } from "../lib/drillGen";
 import { Entity } from "./Entity";
 
@@ -21,6 +21,10 @@ interface Props {
 // member individually.
 export function ClusterRecallCard({ cluster, onGraded, onOpenEntity }: Props) {
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
+  // Every member speaks when it's tapped open — warm them all up front.
+  useEffect(() => {
+    prefetchSpeech(cluster);
+  }, [cluster]);
   const [missed, setMissed] = useState<Set<string>>(() => new Set());
   const allRevealed = cluster.every((w) => revealed.has(w));
 
@@ -63,7 +67,7 @@ export function ClusterRecallCard({ cluster, onGraded, onOpenEntity }: Props) {
                       n.add(w);
                       return n;
                     });
-                    speak(w);
+                    autoSpeak(w);
                   }}
                 />
                 {isRevealed && (

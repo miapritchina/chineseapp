@@ -12,6 +12,27 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Audio timing is consistent across every drill (v154, owner
+  request):** an audit of every surface that shows a character turned up
+  three that were out of step. The **new-words** card now speaks with
+  its prompt (the answer there is a meaning, so the sound gives nothing
+  away) instead of after the pick; the **disambiguation** compare view
+  speaks its focus character, where it used to be silent even though
+  half of what makes a pair confusable is the sound; and **cluster
+  recall** now reveals through `autoSpeak` rather than `speak`, so the
+  Sound toggle actually mutes it. The recognition card deliberately
+  keeps its audio on the reveal — its Sound row grades that exact
+  recall. Audio warm-up (v153) extended to the review queue, Sift and
+  Learn, so a reveal never waits on the network either. The rule is now
+  written down in ARCHITECTURE.md and pinned by
+  `src/components/drill-audio.test.tsx`.
+- **CI: branches stop cancelling each other (v154):** with the build job
+  now running everywhere (v152), the workflow's single global `pages`
+  concurrency group meant a push to any branch killed another branch's
+  in-flight build. The group is per-ref now — a new push still
+  supersedes its own branch's run — and the deploy job carries its own
+  global group so real deploys stay serialized and are never cancelled
+  halfway.
 - **Flashcard audio starts without the wait (v153, owner report):** the
   word's MP3 was only requested when its card appeared, so the first
   sound arrived about a second late — a round-trip to the China-hosted

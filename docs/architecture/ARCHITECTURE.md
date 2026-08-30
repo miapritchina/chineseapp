@@ -168,6 +168,28 @@ detection. The raw score is logged to `user_review_log.score`
 The cloze card hides the word's gloss until after the pick — with it
 visible the drill collapsed into reverse recognition.
 
+### When a drill speaks (v154)
+
+One rule decides the timing everywhere, and every surface honours the
+**Sound** toggle (`autoSpeak`, never bare `speak`, which is reserved
+for an explicit 🔊 tap):
+
+- **The character is the stimulus → audio arrives with it.** Flashcards,
+  Sift, Learn lessons, Family sweep, the new-words card (its answer is a
+  meaning, so the sound gives nothing away), Disambiguation.
+- **The sound is the answer being graded → audio waits for the reveal.**
+  The combined recognition card (its Sound row grades exactly this
+  recall) and cluster recall.
+- **The character is one of the options → audio waits for the pick,**
+  or naming it early would name the answer: reverse recognition, cloze,
+  word-build, and the Forge / Pairs / Chain games.
+- The write drill is the one place that speaks *without* a character on
+  screen — it reads the prompt aloud so you know what to draw.
+
+Every one of these surfaces warms its upcoming audio through
+`prefetchSpeech` (v153–v154), so the sound is local by the time it's
+needed — see the PWA section.
+
 `recognition` is a legacy facet name from pre-v66 cards; the load path
 renames them to `meaningRecognition` in memory. `phoneticTap`,
 `componentSound` (dropped v85, scrubbed v95) and `familyTransfer`
