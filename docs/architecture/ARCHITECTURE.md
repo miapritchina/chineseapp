@@ -49,6 +49,7 @@ connection badges.
 | `public/data-chars.json` | ~10k chars + components + etymology | Static; built via `extract-chinese.mjs` |
 | `public/phonetic-components.json` | Top-250 productive sound components | Static; built via `extract-phonetic-components.mjs` |
 | `public/sanzijing.json` | 三字经 standard edition (178 numbered couplets) + Giles 1900 translation + modern interpretation | Static; curated from Wikisource/ctext (v100–v101) |
+| `public/mnemonic-seeds.json` | 655 story mnemonics for the HSK 3.0 level 1–3 chars — the MAKE IT STICK starter ([ADR-0018](../decisions/0018-pregenerated-mnemonic-seeds.md)); user edits live in `user_mnemonics` | Static; hand-written (v155), loaded by `useMnemonicSeeds` |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
 | Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices. Auto-graded drills also store their raw 0–1 `score` (additive column, migration 0014; null for self-graded rows) | Live; insert from `useReview`, select from `useWordInference` |

@@ -92,6 +92,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── useReview                ts-fsrs scheduler at word/char/component level
 │   │   ├── usePhoneticComponents    Fetches public/phonetic-components.json
 │   │   ├── useMnemonics             Per-word/char user notes
+│   │   ├── useMnemonicSeeds         Fetches public/mnemonic-seeds.json (module-cached)
 │   │   ├── useSentenceDraft         Composer draft → user_sentence_draft
 │   │   ├── useSavedSentences        Saved sentences → user_sentences
 │   │   ├── useStrokeData            Per-session HanziWriter cache
@@ -116,6 +117,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 ├── public/
 │   ├── data-chars.json              ~10k chars + components + etymology
 │   ├── phonetic-components.json     Top-250 productive sound components
+│   ├── mnemonic-seeds.json          655 story mnemonics, HSK 3.0 lv 1–3 chars (ADR-0018)
 │   ├── sanzijing.json               三字经 (1068 chars) + Giles translation
 │   ├── favicon.svg                  中 glyph (drawn as shapes)
 │   └── pwa-*.png, apple-touch-icon.png, maskable-icon-*.png

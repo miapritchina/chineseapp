@@ -11,6 +11,20 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Story mnemonics for every HSK 1–3 character (owner request):**
+  `public/mnemonic-seeds.json` ships 655 hand-written mnemonics — a
+  short visual scene built from each character's components, with a
+  pronunciation cue only where a sound component genuinely matches
+  (e.g. 想 "相 (an eye 目 inspecting a tree 木) sits on your heart 心 —
+  the heart inspecting images is thinking. 相 xiāng lends the sound.").
+  Character set is the official HSK 3.0 levels 1–3, which brackets the
+  HelloChinese v2 course band. The "💡 MAKE IT STICK" section now
+  prefers the seed over the old formulaic starter and is **re-mounted
+  in the EntitySheet** (it had been Learn-lesson-only since v99); user
+  edits still override and sync via `user_mnemonics` as before. See
+  [ADR-0018](docs/decisions/0018-pregenerated-mnemonic-seeds.md).
+
 ### Changed
 - **Audio timing is consistent across every drill (v154, owner
   request):** an audit of every surface that shows a character turned up
