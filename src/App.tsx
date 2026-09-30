@@ -74,7 +74,7 @@ const SWEEP_GAME_SIZE = 12;
 // Flashcards whose audio is fetched before the deck is even opened.
 const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v154";
+const APP_VERSION = "chinese v155";
 
 export function App() {
   const dict = useDictionary();

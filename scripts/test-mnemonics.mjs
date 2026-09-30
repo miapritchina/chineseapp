@@ -1,7 +1,10 @@
-// Tests for src/lib/mnemonics.ts → buildStarterMnemonic.
+// Tests for src/lib/mnemonics.ts → buildStarterMnemonic, plus the
+// public/mnemonic-seeds.json data contract (hand-written starter
+// mnemonics for HSK 3.0 level 1–3 characters).
 // Run with: node scripts/test-mnemonics.mjs
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 // Re-implement buildStarterMnemonic against pure data so we don't need
 // to load the TS source. Keep this in sync with src/lib/mnemonics.ts.
@@ -71,6 +74,20 @@ test("missing pinyin / definition collapses to just the char", () => {
     components: [{ char: "X", type: "sound" }],
   };
   assert.equal(buildStarterMnemonic("Y", cd), "X → Y");
+});
+
+test("mnemonic-seeds.json: every seed is a single known char with usable text", () => {
+  const { seeds } = JSON.parse(readFileSync("public/mnemonic-seeds.json", "utf8"));
+  const { chars } = JSON.parse(readFileSync("public/data-chars.json", "utf8"));
+  const entries = Object.entries(seeds);
+  assert.ok(entries.length >= 600, `expected ≥600 seeds, got ${entries.length}`);
+  for (const [k, v] of entries) {
+    assert.equal([...k].length, 1, `key "${k}" is not a single character`);
+    assert.ok(chars[k], `seed char ${k} missing from data-chars.json`);
+    assert.equal(typeof v, "string", `seed for ${k} is not a string`);
+    assert.ok(v.trim().length >= 10, `seed for ${k} is too short`);
+    assert.ok(v.length <= 400, `seed for ${k} is too long (${v.length})`);
+  }
 });
 
 let failures = 0;

@@ -9,6 +9,7 @@ import { CharFormula } from "./ui/CharFormula";
 import { useResolvedDefs } from "../hooks/useResolvedDefs";
 import { EtymologySection } from "./sheet/EtymologySection";
 import { RelatedWordsColumns } from "./sheet/RelatedWordsColumns";
+import { MnemonicSection } from "./sheet/MnemonicSection";
 import { roleColor } from "./sheet/helpers";
 
 interface Props {
@@ -46,9 +47,8 @@ interface Props {
 //   ── RELATED WORDS           — RelatedWordsColumns (one column per
 //                                unique char in the key; renders both
 //                                multi-char-word and single-char views)
-// (The "Make it stick" mnemonic editor is currently disabled — the
-// MnemonicSection component still lives in src/components/sheet/ and
-// can be re-mounted here when needed.)
+//   ── 💡 MAKE IT STICK        — MnemonicSection (seeded starter +
+//                                user-editable override)
 export function EntitySheet({
   word,
   charKey,
@@ -216,6 +216,16 @@ export function EntitySheet({
             onOpenTree={onOpenTree}
           />
         )}
+
+        <MnemonicSection
+          itemKey={key}
+          isMultiCharWord={isMultiCharWord}
+          pinyin={pinyin}
+          defs={defs}
+          charData={charData}
+          word={word}
+          chars={chars}
+        />
 
         {(isMultiCharWord || matches.length > 0) && (
           <RelatedWordsColumns wordKey={key} onOpenWord={onOpenWord} />

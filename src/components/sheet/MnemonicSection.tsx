@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import type { Char } from "../../lib/types";
 import { buildStarterMnemonic, buildStarterWordMnemonic } from "../../lib/mnemonics";
 import { useMnemonicsCtx } from "../../state/contexts";
+import { useMnemonicSeeds } from "../../hooks/useMnemonicSeeds";
 
 // "💡 MAKE IT STICK" — editable mnemonic. Stores user-edited text via
-// useMnemonicsCtx; falls back to a starter generated from the entity's
-// pinyin/meaning. "Reset" clears the user override and shows the starter
-// again.
+// useMnemonicsCtx; falls back to a starter: for HSK 1–3 characters a
+// hand-written story from mnemonic-seeds.json, otherwise one generated
+// from the entity's pinyin/meaning. "Reset" clears the user override
+// and shows the starter again.
 
 interface Props {
   itemKey: string;
@@ -29,11 +31,13 @@ export function MnemonicSection({
   chars,
 }: Props) {
   const { get: getMnemonic, save: saveMnemonic, clear: clearMnemonic } = useMnemonicsCtx();
+  const seeds = useMnemonicSeeds();
 
+  const seed = !isMultiCharWord ? (seeds?.[itemKey] ?? null) : null;
   const starter =
     isMultiCharWord && word
       ? buildStarterWordMnemonic(word.word, pinyin, defs[0] ?? "", chars)
-      : buildStarterMnemonic(itemKey, charData);
+      : (seed ?? buildStarterMnemonic(itemKey, charData));
 
   const stored = getMnemonic(itemKey);
   const [mnemonic, setMnemonic] = useState<string>(() => stored?.text ?? starter);
@@ -51,6 +55,14 @@ export function MnemonicSection({
     // doesn't re-fire on those.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemKey]);
+
+  // The seed file usually finishes loading after first mount — swap it
+  // in unless the user has stored text or is mid-edit.
+  useEffect(() => {
+    if (!seed || editing || getMnemonic(itemKey)) return;
+    setMnemonic(seed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed]);
 
   const persist = (text: string) => {
     if (text === starter && !editedFlag) {

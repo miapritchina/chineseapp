@@ -38,11 +38,14 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 | Audio still lags on iOS? (follow-up to v153) | The v153 warm-up assumes an `<audio>` request is served from the service worker's `tts-audio` cache. WebKit has historically not routed media-element requests through the SW, and the endpoint sends no cache headers, so on iOS the warm fetch may not be reused. If cards 2+ still lag on device: play from an `Audio` element preloaded during the warm-up, or serve the MP3s through our own origin (Supabase edge function) with cache headers + CORS, which would also allow blob playback. |
 | Cross-device deletion propagation | Tombstone column or "wholesale replace" pass. [Open work in ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | Fix [BUG-4](BUGS.md) (hamburger dismiss) | Cosmetic; touchstart listener + non-reflow close. |
+| **Sentence bank — "sentences from words I know"** | Owner request (grammar-practice research, 2026-09). Build-time script: Tatoeba zh-en pairs (CC-BY, ~89k) → jieba segmentation (`@node-rs/jieba`, build-time only — never ship a segmenter to the browser) → per-sentence token arrays in static JSON/Supabase. UI: example sentences on the EntitySheet ranked by known-word coverage, plus an i+1 drill (sentences of saved words + exactly one new). Pipeline reference: [HanziGraph](https://github.com/mreichhoff/HanziGraph) (MIT). |
+| **Grammar points as first-class content** | Owner request (same research). Backbone: official HSK 3.0 grammar lists ([krmanik/HSK-3.0](https://github.com/krmanik/HSK-3.0), JSON). Richer explanations + tagged example sentences: Chinese Grammar Wiki dumps ([krmanik/Chinese-Grammar](https://github.com/krmanik/Chinese-Grammar)) — **CC BY-NC-SA: adopting it permanently forecloses monetizing; needs an ADR**. Surface as Learn lesson cards + link to sentence-bank sentences exhibiting each pattern. |
 
 ## P3 — someday
 
 | Item | Notes |
 |---|---|
+| Live mnemonic generation beyond HSK 1–3 | Follow-up to [ADR-0018](docs/decisions/0018-pregenerated-mnemonic-seeds.md): a Supabase Edge Function holding an Anthropic API key generates a starter for any character on demand (owner must add the secret + billing). Alternative cheap step: pre-generate another HSK 4–6 batch. |
 | `npm run lint` fails on main | One pre-existing error: `'Node' is not defined` in `src/hooks/usePopover.ts` — the eslint config is missing the DOM globals for that file. Cosmetic, but it makes the lint output useless as a gate. |
 | Phonetics page visual refresh | [Redesign spec §4H](docs/product/chinese-app-ux-redesign.md#4h-phonetics-page--needs-visual-refresh). |
 | EntitySheet etymology section more prominent | [Redesign spec §4E](docs/product/chinese-app-ux-redesign.md#4e-entitysheet--make-componentsetymology-more-prominent). Fold into Stage E. |
