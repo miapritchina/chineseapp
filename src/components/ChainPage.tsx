@@ -16,8 +16,8 @@ interface Props {
   onOpenEntity?: (key: string) => void;
 }
 
-// 词语接龙 (v117): grow a chain of the user's words, each starting
-// with the previous word's last character.
+// 词语接龙 (v117): grow a chain of the user's words, each linked by
+// the previous word's last character.
 //
 // v121 (owner: "give a bunch of characters from which I can build the
 // next word"): nothing is offered to recognize — no candidate words,
@@ -25,6 +25,9 @@ interface Props {
 // continuation from a tray of loose characters. Any of your unused
 // words starting with the link counts; a character that leads nowhere
 // breaks the chain. Still a game — nothing is graded.
+//
+// v156: any unused word CONTAINING the link counts, in any position —
+// the link is a highlighted tray tile and you build the whole word.
 export function ChainPage({ onClose, onOpenEntity }: Props) {
   const { savedList } = useSavedCtx();
   const { findWord, ensureCached } = useDictCtx();
@@ -32,7 +35,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
 
   const [chain, setChain] = useState<string[]>([]);
   const [step, setStep] = useState<ChainStep | null>(null);
-  // Characters tapped so far for the word in progress (after the link).
+  // Characters tapped so far for the word in progress.
   const [built, setBuilt] = useState("");
   const [usedTiles, setUsedTiles] = useState<number[]>([]);
   const [wrongTile, setWrongTile] = useState<number | null>(null);
@@ -93,7 +96,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
   const tapTile = (i: number) => {
     if (!step || over) return;
     const next = built + step.tray[i];
-    const state = chainBuildState(step.link, next, step.answers);
+    const state = chainBuildState(next, step.answers);
     if (state === "dead") {
       setWrongTile(i);
       return;
@@ -103,7 +106,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
       setUsedTiles((prev) => [...prev, i]);
       return;
     }
-    const word = step.link + next;
+    const word = next;
     const nextChain = [...chain, word];
     setChain(nextChain);
     setBuilt("");
@@ -150,11 +153,13 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
 
         {step && !over && (
           <>
-            <div className="phonetic-tap-prompt">Build a word that starts with</div>
+            <div className="phonetic-tap-prompt">Build a word that contains {step.link}</div>
             <div className="chain-build">
-              <span className="chain-build-link">{step.link}</span>
               {[...built].map((c, i) => (
-                <span key={`${c}-${i}`} className="chain-build-char">
+                <span
+                  key={`${c}-${i}`}
+                  className={c === step.link ? "chain-build-link" : "chain-build-char"}
+                >
                   {c}
                 </span>
               ))}
@@ -170,9 +175,9 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
                 <button
                   key={`${c}-${i}`}
                   type="button"
-                  className={`forge-piece${usedTiles.includes(i) ? " is-consumed" : ""}${
-                    wrongTile === i ? " is-wrong" : ""
-                  }`}
+                  className={`forge-piece${c === step.link ? " chain-tile-link" : ""}${
+                    usedTiles.includes(i) ? " is-consumed" : ""
+                  }${wrongTile === i ? " is-wrong" : ""}`}
                   onClick={() => tapTile(i)}
                   disabled={usedTiles.includes(i)}
                 >
@@ -192,7 +197,8 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
             </div>
             {broken && step && (
               <div className="chain-reveal">
-                No word of yours starts with {step.link + built + step.tray[wrongTile!]}. It wanted{" "}
+                No word of yours with {step.link} starts with {built + step.tray[wrongTile!]}. It
+                wanted{" "}
                 <button
                   type="button"
                   className="chain-word"

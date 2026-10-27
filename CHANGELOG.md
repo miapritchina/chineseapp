@@ -11,6 +11,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **Chain (接龙) accepts the link character anywhere (v156, owner
+  request):** the next word no longer has to *start* with the
+  previous word's last character — any of your unused words that
+  contains it counts (学生 → 先生 → 生日). The link character is now an
+  accented tile in the tray and you build the whole word; decoys are
+  characters that appear in no word containing the link. Words with a
+  repeated character (谢谢) now get one tile per occurrence.
+
 ### Added
 - **Story mnemonics for every HSK 1–3 character (owner request):**
   `public/mnemonic-seeds.json` ships 655 hand-written mnemonics — a

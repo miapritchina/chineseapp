@@ -4407,7 +4407,7 @@ body {
   color: var(--accent);
   font-weight: 600;
 }
-/* Build-the-word tray (v121) — the link char plus what you've tapped,
+/* Build-the-word tray (v121) — what you've tapped (link char accented),
    over a scatter of loose characters (shares .forge-piece tiles). */
 .chain-build {
   display: flex;
@@ -4426,6 +4426,10 @@ body {
   background: var(--surface);
 }
 .chain-build-link {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.forge-piece.chain-tile-link:not(.is-wrong) {
   color: var(--accent);
   border-color: var(--accent);
 }
