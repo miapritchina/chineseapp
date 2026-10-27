@@ -4244,6 +4244,14 @@ body {
     border-color 0.12s,
     opacity 0.2s;
 }
+.forge-piece-pinyin {
+  display: block;
+  font-family: system-ui, sans-serif;
+  font-size: var(--caption);
+  color: var(--muted);
+  line-height: 1;
+  margin-top: 2px;
+}
 .forge-piece.is-selected {
   border-color: var(--text);
   transform: scale(1.08);

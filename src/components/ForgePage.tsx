@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useDictCtx, useSavedCtx } from "../state/contexts";
+import { useCharsCtx, useDictCtx, useSavedCtx } from "../state/contexts";
 import { autoSpeak, stopSpeech } from "../lib/speech";
 import { anySmushLeft, buildWordForgeRound, forgeWordPool, smush } from "../lib/forge";
 import { PageHeader } from "./ui/PageHeader";
@@ -14,8 +14,10 @@ interface Props {
 // tray scatters characters from the user's words; tap two to smush
 // them into any saved word. Round ends when nothing combines; an
 // empty tray is a perfect clear. A game — nothing is graded.
+// v159 (owner): each tile shows its character's pinyin.
 export function ForgePage({ onClose, onOpenEntity }: Props) {
   const { findWord } = useDictCtx();
+  const { chars } = useCharsCtx();
   const { savedList } = useSavedCtx();
 
   const pool = useMemo(() => forgeWordPool(savedList.map((s) => s.word)), [savedList]);
@@ -104,6 +106,7 @@ export function ForgePage({ onClose, onOpenEntity }: Props) {
               disabled={consumed.has(i)}
             >
               {c}
+              <span className="forge-piece-pinyin">{chars[c]?.pinyin ?? ""}</span>
             </button>
           ))}
         </div>

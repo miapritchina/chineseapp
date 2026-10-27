@@ -138,6 +138,8 @@ write NO FSRS state — pure exposure.
   word (either order, tapped order wins — 蜂蜜/蜜蜂). Cross-
   combinations count. Round ends when no pair combines; empty tray =
   perfect clear. Formed words line up with pinyin + gloss + audio.
+  v159 (owner): each tray tile shows its character's pinyin (the
+  `data-chars.json` reading) under the hanzi.
 - **🀄 Pairs** (`lib/pairs.ts` + `PairsPage`): 6-pair memory board,
   hanzi tiles vs meaning tiles, material due-words-first. Mismatch
   flips back; match locks green + speaks. Score = moves + seconds;
