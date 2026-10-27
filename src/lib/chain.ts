@@ -8,9 +8,11 @@
 //
 // v157 (owner): the next link is the NEW character of the word just
 // formed, not its last one (学生 → 先生 links on 先, not 生 again).
-// With several new characters, the last one that still has a
-// continuation wins. The start word has no previous link, so any of
-// its characters may serve.
+// v158 (owner: "the goal is to allow the game to be long"): among
+// several new characters the one with the most unused continuations
+// wins, and when no new character has any, the old link is reused
+// instead of ending the run. The start word has no previous link, so
+// any of its characters may serve.
 //
 // v121 (owner: "give a bunch of characters from which I can build the
 // next word"): you are NOT shown candidate words or meanings — you
@@ -51,7 +53,7 @@ export interface ChainStep {
 // Next step of the chain, or null when the pool has no continuation —
 // a dead end, which ends the run as a WIN (the chain is exhausted).
 // `prevLink` is the character `current` was built around; the next
-// link is drawn from its other (new) characters.
+// link prefers its other (new) characters and falls back to it.
 export function nextChainStep(
   current: string,
   pool: string[],
@@ -59,8 +61,12 @@ export function nextChainStep(
   rand: Rand = Math.random,
   prevLink?: string,
 ): ChainStep | null {
-  const fresh = [...new Set(current)].filter((c) => c !== prevLink);
-  const candidates = fresh.length > 0 ? fresh.reverse() : [...new Set(current)];
+  const open = (c: string) => pool.filter((w) => !used.has(w) && w.includes(c)).length;
+  const fresh = [...new Set(current)]
+    .filter((c) => c !== prevLink)
+    .reverse()
+    .sort((a, b) => open(b) - open(a));
+  const candidates = prevLink ? [...fresh, prevLink] : fresh;
   for (const link of candidates) {
     const step = stepForLink(link, pool, used, rand);
     if (step) return step;

@@ -166,6 +166,9 @@ write NO FSRS state — pure exposure.
   just formed, not its last one (学生 → 先生 then links on 先). With
   several new characters, the last one that still has a continuation
   is used; a word made only of the link (生生) keeps it.
+  v158 (owner: keep runs long): the new character with the most
+  unused continuations is chosen, and if no new character has any,
+  the old link is reused rather than ending the run.
 
 Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
 sentence scramble.
