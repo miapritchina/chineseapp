@@ -157,6 +157,11 @@ write NO FSRS state — pure exposure.
   produce, not a trick. Wrong tile breaks the chain and reveals an
   intended word; pool exhaustion = perfect chain. Best-this-visit
   only — no persistence.
+  v156 (owner) loosened the link rule: the next word only has to
+  **contain** the previous word's last character, anywhere (学生 →
+  先生 is valid). The link moves into the tray as an accented tile
+  and the player builds the whole word; decoys are drawn from
+  characters that appear in no pool word containing the link.
 
 Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
 sentence scramble.

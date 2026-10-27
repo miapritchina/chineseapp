@@ -393,7 +393,7 @@ export function ReviewLaunch({
                 >
                   <span className="launch-game-name">⛓ Chain</span>
                   <span className="launch-game-hint">
-                    接龙 — link words by their last character
+                    接龙 — the next word holds the last character
                   </span>
                 </button>
               )}
