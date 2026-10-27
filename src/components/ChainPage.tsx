@@ -17,7 +17,7 @@ interface Props {
 }
 
 // 词语接龙 (v117): grow a chain of the user's words, each linked by
-// the previous word's last character.
+// a character of the previous word.
 //
 // v121 (owner: "give a bunch of characters from which I can build the
 // next word"): nothing is offered to recognize — no candidate words,
@@ -28,6 +28,7 @@ interface Props {
 //
 // v156: any unused word CONTAINING the link counts, in any position —
 // the link is a highlighted tray tile and you build the whole word.
+// v157: the next link is the word's new character, not its last one.
 export function ChainPage({ onClose, onOpenEntity }: Props) {
   const { savedList } = useSavedCtx();
   const { findWord, ensureCached } = useDictCtx();
@@ -111,7 +112,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
     setChain(nextChain);
     setBuilt("");
     setUsedTiles([]);
-    setStep(nextChainStep(word, pool, new Set(nextChain)));
+    setStep(nextChainStep(word, pool, new Set(nextChain), Math.random, step.link));
     autoSpeak(word);
   };
 
@@ -137,14 +138,17 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
                 className={`chain-word${i === chain.length - 1 ? " is-head" : ""}`}
                 onClick={onOpenEntity ? () => onOpenEntity(w) : undefined}
               >
-                {i === chain.length - 1 && !over ? (
-                  <>
-                    {[...w].slice(0, -1).join("")}
-                    <span className="chain-link-char">{[...w].pop()}</span>
-                  </>
-                ) : (
-                  w
-                )}
+                {i === chain.length - 1 && step && !over
+                  ? [...w].map((c, j) =>
+                      c === step.link ? (
+                        <span key={j} className="chain-link-char">
+                          {c}
+                        </span>
+                      ) : (
+                        c
+                      ),
+                    )
+                  : w}
               </button>
             </span>
           ))}
