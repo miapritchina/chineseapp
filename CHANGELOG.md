@@ -12,6 +12,11 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Chain links on the new character (v157, owner request):** after
+  you build a word around the link, the next link is the character
+  you *added*, not the word's last character — 学生 → 先生 now asks for
+  a word with 先 instead of 生 again. With several new characters
+  (中 → 中国人) the last one that still has a continuation is used.
 - **Chain (接龙) accepts the link character anywhere (v156, owner
   request):** the next word no longer has to *start* with the
   previous word's last character — any of your unused words that

@@ -162,6 +162,10 @@ write NO FSRS state — pure exposure.
   先生 is valid). The link moves into the tray as an accented tile
   and the player builds the whole word; decoys are drawn from
   characters that appear in no pool word containing the link.
+  v157 (owner): the next link is the **new** character of the word
+  just formed, not its last one (学生 → 先生 then links on 先). With
+  several new characters, the last one that still has a continuation
+  is used; a word made only of the link (生生) keeps it.
 
 Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
 sentence scramble.

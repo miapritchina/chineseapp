@@ -6,6 +6,12 @@
 // anywhere (学生 → 先生 → 生日 all valid after 学生). The link joins
 // the tray as a tile and the player builds the whole word.
 //
+// v157 (owner): the next link is the NEW character of the word just
+// formed, not its last one (学生 → 先生 links on 先, not 生 again).
+// With several new characters, the last one that still has a
+// continuation wins. The start word has no previous link, so any of
+// its characters may serve.
+//
 // v121 (owner: "give a bunch of characters from which I can build the
 // next word"): you are NOT shown candidate words or meanings — you
 // get a tray of loose characters and must produce the continuation
@@ -19,8 +25,6 @@ export const CHAIN_TRAY_SIZE = 9;
 // the tray. More would make the step trivially easy.
 const TRAY_ANSWERS = 3;
 
-const lastChar = (w: string) => [...w][[...w].length - 1];
-
 // Chain material: the user's multi-character saved words.
 export function chainPool(savedWords: string[]): string[] {
   return [...new Set(savedWords.filter((w) => [...w].length >= 2))];
@@ -29,7 +33,7 @@ export function chainPool(savedWords: string[]): string[] {
 // A start word that has at least one continuation in the pool.
 export function pickChainStart(pool: string[], rand: Rand = Math.random): string | null {
   for (const w of shuffle(pool, rand)) {
-    if (pool.some((x) => x !== w && x.includes(lastChar(w)))) return w;
+    if ([...w].some((c) => pool.some((x) => x !== w && x.includes(c)))) return w;
   }
   return null;
 }
@@ -46,13 +50,30 @@ export interface ChainStep {
 
 // Next step of the chain, or null when the pool has no continuation —
 // a dead end, which ends the run as a WIN (the chain is exhausted).
+// `prevLink` is the character `current` was built around; the next
+// link is drawn from its other (new) characters.
 export function nextChainStep(
   current: string,
   pool: string[],
   used: Set<string>,
   rand: Rand = Math.random,
+  prevLink?: string,
 ): ChainStep | null {
-  const link = lastChar(current);
+  const fresh = [...new Set(current)].filter((c) => c !== prevLink);
+  const candidates = fresh.length > 0 ? fresh.reverse() : [...new Set(current)];
+  for (const link of candidates) {
+    const step = stepForLink(link, pool, used, rand);
+    if (step) return step;
+  }
+  return null;
+}
+
+function stepForLink(
+  link: string,
+  pool: string[],
+  used: Set<string>,
+  rand: Rand,
+): ChainStep | null {
   const answers = pool.filter((w) => !used.has(w) && w.includes(link));
   if (answers.length === 0) return null;
 
