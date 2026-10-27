@@ -12,6 +12,9 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Forge tiles show pinyin (v159, owner request):** every loose
+  character in the Forge tray carries its pinyin under the hanzi, so
+  you can sound a pair out before smushing it.
 - **Chain runs last longer (v158, owner request):** when the word you
   built adds several new characters, the next link is the one with the
   most of your words left to play; when none of the new characters
