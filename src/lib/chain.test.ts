@@ -49,18 +49,21 @@ describe("nextChainStep", () => {
     }
   });
   it("links on the new character, not the one the word was built around", () => {
-    const step = nextChainStep("先生", pool, new Set(["学生", "先生"]), () => 0, "生");
-    expect(step).toBeNull();
     const p = [...pool, "首先"];
     const next = nextChainStep("先生", p, new Set(["学生", "先生"]), () => 0, "生")!;
     expect(next.link).toBe("先");
     expect(next.answers).toEqual(["首先"]);
   });
-  it("prefers the last new character that still has a continuation", () => {
-    const p = ["中国人", "国家", "人们", "电话", "朋友", "喝水", "先生"];
+  it("prefers the new character with the most continuations", () => {
+    const p = ["中国人", "国家", "人们", "人口", "电话", "朋友", "喝水", "先生"];
     expect(nextChainStep("中国人", p, new Set(["中国人"]), () => 0, "中")!.link).toBe("人");
-    const noRen = p.filter((w) => w !== "人们");
+    const noRen = p.filter((w) => !w.startsWith("人"));
     expect(nextChainStep("中国人", noRen, new Set(["中国人"]), () => 0, "中")!.link).toBe("国");
+  });
+  it("falls back to the old link when no new character continues", () => {
+    const step = nextChainStep("先生", pool, new Set(["学生", "先生"]), () => 0, "生")!;
+    expect(step.link).toBe("生");
+    expect(step.answers).toEqual(["生日"]);
   });
   it("a word of only the link character keeps that link", () => {
     const p = ["学生", "生生", "生日", "电话", "朋友", "喝水"];

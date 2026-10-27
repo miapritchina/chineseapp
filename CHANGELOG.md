@@ -12,6 +12,11 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Chain runs last longer (v158, owner request):** when the word you
+  built adds several new characters, the next link is the one with the
+  most of your words left to play; when none of the new characters
+  leads anywhere, the chain falls back to the previous link instead
+  of ending.
 - **Chain links on the new character (v157, owner request):** after
   you build a word around the link, the next link is the character
   you *added*, not the word's last character — 学生 → 先生 now asks for
