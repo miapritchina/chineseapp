@@ -19,6 +19,7 @@ import { SearchBar } from "./components/SearchBar";
 import { searchByComponent } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { GamesBar } from "./components/GamesBar";
+import { GameRoundEnd } from "./components/GameRoundEnd";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
 import { EntitySheet } from "./components/EntitySheet";
@@ -72,10 +73,12 @@ import { prefetchSpeech, setAutoSpeakEnabled } from "./lib/speech";
 const SEARCH_DEBOUNCE_MS = 200;
 // Components dealt per Family sweep game (v142).
 const SWEEP_GAME_SIZE = 12;
+// New words plays in short rounds drawn from the whole pool (v166).
+const NEW_WORDS_ROUND = 15;
 // Flashcards whose audio is fetched before the deck is even opened.
 const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v165";
+const APP_VERSION = "chinese v166";
 
 export function App() {
   const dict = useDictionary();
@@ -416,6 +419,16 @@ export function App() {
   // New words / Family sweep run inside ReviewPage; this marks such a
   // session as a home-launched game so closing it returns home too.
   const [reviewGame, setReviewGame] = useState<"newWords" | "sweep" | null>(null);
+  const [newWordsRound, setNewWordsRound] = useState({ n: 0, right: 0, answered: 0, over: false });
+  const startNewWordsRound = () => {
+    setNewWordsRound((r) => ({ n: r.n + 1, right: 0, answered: 0, over: false }));
+    setReviewGame("newWords");
+    setReviewLaunched({
+      ...loadStartSettings(),
+      enabledFacets: ["wordInference"],
+      sessionSize: NEW_WORDS_ROUND,
+    });
+  };
   const forgeReady = useMemo(
     () => forgeWordPool(saved.savedList.map((s) => s.word)).length >= 4,
     [saved.savedList],
@@ -922,14 +935,39 @@ export function App() {
           onIntroduced={(w) => creditPassiveView(w)}
         />
       )}
-      {showReview && reviewLaunched && (
+      {showReview && reviewGame === "newWords" && newWordsRound.over && (
+        <GameRoundEnd
+          tag="New words"
+          title={
+            newWordsRound.answered > 0
+              ? `${newWordsRound.right} of ${newWordsRound.answered} right`
+              : "Round done"
+          }
+          hint={
+            inferenceWords.length === 0
+              ? "That's every new word your characters can build right now."
+              : newWordsRound.right > 0
+                ? "The ones you got right won't come back."
+                : undefined
+          }
+          onAgain={inferenceWords.length > 0 ? startNewWordsRound : undefined}
+          onClose={() => closeHashPage("#/review")}
+        />
+      )}
+      {showReview && reviewLaunched && !(reviewGame === "newWords" && newWordsRound.over) && (
         <ReviewPage
+          key={reviewGame === "newWords" ? `newWords-${newWordsRound.n}` : "review"}
           dueCards={dueCards}
           cards={reviewState.cards}
           inferenceWords={inferenceWords}
           onInferenceResult={(w, gotIt) => {
             markInferenceSeen(w, gotIt);
             recordInference(w, gotIt);
+            setNewWordsRound((r) => ({
+              ...r,
+              right: r.right + (gotIt ? 1 : 0),
+              answered: r.answered + 1,
+            }));
           }}
           clusters={clusters}
           sweepComponents={sweepBatch}
@@ -952,7 +990,20 @@ export function App() {
             cancelFlow();
             setReviewLaunched(null);
           }}
-          onComplete={flowQueue.length > 0 ? advanceFlow : undefined}
+          onComplete={
+            reviewGame === "newWords"
+              ? () => {
+                  track("game_round_end", {
+                    game: "newWords",
+                    right: newWordsRound.right,
+                    answered: newWordsRound.answered,
+                  });
+                  setNewWordsRound((r) => ({ ...r, over: true }));
+                }
+              : flowQueue.length > 0
+                ? advanceFlow
+                : undefined
+          }
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -1070,15 +1121,7 @@ export function App() {
                 icon: "✨",
                 name: "New words",
                 ready: inferenceWords.length > 0,
-                onStart: () =>
-                  playGame(() => {
-                    setReviewGame("newWords");
-                    setReviewLaunched({
-                      ...loadStartSettings(),
-                      enabledFacets: ["wordInference"],
-                      sessionSize: null,
-                    });
-                  }),
+                onStart: () => playGame(startNewWordsRound),
               },
               {
                 id: "chain",

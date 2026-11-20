@@ -125,6 +125,13 @@ Session-wide sound setting (v114): "Speak answers automatically"
 auto-play — reveals, Sift cards, Learn lesson openings. The 🔊 replay
 buttons always work regardless.
 
+**New words, v166 (owner: "it should be way more"):** the pool is no
+longer the top-500 two-character words capped at 150 per session. The
+`discover_words` RPC returns 2–4 character words from the whole
+character set, skipping saved / retired / resting words server-side,
+and the game runs in **rounds of 15** that end on a score screen with
+"Another round" — the whole pool, in finite bites.
+
 ## Games (v116 — play, not practice)
 
 Owner picked two from a proposed list (word chain, tone sniper,

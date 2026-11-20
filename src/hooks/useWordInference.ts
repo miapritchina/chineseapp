@@ -3,6 +3,7 @@ import type { Word } from "../lib/types";
 import { supabase } from "../lib/supabase";
 import {
   inferenceAvailable,
+  inferenceExclude,
   inferencePairs,
   knownChars,
   mergeInferenceOutcome,
@@ -28,17 +29,19 @@ import {
 // INFERENCE_COOLDOWN_DAYS before it may rotate back in.
 
 const PROBE_CHUNK = 150;
-// v138: the pool is discovered server-side (words_from_chars RPC) from
-// the user's ENTIRE character set in one query — no more 60-char cap;
-// combining a brand-new character with any old one is the whole fun.
-// The v137 client-side pair-probe stays as the fallback while the
-// migration lags (ADR-0005).
+// v166: the pool is the WHOLE set of 2–4 character words buildable from
+// the user's characters (discover_words RPC, migration 0018). The
+// server skips saved / retired / resting words, so each fetch is a
+// window of the most common words not yet met — retire some and the
+// next fetch reaches deeper. Fallbacks while a migration lags
+// (ADR-0005): the v138 words_from_chars RPC (top-500 two-character
+// words), then the v137 client-side pair probe.
 const ALL_CHAR_CAP = 1200;
+const WINDOW = 300;
 const RPC_MAX = 500;
 const FALLBACK_CHAR_CAP = 60;
 // Chars from the most recent saves — words containing one lead the pool.
 const RECENT_CHAR_COUNT = 20;
-const POOL_CAP = 150;
 const SEEN_KEY = "chinese.inferenceSeen";
 export const INFERENCE_COOLDOWN_DAYS = 14;
 const COOLDOWN_MS = INFERENCE_COOLDOWN_DAYS * 86400000;
@@ -81,6 +84,11 @@ interface Opts {
 export function useWordInference({ userId, savedList, ensureCached, findWord }: Opts) {
   const [probedKeys, setProbedKeys] = useState<string[]>([]);
   const [seen, setSeen] = useState<Seen>(() => loadSeen());
+  const seenRef = useRef(seen);
+  seenRef.current = seen;
+  // Bumped when the account's answer history adds to what this device
+  // knew — the pool is then re-fetched with the fuller skip list.
+  const [seenEpoch, setSeenEpoch] = useState(0);
   const probedForRef = useRef<string>("");
   // Fresh rotation each app session — a fixed slice showed the same
   // words every time (owner-reported bug). Ref so the order is stable
@@ -116,7 +124,7 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
       ]);
       if (known.error || recent.error) return; // missing table → degrade silently
       const rows = [...(known.data ?? []), ...(recent.data ?? [])];
-      setSeen((prev) => {
+      const merge = (prev: Seen): Seen | null => {
         let changed = false;
         const next = new Map(prev);
         for (const r of rows) {
@@ -130,10 +138,16 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
             changed = true;
           }
         }
-        if (!changed) return prev;
+        return changed ? next : null;
+      };
+      if (!merge(seenRef.current)) return;
+      setSeen((prev) => {
+        const next = merge(prev);
+        if (!next) return prev;
         persistSeen(next);
         return next;
       });
+      setSeenEpoch((e) => e + 1);
     })();
   }, [userId]);
 
@@ -143,7 +157,7 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
       .slice()
       .sort((a, b) => b.savedAt - a.savedAt)
       .map((s) => s.word);
-    const signature = words.join("");
+    const signature = `${words.join("")}|${seenEpoch}`;
     if (signature === probedForRef.current) return;
     probedForRef.current = signature;
     if (words.length < 2) {
@@ -157,12 +171,19 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
     // re-probe) — a cleanup-based cancel would kill the in-flight probe
     // it just deduplicated against.
     void (async () => {
-      // Preferred path (v138): one RPC over the WHOLE character set.
       const allChars = knownChars(words, ALL_CHAR_CAP);
-      const { data, error } = await supabase.rpc("words_from_chars", {
+      const exclude = inferenceExclude(words, seenRef.current, Date.now(), COOLDOWN_MS);
+      let { data, error } = await supabase.rpc("discover_words", {
         chars: allChars,
-        max_results: RPC_MAX,
+        exclude,
+        max_results: WINDOW,
       });
+      if (error) {
+        ({ data, error } = await supabase.rpc("words_from_chars", {
+          chars: allChars,
+          max_results: RPC_MAX,
+        }));
+      }
       if (!error && Array.isArray(data)) {
         const keys = (data as { word: string }[]).map((r) => r.word);
         for (let i = 0; i < keys.length; i += PROBE_CHUNK) {
@@ -172,8 +193,8 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
         if (probedForRef.current === signature) setProbedKeys(keys);
         return;
       }
-      // Fallback (function not deployed yet, ADR-0005): the v137
-      // client-side pair probe over recent characters.
+      // Last resort: the v137 client-side pair probe over recent
+      // characters.
       const candidates = inferencePairs(words, FALLBACK_CHAR_CAP);
       for (let i = 0; i < candidates.length; i += PROBE_CHUNK) {
         if (probedForRef.current !== signature) return;
@@ -182,7 +203,7 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
       if (probedForRef.current === signature) setProbedKeys(candidates);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedList]);
+  }, [savedList, seenEpoch]);
 
   const words = useMemo<Word[]>(() => {
     if (probedKeys.length === 0) return [];
@@ -208,7 +229,7 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
       ),
     );
     const ordered = orderInferencePool(found, recentChars);
-    const capped = ordered.slice(0, POOL_CAP);
+    const capped = ordered.slice(0, WINDOW);
     if (capped.length === 0) return [];
     const offset = Math.floor(rotationRef.current * capped.length) % capped.length;
     return [...capped.slice(offset), ...capped.slice(0, offset)];

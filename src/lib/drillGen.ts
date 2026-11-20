@@ -350,6 +350,19 @@ export function inferenceAvailable(
   return !o || (!o.known && o.ts <= now - cooldownMs);
 }
 
+// Words the server should leave out of the New-words pool: everything
+// saved, plus answered words that are retired or still resting.
+export function inferenceExclude(
+  saved: string[],
+  seen: Iterable<[string, InferenceOutcome]>,
+  now: number,
+  cooldownMs: number,
+): string[] {
+  const out = new Set(saved);
+  for (const [w, o] of seen) if (!inferenceAvailable(o, now, cooldownMs)) out.add(w);
+  return [...out];
+}
+
 export function orderInferencePool<T extends { word: string; rank?: number | null }>(
   words: T[],
   recentChars: Set<string>,
