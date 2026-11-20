@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
-import { reportError } from "./lib/analytics";
+import { isOpaqueErrorEvent, reportError, track } from "./lib/analytics";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found");
@@ -27,7 +27,23 @@ function showError(label: string, err: unknown) {
   box.textContent = `${label}\n\n${msg}\n\n${box.textContent ?? ""}`.slice(0, 8000);
 }
 
-window.addEventListener("error", (e) => showError("window error", e.error ?? e.message));
+window.addEventListener(
+  "error",
+  (e) => {
+    if (isOpaqueErrorEvent(e)) {
+      const t = e.target as { tagName?: string; src?: string; href?: string } | null;
+      track("opaque_error_event", {
+        ctor: e.constructor.name,
+        target: e.target === window ? "window" : (t?.tagName ?? String(e.target)),
+        src: t?.src ?? t?.href ?? e.filename ?? "",
+        message: e.message ?? "",
+      });
+      return;
+    }
+    showError("window error", e.error ?? e.message);
+  },
+  true,
+);
 window.addEventListener("unhandledrejection", (e) => showError("unhandled rejection", e.reason));
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { err: unknown }> {

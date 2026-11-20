@@ -47,7 +47,17 @@
           if (e instanceof Error) return e.name + ': ' + e.message + '\n' + (e.stack || '');
           try { return JSON.stringify(e, Object.getOwnPropertyNames(e)); } catch (_) { return String(e); }
         }
+        // Capture phase also sees every failed resource load (a blocked
+        // third-party script, a missing image): an event with no error and
+        // no message. Those must not cover a working app (BUG-20) — they
+        // are only listed if the app then fails to mount.
+        var failedLoads = [];
         window.addEventListener('error', function (ev) {
+          if (!ev.error && (!ev.message || ev.message === 'Script error.')) {
+            var t = ev.target || {};
+            failedLoads.push(t.src || t.href || ev.message || String(t.tagName || t));
+            return;
+          }
           var src = ev.filename ? ' [' + ev.filename + ':' + ev.lineno + ':' + ev.colno + ']' : '';
           paint('window error' + src, fmtErr(ev.error || ev.message));
         }, true);
@@ -69,6 +79,7 @@
           var info = [
             'URL: ' + location.href,
             'UA:  ' + navigator.userAgent,
+            'failed to load: ' + (failedLoads.join(', ') || 'none'),
             'localStorage:',
             JSON.stringify(ls, null, 2),
           ].join('\n');

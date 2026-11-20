@@ -62,6 +62,14 @@ export function track(event: string, props: Record<string, unknown> = {}) {
   else if (queue.length < 200) queue.push([event, props]);
 }
 
+// An `error` event that names no error: a bare Event (no error, no
+// message) or a third-party script's masked "Script error.". Neither is
+// an uncaught exception in our own code, so the on-page error overlay
+// must not blank the app for it (BUG-20).
+export function isOpaqueErrorEvent(e: { error?: unknown; message?: string }): boolean {
+  return e.error == null && (!e.message || e.message === "Script error.");
+}
+
 export interface SurfaceInput {
   hash: string;
   sentenceMode: boolean;

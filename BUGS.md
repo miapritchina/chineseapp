@@ -37,6 +37,7 @@ feature broken) · **Medium** (annoying but workarounds exist) ·
 
 | ID | Severity | Title | Fixed in |
 |---|---|---|---|
+| BUG-20 | Critical | App covered by a "window error / undefined" screen on iPhone after v163 | v164 — the `index.html` diagnostic shim listens for `error` in the capture phase, so every failed resource load (an event with no error and no message) painted the full-screen overlay. v163 added PostHog's six helper scripts; when something on the device blocks them (reproduced by refusing all `posthog.com` requests, as a content blocker does) each one covered the app. Opaque events (no error/message, or a third-party "Script error.") no longer paint; they are listed only in the "app did not mount" dump, and `main.tsx` logs them as `opaque_error_event`. Reported live by owner. |
 | BUG-2 | Medium | All user data persisted to localStorage instead of Supabase | (cloud-first hooks rework) — see [ADR-0001](docs/decisions/0001-supabase-source-of-truth.md). Cross-device deletion propagation remains [open work](docs/architecture/ARCHITECTURE.md#open-work--explicitly-deferred). |
 | BUG-6 | High | Retired phoneticTap/componentSound cards clog the review queue and starve word reviews | v95 — seeding removed in `useReview`; legacy rows ignored on load/sync + scrubbed locally; daily-new cap now counts word cards only. |
 | BUG-7 | Medium | Sound-facet grade of the combined card never syncs to Supabase | v95 — ref-mirrored cards map ([ADR-0010](docs/decisions/0010-ref-mirrored-cards-map-in-usereview.md)); both same-tick grades upsert. |

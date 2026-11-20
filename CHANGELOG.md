@@ -11,6 +11,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Fixed
+- **App blanked by "window error / undefined" (v164, [BUG-20](BUGS.md)):**
+  a blocked or failed third-party script (PostHog's helpers, when a
+  content blocker refuses them) no longer covers the app with the
+  error screen. Real crashes still show it.
+
 ### Added
 - **PostHog fully on (v163):** analytics now report to your personal
   PostHog project (US) with everything the free tier offers — page
