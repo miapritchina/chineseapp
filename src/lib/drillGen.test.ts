@@ -4,6 +4,7 @@ import {
   orderInferencePool,
   buildWordTray,
   inferenceAvailable,
+  inferenceExclude,
   surfacesConstituents,
   mergeInferenceOutcome,
   familySweepScore,
@@ -348,5 +349,21 @@ describe("surfacesConstituents", () => {
   it("never pads a single-facet game with character cards", () => {
     expect(surfacesConstituents(true, new Set(["wordInference"]))).toBe(false);
     expect(surfacesConstituents(true, new Set(["familySweep"]))).toBe(false);
+  });
+});
+
+describe("inferenceExclude", () => {
+  const DAY = 86400000;
+  const now = 100 * DAY;
+
+  it("skips saved words, retired words and resting misses — not rested ones", () => {
+    const seen: [string, { ts: number; known: boolean }][] = [
+      ["大学", { ts: now - 200 * DAY, known: true }],
+      ["小学", { ts: now - 2 * DAY, known: false }],
+      ["中学", { ts: now - 30 * DAY, known: false }],
+    ];
+    expect(new Set(inferenceExclude(["学生", "大学"], seen, now, 14 * DAY))).toEqual(
+      new Set(["学生", "大学", "小学"]),
+    );
   });
 });

@@ -11,6 +11,14 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Changed
+- **New words: the whole pool, in short rounds (v166, owner request):**
+  the game now draws from every 2–4 character word your characters can
+  build (it used to see only the 500 most common two-character words,
+  150 per session, many already saved). Words you've saved or retired
+  are skipped on the server, so new ones keep surfacing. A round is 15
+  words and ends with your score and an "Another round" button.
+
 ### Fixed
 - **Family sweep starts again (v165, [BUG-22](BUGS.md)):** the game
   has opened to "All caught up" since v137; it now plays its 12-round

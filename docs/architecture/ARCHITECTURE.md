@@ -130,10 +130,15 @@ kinds, seven scheduled facets (plus one session-only drill):
 has no FSRS row: unsaved words built from known chars — a correct
 answer cascade-credits the constituent char cards. A game, not review
 (v137): excluded from due counts. Pool comes from the
-`words_from_chars` RPC (v138, migration 0015): every real two-char
-word buildable from the user's WHOLE character set, one query, up to
-150 in rotation, fresh×old combinations first (client pair-probe over
-recent chars remains the ADR-0005 fallback). Each word
+`discover_words` RPC (v166, migration 0018): every real 2–4 character
+word buildable from the user's WHOLE character set, minus a skip list
+the client sends (saved, retired, resting words) — so each fetch is a
+window of the 300 most common words not yet met, and retiring words
+moves the window deeper. Fallbacks per ADR-0005: the v138
+`words_from_chars` RPC (top-500 two-character words), then a client
+pair-probe over recent chars. Played in rounds of 15 (`GameRoundEnd`
+shows the score and offers another round); fresh×old combinations
+first. Each word
 randomly renders as guess-the-meaning OR build-the-word
 (`WordBuildCard`: translation shown, assemble the hanzi from a tray
 of its characters + decoys). Since v160 a
