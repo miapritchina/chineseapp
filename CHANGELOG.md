@@ -11,6 +11,12 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Pull down to update (v167, owner request):** on the home screen, a
+  long pull-down checks for a new app version and reloads onto it — the
+  installed app had no way to reload. A short pull does nothing; a pill
+  shows "Keep pulling" → "Release to update".
+
 ### Changed
 - **New words: the whole pool, in short rounds (v166, owner request):**
   the game now draws from every 2–4 character word your characters can

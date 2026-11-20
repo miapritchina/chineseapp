@@ -20,6 +20,7 @@ import { searchByComponent } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
 import { GamesBar } from "./components/GamesBar";
 import { GameRoundEnd } from "./components/GameRoundEnd";
+import { PullToRefresh } from "./components/PullToRefresh";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
 import { EntitySheet } from "./components/EntitySheet";
@@ -78,7 +79,7 @@ const NEW_WORDS_ROUND = 15;
 // Flashcards whose audio is fetched before the deck is even opened.
 const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v166";
+const APP_VERSION = "chinese v167";
 
 export function App() {
   const dict = useDictionary();
@@ -773,6 +774,7 @@ export function App() {
         signOut: auth.signOut,
       }}
     >
+      <PullToRefresh enabled={(surface === "home" || surface === "sentence") && !top} />
       <header className="topbar">
         <HamburgerMenu
           version={APP_VERSION}

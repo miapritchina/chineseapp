@@ -467,6 +467,10 @@ The app installs and runs offline from one service worker
   rolling lookahead as the deck advances) and `index.html`
   preconnects to the host. The endpoint sends no CORS headers, so the
   responses are opaque: they can be cached and played, never read.
+- **Picking up a new build (v167)** — the installed app has no browser
+  chrome, so `PullToRefresh` (home screen only) turns a long pull-down
+  into `refreshApp()` (`lib/pullRefresh.ts`): `registration.update()`,
+  wait for the new worker to activate, then reload.
 - **Not cached** — everything Supabase. User data stays cloud-first
   ([ADR-0001](../decisions/0001-supabase-source-of-truth.md)); offline
   reads come from the hooks' own localStorage mirrors, not the SW.
