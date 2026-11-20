@@ -228,16 +228,6 @@ body {
 .hamburger-item.is-disabled:hover {
   background: transparent;
 }
-.hamburger-badge {
-  background: var(--accent);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  min-width: 18px;
-  text-align: center;
-}
 .hamburger-soon {
   color: var(--muted);
   font-size: 11px;

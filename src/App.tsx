@@ -62,7 +62,7 @@ import { useState } from "react";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
 import { problemWords, problemChars, FOCUS_POOL } from "./lib/focus";
-import { DAILY_GOAL, bumpDailyDone, loadDailyDone } from "./lib/dailyGoal";
+import { activeSurface, startAnalytics, track } from "./lib/analytics";
 import { buildClusters, shuffle } from "./lib/drillGen";
 import { ensureAllFontFaces, ensureFontFace, fontById, nextFontId } from "./lib/fonts";
 import { isDue } from "./lib/fsrs";
@@ -75,7 +75,7 @@ const SWEEP_GAME_SIZE = 12;
 // Flashcards whose audio is fetched before the deck is even opened.
 const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v161";
+const APP_VERSION = "chinese v162";
 
 export function App() {
   const dict = useDictionary();
@@ -178,10 +178,8 @@ export function App() {
   const [siftWords, setSiftWords] = useState<string[] | null>(null);
   // Focus mode (v127): the active problem-word session; null = closed.
   const [focusWords, setFocusWords] = useState<string[] | null>(null);
-  // Daily goal (v137): graded cards done today. The backlog stays
-  // available; the badge counts down a modest expectation instead.
-  const [dailyDone, setDailyDone] = useState<number>(() => loadDailyDone());
-  const noteCardDone = () => setDailyDone(bumpDailyDone());
+  const surfaceRef = useRef("home");
+  const noteCardDone = () => track("card_done", { surface: surfaceRef.current });
   // Family sweep (v137): a game over ALL usable components.
   const sweepPool = useMemo(
     () =>
@@ -417,7 +415,7 @@ export function App() {
   const [gameOpen, setGameOpen] = useState<"forge" | "pairs" | "chain" | null>(null);
   // New words / Family sweep run inside ReviewPage; this marks such a
   // session as a home-launched game so closing it returns home too.
-  const [reviewIsGame, setReviewIsGame] = useState(false);
+  const [reviewGame, setReviewGame] = useState<"newWords" | "sweep" | null>(null);
   const forgeReady = useMemo(
     () => forgeWordPool(saved.savedList.map((s) => s.word)).length >= 4,
     [saved.savedList],
@@ -476,7 +474,7 @@ export function App() {
         setSiftWords(null);
         setFlowQueue([]);
         setGameOpen(null);
-        setReviewIsGame(false);
+        setReviewGame(null);
       }
       const entry = parseHash();
       if (entry) {
@@ -510,6 +508,54 @@ export function App() {
   useEffect(() => {
     if (auth.user) setShowSignIn(false);
   }, [auth.user, setShowSignIn]);
+
+  useEffect(() => {
+    if (!auth.user) return;
+    startAnalytics(auth.user.id);
+    track("app_open", {
+      standalone: window.matchMedia("(display-mode: standalone)").matches,
+      saved_words: saved.savedList.length,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.user?.id]);
+
+  const surface = activeSurface({
+    hash: showReview
+      ? "#/review"
+      : showCards
+        ? "#/cards"
+        : showExplore
+          ? "#/explore"
+          : showClassic
+            ? "#/classic"
+            : showStats
+              ? "#/stats"
+              : "",
+    sentenceMode: searchMode === "sentence",
+    gameOpen,
+    reviewGame,
+    reviewLaunched: !!reviewLaunched,
+    learn: !!learnWords,
+    sift: !!siftWords,
+    focus: !!focusWords,
+  });
+  const surfaceSinceRef = useRef(Date.now());
+  useEffect(() => {
+    const prev = surfaceRef.current;
+    if (prev === surface) return;
+    track("surface_leave", {
+      surface: prev,
+      seconds: Math.round((Date.now() - surfaceSinceRef.current) / 1000),
+    });
+    track("surface_view", { surface, from: prev });
+    surfaceRef.current = surface;
+    surfaceSinceRef.current = Date.now();
+  }, [surface]);
+
+  useEffect(() => {
+    const q = debouncedQuery.trim();
+    if (q && searchMode !== "sentence") track("search", { query: q, mode: searchMode });
+  }, [debouncedQuery, searchMode]);
 
   // Debounce search input.
   const searchTimer = useRef<number | null>(null);
@@ -663,11 +709,15 @@ export function App() {
   };
 
   const openWord = async (word: string) => {
+    track("entity_open", { kind: "word", key: word, surface: surfaceRef.current });
     await dict.ensureCached([word]);
     push({ kind: "word", key: word });
   };
 
-  const openChar = (char: string) => push({ kind: "char", key: char });
+  const openChar = (char: string) => {
+    track("entity_open", { kind: "char", key: char, surface: surfaceRef.current });
+    push({ kind: "char", key: char });
+  };
 
   const top = stack[stack.length - 1];
   const topWord = top?.kind === "word" ? dict.findWord(top.key) : null;
@@ -715,7 +765,6 @@ export function App() {
         <HamburgerMenu
           version={APP_VERSION}
           reviewHref="#/review"
-          reviewBadge={Math.min(dueCards.length, Math.max(0, DAILY_GOAL - dailyDone))}
           cardsHref="#/cards"
           exploreHref="#/explore"
           classicHref="#/classic"
@@ -742,8 +791,6 @@ export function App() {
       {showReview && !reviewLaunched && !learnWords && !siftWords && !focusWords && !gameOpen && (
         <ReviewLaunch
           totalDue={dueCards.length}
-          dailyDone={dailyDone}
-          dailyGoal={DAILY_GOAL}
           facetCounts={facetDueCounts}
           learnCount={learnableWords.length}
           onStartLearn={(size) => setLearnWords(learnableWords.slice(0, size ?? undefined))}
@@ -899,7 +946,7 @@ export function App() {
           onGradeCluster={gradeCluster}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={() => {
-            if (reviewIsGame) {
+            if (reviewGame) {
               closeHashPage("#/review");
               return;
             }
@@ -1026,7 +1073,7 @@ export function App() {
                 ready: inferenceWords.length > 0,
                 onStart: () =>
                   playGame(() => {
-                    setReviewIsGame(true);
+                    setReviewGame("newWords");
                     setReviewLaunched({
                       ...loadStartSettings(),
                       enabledFacets: ["wordInference"],
@@ -1063,7 +1110,7 @@ export function App() {
                 onStart: () =>
                   playGame(() => {
                     setSweepBatch(shuffle(sweepPool).slice(0, SWEEP_GAME_SIZE));
-                    setReviewIsGame(true);
+                    setReviewGame("sweep");
                     setReviewLaunched({
                       ...loadStartSettings(),
                       enabledFacets: ["familySweep"],

@@ -114,6 +114,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │       ├── flashcards.ts            Flashcards deck (due first, then weakest not-due filler)
 │       ├── learn.ts                 Learn-mode material picker
 │       ├── share.ts                 profile share links (?share=token → live saved set)
+│       ├── analytics.ts             PostHog usage events + activeSurface (ADR-0019)
 │       └── supabase.ts              Client + wakeUp ping
 ├── public/
 │   ├── data-chars.json              ~10k chars + components + etymology

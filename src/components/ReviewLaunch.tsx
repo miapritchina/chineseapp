@@ -148,10 +148,6 @@ interface Props {
   // about to study before tapping Start.
   facetCounts: Record<string, number>;
   totalDue: number;
-  // Daily goal (v137): cards done today / the modest expectation. The
-  // backlog stays available; only the framing changes.
-  dailyDone?: number;
-  dailyGoal?: number;
   // Learn mode (v110): how many saved words qualify for a lesson, and
   // the launcher — receives the chosen session size so App can cap
   // the lesson the same way review sessions are capped.
@@ -178,8 +174,6 @@ interface Props {
 export function ReviewLaunch({
   facetCounts,
   totalDue,
-  dailyDone = 0,
-  dailyGoal = 0,
   learnCount = 0,
   onStartLearn,
   siftCount = 0,
@@ -260,11 +254,7 @@ export function ReviewLaunch({
           ← Done
         </button>
         <span className="review-kind-tag">Review</span>
-        <span className="review-progress">
-          {dailyGoal > 0
-            ? `${Math.min(dailyDone, dailyGoal)} / ${dailyGoal} today`
-            : `${totalDue} due`}
-        </span>
+        <span className="review-progress" />
       </div>
       <div className="review-body launch-body">
         {onJustStart && (
@@ -391,7 +381,7 @@ export function ReviewLaunch({
             disabled={siftCount === 0}
             title="Triage: swipe right = I know this (counts as done in every drill today); swipe left = keep for practice, hidden from Sift until tomorrow."
           >
-            Sift · {siftCount} due words
+            Sift
           </button>
         )}
         {onStartFocus && (
@@ -402,7 +392,7 @@ export function ReviewLaunch({
             disabled={focusCount === 0}
             title="Attention for problem words — seen many times, still failing. Each gets its lesson, a practice re-test, and one graded test, spaced within the session."
           >
-            Focus · {focusCount} problem words
+            Focus
           </button>
         )}
       </div>

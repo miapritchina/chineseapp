@@ -129,7 +129,7 @@ kinds, seven scheduled facets (plus one session-only drill):
 `wordInference` (v98, drill 1 in [recognition-drills.md](../product/recognition-drills.md))
 has no FSRS row: unsaved words built from known chars — a correct
 answer cascade-credits the constituent char cards. A game, not review
-(v137): excluded from due counts and the daily goal. Pool comes from the
+(v137): excluded from due counts. Pool comes from the
 `words_from_chars` RPC (v138, migration 0015): every real two-char
 word buildable from the user's WHOLE character set, one query, up to
 150 in rotation, fresh×old combinations first (client pair-probe over
@@ -297,17 +297,16 @@ queue.
 ### Queue + leech interleaving
 
 No daily cap since v102 ([ADR-0012](../decisions/0012-no-daily-cap-repeat-until-correct.md)) —
-everything due surfaces. The EXPECTATION is softer since v137: the
-hamburger badge counts down a modest daily goal (`lib/dailyGoal.ts`,
-30 graded cards/day, localStorage day counter fed by review, Sift and
-Focus) instead of shouting the whole backlog, and the launch header
-shows "done / goal today". Doing more stays one tap away — ADR-0012's
-availability guarantee is untouched. The fun facets (wordInference,
+everything due surfaces. Since v162 nothing announces the backlog
+([ADR-0019](../decisions/0019-measure-usage-before-reorganizing.md)):
+the v137 daily goal, the hamburger due badge and the launcher's due /
+problem-word counts are gone — the app complements Hello Chinese, which
+owns the streak. Due numbers live only on the Stats page. The fun facets (wordInference,
 familySweep) live with the games since v141 — on the home page's
 `GamesBar` since v161 (moved off the launch screen; a game opens on
 `#/review` and closing it returns home). Tapping one starts a
 single-facet session (like Chain/Forge/Pairs); they are no longer drill toggles, are excluded from the "due"
-arithmetic, and never count toward the goal. Since v106 the default session order is an
+arithmetic. Since v106 the default session order is an
 activity **interleave**, not a grouped run: `interleaveByActivity`
 (drillGen) round-robins across drill groups (meaning/sound unified),
 most-overdue first within each group, the neediest group leading each
