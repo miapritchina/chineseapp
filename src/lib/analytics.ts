@@ -1,33 +1,59 @@
 import type { PostHog } from "posthog-js";
 
-// Usage measurement (v162, ADR-0019): how the owner actually uses the
-// app vs how she thinks she does, before the two-door reorganization.
-// Signed-in sessions only, keyed by the Supabase user id — never email.
-// The project key is public by design (like the Supabase anon key);
-// empty = analytics off. posthog-js is lazy-loaded so it never delays
-// first paint.
-export const POSTHOG_KEY = "";
+// Usage measurement (v162, ADR-0019; full free feature set since v163,
+// ADR-0020): how the owner actually uses the app vs how she thinks she
+// does, before the two-door reorganization. Owner's PERSONAL PostHog
+// project (US cloud) — not the work account. Signed-in sessions only,
+// keyed by the Supabase user id — never email. The project key is
+// public by design (like the Supabase anon key). posthog-js is
+// lazy-loaded so it never delays first paint.
+export const POSTHOG_KEY = "phc_Bym9u4MV2tLb6YmGStksWtW9Z2yCAYGeeUqKz86CJxxh";
 export const POSTHOG_HOST = "https://us.i.posthog.com";
 
 let client: PostHog | null = null;
 let loading: Promise<PostHog | null> | null = null;
 const queue: [string, Record<string, unknown>][] = [];
 
-export function startAnalytics(userId: string) {
+let currentSurface = "home";
+
+export function startAnalytics(userId: string, superProps: Record<string, unknown>) {
   if (!POSTHOG_KEY || loading) return;
   loading = import("posthog-js").then(({ default: posthog }) => {
     posthog.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
+      defaults: "2026-08-30",
       person_profiles: "identified_only",
-      capture_pageview: false,
-      autocapture: false,
+      // Hash routes (#/review, #/w/…) are the app's pages.
+      capture_pageview: { path: true, search: true, hash: true },
+      capture_pageleave: true,
+      autocapture: true,
+      rageclick: true,
+      capture_dead_clicks: true,
+      enable_heatmaps: true,
+      capture_exceptions: true,
+      capture_performance: { web_vitals: true, network_timing: true },
+      enable_recording_console_log: true,
+      // No network headers/bodies: they would carry the Supabase token.
       session_recording: { maskAllInputs: false },
+      disable_surveys: false,
     });
+    posthog.register({ ...superProps, surface: currentSurface });
     posthog.identify(userId);
     client = posthog;
     for (const [event, props] of queue.splice(0)) posthog.capture(event, props);
     return posthog;
   });
+}
+
+// Every later event (autocaptured clicks included) carries the surface,
+// so heatmaps and click data split by mode even inside #/review.
+export function setSurface(surface: string) {
+  currentSurface = surface;
+  client?.register({ surface });
+}
+
+export function reportError(err: unknown) {
+  if (client && err instanceof Error) client.captureException(err);
 }
 
 export function track(event: string, props: Record<string, unknown> = {}) {
