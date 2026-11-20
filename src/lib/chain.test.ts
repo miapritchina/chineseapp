@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { chainBuildState, chainPool, nextChainStep, pickChainStart } from "./chain";
+import {
+  CHAIN_TRAY_SIZE,
+  chainBuildState,
+  chainPool,
+  nextChainStep,
+  pickChainStart,
+} from "./chain";
 
 const pool = ["学生", "生日", "日子", "中国", "电话", "朋友", "先生", "喝水"];
 
@@ -38,6 +44,11 @@ describe("nextChainStep", () => {
     const p = ["学生", "生生", "中国", "电话", "朋友", "喝水"];
     const step = nextChainStep("学生", p, new Set(["学生"]), () => 0)!;
     expect(step.tray.filter((c) => c === "生")).toHaveLength(2);
+  });
+  it("fills the tray to CHAIN_TRAY_SIZE when the pool has enough decoys", () => {
+    const big = [...pool, "苹果", "米饭", "老师", "汽车", "飞机", "医院", "商店", "天气"];
+    const step = nextChainStep("学生", big, new Set(["学生"]), () => 0)!;
+    expect(step.tray).toHaveLength(CHAIN_TRAY_SIZE);
   });
   it("decoys appear in no pool word containing the link", () => {
     const step = nextChainStep("学生", pool, new Set(["学生"]), () => 0)!;

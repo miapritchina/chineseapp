@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDictCtx, useSavedCtx } from "../state/contexts";
 import { autoSpeak, stopSpeech } from "../lib/speech";
 import {
+  CHAIN_LIVES,
   chainBuildState,
   chainPool,
   nextChainStep,
@@ -29,6 +30,7 @@ interface Props {
 // v156: any unused word CONTAINING the link counts, in any position —
 // the link is a highlighted tray tile and you build the whole word.
 // v157: the next link is the word's new character, not its last one.
+// v161: three lives — a wrong tile costs one and resets the word.
 export function ChainPage({ onClose, onOpenEntity }: Props) {
   const { savedList } = useSavedCtx();
   const { findWord, ensureCached } = useDictCtx();
@@ -40,6 +42,10 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
   const [built, setBuilt] = useState("");
   const [usedTiles, setUsedTiles] = useState<number[]>([]);
   const [wrongTile, setWrongTile] = useState<number | null>(null);
+  const [lives, setLives] = useState(CHAIN_LIVES);
+  // What the last wrong tap spelled — shown under the tray, and in the
+  // reveal once the final life goes.
+  const [missed, setMissed] = useState<string | null>(null);
   const [best, setBest] = useState(0);
   const chainEndRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +60,8 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
     setBuilt("");
     setUsedTiles([]);
     setWrongTile(null);
+    setLives(CHAIN_LIVES);
+    setMissed(null);
     setChain(start ? [start] : []);
     setStep(start ? nextChainStep(start, pool, new Set([start])) : null);
     if (start) autoSpeak(start);
@@ -90,7 +98,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
     );
   }
 
-  const broken = wrongTile !== null;
+  const broken = lives === 0;
   const deadEnd = !broken && step === null && chain.length > 0;
   const over = broken || deadEnd;
 
@@ -100,8 +108,13 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
     const state = chainBuildState(next, step.answers);
     if (state === "dead") {
       setWrongTile(i);
+      setMissed(next);
+      setLives((l) => l - 1);
+      setBuilt("");
+      setUsedTiles([]);
       return;
     }
+    setWrongTile(null);
     if (state === "building") {
       setBuilt(next);
       setUsedTiles((prev) => [...prev, i]);
@@ -112,6 +125,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
     setChain(nextChain);
     setBuilt("");
     setUsedTiles([]);
+    setMissed(null);
     setStep(nextChainStep(word, pool, new Set(nextChain), Math.random, step.link));
     autoSpeak(word);
   };
@@ -126,7 +140,9 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
       <PageHeader
         onBack={onClose}
         tag="Chain"
-        progress={`${score} link${score === 1 ? "" : "s"}`}
+        progress={`${score} link${score === 1 ? "" : "s"} · ${"♥".repeat(lives)}${"♡".repeat(
+          CHAIN_LIVES - lives,
+        )}`}
       />
       <div className="chain-body">
         <div className="chain-row">
@@ -182,6 +198,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
                   className={`forge-piece${c === step.link ? " chain-tile-link" : ""}${
                     usedTiles.includes(i) ? " is-consumed" : ""
                   }${wrongTile === i ? " is-wrong" : ""}`}
+                  onAnimationEnd={() => setWrongTile(null)}
                   onClick={() => tapTile(i)}
                   disabled={usedTiles.includes(i)}
                 >
@@ -189,6 +206,12 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
                 </button>
               ))}
             </div>
+            {missed && (
+              <div className="chain-miss">
+                No word of yours with {step.link} starts with {missed} — {lives}{" "}
+                {lives === 1 ? "life" : "lives"} left
+              </div>
+            )}
           </>
         )}
 
@@ -201,8 +224,7 @@ export function ChainPage({ onClose, onOpenEntity }: Props) {
             </div>
             {broken && step && (
               <div className="chain-reveal">
-                No word of yours with {step.link} starts with {built + step.tray[wrongTile!]}. It
-                wanted{" "}
+                No word of yours with {step.link} starts with {missed}. It wanted{" "}
                 <button
                   type="button"
                   className="chain-word"

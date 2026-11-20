@@ -128,8 +128,10 @@ buttons always work regardless.
 ## Games (v116 — play, not practice)
 
 Owner picked two from a proposed list (word chain, tone sniper,
-forge, pairs, sprint, scramble). Both are launch-screen buttons and
-write NO FSRS state — pure exposure.
+forge, pairs, sprint, scramble). They write NO FSRS state — pure
+exposure. Since v161 every game (plus New words and Family sweep)
+launches from the `GamesBar` row on the home page, not the review
+launch screen; closing a game goes back home.
 
 - **⚒ Forge** (`lib/forge.ts` + `ForgePage`): Smush-style word game
   (v118 — the original component-forge version didn't land with the
@@ -171,6 +173,11 @@ write NO FSRS state — pure exposure.
   v158 (owner: keep runs long): the new character with the most
   unused continuations is chosen, and if no new character has any,
   the old link is reused rather than ending the run.
+  v161 (owner): the tray grows to 15 tiles (5×3, smaller tiles;
+  characters of up to 4 valid words plus decoys), and a run has
+  **three lives** — a wrong tile costs one (♥♥♡ in the header),
+  says what it spelled, and resets the word in progress; the third
+  miss breaks the chain and reveals an intended word.
 
 Unpicked ideas parked for later: tone sniper, speed sprint (TODO),
 sentence scramble.

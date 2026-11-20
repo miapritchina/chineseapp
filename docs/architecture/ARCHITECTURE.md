@@ -303,9 +303,10 @@ hamburger badge counts down a modest daily goal (`lib/dailyGoal.ts`,
 Focus) instead of shouting the whole backlog, and the launch header
 shows "done / goal today". Doing more stays one tap away — ADR-0012's
 availability guarantee is untouched. The fun facets (wordInference,
-familySweep) live in the launch screen's Games section since v141 —
-tapping their card starts a single-facet session (like Chain/Forge/
-Pairs); they are no longer drill toggles, are excluded from the "due"
+familySweep) live with the games since v141 — on the home page's
+`GamesBar` since v161 (moved off the launch screen; a game opens on
+`#/review` and closing it returns home). Tapping one starts a
+single-facet session (like Chain/Forge/Pairs); they are no longer drill toggles, are excluded from the "due"
 arithmetic, and never count toward the goal. Since v106 the default session order is an
 activity **interleave**, not a grouped run: `interleaveByActivity`
 (drillGen) round-robins across drill groups (meaning/sound unified),
@@ -336,7 +337,8 @@ URL hash routing  ───▶  │   App.tsx      │
         ▼                       ▼                       ▼
    Home view              Modal stack             Full-screen pages
    ─────────              ────────────            ─────────────────
-   SavedShelf             EntitySheet             ReviewLaunch
+   GamesBar               EntitySheet             ReviewLaunch
+   SavedShelf
    SearchBar              ├ DecompositionTree     ReviewPage
    ResultsList            │  └ NodeCard           ├ CombinedRecognitionCard
    ComponentTable         ├ NodeCard              ├ FamilyTransferCard

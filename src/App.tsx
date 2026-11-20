@@ -18,6 +18,7 @@ import { supabase, wakeUp } from "./lib/supabase";
 import { SearchBar } from "./components/SearchBar";
 import { searchByComponent } from "./lib/componentSearch";
 import { SavedShelf } from "./components/SavedShelf";
+import { GamesBar } from "./components/GamesBar";
 import { ResultsList } from "./components/ResultsList";
 import { TreeModal } from "./components/TreeModal";
 import { EntitySheet } from "./components/EntitySheet";
@@ -74,7 +75,7 @@ const SWEEP_GAME_SIZE = 12;
 // Flashcards whose audio is fetched before the deck is even opened.
 const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v160";
+const APP_VERSION = "chinese v161";
 
 export function App() {
   const dict = useDictionary();
@@ -411,8 +412,12 @@ export function App() {
   const [exploreFocus, setExploreFocus] = useState<ExploreFocus | null>(null);
   // Learn mode (v110): the active lesson's words; null = no lesson.
   const [learnWords, setLearnWords] = useState<string[] | null>(null);
-  // Games (v116): pure play, launched from the review launch screen.
+  // Games (v116): pure play. Launched from the home page since v161 —
+  // they open on #/review and closing goes straight back home.
   const [gameOpen, setGameOpen] = useState<"forge" | "pairs" | "chain" | null>(null);
+  // New words / Family sweep run inside ReviewPage; this marks such a
+  // session as a home-launched game so closing it returns home too.
+  const [reviewIsGame, setReviewIsGame] = useState(false);
   const forgeReady = useMemo(
     () => forgeWordPool(saved.savedList.map((s) => s.word)).length >= 4,
     [saved.savedList],
@@ -471,6 +476,7 @@ export function App() {
         setSiftWords(null);
         setFlowQueue([]);
         setGameOpen(null);
+        setReviewIsGame(false);
       }
       const entry = parseHash();
       if (entry) {
@@ -483,6 +489,11 @@ export function App() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, [openFromHash, setShowReview, setShowExplore, setShowClassic, setSearchMode]);
+
+  const playGame = (start: () => void) => {
+    start();
+    window.location.hash = "#/review";
+  };
 
   const closeHashPage = (target: string) => {
     if (window.location.hash === target) history.back();
@@ -741,36 +752,13 @@ export function App() {
           focusCount={problemPool.length}
           onStartFocus={() => setFocusWords(problemPool.slice(0, FOCUS_POOL))}
           onJustStart={justStart}
-          forgeReady={forgeReady}
-          onStartForge={() => setGameOpen("forge")}
-          pairsReady={pairsPool.length >= PAIRS_PER_BOARD}
-          onStartPairs={() => setGameOpen("pairs")}
-          chainReady={chainReady}
-          onStartChain={() => setGameOpen("chain")}
-          newWordsReady={inferenceWords.length > 0}
-          onStartNewWords={() =>
-            setReviewLaunched({
-              ...loadStartSettings(),
-              enabledFacets: ["wordInference"],
-              sessionSize: null,
-            })
-          }
-          sweepReady={sweepPool.length > 0}
-          onStartSweep={() => {
-            setSweepBatch(shuffle(sweepPool).slice(0, SWEEP_GAME_SIZE));
-            setReviewLaunched({
-              ...loadStartSettings(),
-              enabledFacets: ["familySweep"],
-              sessionSize: null,
-            });
-          }}
           onStart={(s) => setReviewLaunched(s)}
           onClose={() => closeHashPage("#/review")}
         />
       )}
       {showReview && gameOpen === "forge" && (
         <ForgePage
-          onClose={() => setGameOpen(null)}
+          onClose={() => closeHashPage("#/review")}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -779,7 +767,7 @@ export function App() {
       )}
       {showReview && gameOpen === "chain" && (
         <ChainPage
-          onClose={() => setGameOpen(null)}
+          onClose={() => closeHashPage("#/review")}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -789,7 +777,7 @@ export function App() {
       {showReview && gameOpen === "pairs" && (
         <PairsPage
           words={pairsPool}
-          onClose={() => setGameOpen(null)}
+          onClose={() => closeHashPage("#/review")}
           onOpenEntity={(key) => {
             if ([...key].length > 1) void openWord(key);
             else openChar(key);
@@ -911,6 +899,10 @@ export function App() {
           onGradeCluster={gradeCluster}
           onAttributeFailure={(childKey) => attributeFailure(childKey)}
           onClose={() => {
+            if (reviewIsGame) {
+              closeHashPage("#/review");
+              return;
+            }
             cancelFlow();
             setReviewLaunched(null);
           }}
@@ -1025,6 +1017,62 @@ export function App() {
         />
       ) : (
         <main className="home" aria-label="Home">
+          <GamesBar
+            games={[
+              {
+                id: "newWords",
+                icon: "✨",
+                name: "New words",
+                ready: inferenceWords.length > 0,
+                onStart: () =>
+                  playGame(() => {
+                    setReviewIsGame(true);
+                    setReviewLaunched({
+                      ...loadStartSettings(),
+                      enabledFacets: ["wordInference"],
+                      sessionSize: null,
+                    });
+                  }),
+              },
+              {
+                id: "chain",
+                icon: "⛓",
+                name: "Chain",
+                ready: chainReady,
+                onStart: () => playGame(() => setGameOpen("chain")),
+              },
+              {
+                id: "forge",
+                icon: "⚒",
+                name: "Forge",
+                ready: forgeReady,
+                onStart: () => playGame(() => setGameOpen("forge")),
+              },
+              {
+                id: "pairs",
+                icon: "🀄",
+                name: "Pairs",
+                ready: pairsPool.length >= PAIRS_PER_BOARD,
+                onStart: () => playGame(() => setGameOpen("pairs")),
+              },
+              {
+                id: "sweep",
+                icon: "🧹",
+                name: "Sweep",
+                ready: sweepPool.length > 0,
+                onStart: () =>
+                  playGame(() => {
+                    setSweepBatch(shuffle(sweepPool).slice(0, SWEEP_GAME_SIZE));
+                    setReviewIsGame(true);
+                    setReviewLaunched({
+                      ...loadStartSettings(),
+                      enabledFacets: ["familySweep"],
+                      sessionSize: null,
+                    });
+                  }),
+              },
+            ]}
+          />
           <SavedShelf
             onOpenWord={(w) => void openWord(w)}
             onOpenChar={openChar}
