@@ -11,6 +11,20 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 
 ## [Unreleased]
 
+### Added
+- **Usage analytics (v162):** PostHog events + session replay for
+  signed-in sessions (which screens, modes and games you open, how long,
+  cards done, searches, saves) — ~3 weeks of real data to compare with
+  how you *think* you use the app before the big reorganization
+  ([ADR-0019](docs/decisions/0019-measure-usage-before-reorganizing.md)).
+  Off until the PostHog project key is added.
+
+### Removed
+- **Backlog pressure (v162, owner request):** the due-count badge in the
+  menu, the "x / 30 today" daily goal, and the due / problem-word counts
+  on the Review screen's Sift and Focus buttons. Due numbers now live
+  only on the Stats page.
+
 ### Changed
 - **Games live on the home page (v161, owner request):** a Games row
   (New words, Chain, Forge, Pairs, Sweep) sits above your saved words,

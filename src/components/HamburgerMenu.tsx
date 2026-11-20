@@ -4,7 +4,6 @@ interface Props {
   version: string;
   // null means the link is shown but disabled (placeholder for future pages).
   reviewHref?: string | null;
-  reviewBadge?: number;
   cardsHref?: string | null;
   exploreHref?: string | null;
   classicHref?: string | null;
@@ -25,7 +24,6 @@ interface Props {
 export function HamburgerMenu({
   version,
   reviewHref = null,
-  reviewBadge = 0,
   cardsHref = null,
   exploreHref,
   classicHref = null,
@@ -72,7 +70,6 @@ export function HamburgerMenu({
             onClick={() => setOpen(false)}
           >
             <span>Review</span>
-            {reviewBadge > 0 && <span className="hamburger-badge">{reviewBadge}</span>}
           </a>
         ) : (
           <span

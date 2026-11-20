@@ -26,6 +26,7 @@ Each stage ships green (`npm test` + `tsc`). Supersedes the old "stage 4/5" entr
 
 | Item | Notes |
 |---|---|
+| **Two-door reorganization** (after ~3 weeks of PostHog data, ≈ mid-Dec 2026) | Agreed shape ([ADR-0019](docs/decisions/0019-measure-usage-before-reorganizing.md)): home = search/save + one **▶ 5 minutes** button (a short finite session absorbing Review, Just start, Flashcards, Focus, Learn; drill toggles + size move to Settings; ends with a "what you gained" summary) + a **Play** row trimmed to ~3 games by usage. Also: a 20-second intro card right after saving a word; Sift → a "too easy" swipe inside the session; Sweep → Explore. Compare data to the owner's baseline guesses in the ADR first. |
 | Confirm [BUG-1](BUGS.md) (deep links) live | Code is wired (`App.tsx` `parseHash`/`openFromHash` on cold-load + hashchange). Needs one browser pass to close. |
 | **Refactor stage 6 — CSS reorg** | 2,620-line `styles.css` → `tokens.css` + per-feature files imported through one `styles.css` to preserve cascade order. Visual diff before merge. Best done after the Entity migration settles the class surface. |
 

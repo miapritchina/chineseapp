@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { loadTimestampMap, persistTimestampMap } from "../lib/localCache";
 import { useReconcileTriggers } from "./useReconcileTriggers";
+import { track } from "../lib/analytics";
 
 const SAVED_KEY = "chinese.saved";
 const LEARNED_KEY = "chinese.learned";
@@ -189,6 +190,7 @@ export function useSaved({ userId }: UseSavedOpts) {
   const setStatus = useCallback(
     (key: string, next: Status | null) => {
       const now = Date.now();
+      track("word_status", { word: key, status: next ?? "removed" });
 
       if (next === null) {
         setItems((prev) => {

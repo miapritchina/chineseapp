@@ -421,7 +421,7 @@ The app uses two coexisting routing patterns: a **modal stack** (`useModalStack`
 
 ### 7.7 HamburgerMenu
 
-**What:** Top-bar left-slot drawer. **Where:** Topbar. **Props:** `version`, `reviewHref`, `reviewBadge`, `phoneticsHref`, `sentenceHref`. **Classes:** `.hamburger-wrapper`, `.hamburger-btn`, `.hamburger-menu`, `.hamburger-item`, `.hamburger-badge`, `.hamburger-soon`, `.hamburger-divider`, `.hamburger-version`. **States:** open (`.is-open`), disabled items (`.is-disabled`).
+**What:** Top-bar left-slot drawer. **Where:** Topbar. **Props:** `version`, `reviewHref`, `phoneticsHref`, `sentenceHref`. **Classes:** `.hamburger-wrapper`, `.hamburger-btn`, `.hamburger-menu`, `.hamburger-item`, `.hamburger-soon`, `.hamburger-divider`, `.hamburger-version`. **States:** open (`.is-open`), disabled items (`.is-disabled`).
 
 ### 7.8 SearchBar
 
