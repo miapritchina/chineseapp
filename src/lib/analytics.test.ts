@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeSurface, type SurfaceInput } from "./analytics";
+import { activeSurface, isOpaqueErrorEvent, type SurfaceInput } from "./analytics";
 
 const base: SurfaceInput = {
   hash: "",
@@ -39,5 +39,23 @@ describe("activeSurface", () => {
     expect(
       activeSurface({ ...base, hash: "#/review", reviewLaunched: true, reviewGame: "newWords" }),
     ).toBe("game:newWords");
+  });
+});
+
+describe("isOpaqueErrorEvent", () => {
+  it("a bare error event with no error and no message is opaque", () => {
+    expect(isOpaqueErrorEvent({})).toBe(true);
+    expect(isOpaqueErrorEvent({ error: null, message: "" })).toBe(true);
+  });
+
+  it("a third-party script's masked error is opaque", () => {
+    expect(isOpaqueErrorEvent({ error: null, message: "Script error." })).toBe(true);
+  });
+
+  it("a real uncaught exception is not", () => {
+    expect(isOpaqueErrorEvent({ error: new Error("boom"), message: "boom" })).toBe(false);
+    expect(isOpaqueErrorEvent({ error: null, message: "ReferenceError: x is not defined" })).toBe(
+      false,
+    );
   });
 });
