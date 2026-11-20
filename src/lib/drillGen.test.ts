@@ -4,6 +4,7 @@ import {
   orderInferencePool,
   buildWordTray,
   inferenceAvailable,
+  surfacesConstituents,
   mergeInferenceOutcome,
   familySweepScore,
   inferencePairs,
@@ -330,5 +331,22 @@ describe("new-words game memory", () => {
   it("a later miss never un-retires a known word", () => {
     const merged = mergeInferenceOutcome({ ts: 1, known: true }, { ts: 2, known: false });
     expect(merged).toEqual({ ts: 2, known: true });
+  });
+});
+
+describe("surfacesConstituents", () => {
+  it("off when the option is off", () => {
+    expect(surfacesConstituents(false)).toBe(false);
+    expect(surfacesConstituents(false, new Set(["meaningRecognition"]))).toBe(false);
+  });
+
+  it("on for sessions that drill recognition", () => {
+    expect(surfacesConstituents(true)).toBe(true);
+    expect(surfacesConstituents(true, new Set(["meaningRecognition", "clozeChar"]))).toBe(true);
+  });
+
+  it("never pads a single-facet game with character cards", () => {
+    expect(surfacesConstituents(true, new Set(["wordInference"]))).toBe(false);
+    expect(surfacesConstituents(true, new Set(["familySweep"]))).toBe(false);
   });
 });

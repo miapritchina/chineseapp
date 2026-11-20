@@ -205,6 +205,17 @@ export function buildClusters(
 // last.
 const SYNTHETIC_FACETS = new Set(["wordInference", "clusterRecall", "familySweep"]);
 
+// "Include word characters" adds never-seen characters of saved words
+// as recognition cards. They belong only to sessions that drill
+// recognition — in a single-facet game (New words, Family sweep) they
+// padded the deck with stray character cards (BUG-21).
+export function surfacesConstituents(
+  includeSubchars: boolean,
+  enabledFacets?: Set<string>,
+): boolean {
+  return includeSubchars && (!enabledFacets || enabledFacets.has("meaningRecognition"));
+}
+
 export function interleaveByActivity<T extends { facet: string; dueAt: number }>(
   rows: T[],
   // Urgent rows (v136: words containing a problem character) lead
