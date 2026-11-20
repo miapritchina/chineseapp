@@ -62,7 +62,7 @@ import { useState } from "react";
 import { learnPool } from "./lib/learn";
 import { siftDayKey, siftPool } from "./lib/sift";
 import { problemWords, problemChars, FOCUS_POOL } from "./lib/focus";
-import { activeSurface, startAnalytics, track } from "./lib/analytics";
+import { activeSurface, setSurface, startAnalytics, track } from "./lib/analytics";
 import { buildClusters, shuffle } from "./lib/drillGen";
 import { ensureAllFontFaces, ensureFontFace, fontById, nextFontId } from "./lib/fonts";
 import { isDue } from "./lib/fsrs";
@@ -75,7 +75,7 @@ const SWEEP_GAME_SIZE = 12;
 // Flashcards whose audio is fetched before the deck is even opened.
 const FLASHCARD_AUDIO_WARM = 3;
 // Build label shown in the hamburger menu + stamped on every bug report.
-const APP_VERSION = "chinese v162";
+const APP_VERSION = "chinese v163";
 
 export function App() {
   const dict = useDictionary();
@@ -511,11 +511,9 @@ export function App() {
 
   useEffect(() => {
     if (!auth.user) return;
-    startAnalytics(auth.user.id);
-    track("app_open", {
-      standalone: window.matchMedia("(display-mode: standalone)").matches,
-      saved_words: saved.savedList.length,
-    });
+    const standalone = window.matchMedia("(display-mode: standalone)").matches;
+    startAnalytics(auth.user.id, { app_version: APP_VERSION, standalone });
+    track("app_open", { standalone, saved_words: saved.savedList.length });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.user?.id]);
 
@@ -547,6 +545,7 @@ export function App() {
       surface: prev,
       seconds: Math.round((Date.now() - surfaceSinceRef.current) / 1000),
     });
+    setSurface(surface);
     track("surface_view", { surface, from: prev });
     surfaceRef.current = surface;
     surfaceSinceRef.current = Date.now();

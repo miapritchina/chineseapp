@@ -367,6 +367,21 @@ The combined recognition card has a launch screen (`ReviewLaunch`)
 between `#/review` and the actual review session — `App.tsx` holds
 the launched flag locally.
 
+### Usage analytics (v162–163)
+
+`lib/analytics.ts` lazy-loads posthog-js once a user is signed in
+(personal PostHog project, US cloud; identified by Supabase user id,
+never email — [ADR-0019](../decisions/0019-measure-usage-before-reorganizing.md),
+[ADR-0020](../decisions/0020-posthog-full-free-feature-set.md)). Since
+one hash (`#/review`) hosts many modes and games, `activeSurface`
+derives the real surface (`review`, `learn`, `game:chain`, …) from App
+state; App registers it as the `surface` super property and emits
+`surface_view`/`surface_leave`. Named events: `app_open`, `card_done`,
+`search`, `entity_open`, `word_status` (from `useSaved.setStatus`).
+Autocapture, hash `$pageview`s, heatmaps, rage/dead clicks, exceptions,
+web vitals, replay and surveys come from the SDK config. Nothing is
+read back — analytics never drives app state.
+
 ### Drill component contract
 
 See [ADR-0007](../decisions/0007-tap-anywhere-to-advance.md) for the

@@ -12,12 +12,17 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Added
+- **PostHog fully on (v163):** analytics now report to your personal
+  PostHog project (US) with everything the free tier offers — page
+  views per screen, autocaptured taps, rage/dead clicks, heatmaps,
+  error tracking, web vitals, session replay with console logs, and
+  in-app surveys. Every event is tagged with the screen/mode you were
+  in and the app version ([ADR-0020](docs/decisions/0020-posthog-full-free-feature-set.md)).
 - **Usage analytics (v162):** PostHog events + session replay for
   signed-in sessions (which screens, modes and games you open, how long,
   cards done, searches, saves) — ~3 weeks of real data to compare with
   how you *think* you use the app before the big reorganization
   ([ADR-0019](docs/decisions/0019-measure-usage-before-reorganizing.md)).
-  Off until the PostHog project key is added.
 
 ### Removed
 - **Backlog pressure (v162, owner request):** the due-count badge in the

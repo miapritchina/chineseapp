@@ -29,6 +29,7 @@ number never changes, even if the ADR is superseded.
 | 0017 | [Flashcards is a derived view, not a new data feature](0017-flashcards-derived-no-new-state.md) | Accepted |
 | 0018 | [Ship pre-generated mnemonic seeds, not a live LLM call](0018-pregenerated-mnemonic-seeds.md) | Accepted |
 | 0019 | [Measure real usage with PostHog before reorganizing practice](0019-measure-usage-before-reorganizing.md) | Accepted |
+| 0020 | [Use PostHog's full free feature set (personal project)](0020-posthog-full-free-feature-set.md) | Accepted |
 
 ## Writing a new ADR
 

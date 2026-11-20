@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
+import { reportError } from "./lib/analytics";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found");
@@ -11,7 +12,8 @@ if (!root) throw new Error("Root element not found");
 //   - window.onerror (uncaught exceptions outside React)
 //   - unhandledrejection (broken promises)
 function showError(label: string, err: unknown) {
-  const msg = err instanceof Error ? `${err.name}: ${err.message}\n${err.stack ?? ""}` : String(err);
+  const msg =
+    err instanceof Error ? `${err.name}: ${err.message}\n${err.stack ?? ""}` : String(err);
   let box = document.getElementById("error-overlay");
   if (!box) {
     box = document.createElement("div");
@@ -28,16 +30,14 @@ function showError(label: string, err: unknown) {
 window.addEventListener("error", (e) => showError("window error", e.error ?? e.message));
 window.addEventListener("unhandledrejection", (e) => showError("unhandled rejection", e.reason));
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { err: unknown }
-> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { err: unknown }> {
   state = { err: null as unknown };
   static getDerivedStateFromError(err: unknown) {
     return { err };
   }
   componentDidCatch(err: unknown) {
     showError("react render error", err);
+    reportError(err);
   }
   render() {
     if (this.state.err) return null; // overlay handles display
