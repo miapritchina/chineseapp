@@ -315,6 +315,30 @@ export function planClusterGrades(
 // owner: "it is super fun to combine a newly learned character with
 // an old one — my favorite game"): words containing at least one
 // recently-learned character first, then common-words-first.
+// New-words game memory (v160, owner request): a correct answer
+// retires the word for good — the game is for discovering words, not
+// drilling them. A miss only rests for the cooldown, then may return.
+export interface InferenceOutcome {
+  ts: number;
+  known: boolean;
+}
+
+export function mergeInferenceOutcome(
+  prev: InferenceOutcome | undefined,
+  next: InferenceOutcome,
+): InferenceOutcome {
+  if (!prev) return next;
+  return { ts: Math.max(prev.ts, next.ts), known: prev.known || next.known };
+}
+
+export function inferenceAvailable(
+  o: InferenceOutcome | undefined,
+  now: number,
+  cooldownMs: number,
+): boolean {
+  return !o || (!o.known && o.ts <= now - cooldownMs);
+}
+
 export function orderInferencePool<T extends { word: string; rank?: number | null }>(
   words: T[],
   recentChars: Set<string>,

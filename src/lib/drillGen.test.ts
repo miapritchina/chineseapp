@@ -3,6 +3,8 @@ import {
   buildFamilySweep,
   orderInferencePool,
   buildWordTray,
+  inferenceAvailable,
+  mergeInferenceOutcome,
   familySweepScore,
   inferencePairs,
   interleaveByActivity,
@@ -304,5 +306,29 @@ describe("orderInferencePool", () => {
     ];
     const out = orderInferencePool(pool, new Set(["票"]));
     expect(out.map((w) => w.word)).toEqual(["票房", "票据", "中国"]);
+  });
+});
+
+describe("new-words game memory", () => {
+  const DAY = 86400000;
+  const now = 100 * DAY;
+  const cooldown = 14 * DAY;
+
+  it("offers words never answered", () => {
+    expect(inferenceAvailable(undefined, now, cooldown)).toBe(true);
+  });
+
+  it("retires a correctly answered word for good", () => {
+    expect(inferenceAvailable({ ts: now - 365 * DAY, known: true }, now, cooldown)).toBe(false);
+  });
+
+  it("rests a missed word, then lets it return", () => {
+    expect(inferenceAvailable({ ts: now - 3 * DAY, known: false }, now, cooldown)).toBe(false);
+    expect(inferenceAvailable({ ts: now - 15 * DAY, known: false }, now, cooldown)).toBe(true);
+  });
+
+  it("a later miss never un-retires a known word", () => {
+    const merged = mergeInferenceOutcome({ ts: 1, known: true }, { ts: 2, known: false });
+    expect(merged).toEqual({ ts: 2, known: true });
   });
 });
