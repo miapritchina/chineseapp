@@ -12,6 +12,13 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Fixed
+- **Family sweep starts again (v165, [BUG-22](BUGS.md)):** the game
+  has opened to "All caught up" since v137; it now plays its 12-round
+  sweep.
+- **No stray character cards in games (v165, [BUG-21](BUGS.md)):**
+  with "Include word characters" on, New words and Sweep were padded
+  with plain character-recognition cards (New words read "1 / 154"
+  instead of 150).
 - **App blanked by "window error / undefined" (v164, [BUG-20](BUGS.md)):**
   a blocked or failed third-party script (PostHog's helpers, when a
   content blocker refuses them) no longer covers the app with the

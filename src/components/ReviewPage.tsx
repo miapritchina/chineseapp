@@ -16,7 +16,11 @@ import { ReverseRecognitionCard } from "./ReverseRecognitionCard";
 import { ClozeCharCard } from "./ClozeCharCard";
 import { FamilySweepCard } from "./FamilySweepCard";
 import { clusterFor, LEECH_LAPSES } from "../lib/confusionClusters";
-import { interleaveByActivity, type ClusterMemberResult } from "../lib/drillGen";
+import {
+  interleaveByActivity,
+  surfacesConstituents,
+  type ClusterMemberResult,
+} from "../lib/drillGen";
 import { FOCUS_MAX_STABILITY_DAYS, PROBLEM_CHAR_MIN_LAPSES } from "../lib/focus";
 import { pickDrillFontStack } from "../lib/fonts";
 import { DRILL_HELP } from "../lib/drillHelp";
@@ -241,7 +245,7 @@ export function ReviewPage({
   // grading seeds their real card on demand (useReview.grade). Chars
   // with an existing row respect their FSRS schedule instead.
   const constituentRows: ReviewCard[] = [];
-  if (includeSubchars && cards) {
+  if (surfacesConstituents(!!includeSubchars, enabledFacets) && cards) {
     for (const c of constituentChars) {
       if (cards.has(`char|meaningRecognition|${c}`) || cards.has(`char|recognition|${c}`)) {
         continue;
@@ -315,12 +319,13 @@ export function ReviewPage({
   // groups, most-overdue first within each — NOT a shuffle. The
   // Shuffle toggle still randomizes fully via the position map below.
   const mixed = randomOrder
-    ? [...dedupedFiltered, ...constituentRows, ...inferenceRows, ...clusterRows]
+    ? [...dedupedFiltered, ...constituentRows, ...inferenceRows, ...clusterRows, ...sweepRows]
     : interleaveByActivity([
         ...dedupedFiltered,
         ...constituentRows,
         ...inferenceRows,
         ...clusterRows,
+        ...sweepRows,
       ]);
 
   // Freeze the session to the first `sessionSize` cards seen (v107;
