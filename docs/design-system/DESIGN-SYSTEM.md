@@ -487,6 +487,10 @@ Retired drill (facet = familyTransfer) — owner saw no value. Component deleted
 
 **What:** Row of five game tiles (icon + name) — New words, Chain, Forge, Pairs, Sweep. Tiles whose game lacks material are disabled; the whole row hides when none is ready. **Where:** Home, above SavedShelf (moved off ReviewLaunch). **Classes:** `.games-bar`, `.games-row`, `.game-tile` (+ `:disabled`), `.game-tile-icon`, `.game-tile-name`. Chain's tray overrides tile size via `.chain-tray .forge-piece` (60px, 5 per row) and shows misses in `.chain-miss`.
 
+### 7.22b PullToRefresh *(v167)*
+
+**What:** A status pill for the long pull-down that reloads the app onto the newest build: "↓ Keep pulling to update" (from 40px of finger travel) → "↑ Release to update" (150px) → "Checking for a new version…". **Where:** Home / Sentence only, never over a sheet or full-screen page. **Classes:** `.pull-refresh` (+ `.is-pulling` / `.is-armed` / `.is-refreshing`). Thresholds in `lib/pullRefresh.ts`.
+
 ### 7.23 AuthButton + SignInModal
 
 **What:** Email one-time-code auth flow (v95; was magic-link). **AuthButton classes:** `.auth-button`, `.auth-loading`, `.auth-menu`, `.auth-dropdown`. **SignInModal classes:** `.popup-root`, `.popup-panel`, `.signin-panel`, `.signin-form`, `.signin-sent`.

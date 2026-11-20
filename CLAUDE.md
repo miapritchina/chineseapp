@@ -79,6 +79,7 @@ and [ADR-0005](docs/decisions/0005-additive-migrations-and-shape-fallback.md).
 │   │   ├── StatsPage                Words/strength/review-history stats (#/stats)
 │   │   ├── GamesBar                 Home-page row of game tiles (v161)
 │   │   ├── GameRoundEnd             Score + "Another round" after a short game round (v166)
+│   │   ├── PullToRefresh            Long pull-down on home → check for a new build + reload (v167)
 │   │   ├── ForgePage / PairsPage / ChainPage  Games: forge, memory match, 接龙 (ungraded)
 │   │   ├── LearnPage                Lesson cards that teach instead of test
 │   │   ├── ProductionCard           Drill: Hanzi Writer trace quiz

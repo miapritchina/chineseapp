@@ -1989,6 +1989,26 @@ body {
   color: var(--muted);
   padding: 14px 18px 4px;
 }
+.pull-refresh {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--muted);
+  font-size: var(--caption);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.pull-refresh.is-armed,
+.pull-refresh.is-refreshing {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .games-row {
   display: flex;
   gap: 8px;
