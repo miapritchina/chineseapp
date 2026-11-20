@@ -52,7 +52,7 @@ connection badges.
 | `public/mnemonic-seeds.json` | 655 story mnemonics for the HSK 3.0 level 1–3 chars — the MAKE IT STICK starter ([ADR-0018](../decisions/0018-pregenerated-mnemonic-seeds.md)); user edits live in `user_mnemonics` | Static; hand-written (v155), loaded by `useMnemonicSeeds` |
 | Supabase `words` table | ~91k words: pinyin, defs, HSK, rank | Static seed via `seed-supabase.mjs`; queried at runtime |
 | Supabase `user_saves`, `user_fsrs_state`, `user_mnemonics`, `user_sentences`, `user_sentence_draft` | User-private state — **the source of truth** | Live; `localStorage` is an offline read-cache only |
-| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads recent rows back so answered inference words rest across devices. Auto-graded drills also store their raw 0–1 `score` (additive column, migration 0014; null for self-graded rows) | Live; insert from `useReview`, select from `useWordInference` |
+| Supabase `user_review_log` | Append-only grade log (v99) — raw material for future FSRS parameter optimization. Since v104 also records `wordInference` outcomes (prev_card null), and `useWordInference` reads them back so correctly answered inference words stay retired (and misses rest 14 days) across devices. Auto-graded drills also store their raw 0–1 `score` (additive column, migration 0014; null for self-graded rows) | Live; insert from `useReview`, select from `useWordInference` |
 | Supabase `user_classic_progress` | Furthest-read 三字经 couplet (v101) — scroll-tracked bookmark, max(local, remote) merge | Live; `useClassicProgress` |
 | Supabase `user_shares` | Profile share tokens (v110): one stable 12-char token per account; `get_profile_words(token)` resolves to the owner's LIVE saved set (SECURITY DEFINER), so a `?share=` link imports the profile as it is at click time. `words` column = courtesy snapshot for pre-v110 clients (`get_shared_words`) | Live; share flow in `App.tsx`, import in `useAutoImport` |
 | Supabase `bug_reports` | In-app bug reports: free-text `note` + auto-captured `context` JSONB (page, active word/char, version, viewport, UA, timestamp — `lib/bugReport.ts`). Client INSERT-only (anon **and** authenticated — the one anon-writable user table; SELECT owner-only). A GitHub Action (`bug-reports-to-issues.yml`) bridges each row to a **GitHub issue labeled `bug-report`** — the readable/triageable copy — stamping `github_issue`/`synced_at` for idempotency. Triage runbook: [bug-report-triage.md](bug-report-triage.md) | Live; `useBugReport` + `BugReportModal` write; sync → issues |
@@ -136,11 +136,13 @@ word buildable from the user's WHOLE character set, one query, up to
 recent chars remains the ADR-0005 fallback). Each word
 randomly renders as guess-the-meaning OR build-the-word
 (`WordBuildCard`: translation shown, assemble the hanzi from a tray
-of its characters + decoys). Since v104 an
-answered word (right OR wrong) is done and rests for 14 days: recorded
-immediately in localStorage (`chinese.inferenceSeen`) and logged to
-`user_review_log` under the `wordInference` facet, which signed-in
-devices read back so the rest-period follows the account. Word-kind
+of its characters + decoys). Since v160 a
+correctly answered word is retired for good and a missed one rests for
+14 days before it may rotate back: recorded immediately in localStorage
+(`chinese.inferenceSeen`, read-cache) and logged to `user_review_log`
+under the `wordInference` facet (rating Good/Again), which signed-in
+devices read back — Good rows all-time, any rating within the
+cooldown — so the memory follows the account. Word-kind
 facets beyond meaning/sound sort after meaning/sound in the due queue
 (there is no daily cap since v102).
 

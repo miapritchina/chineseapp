@@ -12,6 +12,11 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **New words never repeats a word you got right (v160, owner
+  request):** a correct answer retires that word from the game for
+  good (synced to your account), so each round is about discovering
+  new words, not drilling old ones. Missed words still come back after
+  a 14-day rest. Previously every answered word returned after 14 days.
 - **Forge tiles show pinyin (v159, owner request):** every loose
   character in the Forge tray carries its pinyin under the hanzi, so
   you can sound a pair out before smushing it.

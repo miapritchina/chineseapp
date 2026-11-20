@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Word } from "../lib/types";
 import { supabase } from "../lib/supabase";
-import { inferencePairs, knownChars, orderInferencePool } from "../lib/drillGen";
+import {
+  inferenceAvailable,
+  inferencePairs,
+  knownChars,
+  mergeInferenceOutcome,
+  orderInferencePool,
+  type InferenceOutcome,
+} from "../lib/drillGen";
 
 // Discovers real, unsaved words built entirely from characters the
 // user already knows (drill 1 — see docs/product/recognition-drills.md).
@@ -14,10 +21,10 @@ import { inferencePairs, knownChars, orderInferencePool } from "../lib/drillGen"
 // closed over the pre-probe cache and always come up empty (the same
 // stale-dict-closure trap as the v90 search hang).
 //
-// Answered words are DONE across sessions: `markSeen` records them in
-// localStorage immediately and useReview logs the outcome to
-// user_review_log; signed-in devices pull recent wordInference log
-// rows back so the rest-period follows the account. A word rests for
+// Answer memory: `markSeen` records the outcome in localStorage
+// immediately and useReview logs it to user_review_log; signed-in
+// devices pull wordInference log rows back so it follows the account.
+// A correct answer retires the word for good (v160); a miss rests for
 // INFERENCE_COOLDOWN_DAYS before it may rotate back in.
 
 const PROBE_CHUNK = 150;
@@ -36,21 +43,29 @@ const SEEN_KEY = "chinese.inferenceSeen";
 export const INFERENCE_COOLDOWN_DAYS = 14;
 const COOLDOWN_MS = INFERENCE_COOLDOWN_DAYS * 86400000;
 
-function loadSeen(): Map<string, number> {
+type Seen = Map<string, InferenceOutcome>;
+
+function loadSeen(): Seen {
   try {
     const raw = localStorage.getItem(SEEN_KEY);
     if (!raw) return new Map();
-    const parsed = JSON.parse(raw) as { items?: [string, number][] };
+    // Pre-v160 entries are [word, ts] — no flag, so they only rest.
+    const parsed = JSON.parse(raw) as { items?: [string, number, boolean?][] };
     const cutoff = Date.now() - COOLDOWN_MS;
-    return new Map((parsed.items ?? []).filter(([w, ts]) => w && ts > cutoff));
+    return new Map(
+      (parsed.items ?? [])
+        .filter(([w, ts, known]) => w && (known || ts > cutoff))
+        .map(([w, ts, known]) => [w, { ts, known: !!known }]),
+    );
   } catch {
     return new Map();
   }
 }
 
-function persistSeen(seen: Map<string, number>) {
+function persistSeen(seen: Seen) {
   try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify({ items: [...seen.entries()] }));
+    const items = [...seen.entries()].map(([w, o]) => [w, o.ts, o.known]);
+    localStorage.setItem(SEEN_KEY, JSON.stringify({ items }));
   } catch {
     /* ignore */
   }
@@ -65,7 +80,7 @@ interface Opts {
 
 export function useWordInference({ userId, savedList, ensureCached, findWord }: Opts) {
   const [probedKeys, setProbedKeys] = useState<string[]>([]);
-  const [seen, setSeen] = useState<Map<string, number>>(() => loadSeen());
+  const [seen, setSeen] = useState<Seen>(() => loadSeen());
   const probedForRef = useRef<string>("");
   // Fresh rotation each app session — a fixed slice showed the same
   // words every time (owner-reported bug). Ref so the order is stable
@@ -73,35 +88,45 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
   const rotationRef = useRef(Math.random());
 
   // Answered now → out of the pool now AND after exiting/reloading.
-  const markSeen = useCallback((word: string) => {
+  const markSeen = useCallback((word: string, gotIt: boolean) => {
     setSeen((prev) => {
       const next = new Map(prev);
-      next.set(word, Date.now());
+      next.set(word, mergeInferenceOutcome(prev.get(word), { ts: Date.now(), known: gotIt }));
       persistSeen(next);
       return next;
     });
   }, []);
 
-  // Signed-in: merge recent wordInference outcomes from the review log
-  // so the rest-period follows the account across devices.
+  // Signed-in: merge wordInference outcomes from the review log so
+  // retired words and resting misses follow the account across devices.
+  // Correct answers are read all-time; misses only within the cooldown.
   useEffect(() => {
     if (!userId) return;
     void (async () => {
       const since = new Date(Date.now() - COOLDOWN_MS).toISOString();
-      const { data, error } = await supabase
-        .from("user_review_log")
-        .select("item_key, reviewed_at")
-        .eq("user_id", userId)
-        .eq("facet", "wordInference")
-        .gte("reviewed_at", since);
-      if (error || !data) return; // missing table → degrade silently
+      const base = () =>
+        supabase
+          .from("user_review_log")
+          .select("item_key, reviewed_at, rating")
+          .eq("user_id", userId)
+          .eq("facet", "wordInference");
+      const [known, recent] = await Promise.all([
+        base().eq("rating", "Good"),
+        base().gte("reviewed_at", since),
+      ]);
+      if (known.error || recent.error) return; // missing table → degrade silently
+      const rows = [...(known.data ?? []), ...(recent.data ?? [])];
       setSeen((prev) => {
         let changed = false;
         const next = new Map(prev);
-        for (const r of data) {
-          const ts = new Date(r.reviewed_at).getTime();
-          if ((next.get(r.item_key) ?? 0) < ts) {
-            next.set(r.item_key, ts);
+        for (const r of rows) {
+          const cur = next.get(r.item_key);
+          const merged = mergeInferenceOutcome(cur, {
+            ts: new Date(r.reviewed_at).getTime(),
+            known: r.rating === "Good",
+          });
+          if (!cur || cur.ts !== merged.ts || cur.known !== merged.known) {
+            next.set(r.item_key, merged);
             changed = true;
           }
         }
@@ -162,10 +187,13 @@ export function useWordInference({ userId, savedList, ensureCached, findWord }: 
   const words = useMemo<Word[]>(() => {
     if (probedKeys.length === 0) return [];
     const saved = new Set(savedList.map((s) => s.word));
-    const cutoff = Date.now() - COOLDOWN_MS;
+    const now = Date.now();
     const found = probedKeys
       .map((k) => findWord(k))
-      .filter((w): w is Word => !!w && !saved.has(w.word) && (seen.get(w.word) ?? 0) <= cutoff);
+      .filter(
+        (w): w is Word =>
+          !!w && !saved.has(w.word) && inferenceAvailable(seen.get(w.word), now, COOLDOWN_MS),
+      );
     // Fresh×old combinations lead (v138), then common words; rotate by
     // a per-session random offset so each session starts somewhere new
     // without the order jumping mid-session (a shuffle here would
