@@ -168,17 +168,6 @@ interface Props {
   // (drills → learn) from the saved settings. Sift left the chain in
   // v123 — it's standalone triage, not a workout stage.
   onJustStart?: () => void;
-  // Games (v116): pure play, no grading.
-  forgeReady?: boolean;
-  onStartForge?: () => void;
-  pairsReady?: boolean;
-  onStartPairs?: () => void;
-  chainReady?: boolean;
-  onStartChain?: () => void;
-  newWordsReady?: boolean;
-  onStartNewWords?: () => void;
-  sweepReady?: boolean;
-  onStartSweep?: () => void;
   onStart: (settings: ReviewSettings) => void;
   onClose: () => void;
 }
@@ -198,16 +187,6 @@ export function ReviewLaunch({
   focusCount = 0,
   onStartFocus,
   onJustStart,
-  forgeReady = false,
-  onStartForge,
-  pairsReady = false,
-  onStartPairs,
-  chainReady = false,
-  onStartChain,
-  newWordsReady = false,
-  onStartNewWords,
-  sweepReady = false,
-  onStartSweep,
   onStart,
   onClose,
 }: Props) {
@@ -331,75 +310,6 @@ export function ReviewLaunch({
             <span>All</span>
           </div>
         </div>
-        {(onStartForge || onStartPairs || onStartChain || onStartNewWords || onStartSweep) && (
-          <div className="launch-section">
-            <div className="launch-section-title">Games</div>
-            <div className="launch-games-col">
-              {onStartNewWords && (
-                <button
-                  type="button"
-                  className="review-btn launch-game-btn"
-                  onClick={onStartNewWords}
-                  disabled={!newWordsReady}
-                >
-                  <span className="launch-game-name">✨ New words</span>
-                  <span className="launch-game-hint">
-                    Real words you haven&apos;t saved, built from your characters — guess the
-                    meaning or build the hanzi
-                  </span>
-                </button>
-              )}
-              {onStartSweep && (
-                <button
-                  type="button"
-                  className="review-btn launch-game-btn"
-                  onClick={onStartSweep}
-                  disabled={!sweepReady}
-                >
-                  <span className="launch-game-name">🧹 Family sweep</span>
-                  <span className="launch-game-hint">
-                    Tap every character built with a component — random components each round
-                  </span>
-                </button>
-              )}
-              {onStartForge && (
-                <button
-                  type="button"
-                  className="review-btn launch-game-btn"
-                  onClick={onStartForge}
-                  disabled={!forgeReady}
-                >
-                  <span className="launch-game-name">⚒ Forge</span>
-                  <span className="launch-game-hint">Smush characters into words you know</span>
-                </button>
-              )}
-              {onStartPairs && (
-                <button
-                  type="button"
-                  className="review-btn launch-game-btn"
-                  onClick={onStartPairs}
-                  disabled={!pairsReady}
-                >
-                  <span className="launch-game-name">🀄 Pairs</span>
-                  <span className="launch-game-hint">Memory match — hanzi against meanings</span>
-                </button>
-              )}
-              {onStartChain && (
-                <button
-                  type="button"
-                  className="review-btn launch-game-btn"
-                  onClick={onStartChain}
-                  disabled={!chainReady}
-                >
-                  <span className="launch-game-name">⛓ Chain</span>
-                  <span className="launch-game-hint">
-                    接龙 — each word holds the last one’s new character
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
         <details className="launch-options-details">
           <summary className="launch-options-summary">Options</summary>
           <div className="launch-options">

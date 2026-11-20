@@ -12,6 +12,15 @@ Categories: **Added** · **Changed** · **Fixed** · **Deprecated** · **Removed
 ## [Unreleased]
 
 ### Changed
+- **Games live on the home page (v161, owner request):** a Games row
+  (New words, Chain, Forge, Pairs, Sweep) sits above your saved words,
+  and closing a game brings you back home. The Review screen no longer
+  lists them.
+- **Chain: bigger tray + three lives (v161, owner request):** 15
+  characters to build from (was 9), drawn from up to four valid words
+  plus decoys. A wrong tile now costs one of three lives (♥♥♥ in the
+  header) and resets the word you were building, instead of ending the
+  chain right away.
 - **New words never repeats a word you got right (v160, owner
   request):** a correct answer retires that word from the game for
   good (synced to your account), so each round is about discovering

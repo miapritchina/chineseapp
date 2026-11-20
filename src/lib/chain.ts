@@ -19,13 +19,17 @@
 // get a tray of loose characters and must produce the continuation
 // yourself. The tray carries the characters of a few valid
 // continuations plus decoys that appear in no word containing the link.
+//
+// v161 (owner): a bigger tray (more to choose from) and three lives —
+// a wrong tile costs a life and resets the word; the third breaks it.
 
 import { shuffle, type Rand } from "./drillGen";
 
-export const CHAIN_TRAY_SIZE = 9;
+export const CHAIN_TRAY_SIZE = 15;
+export const CHAIN_LIVES = 3;
 // How many valid continuations get their completion characters into
 // the tray. More would make the step trivially easy.
-const TRAY_ANSWERS = 3;
+const TRAY_ANSWERS = 4;
 
 // Chain material: the user's multi-character saved words.
 export function chainPool(savedWords: string[]): string[] {
